@@ -22,5 +22,6 @@ export const tasks = pgTable('tasks', {
   isToday: boolean('istoday').default(false).notNull(),
   category: text('category').default('작업').notNull(),
   createdAt: bigint('createdat', { mode: 'number' }).notNull(),
+  completedAt: bigint('completedat', { mode: 'number' }),
 })
 
