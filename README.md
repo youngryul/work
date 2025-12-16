@@ -80,31 +80,33 @@ src/
     └── task.js            # Task 타입 정의
 ```
 
-## Railway 배포
+## Vercel 배포
 
 ### 배포 준비
 
-1. **Railway 프로젝트 생성**
-   - [Railway](https://railway.app)에 로그인
+1. **Vercel 프로젝트 생성**
+   - [Vercel](https://vercel.com)에 로그인
    - 새 프로젝트 생성
    - GitHub 저장소 연결
 
 2. **환경 변수 설정**
-   Railway 대시보드에서 다음 환경 변수를 설정하세요:
+   Vercel 대시보드의 프로젝트 설정 > Environment Variables에서 다음 환경 변수를 설정하세요:
    ```
    VITE_SUPABASE_URL=your_supabase_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
 3. **배포**
-   - Railway가 자동으로 감지하여 빌드 및 배포
-   - `railway.json` 파일이 배포 설정을 관리합니다
+   - Vercel이 자동으로 Vite 프로젝트를 감지하여 빌드 및 배포
+   - `vercel.json` 파일이 배포 설정을 관리합니다
+   - GitHub에 푸시하면 자동으로 재배포됩니다
 
 ### 배포 후 확인사항
 
 - Supabase 데이터베이스 테이블이 생성되어 있는지 확인
 - 환경 변수가 올바르게 설정되었는지 확인
 - 배포된 URL에서 앱이 정상 작동하는지 확인
+- SPA 라우팅이 정상 작동하는지 확인 (모든 경로가 index.html로 리다이렉트)
 
 ## 주요 기능 설명
 
