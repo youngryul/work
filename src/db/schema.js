@@ -1,0 +1,18 @@
+import { pgTable, uuid, text, boolean, bigint } from 'drizzle-orm/pg-core'
+import { DEFAULT_CATEGORY } from '../constants/categories.js'
+
+/**
+ * tasks 테이블 스키마 정의
+ * 
+ * PostgreSQL은 따옴표로 감싸지 않은 컬럼명을 소문자로 변환하므로,
+ * Supabase와의 호환성을 위해 소문자 컬럼명을 사용합니다.
+ */
+export const tasks = pgTable('tasks', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  title: text('title').notNull(),
+  completed: boolean('completed').default(false).notNull(),
+  isToday: boolean('istoday').default(false).notNull(),
+  category: text('category').default(DEFAULT_CATEGORY).notNull(),
+  createdAt: bigint('createdat', { mode: 'number' }).notNull(),
+})
+
