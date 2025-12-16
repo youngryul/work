@@ -16,7 +16,7 @@ function App() {
           <div className="flex gap-4">
             <button
               onClick={() => setCurrentView('today')}
-              className={`px-4 py-2 rounded-lg transition-all duration-200 text-lg ${
+              className={`px-4 py-2 rounded-lg transition-all duration-200 text-2xl ${
                 currentView === 'today'
                   ? 'bg-pink-400 text-white shadow-md'
                   : 'text-gray-600 hover:bg-pink-100'
@@ -26,7 +26,7 @@ function App() {
             </button>
             <button
               onClick={() => setCurrentView('backlog')}
-              className={`px-4 py-2 rounded-lg transition-all duration-200 text-lg ${
+              className={`px-4 py-2 rounded-lg transition-all duration-200 text-2xl ${
                 currentView === 'backlog'
                   ? 'bg-pink-400 text-white shadow-md'
                   : 'text-gray-600 hover:bg-pink-100'

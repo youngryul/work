@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { updateTask, deleteTask } from '../services/taskService.js'
-import { CATEGORY_EMOJIS } from '../constants/categories.js'
+import { getCategoryEmoji } from '../services/categoryService.js'
+import CategorySelector from './CategorySelector.jsx'
 
 /**
  * 할 일 항목 컴포넌트
@@ -11,7 +12,17 @@ import { CATEGORY_EMOJIS } from '../constants/categories.js'
  */
 export default function TaskItem({ task, onUpdate, onDelete }) {
   const [isEditing, setIsEditing] = useState(false)
+  const [isEditingCategory, setIsEditingCategory] = useState(false)
   const [editTitle, setEditTitle] = useState(task.title)
+  const [categoryEmoji, setCategoryEmoji] = useState('📝')
+
+  useEffect(() => {
+    const loadEmoji = async () => {
+      const emoji = await getCategoryEmoji(task.category)
+      setCategoryEmoji(emoji)
+    }
+    loadEmoji()
+  }, [task.category])
 
   /**
    * 완료 상태 토글
@@ -84,18 +95,32 @@ export default function TaskItem({ task, onUpdate, onDelete }) {
     }
   }
 
+  /**
+   * 카테고리 변경
+   */
+  const handleCategoryChange = async (newCategory) => {
+    try {
+      const updated = await updateTask(task.id, { category: newCategory })
+      onUpdate(updated)
+      setIsEditingCategory(false)
+    } catch (error) {
+      console.error('카테고리 변경 오류:', error)
+    }
+  }
+
   return (
     <div
-      className={`group flex items-center gap-3 p-4 rounded-lg transition-all duration-300 animate-fade-in ${
+      className={`group flex flex-col gap-3 p-4 rounded-lg transition-all duration-300 animate-fade-in ${
         task.completed
           ? 'bg-pink-100 opacity-60'
           : 'bg-white shadow-sm hover:shadow-md'
       }`}
     >
+      <div className="flex items-center gap-3">
       {/* 체크박스 */}
       <button
         onClick={handleToggleComplete}
-        className={`flex-shrink-0 w-6 h-6 rounded-full border-2 transition-all duration-200 ${
+        className={`flex-shrink-0 w-8 h-8 rounded-full border-2 transition-all duration-200 ${
           task.completed
             ? 'bg-pink-400 border-pink-400 checkmark-animate'
             : 'border-gray-300 hover:border-pink-400'
@@ -120,9 +145,14 @@ export default function TaskItem({ task, onUpdate, onDelete }) {
       </button>
 
       {/* 카테고리 이모지 */}
-      <span className="text-2xl flex-shrink-0">
-        {CATEGORY_EMOJIS[task.category] || '📝'}
-      </span>
+      <button
+        onClick={() => setIsEditingCategory(!isEditingCategory)}
+        className="flex-shrink-0 text-3xl hover:scale-110 transition-transform duration-200"
+        aria-label="카테고리 변경"
+        title="카테고리를 변경하려면 클릭하세요"
+      >
+        {categoryEmoji}
+      </button>
 
       {/* 할 일 제목 */}
       {isEditing ? (
@@ -132,13 +162,13 @@ export default function TaskItem({ task, onUpdate, onDelete }) {
           onChange={(e) => setEditTitle(e.target.value)}
           onBlur={handleSaveEdit}
           onKeyDown={handleKeyPress}
-          className="flex-1 px-2 py-1 border-2 border-pink-300 rounded focus:outline-none focus:border-pink-500 text-lg"
+          className="flex-1 px-2 py-1 border-2 border-pink-300 rounded focus:outline-none focus:border-pink-500 text-base font-sans"
           autoFocus
         />
       ) : (
         <span
           onClick={handleStartEdit}
-          className={`flex-1 text-lg cursor-pointer ${
+          className={`flex-1 text-base cursor-pointer font-sans ${
             task.completed ? 'line-through text-gray-500' : 'text-gray-800'
           }`}
         >
@@ -149,11 +179,22 @@ export default function TaskItem({ task, onUpdate, onDelete }) {
       {/* 삭제 버튼 */}
       <button
         onClick={handleDelete}
-        className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-red-400 hover:text-red-600 text-xl"
+        className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-red-400 hover:text-red-600 text-3xl"
         aria-label="삭제"
       >
         ×
       </button>
+      </div>
+
+      {/* 카테고리 선택기 (편집 모드일 때만 표시) */}
+      {isEditingCategory && (
+        <div className="pt-2 border-t border-pink-100">
+          <CategorySelector
+            selectedCategory={task.category}
+            onChange={handleCategoryChange}
+          />
+        </div>
+      )}
     </div>
   )
 }

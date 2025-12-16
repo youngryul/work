@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { getBacklogTasks, createTask, moveToToday } from '../services/taskService.js'
-import { DEFAULT_CATEGORY, MAX_TODAY_TASKS } from '../constants/categories.js'
+import { getDefaultCategory } from '../services/categoryService.js'
 import TaskItem from './TaskItem.jsx'
+import CategorySelector from './CategorySelector.jsx'
+import CategoryManager from './CategoryManager.jsx'
 
 /**
  * 백로그 화면 컴포넌트
@@ -9,7 +11,19 @@ import TaskItem from './TaskItem.jsx'
 export default function BacklogView() {
   const [tasks, setTasks] = useState([])
   const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+
+  /**
+   * 기본 카테고리 로드
+   */
+  useEffect(() => {
+    const loadDefaultCategory = async () => {
+      const defaultCat = await getDefaultCategory()
+      setSelectedCategory(defaultCat)
+    }
+    loadDefaultCategory()
+  }, [])
 
   /**
    * 백로그 목록 로드
@@ -26,6 +40,13 @@ export default function BacklogView() {
     }
   }
 
+  /**
+   * 카테고리 변경 시 목록 새로고침
+   */
+  const handleCategoryChange = () => {
+    loadTasks()
+  }
+
   useEffect(() => {
     loadTasks()
   }, [])
@@ -38,9 +59,12 @@ export default function BacklogView() {
     if (newTaskTitle.trim() === '') return
 
     try {
-      const newTask = await createTask(newTaskTitle, DEFAULT_CATEGORY, false)
+      const newTask = await createTask(newTaskTitle, selectedCategory, false)
       setTasks([newTask, ...tasks])
       setNewTaskTitle('')
+      // 기본 카테고리로 리셋
+      const defaultCat = await getDefaultCategory()
+      setSelectedCategory(defaultCat)
     } catch (error) {
       alert(error.message || '할 일 추가에 실패했습니다.')
     }
@@ -73,33 +97,53 @@ export default function BacklogView() {
     setTasks(tasks.filter((t) => t.id !== taskId))
   }
 
+  /**
+   * 카테고리별로 할 일 분리 및 정렬 (가장 오래된 것부터)
+   */
+  const companyTasks = tasks
+    .filter((task) => task.category === '회사')
+    .sort((a, b) => (a.createdAt || a.createdat || 0) - (b.createdAt || b.createdat || 0))
+  const otherTasks = tasks
+    .filter((task) => task.category !== '회사')
+    .sort((a, b) => (a.createdAt || a.createdat || 0) - (b.createdAt || b.createdat || 0))
+
   return (
-    <div className="max-w-2xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-5xl font-handwriting text-gray-800 mb-2">
+        <h1 className="text-6xl font-handwriting text-gray-800 mb-2">
           백로그
         </h1>
-        <p className="text-xl text-gray-600">
+        <p className="text-3xl text-gray-600">
           {tasks.length > 0
             ? `총 ${tasks.length}개의 할 일`
             : '백로그가 비어있어요'}
         </p>
       </div>
 
+      {/* 카테고리 관리 */}
+      <CategoryManager 
+        onCategoryChange={handleCategoryChange}
+        onCategorySelect={setSelectedCategory}
+      />
+
       {/* 할 일 추가 폼 */}
       <form onSubmit={handleAddTask} className="mb-6">
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <CategorySelector
+            selectedCategory={selectedCategory}
+            onChange={setSelectedCategory}
+          />
           <input
             type="text"
             value={newTaskTitle}
             onChange={(e) => setNewTaskTitle(e.target.value)}
             placeholder="새 할 일을 입력하세요..."
-            className="flex-1 px-4 py-3 text-lg border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400 shadow-sm"
+            className="flex-1 px-4 py-3 text-base border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400 shadow-sm font-sans"
             autoFocus
           />
           <button
             type="submit"
-            className="px-6 py-3 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors duration-200 text-lg font-semibold shadow-sm"
+            className="px-6 py-3 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors duration-200 text-2xl font-semibold shadow-sm whitespace-nowrap"
           >
             추가
           </button>
@@ -108,28 +152,66 @@ export default function BacklogView() {
 
       {/* 할 일 목록 */}
       {isLoading ? (
-        <div className="text-center py-8 text-gray-500 text-xl">로딩 중...</div>
+        <div className="text-center py-8 text-gray-500 text-3xl">로딩 중...</div>
       ) : tasks.length === 0 ? (
-        <div className="text-center py-12 text-gray-400 text-2xl">
+        <div className="text-center py-12 text-gray-400 text-3xl">
           백로그가 비어있어요. 위에서 추가해보세요! ✨
         </div>
       ) : (
-        <div className="space-y-3">
-          {tasks.map((task) => (
-            <div key={task.id} className="relative group">
-              <TaskItem
-                task={task}
-                onUpdate={handleTaskUpdate}
-                onDelete={handleTaskDelete}
-              />
-              <button
-                onClick={() => handleMoveToToday(task.id)}
-                className="absolute right-12 top-1/2 -translate-y-1/2 px-3 py-1 bg-pink-200 text-pink-700 rounded-lg text-sm hover:bg-pink-300 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm"
-              >
-                오늘로
-              </button>
-            </div>
-          ))}
+        <div className="grid grid-cols-2 gap-6">
+          {/* 왼쪽: 회사 카테고리 */}
+          <div className="space-y-3">
+            {companyTasks.length > 0 && (
+              <h2 className="text-2xl font-handwriting text-gray-700 mb-3">회사</h2>
+            )}
+            {companyTasks.map((task) => (
+              <div key={task.id} className="relative group">
+                <TaskItem
+                  task={task}
+                  onUpdate={handleTaskUpdate}
+                  onDelete={handleTaskDelete}
+                />
+                <button
+                  onClick={() => handleMoveToToday(task.id)}
+                  className="absolute right-12 top-1/2 -translate-y-1/2 px-3 py-1 bg-pink-200 text-pink-700 rounded-lg text-sm hover:bg-pink-300 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm"
+                >
+                  오늘로
+                </button>
+              </div>
+            ))}
+            {companyTasks.length === 0 && (
+              <div className="text-center py-8 text-gray-400 text-lg">
+                회사 할 일이 없어요
+              </div>
+            )}
+          </div>
+
+          {/* 오른쪽: 나머지 카테고리 */}
+          <div className="space-y-3">
+            {otherTasks.length > 0 && (
+              <h2 className="text-2xl font-handwriting text-gray-700 mb-3">기타</h2>
+            )}
+            {otherTasks.map((task) => (
+              <div key={task.id} className="relative group">
+                <TaskItem
+                  task={task}
+                  onUpdate={handleTaskUpdate}
+                  onDelete={handleTaskDelete}
+                />
+                <button
+                  onClick={() => handleMoveToToday(task.id)}
+                  className="absolute right-12 top-1/2 -translate-y-1/2 px-3 py-1 bg-pink-200 text-pink-700 rounded-lg text-sm hover:bg-pink-300 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm"
+                >
+                  오늘로
+                </button>
+              </div>
+            ))}
+            {otherTasks.length === 0 && (
+              <div className="text-center py-8 text-gray-400 text-lg">
+                기타 할 일이 없어요
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

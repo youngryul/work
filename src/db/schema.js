@@ -1,5 +1,13 @@
 import { pgTable, uuid, text, boolean, bigint } from 'drizzle-orm/pg-core'
-import { DEFAULT_CATEGORY } from '../constants/categories.js'
+
+/**
+ * categories 테이블 스키마 정의
+ */
+export const categories = pgTable('categories', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: text('name').notNull().unique(),
+  emoji: text('emoji').notNull(),
+})
 
 /**
  * tasks 테이블 스키마 정의
@@ -12,7 +20,7 @@ export const tasks = pgTable('tasks', {
   title: text('title').notNull(),
   completed: boolean('completed').default(false).notNull(),
   isToday: boolean('istoday').default(false).notNull(),
-  category: text('category').default(DEFAULT_CATEGORY).notNull(),
+  category: text('category').default('작업').notNull(),
   createdAt: bigint('createdat', { mode: 'number' }).notNull(),
 })
 

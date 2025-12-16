@@ -30,20 +30,17 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ## Supabase 데이터베이스 설정
 
 1. Supabase 프로젝트를 생성합니다.
-2. **Drizzle ORM을 사용한 마이그레이션** (권장):
+2. **데이터베이스 테이블 생성**:
+   - SQL Editor에서 다음 파일들을 순서대로 실행합니다:
+     1. `supabase-schema.sql` - tasks 테이블 생성
+     2. `supabase-categories-init.sql` - categories 테이블 생성 및 기본 카테고리 데이터 삽입
+   
+   또는 **Drizzle ORM을 사용한 마이그레이션**:
    ```bash
    npm run db:generate  # 스키마에서 마이그레이션 파일 생성
-   npm run db:push      # 스키마를 데이터베이스에 직접 푸시 (마이그레이션 파일 없이)
+   npm run db:push      # 스키마를 데이터베이스에 직접 푸시
    ```
-   
-   또는 마이그레이션 파일을 생성한 후 수동으로 적용하려면:
-   ```bash
-   npm run db:generate  # 마이그레이션 파일 생성
-   # 생성된 마이그레이션 파일을 Supabase SQL Editor에서 실행
-   ```
-   
-   또는 **수동으로 SQL 실행**:
-   - SQL Editor에서 `supabase-schema.sql` 파일의 내용을 실행하여 `tasks` 테이블을 생성합니다.
+   (Drizzle을 사용한 경우, `supabase-categories-init.sql`을 수동으로 실행하여 기본 카테고리 데이터를 삽입해야 합니다)
 
 3. `.env` 파일에 다음을 설정합니다:
    - `VITE_SUPABASE_URL`: Supabase 프로젝트 URL
@@ -83,11 +80,37 @@ src/
     └── task.js            # Task 타입 정의
 ```
 
+## Railway 배포
+
+### 배포 준비
+
+1. **Railway 프로젝트 생성**
+   - [Railway](https://railway.app)에 로그인
+   - 새 프로젝트 생성
+   - GitHub 저장소 연결
+
+2. **환경 변수 설정**
+   Railway 대시보드에서 다음 환경 변수를 설정하세요:
+   ```
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+3. **배포**
+   - Railway가 자동으로 감지하여 빌드 및 배포
+   - `railway.json` 파일이 배포 설정을 관리합니다
+
+### 배포 후 확인사항
+
+- Supabase 데이터베이스 테이블이 생성되어 있는지 확인
+- 환경 변수가 올바르게 설정되었는지 확인
+- 배포된 URL에서 앱이 정상 작동하는지 확인
+
 ## 주요 기능 설명
 
-- **오늘 할 일**: 최대 5개까지만 선택 가능
-- **백로그**: 미완료 할 일 중 오늘 할 일이 아닌 항목
-- **카테고리**: 작업(💻), 공부(📚), 생각(🧠), 개인(❤️)
+- **오늘 할 일**: 백로그에서 추가 후 오늘 할 일로 이동
+- **백로그**: 모든 할 일 관리 및 카테고리별 분류
+- **카테고리**: 사용자 정의 카테고리 추가/삭제 가능
 - **인라인 수정**: 할 일 텍스트를 클릭하여 바로 수정 가능
 - **완료 처리**: 체크박스로 완료/미완료 토글
 

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getTodayTasks, createTask } from '../services/taskService.js'
-import { DEFAULT_CATEGORY, MAX_TODAY_TASKS } from '../constants/categories.js'
+import { getTodayTasks } from '../services/taskService.js'
 import TaskItem from './TaskItem.jsx'
 
 /**
@@ -8,7 +7,6 @@ import TaskItem from './TaskItem.jsx'
  */
 export default function TodayView() {
   const [tasks, setTasks] = useState([])
-  const [newTaskTitle, setNewTaskTitle] = useState('')
   const [isLoading, setIsLoading] = useState(true)
 
   /**
@@ -29,27 +27,6 @@ export default function TodayView() {
   useEffect(() => {
     loadTasks()
   }, [])
-
-  /**
-   * 할 일 추가
-   */
-  const handleAddTask = async (e) => {
-    e.preventDefault()
-    if (newTaskTitle.trim() === '') return
-
-    if (tasks.length >= MAX_TODAY_TASKS) {
-      alert(`오늘 할 일은 최대 ${MAX_TODAY_TASKS}개까지 추가할 수 있습니다.`)
-      return
-    }
-
-    try {
-      const newTask = await createTask(newTaskTitle, DEFAULT_CATEGORY, true)
-      setTasks([newTask, ...tasks])
-      setNewTaskTitle('')
-    } catch (error) {
-      alert(error.message || '할 일 추가에 실패했습니다.')
-    }
-  }
 
   /**
    * 할 일 업데이트
@@ -73,48 +50,22 @@ export default function TodayView() {
   return (
     <div className="max-w-2xl mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-5xl font-handwriting text-gray-800 mb-2">
+        <h1 className="text-6xl font-handwriting text-gray-800 mb-2">
           오늘 할 일
         </h1>
-        <p className="text-xl text-gray-600">
+        <p className="text-3xl text-gray-600">
           {tasks.length > 0
             ? `${completedCount}개 완료 / ${tasks.length}개`
             : '오늘은 무엇을 할까요?'}
         </p>
       </div>
 
-      {/* 할 일 추가 폼 */}
-      <form onSubmit={handleAddTask} className="mb-6">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            placeholder="할 일을 입력하세요..."
-            className="flex-1 px-4 py-3 text-lg border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400 shadow-sm"
-            autoFocus
-          />
-          <button
-            type="submit"
-            disabled={tasks.length >= MAX_TODAY_TASKS}
-            className="px-6 py-3 bg-pink-400 text-white rounded-lg hover:bg-pink-500 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 text-lg font-semibold shadow-sm"
-          >
-            추가
-          </button>
-        </div>
-        {tasks.length >= MAX_TODAY_TASKS && (
-          <p className="mt-2 text-sm text-gray-500">
-            오늘 할 일은 최대 {MAX_TODAY_TASKS}개까지 추가할 수 있습니다.
-          </p>
-        )}
-      </form>
-
       {/* 할 일 목록 */}
       {isLoading ? (
-        <div className="text-center py-8 text-gray-500 text-xl">로딩 중...</div>
+        <div className="text-center py-8 text-gray-500 text-3xl">로딩 중...</div>
       ) : tasks.length === 0 ? (
-        <div className="text-center py-12 text-gray-400 text-2xl">
-          아직 할 일이 없어요. 위에서 추가해보세요! ✨
+        <div className="text-center py-12 text-gray-400 text-3xl">
+          아직 할 일이 없어요. 백로그에서 추가 후 오늘 할 일로 이동해주세요! ✨
         </div>
       ) : (
         <div className="space-y-3">

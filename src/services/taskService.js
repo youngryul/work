@@ -1,5 +1,5 @@
 import { supabase } from '../config/supabase.js'
-import { DEFAULT_CATEGORY, MAX_TODAY_TASKS } from '../constants/categories.js'
+import { getDefaultCategory } from './categoryService.js'
 
 /**
  * 데이터베이스 컬럼명을 camelCase로 변환
@@ -62,7 +62,7 @@ export async function getBacklogTasks() {
     .select('*')
     .eq('completed', false)
     .eq('istoday', false)
-    .order('createdat', { ascending: false })
+    .order('createdat', { ascending: true })
 
   if (error) {
     console.error('백로그 조회 오류:', error)
@@ -80,19 +80,14 @@ export async function getBacklogTasks() {
  * @returns {Promise<Object|null>} 생성된 할 일
  */
 export async function createTask(title, category, isToday = false) {
-  // 오늘 할 일 개수 확인
-  if (isToday) {
-    const todayTasks = await getTodayTasks()
-    if (todayTasks.length >= MAX_TODAY_TASKS) {
-      throw new Error(`오늘 할 일은 최대 ${MAX_TODAY_TASKS}개까지 선택할 수 있습니다.`)
-    }
-  }
+  // 카테고리가 없으면 기본 카테고리 사용
+  const finalCategory = category || (await getDefaultCategory())
 
   const newTask = {
     title: title.trim(),
     completed: false,
     istoday: isToday,
-    category: category || DEFAULT_CATEGORY,
+    category: finalCategory,
     createdat: Date.now(),
   }
 
@@ -169,11 +164,6 @@ export async function deleteTask(id) {
  * @returns {Promise<Object|null>} 수정된 할 일
  */
 export async function moveToToday(id) {
-  const todayTasks = await getTodayTasks()
-  if (todayTasks.length >= MAX_TODAY_TASKS) {
-    throw new Error(`오늘 할 일은 최대 ${MAX_TODAY_TASKS}개까지 선택할 수 있습니다.`)
-  }
-
   return updateTask(id, { istoday: true })
 }
 
