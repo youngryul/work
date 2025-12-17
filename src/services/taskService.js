@@ -183,6 +183,15 @@ export async function moveToToday(id) {
 }
 
 /**
+ * 백로그로 이동
+ * @param {string} id - 할 일 ID
+ * @returns {Promise<Object|null>} 수정된 할 일
+ */
+export async function moveToBacklog(id) {
+  return updateTask(id, { istoday: false })
+}
+
+/**
  * 날짜 변경 시 오늘 할 일 리셋
  * 완료된 항목은 삭제하고, 미완료 항목은 백로그로 이동
  * @returns {Promise<Object>} 리셋 결과 (삭제된 개수, 백로그로 이동한 개수)

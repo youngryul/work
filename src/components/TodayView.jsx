@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getTodayTasks, resetTodayTasks } from '../services/taskService.js'
+import { getTodayTasks, resetTodayTasks, moveToBacklog } from '../services/taskService.js'
 import TaskItem from './TaskItem.jsx'
 
 /**
@@ -82,6 +82,19 @@ export default function TodayView() {
   }
 
   /**
+   * 백로그로 이동
+   */
+  const handleMoveToBacklog = async (taskId) => {
+    try {
+      await moveToBacklog(taskId)
+      setTasks(tasks.filter((t) => t.id !== taskId))
+      alert('백로그로 이동했습니다!')
+    } catch (error) {
+      alert(error.message || '이동에 실패했습니다.')
+    }
+  }
+
+  /**
    * 완료된 할 일 개수 계산
    */
   const completedCount = tasks.filter((t) => t.completed).length
@@ -132,12 +145,19 @@ export default function TodayView() {
       ) : (
         <div className="space-y-3">
           {incompleteTasks.map((task) => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              onUpdate={handleTaskUpdate}
-              onDelete={handleTaskDelete}
-            />
+            <div key={task.id} className="relative group">
+              <TaskItem
+                task={task}
+                onUpdate={handleTaskUpdate}
+                onDelete={handleTaskDelete}
+              />
+              <button
+                onClick={() => handleMoveToBacklog(task.id)}
+                className="absolute right-12 top-1/2 -translate-y-1/2 px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm"
+              >
+                백로그로
+              </button>
+            </div>
           ))}
         </div>
       )}
