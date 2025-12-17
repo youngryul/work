@@ -34,6 +34,7 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    - SQL Editor에서 다음 파일들을 순서대로 실행합니다:
      1. `supabase-schema.sql` - tasks 테이블 생성
      2. `supabase-categories-init.sql` - categories 테이블 생성 및 기본 카테고리 데이터 삽입
+     3. `supabase-add-completedat.sql` - completedAt 컬럼 추가 (선택사항)
    
    또는 **Drizzle ORM을 사용한 마이그레이션**:
    ```bash
@@ -41,6 +42,9 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    npm run db:push      # 스키마를 데이터베이스에 직접 푸시
    ```
    (Drizzle을 사용한 경우, `supabase-categories-init.sql`을 수동으로 실행하여 기본 카테고리 데이터를 삽입해야 합니다)
+
+3. **테스트 데이터 생성** (선택사항):
+   - `supabase-test-old-task.sql` - 일주일 이상 지난 테스트 할 일 생성 (UI 테스트용)
 
 3. `.env` 파일에 다음을 설정합니다:
    - `VITE_SUPABASE_URL`: Supabase 프로젝트 URL

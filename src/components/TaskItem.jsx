@@ -108,11 +108,26 @@ export default function TaskItem({ task, onUpdate, onDelete }) {
     }
   }
 
+  /**
+   * 생성된 지 일주일이 지났는지 확인
+   */
+  const isOlderThanWeek = () => {
+    const createdAt = task.createdAt || task.createdat
+    if (!createdAt) return false
+    
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000 // 7일 전
+    return createdAt < oneWeekAgo
+  }
+
+  const isOld = isOlderThanWeek()
+
   return (
     <div
       className={`group flex flex-col gap-3 p-4 rounded-lg transition-all duration-300 animate-fade-in ${
         task.completed
           ? 'bg-pink-100 opacity-60'
+          : isOld
+          ? 'bg-red-200 shadow-sm hover:shadow-md'
           : 'bg-white shadow-sm hover:shadow-md'
       }`}
     >
@@ -122,14 +137,20 @@ export default function TaskItem({ task, onUpdate, onDelete }) {
         onClick={handleToggleComplete}
         className={`flex-shrink-0 w-8 h-8 rounded-full border-2 transition-all duration-200 ${
           task.completed
-            ? 'bg-pink-400 border-pink-400 checkmark-animate'
-            : 'border-gray-300 hover:border-pink-400'
+            ? isOld
+              ? 'bg-red-500 border-red-500 checkmark-animate'
+              : 'bg-pink-400 border-pink-400 checkmark-animate'
+            : isOld
+            ? 'border-red-400 hover:border-red-500'
+            : 'border-gray-400 hover:border-pink-400'
         }`}
         aria-label={task.completed ? '완료 취소' : '완료'}
       >
         {task.completed && (
           <svg
-            className="w-full h-full text-white checkmark-animate"
+            className={`w-full h-full checkmark-animate ${
+              isOld ? 'text-yellow-300' : 'text-white'
+            }`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
