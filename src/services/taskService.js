@@ -193,68 +193,39 @@ export async function moveToBacklog(id) {
 
 /**
  * 날짜 변경 시 오늘 할 일 리셋
- * 완료된 항목은 삭제하고, 미완료 항목은 백로그로 이동
- * @returns {Promise<Object>} 리셋 결과 (삭제된 개수, 백로그로 이동한 개수)
+ * 완료된 항목과 미완료 항목 모두 백로그로 이동 (삭제하지 않음)
+ * @returns {Promise<Object>} 리셋 결과 (백로그로 이동한 개수)
  */
 export async function resetTodayTasks() {
   try {
-    // 오늘 할 일 중 완료된 항목 조회
-    const { data: completedTasks, error: completedError } = await supabase
+    // 오늘 할 일 중 모든 항목 조회 (완료/미완료 모두)
+    const { data: allTodayTasks, error: fetchError } = await supabase
       .from('tasks')
       .select('id')
       .eq('istoday', true)
-      .eq('completed', true)
 
-    if (completedError) {
-      console.error('완료된 할 일 조회 오류:', completedError)
-      throw completedError
+    if (fetchError) {
+      console.error('오늘 할 일 조회 오류:', fetchError)
+      throw fetchError
     }
 
-    // 완료된 항목 삭제
-    let deletedCount = 0
-    if (completedTasks && completedTasks.length > 0) {
-      const completedIds = completedTasks.map((t) => t.id)
-      const { error: deleteError } = await supabase
-        .from('tasks')
-        .delete()
-        .in('id', completedIds)
-
-      if (deleteError) {
-        console.error('완료된 할 일 삭제 오류:', deleteError)
-        throw deleteError
-      }
-      deletedCount = completedIds.length
-    }
-
-    // 오늘 할 일 중 미완료 항목을 백로그로 이동
-    const { data: incompleteTasks, error: incompleteError } = await supabase
-      .from('tasks')
-      .select('id')
-      .eq('istoday', true)
-      .eq('completed', false)
-
-    if (incompleteError) {
-      console.error('미완료 할 일 조회 오류:', incompleteError)
-      throw incompleteError
-    }
-
+    // 모든 오늘 할 일 항목을 백로그로 이동 (삭제하지 않음)
     let movedCount = 0
-    if (incompleteTasks && incompleteTasks.length > 0) {
-      const incompleteIds = incompleteTasks.map((t) => t.id)
+    if (allTodayTasks && allTodayTasks.length > 0) {
+      const allIds = allTodayTasks.map((t) => t.id)
       const { error: updateError } = await supabase
         .from('tasks')
         .update({ istoday: false })
-        .in('id', incompleteIds)
+        .in('id', allIds)
 
       if (updateError) {
         console.error('백로그 이동 오류:', updateError)
         throw updateError
       }
-      movedCount = incompleteIds.length
+      movedCount = allIds.length
     }
 
     return {
-      deletedCount,
       movedCount,
     }
   } catch (error) {
