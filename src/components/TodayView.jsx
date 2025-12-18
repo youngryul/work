@@ -33,7 +33,13 @@ export default function TodayView() {
     const todayDate = getTodayDateString()
     const lastResetDate = localStorage.getItem(LAST_RESET_DATE_KEY)
 
-    // 날짜가 변경되었으면 리셋 실행
+    // localStorage에 값이 없으면 (첫 방문 또는 배포 후) 리셋하지 않고 오늘 날짜만 저장
+    if (lastResetDate === null) {
+      localStorage.setItem(LAST_RESET_DATE_KEY, todayDate)
+      return
+    }
+
+    // 날짜가 실제로 변경되었을 때만 리셋 실행
     if (lastResetDate !== todayDate) {
       try {
         await resetTodayTasks()

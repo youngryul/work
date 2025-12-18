@@ -13,6 +13,7 @@ function normalizeTask(task) {
     isToday: task.istoday ?? task.isToday,
     createdAt: task.createdat ?? task.createdAt,
     completedAt: task.completedat ?? task.completedAt,
+    movedToTodayAt: task.movedtotodayat ?? task.movedToTodayAt,
   }
 }
 
@@ -43,7 +44,8 @@ export async function getTodayTasks() {
     .from('tasks')
     .select('*')
     .eq('istoday', true)
-    .order('createdat', { ascending: false })
+    .order('movedtotodayat', { ascending: true, nullsFirst: true })
+    .order('createdat', { ascending: true })
 
   if (error) {
     console.error('오늘 할 일 조회 오류:', error)
@@ -124,6 +126,9 @@ export async function updateTask(id, updates) {
   if ('completedAt' in updates) {
     dbUpdates.completedat = updates.completedAt
   }
+  if ('movedToTodayAt' in updates) {
+    dbUpdates.movedtotodayat = updates.movedToTodayAt
+  }
   
   // completed가 true로 변경될 때 completedAt 설정
   if ('completed' in updates && updates.completed === true) {
@@ -138,12 +143,13 @@ export async function updateTask(id, updates) {
   delete dbUpdates.isToday
   delete dbUpdates.createdAt
   delete dbUpdates.completedAt
+  delete dbUpdates.movedToTodayAt
 
   const { data, error } = await supabase
     .from('tasks')
     .update(dbUpdates)
-    .eq('id', id)
     .select()
+    .eq('id', id)
     .single()
 
   if (error) {
@@ -179,7 +185,7 @@ export async function deleteTask(id) {
  * @returns {Promise<Object|null>} 수정된 할 일
  */
 export async function moveToToday(id) {
-  return updateTask(id, { istoday: true })
+  return updateTask(id, { istoday: true, movedToTodayAt: Date.now() })
 }
 
 /**
