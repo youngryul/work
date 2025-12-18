@@ -26,3 +26,16 @@ export const tasks = pgTable('tasks', {
   movedToTodayAt: bigint('movedtotodayat', { mode: 'number' }),
 })
 
+/**
+ * annual_review 테이블 스키마 정의
+ * 연간 회고록 데이터 저장
+ */
+export const annualReview = pgTable('annual_review', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  year: text('year').notNull(),
+  reviewData: text('reviewdata').notNull(), // JSON 문자열로 저장
+  completedDays: text('completeddays').notNull(), // JSON 배열 문자열로 저장
+  createdAt: bigint('createdat', { mode: 'number' }).notNull(),
+  updatedAt: bigint('updatedat', { mode: 'number' }).notNull(),
+})
+

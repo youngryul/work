@@ -300,6 +300,7 @@ export async function getCompletedTasksByDate(dateString) {
     const endTimestamp = endDate.getTime()
 
     // 해당 날짜에 완료된 항목 조회
+    // completedAt 기준 오름차순 (오래된 것부터 위, 최근 완료한 것이 아래)
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
@@ -307,7 +308,7 @@ export async function getCompletedTasksByDate(dateString) {
       .not('completedat', 'is', null)
       .gte('completedat', startTimestamp)
       .lte('completedat', endTimestamp)
-      .order('completedat', { ascending: false })
+      .order('completedat', { ascending: true })
 
     if (error) {
       console.error('완료된 할 일 조회 오류:', error)

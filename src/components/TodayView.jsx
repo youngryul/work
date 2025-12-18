@@ -106,9 +106,20 @@ export default function TodayView() {
   const completedCount = tasks.filter((t) => t.completed).length
 
   /**
-   * 미완료 할 일만 필터링
+   * 미완료 할 일만 필터링 및 정렬
    */
-  const incompleteTasks = tasks.filter((task) => !task.completed)
+  const incompleteTasks = tasks
+    .filter((task) => !task.completed)
+    .sort((a, b) => {
+      // movedtotodayat 기준 오름차순
+      const aMoved = a.movedToTodayAt || a.createdAt
+      const bMoved = b.movedToTodayAt || b.createdAt
+      if (aMoved !== bMoved) {
+        return aMoved - bMoved
+      }
+      // createdat 기준 오름차순
+      return a.createdAt - b.createdAt
+    })
 
   /**
    * 현재 날짜 포맷팅
