@@ -24,6 +24,7 @@ export const tasks = pgTable('tasks', {
   createdAt: bigint('createdat', { mode: 'number' }).notNull(),
   completedAt: bigint('completedat', { mode: 'number' }),
   movedToTodayAt: bigint('movedtotodayat', { mode: 'number' }),
+  memo: text('memo'),
 })
 
 /**

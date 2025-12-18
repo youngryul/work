@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { updateTask, deleteTask } from '../services/taskService.js'
 import { getCategoryEmoji } from '../services/categoryService.js'
 import CategorySelector from './CategorySelector.jsx'
@@ -9,12 +9,17 @@ import CategorySelector from './CategorySelector.jsx'
  * @param {Object} props.task - 할 일 객체
  * @param {Function} props.onUpdate - 업데이트 콜백
  * @param {Function} props.onDelete - 삭제 콜백
+ * @param {Function} props.onMoveToToday - 오늘로 이동 콜백 (선택)
+ * @param {Function} props.onMoveToBacklog - 백로그로 이동 콜백 (선택)
  */
-export default function TaskItem({ task, onUpdate, onDelete }) {
+export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMoveToBacklog }) {
   const [isEditing, setIsEditing] = useState(false)
   const [isEditingCategory, setIsEditingCategory] = useState(false)
+  const [isEditingMemo, setIsEditingMemo] = useState(false)
   const [editTitle, setEditTitle] = useState(task.title)
+  const [editMemo, setEditMemo] = useState(task.memo || '')
   const [categoryEmoji, setCategoryEmoji] = useState('📝')
+  const memoSaveTimerRef = useRef(null)
 
   useEffect(() => {
     const loadEmoji = async () => {
@@ -23,6 +28,13 @@ export default function TaskItem({ task, onUpdate, onDelete }) {
     }
     loadEmoji()
   }, [task.category])
+
+  /**
+   * task.memo 변경 시 로컬 상태 업데이트
+   */
+  useEffect(() => {
+    setEditMemo(task.memo || '')
+  }, [task.memo])
 
   /**
    * 완료 상태 토글
@@ -107,6 +119,46 @@ export default function TaskItem({ task, onUpdate, onDelete }) {
       console.error('카테고리 변경 오류:', error)
     }
   }
+
+  /**
+   * 메모 저장 (debounce)
+   */
+  const saveMemo = async (memoText) => {
+    // 기존 타이머 취소
+    if (memoSaveTimerRef.current) {
+      clearTimeout(memoSaveTimerRef.current)
+    }
+
+    // 1초 후 자동 저장
+    memoSaveTimerRef.current = setTimeout(async () => {
+      try {
+        const updated = await updateTask(task.id, { memo: memoText.trim() || null })
+        onUpdate(updated)
+      } catch (error) {
+        console.error('메모 저장 오류:', error)
+      }
+    }, 1000)
+  }
+
+  /**
+   * 메모 변경 핸들러
+   */
+  const handleMemoChange = (e) => {
+    const newMemo = e.target.value
+    setEditMemo(newMemo)
+    saveMemo(newMemo)
+  }
+
+  /**
+   * 컴포넌트 언마운트 시 타이머 정리
+   */
+  useEffect(() => {
+    return () => {
+      if (memoSaveTimerRef.current) {
+        clearTimeout(memoSaveTimerRef.current)
+      }
+    }
+  }, [])
 
   /**
    * 생성된 지 일주일이 지났는지 확인
@@ -197,14 +249,51 @@ export default function TaskItem({ task, onUpdate, onDelete }) {
         </span>
       )}
 
-      {/* 삭제 버튼 */}
-      <button
-        onClick={handleDelete}
-        className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-red-400 hover:text-red-600 text-3xl"
-        aria-label="삭제"
-      >
-        ×
-      </button>
+      {/* 버튼 영역 (고정 너비) */}
+      <div className="flex-shrink-0 flex items-center gap-2 w-32 justify-end">
+        {/* 오늘로 버튼 (백로그에서만 표시) */}
+        {onMoveToToday && (
+          <button
+            onClick={onMoveToToday}
+            className="px-3 py-1 bg-pink-200 text-pink-700 rounded-lg text-sm hover:bg-pink-300 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm whitespace-nowrap"
+          >
+            오늘로
+          </button>
+        )}
+
+        {/* 백로그로 버튼 (오늘 할 일에서만 표시) */}
+        {onMoveToBacklog && (
+          <button
+            onClick={onMoveToBacklog}
+            className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm whitespace-nowrap"
+          >
+            백로그로
+          </button>
+        )}
+
+        {/* 메모 아이콘 버튼 */}
+        <button
+          onClick={() => setIsEditingMemo(!isEditingMemo)}
+          className={`text-xl transition-all duration-200 ${
+            task.memo
+              ? 'text-pink-500 hover:text-pink-600'
+              : 'text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100'
+          }`}
+          aria-label="메모"
+          title={task.memo ? '메모 보기/편집' : '메모 추가'}
+        >
+          📝
+        </button>
+
+        {/* 삭제 버튼 */}
+        <button
+          onClick={handleDelete}
+          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-red-400 hover:text-red-600 text-3xl"
+          aria-label="삭제"
+        >
+          ×
+        </button>
+      </div>
       </div>
 
       {/* 카테고리 선택기 (편집 모드일 때만 표시) */}
@@ -213,6 +302,19 @@ export default function TaskItem({ task, onUpdate, onDelete }) {
           <CategorySelector
             selectedCategory={task.category}
             onChange={handleCategoryChange}
+          />
+        </div>
+      )}
+
+      {/* 메모 입력 영역 (편집 모드일 때만 표시) */}
+      {isEditingMemo && (
+        <div className="pt-2 border-t border-pink-100">
+          <textarea
+            value={editMemo}
+            onChange={handleMemoChange}
+            placeholder="메모를 입력하세요..."
+            className="w-full px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400 text-sm font-sans resize-none"
+            rows="3"
           />
         </div>
       )}

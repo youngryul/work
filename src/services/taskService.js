@@ -14,6 +14,7 @@ function normalizeTask(task) {
     createdAt: task.createdat ?? task.createdAt,
     completedAt: task.completedat ?? task.completedAt,
     movedToTodayAt: task.movedtotodayat ?? task.movedToTodayAt,
+    memo: task.memo ?? null,
   }
 }
 
@@ -144,6 +145,7 @@ export async function updateTask(id, updates) {
   delete dbUpdates.createdAt
   delete dbUpdates.completedAt
   delete dbUpdates.movedToTodayAt
+  // memo는 그대로 사용 (소문자 컬럼명과 동일)
 
   const { data, error } = await supabase
     .from('tasks')

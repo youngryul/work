@@ -165,19 +165,13 @@ export default function BacklogView() {
               <h2 className="text-2xl font-handwriting text-gray-700 mb-3">회사</h2>
             )}
             {companyTasks.map((task) => (
-              <div key={task.id} className="relative group">
-                <TaskItem
-                  task={task}
-                  onUpdate={handleTaskUpdate}
-                  onDelete={handleTaskDelete}
-                />
-                <button
-                  onClick={() => handleMoveToToday(task.id)}
-                  className="absolute right-12 top-1/2 -translate-y-1/2 px-3 py-1 bg-pink-200 text-pink-700 rounded-lg text-sm hover:bg-pink-300 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm"
-                >
-                  오늘로
-                </button>
-              </div>
+              <TaskItem
+                key={task.id}
+                task={task}
+                onUpdate={handleTaskUpdate}
+                onDelete={handleTaskDelete}
+                onMoveToToday={() => handleMoveToToday(task.id)}
+              />
             ))}
             {companyTasks.length === 0 && (
               <div className="text-center py-8 text-gray-400 text-lg">
@@ -192,19 +186,13 @@ export default function BacklogView() {
               <h2 className="text-2xl font-handwriting text-gray-700 mb-3">기타</h2>
             )}
             {otherTasks.map((task) => (
-              <div key={task.id} className="relative group">
-                <TaskItem
-                  task={task}
-                  onUpdate={handleTaskUpdate}
-                  onDelete={handleTaskDelete}
-                />
-                <button
-                  onClick={() => handleMoveToToday(task.id)}
-                  className="absolute right-12 top-1/2 -translate-y-1/2 px-3 py-1 bg-pink-200 text-pink-700 rounded-lg text-sm hover:bg-pink-300 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm"
-                >
-                  오늘로
-                </button>
-              </div>
+              <TaskItem
+                key={task.id}
+                task={task}
+                onUpdate={handleTaskUpdate}
+                onDelete={handleTaskDelete}
+                onMoveToToday={() => handleMoveToToday(task.id)}
+              />
             ))}
             {otherTasks.length === 0 && (
               <div className="text-center py-8 text-gray-400 text-lg">

@@ -162,19 +162,13 @@ export default function TodayView() {
       ) : (
         <div className="space-y-3">
           {incompleteTasks.map((task) => (
-            <div key={task.id} className="relative group">
-              <TaskItem
-                task={task}
-                onUpdate={handleTaskUpdate}
-                onDelete={handleTaskDelete}
-              />
-              <button
-                onClick={() => handleMoveToBacklog(task.id)}
-                className="absolute right-12 top-1/2 -translate-y-1/2 px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm"
-              >
-                백로그로
-              </button>
-            </div>
+            <TaskItem
+              key={task.id}
+              task={task}
+              onUpdate={handleTaskUpdate}
+              onDelete={handleTaskDelete}
+              onMoveToBacklog={() => handleMoveToBacklog(task.id)}
+            />
           ))}
         </div>
       )}
