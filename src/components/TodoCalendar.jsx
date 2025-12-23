@@ -1,49 +1,37 @@
 import { useState, useEffect } from 'react'
 import { getCompletedCountsByDate, getCompletedTasksByDate } from '../services/taskService.js'
-import { getDiariesByMonth } from '../services/diaryService.js'
 
 /**
- * 달력 컴포넌트
+ * 할 일 달력 컴포넌트
  * 각 날짜별로 완료된 할 일 개수를 표시
  */
-export default function Calendar({ onDateClick }) {
+export default function TodoCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [completedCounts, setCompletedCounts] = useState({})
-  const [diaries, setDiaries] = useState({}) // { 'YYYY-MM-DD': { imageUrl, content } }
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState(null)
   const [completedTasks, setCompletedTasks] = useState([])
   const [isLoadingTasks, setIsLoadingTasks] = useState(false)
 
   /**
-   * 완료 개수 및 일기 로드
+   * 완료 개수 로드
    */
-  const loadData = async () => {
+  const loadCompletedCounts = async () => {
     setIsLoading(true)
     try {
       const year = currentDate.getFullYear()
       const month = currentDate.getMonth() + 1
-      
-      // 할 일 완료 개수 로드
       const counts = await getCompletedCountsByDate(year, month)
       setCompletedCounts(counts)
-      
-      // 일기 로드
-      const diaryList = await getDiariesByMonth(year, month)
-      const diaryMap = {}
-      diaryList.forEach(diary => {
-        diaryMap[diary.date] = diary
-      })
-      setDiaries(diaryMap)
     } catch (error) {
-      console.error('데이터 로드 오류:', error)
+      console.error('완료 개수 로드 오류:', error)
     } finally {
       setIsLoading(false)
     }
   }
 
   useEffect(() => {
-    loadData()
+    loadCompletedCounts()
   }, [currentDate])
 
   /**
@@ -68,16 +56,9 @@ export default function Calendar({ onDateClick }) {
   }
 
   /**
-   * 날짜 클릭 시 처리
+   * 날짜 클릭 시 완료된 할 일 목록 조회
    */
   const handleDateClick = async (dateString) => {
-    // 일기 작성/수정을 위한 콜백 호출
-    if (onDateClick) {
-      onDateClick(dateString)
-      return
-    }
-    
-    // 기존 동작: 완료된 할 일 목록 조회
     const count = completedCounts[dateString] || 0
     if (count === 0) return
 
@@ -159,52 +140,31 @@ export default function Calendar({ onDateClick }) {
         month === new Date().getMonth() &&
         day === new Date().getDate()
 
-      const diary = diaries[dateString]
-      const hasDiary = !!diary
-      const hasImage = !!diary?.imageUrl
-
       days.push(
         <div
           key={day}
-          onClick={() => handleDateClick(dateString)}
-          className={`aspect-square flex flex-col items-start justify-start p-1 rounded-lg transition-all duration-200 relative overflow-hidden ${
+          onClick={() => count > 0 && handleDateClick(dateString)}
+          className={`aspect-square flex flex-col items-start justify-start p-2 rounded-lg transition-all duration-200 relative ${
             isToday
               ? 'bg-pink-200 border-2 border-pink-400'
               : 'bg-gray-50 hover:bg-gray-100'
-          } ${hasDiary || count > 0 ? 'cursor-pointer hover:shadow-md' : ''}`}
+          } ${count > 0 ? 'cursor-pointer hover:shadow-md' : ''}`}
         >
-          {/* 날짜 번호 */}
           <span
-            className={`text-xs font-medium z-10 ${
+            className={`text-sm font-medium ${
               isToday ? 'text-pink-700' : 'text-gray-700'
             }`}
           >
             {day}
           </span>
-          
-          {/* 일기 이미지 */}
-          {hasImage && (
-            <img
-              src={diary.imageUrl}
-              alt="일기 이미지"
-              className="absolute inset-0 w-full h-full object-cover opacity-80"
-            />
-          )}
-          
-          {/* 할 일 완료 개수 (이미지가 없을 때만 표시) */}
-          {!hasImage && count > 0 && (
+          {count > 0 && (
             <span
-              className={`text-sm font-bold mt-auto mx-auto z-10 ${
+              className={`text-lg font-bold mt-auto mx-auto ${
                 isToday ? 'text-pink-600' : 'text-pink-500'
               }`}
             >
               {count}개
             </span>
-          )}
-          
-          {/* 일기 작성 표시 */}
-          {hasDiary && !hasImage && (
-            <span className="text-xs text-gray-500 mt-auto mx-auto z-10">📝</span>
           )}
         </div>
       )
@@ -341,5 +301,3 @@ export default function Calendar({ onDateClick }) {
     </div>
   )
 }
-
-

@@ -1,32 +1,25 @@
 import { useState, useEffect } from 'react'
-import { getCompletedCountsByDate, getCompletedTasksByDate } from '../services/taskService.js'
-import { getDiariesByMonth } from '../services/diaryService.js'
+import { getDiariesByMonth, getDiaryByDate } from '../services/diaryService.js'
 
 /**
- * 달력 컴포넌트
- * 각 날짜별로 완료된 할 일 개수를 표시
+ * 일기 달력 컴포넌트
+ * 각 날짜별로 일기 이미지를 표시
  */
-export default function Calendar({ onDateClick }) {
+export default function DiaryCalendar({ onDateClick }) {
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [completedCounts, setCompletedCounts] = useState({})
   const [diaries, setDiaries] = useState({}) // { 'YYYY-MM-DD': { imageUrl, content } }
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState(null)
-  const [completedTasks, setCompletedTasks] = useState([])
-  const [isLoadingTasks, setIsLoadingTasks] = useState(false)
+  const [selectedDiary, setSelectedDiary] = useState(null)
 
   /**
-   * 완료 개수 및 일기 로드
+   * 일기 로드
    */
-  const loadData = async () => {
+  const loadDiaries = async () => {
     setIsLoading(true)
     try {
       const year = currentDate.getFullYear()
       const month = currentDate.getMonth() + 1
-      
-      // 할 일 완료 개수 로드
-      const counts = await getCompletedCountsByDate(year, month)
-      setCompletedCounts(counts)
       
       // 일기 로드
       const diaryList = await getDiariesByMonth(year, month)
@@ -36,14 +29,14 @@ export default function Calendar({ onDateClick }) {
       })
       setDiaries(diaryMap)
     } catch (error) {
-      console.error('데이터 로드 오류:', error)
+      console.error('일기 로드 오류:', error)
     } finally {
       setIsLoading(false)
     }
   }
 
   useEffect(() => {
-    loadData()
+    loadDiaries()
   }, [currentDate])
 
   /**
@@ -77,19 +70,21 @@ export default function Calendar({ onDateClick }) {
       return
     }
     
-    // 기존 동작: 완료된 할 일 목록 조회
-    const count = completedCounts[dateString] || 0
-    if (count === 0) return
-
-    setSelectedDate(dateString)
-    setIsLoadingTasks(true)
-    try {
-      const tasks = await getCompletedTasksByDate(dateString)
-      setCompletedTasks(tasks)
-    } catch (error) {
-      console.error('완료된 할 일 로드 오류:', error)
-    } finally {
-      setIsLoadingTasks(false)
+    // 일기 상세 보기
+    const diary = diaries[dateString]
+    if (diary) {
+      try {
+        const fullDiary = await getDiaryByDate(dateString)
+        setSelectedDiary(fullDiary)
+        setSelectedDate(dateString)
+      } catch (error) {
+        console.error('일기 조회 오류:', error)
+      }
+    } else {
+      // 일기가 없으면 작성 폼 열기
+      if (onDateClick) {
+        onDateClick(dateString)
+      }
     }
   }
 
@@ -98,11 +93,11 @@ export default function Calendar({ onDateClick }) {
    */
   const handleClosePopup = () => {
     setSelectedDate(null)
-    setCompletedTasks([])
+    setSelectedDiary(null)
   }
 
   /**
-   * 날짜 포맷팅 (팝업 제목용)
+   * 날짜 포맷팅
    */
   const formatDateForPopup = (dateString) => {
     const [year, month, day] = dateString.split('-')
@@ -153,7 +148,6 @@ export default function Calendar({ onDateClick }) {
     // 날짜 칸
     for (let day = 1; day <= daysInMonth; day++) {
       const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-      const count = completedCounts[dateString] || 0
       const isToday =
         year === new Date().getFullYear() &&
         month === new Date().getMonth() &&
@@ -167,11 +161,11 @@ export default function Calendar({ onDateClick }) {
         <div
           key={day}
           onClick={() => handleDateClick(dateString)}
-          className={`aspect-square flex flex-col items-start justify-start p-1 rounded-lg transition-all duration-200 relative overflow-hidden ${
+          className={`aspect-square flex flex-col items-start justify-start p-1 rounded-lg transition-all duration-200 relative overflow-hidden cursor-pointer hover:shadow-md ${
             isToday
               ? 'bg-pink-200 border-2 border-pink-400'
               : 'bg-gray-50 hover:bg-gray-100'
-          } ${hasDiary || count > 0 ? 'cursor-pointer hover:shadow-md' : ''}`}
+          }`}
         >
           {/* 날짜 번호 */}
           <span
@@ -191,18 +185,7 @@ export default function Calendar({ onDateClick }) {
             />
           )}
           
-          {/* 할 일 완료 개수 (이미지가 없을 때만 표시) */}
-          {!hasImage && count > 0 && (
-            <span
-              className={`text-sm font-bold mt-auto mx-auto z-10 ${
-                isToday ? 'text-pink-600' : 'text-pink-500'
-              }`}
-            >
-              {count}개
-            </span>
-          )}
-          
-          {/* 일기 작성 표시 */}
+          {/* 일기 작성 표시 (이미지가 없을 때) */}
           {hasDiary && !hasImage && (
             <span className="text-xs text-gray-500 mt-auto mx-auto z-10">📝</span>
           )}
@@ -274,8 +257,8 @@ export default function Calendar({ onDateClick }) {
         generateCalendar()
       )}
 
-      {/* 완료된 할 일 팝업 */}
-      {selectedDate && (
+      {/* 일기 상세 팝업 */}
+      {selectedDate && selectedDiary && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
             {/* 팝업 헤더 */}
@@ -284,9 +267,6 @@ export default function Calendar({ onDateClick }) {
                 <h3 className="text-3xl font-handwriting text-gray-800">
                   {formatDateForPopup(selectedDate)}
                 </h3>
-                <p className="text-xl text-gray-600 mt-1">
-                  완료한 할 일 {completedTasks.length}개
-                </p>
               </div>
               <button
                 onClick={handleClosePopup}
@@ -297,43 +277,20 @@ export default function Calendar({ onDateClick }) {
               </button>
             </div>
 
-            {/* 완료된 할 일 목록 */}
+            {/* 일기 내용 */}
             <div className="flex-1 overflow-y-auto p-6">
-              {isLoadingTasks ? (
-                <div className="text-center py-8 text-gray-500">로딩 중...</div>
-              ) : completedTasks.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">
-                  완료된 할 일이 없습니다.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {completedTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className="flex items-center gap-3 p-4 bg-pink-50 rounded-lg border border-pink-200"
-                    >
-                      <div className="flex-shrink-0 w-6 h-6 bg-pink-400 rounded-full flex items-center justify-center">
-                        <svg
-                          className="w-4 h-4 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={3}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      </div>
-                      <span className="text-lg text-gray-800">
-                        {task.title}
-                      </span>
-                    </div>
-                  ))}
+              {selectedDiary.imageUrl && (
+                <div className="mb-6">
+                  <img
+                    src={selectedDiary.imageUrl}
+                    alt="일기 이미지"
+                    className="w-full rounded-lg border-2 border-pink-200"
+                  />
                 </div>
               )}
+              <div className="text-lg text-gray-700 whitespace-pre-wrap font-sans">
+                {selectedDiary.content}
+              </div>
             </div>
           </div>
         </div>
@@ -341,5 +298,3 @@ export default function Calendar({ onDateClick }) {
     </div>
   )
 }
-
-

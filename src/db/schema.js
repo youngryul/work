@@ -60,3 +60,17 @@ export const projectRecords = pgTable('project_records', {
   updatedAt: timestamp('updatedat').defaultNow().notNull(),
 })
 
+/**
+ * diaries 테이블 스키마 정의
+ * 일기 데이터 저장 (AI 이미지 포함)
+ */
+export const diaries = pgTable('diaries', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  date: text('date').notNull().unique(), // YYYY-MM-DD 형식
+  content: text('content').notNull(),
+  imageUrl: text('image_url'), // 생성된 이미지 URL
+  imagePrompt: text('image_prompt'), // 사용된 프롬프트
+  createdAt: timestamp('createdat').defaultNow().notNull(),
+  updatedAt: timestamp('updatedat').defaultNow().notNull(),
+})
+

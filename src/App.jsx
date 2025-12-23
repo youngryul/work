@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import TodayView from './components/TodayView.jsx'
 import BacklogView from './components/BacklogView.jsx'
+import TodoCalendarView from './components/TodoCalendarView.jsx'
 import CalendarView from './components/CalendarView.jsx'
 import AnnualReviewView from './components/AnnualReviewView.jsx'
 import RecordMainView from './components/RecordMainView.jsx'
@@ -65,14 +66,24 @@ function App() {
               백로그
             </button>
             <button
-              onClick={() => setCurrentView('calendar')}
+              onClick={() => setCurrentView('todo-calendar')}
               className={`px-4 py-2 rounded-lg transition-all duration-200 text-2xl ${
-                currentView === 'calendar'
+                currentView === 'todo-calendar'
                   ? 'bg-pink-400 text-white shadow-md'
                   : 'text-gray-600 hover:bg-pink-100'
               }`}
             >
-              달력
+              할 일 달력
+            </button>
+            <button
+              onClick={() => setCurrentView('diary-calendar')}
+              className={`px-4 py-2 rounded-lg transition-all duration-200 text-2xl ${
+                currentView === 'diary-calendar'
+                  ? 'bg-pink-400 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-pink-100'
+              }`}
+            >
+              일기 달력
             </button>
             <button
               onClick={() => setCurrentView('review')}
@@ -102,7 +113,8 @@ function App() {
       <main className="py-8">
         {currentView === 'today' && <TodayView />}
         {currentView === 'backlog' && <BacklogView />}
-        {currentView === 'calendar' && <CalendarView />}
+        {currentView === 'todo-calendar' && <TodoCalendarView />}
+        {currentView === 'diary-calendar' && <CalendarView />}
         {currentView === 'review' && <AnnualReviewView />}
         {currentView === 'records' && (
           <>
