@@ -12,10 +12,14 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "date-fns": "^4.1.0",
+    "drizzle-orm": "^0.29.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@supabase/supabase-js": "^2.39.0",
-    "drizzle-orm": "^0.29.0"
+    "react-markdown": "^10.1.0",
+    "react-syntax-highlighter": "^16.1.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
@@ -28,4 +32,3 @@
     "vite": "^5.0.8"
   }
 }
-

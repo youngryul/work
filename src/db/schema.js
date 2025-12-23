@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, bigint } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, boolean, bigint, timestamp } from 'drizzle-orm/pg-core'
 
 /**
  * categories 테이블 스키마 정의
@@ -38,5 +38,25 @@ export const annualReview = pgTable('annual_review', {
   completedDays: text('completeddays').notNull(), // JSON 배열 문자열로 저장
   createdAt: bigint('createdat', { mode: 'number' }).notNull(),
   updatedAt: bigint('updatedat', { mode: 'number' }).notNull(),
+})
+
+/**
+ * project_records 테이블 스키마 정의
+ * 프로젝트 기록 데이터 저장
+ */
+export const projectRecords = pgTable('project_records', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  projectName: text('projectname').notNull(),
+  type: text('type').notNull(), // MEETING, DECISION, ISSUE, IDEA, RETROSPECT
+  date: text('date').notNull(), // YYYY-MM-DD 형식
+  title: text('title').notNull(),
+  background: text('background'), // Markdown
+  discussion: text('discussion'), // Markdown
+  problem: text('problem'), // Markdown
+  decision: text('decision'), // JSON 문자열 (Decision 객체)
+  actionItems: text('actionitems'), // JSON 문자열 (ActionItem[] 배열)
+  isMain: boolean('is_main').default(false).notNull(), // 프로젝트별 메인 기록 여부
+  createdAt: timestamp('createdat').defaultNow().notNull(),
+  updatedAt: timestamp('updatedat').defaultNow().notNull(),
 })
 
