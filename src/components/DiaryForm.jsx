@@ -16,6 +16,7 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [error, setError] = useState(null)
   const [existingDiary, setExistingDiary] = useState(null)
+  const [imageLoadError, setImageLoadError] = useState(false) // 이미지 로드 실패 상태
 
   // 기존 일기 로드
   useEffect(() => {
@@ -30,9 +31,11 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
       if (diary) {
         setContent(diary.content)
         setExistingDiary(diary)
+        setImageLoadError(false) // 이미지 로드 상태 초기화
       } else {
         setContent('')
         setExistingDiary(null)
+        setImageLoadError(false)
       }
     } catch (error) {
       console.error('일기 로드 실패:', error)
@@ -77,13 +80,39 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
     setError(null)
 
     try {
-      await saveDiary(selectedDate, content, true)
-      alert('이미지가 재생성되었습니다.')
+      // 재생성된 일기 데이터를 받아옴
+      const updatedDiary = await saveDiary(selectedDate, content, true)
+      
+      // 반환된 데이터로 즉시 상태 업데이트
+      if (updatedDiary) {
+        setExistingDiary({
+          ...updatedDiary,
+          // 브라우저 캐시 방지를 위해 이미지 URL에 타임스탬프 추가
+          imageUrl: updatedDiary.imageUrl ? `${updatedDiary.imageUrl}?t=${Date.now()}` : null
+        })
+        setImageLoadError(false) // 이미지 로드 상태 초기화
+      }
+      
+      // 데이터베이스에서 최신 데이터 다시 로드
       await loadExistingDiary()
+      
+      // 이미지가 성공적으로 생성되었는지 확인
+      if (updatedDiary?.imageUrl) {
+        alert('이미지가 재생성되었습니다.')
+      } else {
+        alert('이미지 생성에 실패했습니다. 일기는 저장되었습니다.')
+      }
     } catch (error) {
       console.error('이미지 재생성 실패:', error)
-      setError(error.message || '이미지 재생성에 실패했습니다.')
-      alert(error.message || '이미지 재생성에 실패했습니다.')
+      const errorMessage = error.message || '이미지 재생성에 실패했습니다.'
+      setError(errorMessage)
+      
+      // 사용자 친화적인 에러 메시지 표시
+      if (errorMessage.includes('결제 한도') || errorMessage.includes('크레딧') || errorMessage.includes('billing')) {
+        alert(`⚠️ ${errorMessage}\n\n일기는 저장되었지만 이미지는 생성되지 않았습니다.`)
+      } else {
+        alert(`이미지 재생성 실패: ${errorMessage}`)
+      }
     } finally {
       setIsGeneratingImage(false)
     }
@@ -127,17 +156,41 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
           </div>
 
           {/* 기존 이미지 표시 */}
-          {existingDiary?.imageUrl && (
+          {(existingDiary?.imageUrl || isGeneratingImage) && (
             <div>
               <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
                 생성된 이미지
               </label>
               <div className="relative">
-                <img
-                  src={existingDiary.imageUrl}
-                  alt="일기 이미지"
-                  className="w-full max-w-md rounded-lg border-2 border-pink-200"
-                />
+                {isGeneratingImage ? (
+                  <div className="w-full max-w-md h-64 bg-gray-100 rounded-lg border-2 border-pink-200 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-400 mx-auto mb-2"></div>
+                      <p className="text-sm text-gray-600 font-sans">이미지 생성 중...</p>
+                    </div>
+                  </div>
+                ) : existingDiary?.imageUrl && !imageLoadError ? (
+                  <div className="relative">
+                    <img
+                      key={existingDiary.imageUrl} // key를 변경하여 강제 리렌더링
+                      src={existingDiary.imageUrl}
+                      alt="일기 이미지"
+                      className="w-full max-w-md rounded-lg border-2 border-pink-200"
+                      onError={() => {
+                        console.error('이미지 로드 실패:', existingDiary.imageUrl)
+                        // React 상태로 이미지 로드 실패 처리
+                        setImageLoadError(true)
+                      }}
+                    />
+                  </div>
+                ) : existingDiary?.imageUrl && imageLoadError ? (
+                  <div className="w-full max-w-md h-64 bg-gray-100 rounded-lg border-2 border-pink-200 flex items-center justify-center">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600 font-sans mb-2">⚠️ 이미지를 불러올 수 없습니다</p>
+                      <p className="text-xs text-gray-500 font-sans">이미지가 만료되었거나 삭제되었을 수 있습니다</p>
+                    </div>
+                  </div>
+                ) : null}
                 <button
                   type="button"
                   onClick={handleRegenerateImage}

@@ -51,12 +51,11 @@ export async function generateDiaryImage(diaryContent) {
     
     // OpenAI DALL-E로 이미지 생성
     const response = await openai.images.generate({
-      model: 'dall-e-3',
+      model: 'dall-e-2', // DALL-E 2 사용 (비용 절감: $0.02 per image)
       prompt: prompt,
       n: 1,
       size: '1024x1024', // 달력에 표시하기 적합한 크기
-      quality: 'standard',
-      style: 'natural', // 자연스러운 스타일
+      // DALL-E 2는 quality와 style 옵션을 지원하지 않음
     })
     
     const imageUrl = response.data[0].url
@@ -71,17 +70,33 @@ export async function generateDiaryImage(diaryContent) {
     }
   } catch (error) {
     console.error('이미지 생성 오류:', error)
+    console.error('오류 상세:', {
+      message: error.message,
+      status: error.status,
+      code: error.code,
+      type: error.type
+    })
     
     // 더 구체적인 에러 메시지 제공
-    if (error.message?.includes('rate_limit')) {
+    const errorMessage = error.message || error.toString() || ''
+    
+    if (errorMessage.includes('rate_limit') || errorMessage.includes('Rate limit')) {
       throw new Error('API 사용량 제한에 도달했습니다. 잠시 후 다시 시도해주세요.')
-    } else if (error.message?.includes('insufficient_quota')) {
-      throw new Error('OpenAI API 크레딧이 부족합니다.')
-    } else if (error.message?.includes('invalid_api_key')) {
-      throw new Error('OpenAI API 키가 유효하지 않습니다.')
+    } else if (errorMessage.includes('insufficient_quota') || errorMessage.includes('quota')) {
+      throw new Error('OpenAI API 크레딧이 부족합니다. OpenAI 대시보드에서 결제 정보를 확인해주세요.')
+    } else if (errorMessage.includes('Billing hard limit') || errorMessage.includes('billing')) {
+      throw new Error('OpenAI API 결제 한도에 도달했습니다. OpenAI 대시보드(https://platform.openai.com/account/billing)에서 결제 한도를 늘리거나 결제 정보를 확인해주세요.')
+    } else if (errorMessage.includes('invalid_api_key') || errorMessage.includes('Invalid API key')) {
+      throw new Error('OpenAI API 키가 유효하지 않습니다. .env 파일의 VITE_OPENAI_API_KEY를 확인해주세요.')
+    } else if (errorMessage.includes('does not have access to model') || errorMessage.includes('403')) {
+      // DALL-E 모델 접근 권한 오류 (DALL-E 2 또는 DALL-E 3)
+      const modelName = errorMessage.includes('dall-e-3') ? 'DALL-E 3' : 'DALL-E 2'
+      throw new Error(`${modelName} 모델에 대한 접근 권한이 없습니다. OpenAI 대시보드(https://platform.openai.com/settings/organization)에서:\n1. 올바른 프로젝트/조직을 선택했는지 확인\n2. DALL-E 모델 사용 권한이 활성화되어 있는지 확인\n3. API 키가 올바른 프로젝트에 속해 있는지 확인해주세요.\n\n참고: DALL-E 2는 대부분의 프로젝트에서 사용 가능합니다.`)
+    } else if (errorMessage.includes('400') || errorMessage.includes('Bad Request')) {
+      throw new Error('이미지 생성 요청이 실패했습니다. 일기 내용을 확인하거나 잠시 후 다시 시도해주세요.')
     }
     
-    throw new Error(`이미지 생성 실패: ${error.message || '알 수 없는 오류'}`)
+    throw new Error(`이미지 생성 실패: ${errorMessage || '알 수 없는 오류'}`)
   }
 }
 

@@ -11,6 +11,7 @@ export default function DiaryCalendar({ onDateClick }) {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState(null)
   const [selectedDiary, setSelectedDiary] = useState(null)
+  const [imageErrors, setImageErrors] = useState({}) // { 'YYYY-MM-DD': true } - 이미지 로드 실패한 날짜들
 
   /**
    * 일기 로드
@@ -155,7 +156,8 @@ export default function DiaryCalendar({ onDateClick }) {
 
       const diary = diaries[dateString]
       const hasDiary = !!diary
-      const hasImage = !!diary?.imageUrl
+      const hasImage = !!diary?.imageUrl && !imageErrors[dateString]
+      const imageLoadFailed = imageErrors[dateString]
 
       days.push(
         <div
@@ -182,12 +184,21 @@ export default function DiaryCalendar({ onDateClick }) {
               src={diary.imageUrl}
               alt="일기 이미지"
               className="absolute inset-0 w-full h-full object-cover opacity-80"
+              onError={() => {
+                // 이미지 로드 실패 시 에러 상태 업데이트
+                setImageErrors(prev => ({ ...prev, [dateString]: true }))
+              }}
             />
           )}
           
-          {/* 일기 작성 표시 (이미지가 없을 때) */}
-          {hasDiary && !hasImage && (
-            <span className="text-xs text-gray-500 mt-auto mx-auto z-10">📝</span>
+          {/* 일기 작성 표시 (이미지가 없거나 로드 실패한 경우) */}
+          {hasDiary && (!hasImage || imageLoadFailed) && (
+            <div className="absolute inset-0 flex items-center justify-center z-10">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-lg">🖼️</span>
+                <span className="text-[10px] text-gray-600 font-medium">일기 이미지</span>
+              </div>
+            </div>
           )}
         </div>
       )

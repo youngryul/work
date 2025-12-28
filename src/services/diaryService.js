@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js'
 import { generateDiaryImage } from './aiImageService.js'
+import { uploadImageFromUrl } from './imageService.js'
 
 /**
  * 일기 서비스
@@ -25,25 +26,73 @@ export async function saveDiary(date, content, regenerateImage = false) {
     if (!imageUrl || regenerateImage) {
       try {
         const { imageUrl: generatedUrl, prompt } = await generateDiaryImage(content)
-        imageUrl = generatedUrl
+        
+        // OpenAI의 임시 URL을 Supabase Storage에 업로드하여 영구 저장
+        try {
+          // 재생성 시에는 타임스탬프를 추가하여 고유한 파일명 생성 (캐시 방지)
+          const timestamp = Date.now()
+          const fileName = regenerateImage 
+            ? `${date}-${timestamp}.png` 
+            : `${date}.png`
+          
+          const permanentUrl = await uploadImageFromUrl(
+            generatedUrl,
+            'diaries',
+            fileName
+          )
+          
+          // Edge Function이 임시 URL을 반환한 경우 (폴백) 확인
+          if (permanentUrl && permanentUrl !== generatedUrl) {
+            imageUrl = permanentUrl
+          } else {
+            // Edge Function이 없거나 실패한 경우 임시 URL 사용
+            console.warn('Edge Function을 사용할 수 없습니다. 임시 URL을 사용합니다. (만료될 수 있음)')
+            imageUrl = generatedUrl
+          }
+        } catch (uploadError) {
+          console.error('이미지 업로드 실패, 임시 URL 사용:', uploadError)
+          // 업로드 실패 시 임시 URL 사용 (나중에 만료될 수 있음)
+          imageUrl = generatedUrl
+        }
+        
         imagePrompt = prompt
       } catch (error) {
         console.error('이미지 생성 실패:', error)
         // 이미지 생성 실패해도 일기는 저장
+        // 이미지 URL과 프롬프트는 기존 값 유지 또는 null
         // 사용자에게 경고 메시지 표시는 UI에서 처리
+        // 재생성 요청인 경우에만 에러를 다시 throw하여 UI에서 처리하도록 함
+        if (regenerateImage) {
+          // 재생성 실패 시 에러를 전파하여 UI에서 사용자에게 알림
+          throw error
+        }
+        // 일반 저장 시에는 이미지 없이 일기만 저장
       }
     }
     
     // 일기 저장 또는 업데이트
+    // created_at은 DEFAULT 값이 자동으로 설정됨
+    // updated_at은 트리거가 자동으로 업데이트하지만, INSERT 시에는 명시적으로 설정
+    const upsertData = {
+      date,
+      content,
+    }
+    
+    // image_url과 image_prompt는 null이 아닐 때만 포함
+    if (imageUrl !== null) {
+      upsertData.image_url = imageUrl
+    }
+    if (imagePrompt !== null) {
+      upsertData.image_prompt = imagePrompt
+    }
+    
+    // updated_at을 명시적으로 설정하여 트리거 오류 방지
+    upsertData.updated_at = new Date().toISOString()
+    
+    // upsert 사용 (트리거 오류 방지를 위해 updated_at 명시)
     const { data, error } = await supabase
       .from('diaries')
-      .upsert({
-        date,
-        content,
-        image_url: imageUrl,
-        image_prompt: imagePrompt,
-        updated_at: new Date().toISOString(),
-      }, {
+      .upsert(upsertData, {
         onConflict: 'date',
       })
       .select()

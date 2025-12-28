@@ -74,6 +74,56 @@ export async function uploadImage(file, folder = 'project-records') {
 }
 
 /**
+ * URL에서 이미지를 다운로드하여 Supabase Storage에 업로드
+ * CORS 문제를 해결하기 위해 Supabase Edge Function을 사용
+ * @param {string} imageUrl - 다운로드할 이미지 URL
+ * @param {string} folder - 저장할 폴더명 (기본값: 'diaries')
+ * @param {string} fileName - 저장할 파일명 (기본값: 자동 생성)
+ * @returns {Promise<string>} 업로드된 이미지의 공개 URL
+ */
+export async function uploadImageFromUrl(imageUrl, folder = 'diaries', fileName = null) {
+  try {
+    // Supabase Edge Function을 통해 이미지 다운로드 및 업로드
+    const { data: functionData, error: functionError } = await supabase.functions.invoke(
+      'download-image',
+      {
+        body: {
+          imageUrl,
+          folder,
+          fileName,
+        },
+      }
+    )
+
+    if (functionError) {
+      console.error('Edge Function 호출 오류:', functionError)
+      throw new Error(`이미지 업로드 실패: ${functionError.message || 'Edge Function 호출 실패'}`)
+    }
+
+    if (functionData?.error) {
+      throw new Error(`이미지 업로드 실패: ${functionData.error}`)
+    }
+
+    if (!functionData?.publicUrl) {
+      throw new Error('이미지 업로드 실패: 공개 URL을 받을 수 없습니다.')
+    }
+
+    return functionData.publicUrl
+  } catch (error) {
+    console.error('URL에서 이미지 업로드 실패:', error)
+    
+    // Edge Function이 없는 경우를 대비한 폴백 (임시 URL 사용)
+    if (error.message?.includes('Edge Function') || error.message?.includes('not found')) {
+      console.warn('Edge Function을 사용할 수 없습니다. 임시 URL을 사용합니다.')
+      // 임시 URL을 그대로 반환 (만료될 수 있음)
+      return imageUrl
+    }
+    
+    throw new Error(`이미지 업로드 실패: ${error.message || '알 수 없는 오류'}`)
+  }
+}
+
+/**
  * 이미지 삭제
  * @param {string} filePath - 삭제할 파일 경로
  * @returns {Promise<void>}
