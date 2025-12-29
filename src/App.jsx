@@ -6,6 +6,7 @@ import CalendarView from './components/CalendarView.jsx'
 import AnnualReviewView from './components/AnnualReviewView.jsx'
 import RecordMainView from './components/RecordMainView.jsx'
 import RecordForm from './components/RecordForm.jsx'
+import GoalsDashboard from './components/goals/GoalsDashboard.jsx'
 
 /**
  * 메인 앱 컴포넌트
@@ -93,7 +94,7 @@ function App() {
                   : 'text-gray-600 hover:bg-pink-100'
               }`}
             >
-              회고록
+              2025 회고
             </button>
             <button
               onClick={() => setCurrentView('records')}
@@ -104,6 +105,16 @@ function App() {
               }`}
             >
               프로젝트 기록
+            </button>
+            <button
+              onClick={() => setCurrentView('goals')}
+              className={`px-4 py-2 rounded-lg transition-all duration-200 text-2xl ${
+                currentView === 'goals'
+                  ? 'bg-pink-400 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-pink-100'
+              }`}
+            >
+              2026 목표
             </button>
           </div>
         </div>
@@ -133,6 +144,7 @@ function App() {
             )}
           </>
         )}
+        {currentView === 'goals' && <GoalsDashboard />}
       </main>
     </div>
   )
