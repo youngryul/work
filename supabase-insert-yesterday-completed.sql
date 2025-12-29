@@ -88,3 +88,5 @@ VALUES (
 -- WHERE DATE(to_timestamp(completedat / 1000)) = DATE(NOW() - INTERVAL '1 day')
 -- ORDER BY completedat DESC;
 
+
+

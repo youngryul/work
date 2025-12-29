@@ -1,97 +1,97 @@
 /**
- * 무료 AI 이미지 생성 서비스 (Hugging Face Inference API 사용)
- * Stable Diffusion 모델을 사용하여 이미지 생성
+ * 감정 일기 이미지 생성 서비스
+ * Supabase Edge Function을 통해 OpenAI DALL-E 모델을 사용하여 감정 기반 이미지 생성
  */
+import { supabase } from '../config/supabase.js'
 
 /**
- * 일기 내용을 이미지 생성 프롬프트로 변환
- * @param {string} content - 일기 내용
- * @returns {string} 이미지 생성 프롬프트
- */
-function createImagePrompt(content) {
-  const baseStyle = "simple line drawing, minimalist, black and white, doodle style, hand-drawn sketch, clean lines, journal illustration"
-  
-  const keywords = content
-    .substring(0, 200)
-    .replace(/[^\w\s가-힣]/g, ' ')
-    .split(/\s+/)
-    .filter(word => word.length > 1)
-    .slice(0, 10)
-    .join(', ')
-  
-  return `${keywords}, ${baseStyle}`
-}
-
-/**
- * Hugging Face Inference API를 사용하여 이미지 생성
+ * Supabase Edge Function을 통해 감정 분석 기반 이미지 생성
  * @param {string} diaryContent - 일기 내용
- * @returns {Promise<{imageUrl: string, prompt: string}>} 생성된 이미지 URL과 사용된 프롬프트
+ * @returns {Promise<{imageUrl: string, prompt: string, emotion?: string, scene?: string}>} 생성된 이미지 URL, 프롬프트, 감정, 장면
  */
 export async function generateDiaryImageFree(diaryContent) {
-  const apiKey = import.meta.env.VITE_HUGGINGFACE_API_KEY
-  
-  if (!apiKey) {
-    throw new Error('Hugging Face API 키가 설정되지 않았습니다. .env 파일에 VITE_HUGGINGFACE_API_KEY를 추가해주세요.')
-  }
-
   try {
-    // 프롬프트 생성
-    const prompt = createImagePrompt(diaryContent)
-    
-    // Hugging Face Inference API 호출
-    // Stable Diffusion 모델 사용 (다른 모델로 변경 가능)
-    const model = "stabilityai/stable-diffusion-xl-base-1.0" // 또는 "runwayml/stable-diffusion-v1-5"
-    
-    const response = await fetch(
-      `https://api-inference.huggingface.co/models/${model}`,
-      {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-        body: JSON.stringify({
-          inputs: prompt,
-          parameters: {
-            num_inference_steps: 30,
-            guidance_scale: 7.5,
-            width: 1024,
-            height: 1024,
-          },
-        }),
-      }
-    )
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(`이미지 생성 실패: ${errorData.error || response.statusText}`)
+    // Supabase URL 확인
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    if (!supabaseUrl) {
+      throw new Error('Supabase URL이 설정되지 않았습니다. .env 파일에 VITE_SUPABASE_URL을 추가해주세요.')
     }
 
-    // 이미지 데이터를 Blob으로 받기
-    const imageBlob = await response.blob()
+    // Edge Function URL 구성
+    const functionName = 'generate-image-huggingface'
+    const functionUrl = `${supabaseUrl}/functions/v1/${functionName}`
     
-    // Blob을 Data URL로 변환
-    const imageUrl = await new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result)
-      reader.onerror = reject
-      reader.readAsDataURL(imageBlob)
+    // Supabase Anon Key 가져오기
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+    if (!anonKey) {
+      throw new Error('Supabase Anon Key가 설정되지 않았습니다. .env 파일에 VITE_SUPABASE_ANON_KEY를 추가해주세요.')
+    }
+
+    // Edge Function 직접 호출 (fetch 사용)
+    const response = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${anonKey}`,
+      },
+      body: JSON.stringify({
+        diaryContent,
+      }),
     })
 
+    // 응답 확인
+    if (!response.ok) {
+      const errorText = await response.text()
+      let errorData
+      try {
+        errorData = JSON.parse(errorText)
+      } catch {
+        errorData = { error: errorText || response.statusText }
+      }
+
+      // 404 오류는 Edge Function이 배포되지 않았음을 의미
+      if (response.status === 404) {
+        throw new Error(
+          `Edge Function '${functionName}'이 배포되지 않았습니다. ` +
+          `Supabase 대시보드 > Edge Functions에서 '${functionName}' 함수를 생성하고 배포해주세요.`
+        )
+      }
+
+      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+
+    if (!data || !data.imageUrl) {
+      throw new Error(data?.error || '이미지 생성 실패: 응답 데이터가 올바르지 않습니다.')
+    }
+
     return {
-      imageUrl,
-      prompt,
+      imageUrl: data.imageUrl,
+      prompt: data.prompt,
+      emotion: data.emotion,
+      scene: data.scene,
     }
   } catch (error) {
     console.error('무료 이미지 생성 오류:', error)
     
     const errorMessage = error.message || error.toString() || ''
     
-    if (errorMessage.includes('rate_limit') || errorMessage.includes('Rate limit')) {
+    // Edge Function 배포 관련 오류
+    if (errorMessage.includes('배포되지 않았습니다') || errorMessage.includes('not found') || errorMessage.includes('404')) {
+      throw new Error(
+        `Edge Function이 배포되지 않았습니다. ` +
+        `Supabase 대시보드 > Edge Functions에서 'generate-image-huggingface' 함수를 생성하고 배포해주세요. ` +
+        `또한 Settings > Edge Functions > Secrets에서 HUGGINGFACE_API_KEY를 설정해주세요.`
+      )
+    }
+    
+    // Edge Function에서 반환한 오류 메시지 그대로 전달
+    if (errorMessage.includes('rate_limit') || errorMessage.includes('Rate limit') || errorMessage.includes('사용량 제한')) {
       throw new Error('API 사용량 제한에 도달했습니다. 잠시 후 다시 시도해주세요.')
-    } else if (errorMessage.includes('quota') || errorMessage.includes('Quota')) {
+    } else if (errorMessage.includes('quota') || errorMessage.includes('Quota') || errorMessage.includes('할당량')) {
       throw new Error('무료 할당량을 초과했습니다. Hugging Face Pro로 업그레이드하거나 내일 다시 시도해주세요.')
-    } else if (errorMessage.includes('model is currently loading')) {
+    } else if (errorMessage.includes('model is currently loading') || errorMessage.includes('로딩 중')) {
       throw new Error('모델이 로딩 중입니다. 30초 후 다시 시도해주세요.')
     }
     
@@ -99,12 +99,4 @@ export async function generateDiaryImageFree(diaryContent) {
   }
 }
 
-/**
- * 프롬프트 미리보기 (디버깅용)
- * @param {string} content - 일기 내용
- * @returns {string} 생성될 프롬프트
- */
-export function previewPrompt(content) {
-  return createImagePrompt(content)
-}
 

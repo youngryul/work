@@ -17,6 +17,7 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
   const [error, setError] = useState(null)
   const [existingDiary, setExistingDiary] = useState(null)
   const [imageLoadError, setImageLoadError] = useState(false) // 이미지 로드 실패 상태
+  const [showPrompt, setShowPrompt] = useState(false) // 프롬프트 표시 여부
 
   // 기존 일기 로드
   useEffect(() => {
@@ -91,6 +92,7 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
           imageUrl: updatedDiary.imageUrl ? `${updatedDiary.imageUrl}?t=${Date.now()}` : null
         })
         setImageLoadError(false) // 이미지 로드 상태 초기화
+        setShowPrompt(false) // 프롬프트 숨기기 (새 이미지 생성 시)
       }
       
       // 데이터베이스에서 최신 데이터 다시 로드
@@ -191,14 +193,34 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
                     </div>
                   </div>
                 ) : null}
-                <button
-                  type="button"
-                  onClick={handleRegenerateImage}
-                  disabled={isGeneratingImage}
-                  className="mt-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium font-sans disabled:opacity-50"
-                >
-                  {isGeneratingImage ? '재생성 중...' : '🔄 이미지 재생성'}
-                </button>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={handleRegenerateImage}
+                    disabled={isGeneratingImage}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium font-sans disabled:opacity-50"
+                  >
+                    {isGeneratingImage ? '재생성 중...' : '🔄 이미지 재생성'}
+                  </button>
+                  {existingDiary?.imagePrompt && (
+                    <button
+                      type="button"
+                      onClick={() => setShowPrompt(!showPrompt)}
+                      className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium font-sans"
+                    >
+                      {showPrompt ? '📝 프롬프트 숨기기' : '📝 프롬프트 보기'}
+                    </button>
+                  )}
+                </div>
+                {/* 프롬프트 표시 */}
+                {showPrompt && existingDiary?.imagePrompt && (
+                  <div className="mt-3 p-4 bg-gray-50 border-2 border-gray-200 rounded-lg">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2 font-sans">생성된 프롬프트:</h4>
+                    <p className="text-xs text-gray-600 font-mono whitespace-pre-wrap break-words font-sans">
+                      {existingDiary.imagePrompt}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}

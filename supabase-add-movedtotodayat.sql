@@ -10,3 +10,5 @@ CREATE INDEX IF NOT EXISTS idx_tasks_movedToTodayAt ON tasks(movedtotodayat DESC
 UPDATE tasks
 SET movedtotodayat = createdat
 WHERE istoday = true AND movedtotodayat IS NULL;
+
+

@@ -19,3 +19,5 @@ CREATE POLICY "Allow all operations" ON annual_review
   FOR ALL
   USING (true)
   WITH CHECK (true);
+
+

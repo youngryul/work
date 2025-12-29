@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js'
-import { generateDiaryImage } from './aiImageService.js'
+import { generateDiaryImageFree } from './freeImageService.js'
+
 import { uploadImageFromUrl } from './imageService.js'
 
 /**
@@ -25,7 +26,7 @@ export async function saveDiary(date, content, regenerateImage = false) {
     // 이미지가 없거나 재생성 요청이 있으면 생성
     if (!imageUrl || regenerateImage) {
       try {
-        const { imageUrl: generatedUrl, prompt } = await generateDiaryImage(content)
+        const { imageUrl: generatedUrl, prompt } = await generateDiaryImageFree(content)
         
         // OpenAI의 임시 URL을 Supabase Storage에 업로드하여 영구 저장
         try {
