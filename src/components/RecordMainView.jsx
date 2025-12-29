@@ -253,14 +253,6 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
               <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-pink-200 p-4 h-[calc(100vh-500px)] overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold text-gray-700 font-sans">기록 목록</h2>
-                  {selectedRecord && !selectedRecord.isMain && (
-                    <button
-                      onClick={() => handleSetMainRecord(selectedRecord.id)}
-                      className="px-4 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-sm font-medium shadow-md font-sans"
-                    >
-                      📌 메인 기록으로 설정
-                    </button>
-                  )}
                 </div>
                 {loading ? (
                   <div className="text-center py-8 text-gray-500 text-base font-sans">로딩 중...</div>
@@ -295,6 +287,16 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
           handleEdit(record)
         }}
         onDelete={handleDelete}
+        onSetMain={(id) => {
+          handleSetMainRecord(id)
+          setIsModalOpen(false)
+          setSelectedRecord(null)
+        }}
+        onUnsetMain={(id) => {
+          handleUnsetMainRecord(id)
+          setIsModalOpen(false)
+          setSelectedRecord(null)
+        }}
       />
     </div>
   )

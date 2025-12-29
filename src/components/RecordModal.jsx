@@ -9,8 +9,10 @@ import MarkdownViewer from './MarkdownViewer.jsx'
  * @param {Function} onClose - 닫기 핸들러
  * @param {Function} onEdit - 수정 핸들러
  * @param {Function} onDelete - 삭제 핸들러
+ * @param {Function} onSetMain - 메인 기록 설정 핸들러
+ * @param {Function} onUnsetMain - 메인 기록 해제 핸들러
  */
-export default function RecordModal({ record, isOpen, onClose, onEdit, onDelete }) {
+export default function RecordModal({ record, isOpen, onClose, onEdit, onDelete, onSetMain, onUnsetMain }) {
   if (!isOpen || !record) return null
 
   const formatDate = (dateString) => {
@@ -39,7 +41,30 @@ export default function RecordModal({ record, isOpen, onClose, onEdit, onDelete 
             <h1 className="text-2xl font-bold text-gray-800 mb-1 font-sans">{record.title}</h1>
             <p className="text-base text-gray-500 font-sans">{formatDate(record.date)}</p>
           </div>
-          <div className="flex gap-2 ml-4">
+          <div className="flex gap-2 ml-4 flex-wrap">
+            {record.isMain ? (
+              <button
+                onClick={() => {
+                  if (onUnsetMain) {
+                    onUnsetMain(record.id)
+                  }
+                }}
+                className="px-4 py-2 bg-yellow-400 text-white rounded-lg hover:bg-yellow-500 transition-colors text-base font-medium shadow-md font-sans"
+              >
+                📌 메인 해제
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  if (onSetMain) {
+                    onSetMain(record.id)
+                  }
+                }}
+                className="px-4 py-2 bg-blue-400 text-white rounded-lg hover:bg-blue-500 transition-colors text-base font-medium shadow-md font-sans"
+              >
+                📌 메인 기록으로 설정
+              </button>
+            )}
             <button
               onClick={() => {
                 onEdit?.(record)

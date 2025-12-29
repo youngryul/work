@@ -211,8 +211,10 @@ export async function getRecordById(id) {
  */
 export async function createRecord(recordData) {
   // 필드명 변환 (camelCase -> snake_case)
+  // type 필드는 필수이므로 기본값 'MEETING' 설정
   const dataToInsert = {
     projectname: recordData.projectName,
+    type: recordData.type || 'MEETING', // 기본값: MEETING
     date: recordData.date,
     title: recordData.title,
     background: recordData.content || recordData.background || null,
@@ -247,6 +249,7 @@ export async function updateRecord(id, recordData) {
   // 필드명 변환 (camelCase -> snake_case)
   const dataToUpdate = {
     projectname: recordData.projectName,
+    type: recordData.type, // type 필드 추가
     date: recordData.date,
     title: recordData.title,
     background: recordData.content || recordData.background || null,
