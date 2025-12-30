@@ -138,6 +138,14 @@ function App() {
             >
               버킷리스트 회고
             </button>
+            <a
+              href="https://taro-gwzj.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 rounded-lg transition-all duration-200 text-2xl text-gray-600 hover:bg-purple-100 hover:text-purple-600"
+            >
+              🔮 타로
+            </a>
           </div>
         </div>
       </nav>
