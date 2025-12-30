@@ -9,6 +9,7 @@ import RecordForm from './components/RecordForm.jsx'
 import GoalsDashboard from './components/goals/GoalsDashboard.jsx'
 import BucketlistView from './components/bucketlist/BucketlistView.jsx'
 import BucketlistReflectionView from './components/bucketlist/BucketlistReflectionView.jsx'
+import ReadingView from './components/reading/ReadingView.jsx'
 
 /**
  * 메인 앱 컴포넌트
@@ -138,6 +139,16 @@ function App() {
             >
               버킷리스트 회고
             </button>
+            <button
+              onClick={() => setCurrentView('reading')}
+              className={`px-4 py-2 rounded-lg transition-all duration-200 text-2xl ${
+                currentView === 'reading'
+                  ? 'bg-pink-400 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-pink-100'
+              }`}
+            >
+              📚 독서
+            </button>
             <a
               href="https://taro-gwzj.vercel.app/"
               target="_blank"
@@ -177,6 +188,7 @@ function App() {
         {currentView === 'goals' && <GoalsDashboard />}
         {currentView === 'bucketlist' && <BucketlistView />}
         {currentView === 'bucketlist-reflection' && <BucketlistReflectionView />}
+        {currentView === 'reading' && <ReadingView />}
       </main>
     </div>
   )
