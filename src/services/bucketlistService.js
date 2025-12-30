@@ -2,26 +2,12 @@ import { supabase } from '../config/supabase.js'
 import { BUCKETLIST_STATUS } from '../constants/bucketlistConstants.js'
 
 /**
- * 임시 사용자 ID (향후 인증 시스템과 연동)
- */
-const getUserId = () => {
-  // localStorage에서 사용자 ID 가져오기 (임시)
-  let userId = localStorage.getItem('userId')
-  if (!userId) {
-    userId = crypto.randomUUID()
-    localStorage.setItem('userId', userId)
-  }
-  return userId
-}
-
-/**
  * 데이터베이스 컬럼명을 camelCase로 변환
  */
 function normalizeBucketlist(bucketlist) {
   if (!bucketlist) return bucketlist
   return {
     ...bucketlist,
-    userId: bucketlist.user_id ?? bucketlist.userId,
     targetDate: bucketlist.target_date ?? bucketlist.targetDate,
     completedAt: bucketlist.completed_at ?? bucketlist.completedAt,
     createdAt: bucketlist.created_at ?? bucketlist.createdAt,
@@ -36,11 +22,9 @@ function normalizeBucketlist(bucketlist) {
  */
 export async function getAllBucketlists(status = null) {
   try {
-    const userId = getUserId()
     let query = supabase
       .from('bucketlists')
       .select('*')
-      .eq('user_id', userId)
       .order('created_at', { ascending: true })
 
     if (status) {
@@ -68,12 +52,10 @@ export async function getAllBucketlists(status = null) {
  */
 export async function getBucketlistById(id) {
   try {
-    const userId = getUserId()
     const { data, error } = await supabase
       .from('bucketlists')
       .select('*')
       .eq('id', id)
-      .eq('user_id', userId)
       .single()
 
     if (error) {
@@ -95,9 +77,7 @@ export async function getBucketlistById(id) {
  */
 export async function createBucketlist(bucketlistData) {
   try {
-    const userId = getUserId()
     const newBucketlist = {
-      user_id: userId,
       title: bucketlistData.title.trim(),
       status: bucketlistData.status || BUCKETLIST_STATUS.NOT_COMPLETED,
       target_date: bucketlistData.targetDate || null,
@@ -142,7 +122,6 @@ export async function createBucketlist(bucketlistData) {
  */
 export async function updateBucketlist(id, updates) {
   try {
-    const userId = getUserId()
     const dbUpdates = {}
 
     if ('title' in updates) dbUpdates.title = updates.title.trim()
@@ -165,7 +144,6 @@ export async function updateBucketlist(id, updates) {
       .update(dbUpdates)
       .select()
       .eq('id', id)
-      .eq('user_id', userId)
       .single()
 
     if (error) {
@@ -187,12 +165,10 @@ export async function updateBucketlist(id, updates) {
  */
 export async function deleteBucketlist(id) {
   try {
-    const userId = getUserId()
     const { error } = await supabase
       .from('bucketlists')
       .delete()
       .eq('id', id)
-      .eq('user_id', userId)
 
     if (error) {
       console.error('버킷리스트 삭제 오류:', error)
@@ -213,14 +189,12 @@ export async function deleteBucketlist(id) {
  */
 export async function getCompletedBucketlistsByYear(year = new Date().getFullYear()) {
   try {
-    const userId = getUserId()
     const startDate = new Date(year, 0, 1).toISOString()
     const endDate = new Date(year, 11, 31, 23, 59, 59, 999).toISOString()
 
     const { data, error } = await supabase
       .from('bucketlists')
       .select('*')
-      .eq('user_id', userId)
       .eq('status', BUCKETLIST_STATUS.COMPLETED)
       .not('completed_at', 'is', null)
       .gte('completed_at', startDate)
@@ -261,14 +235,12 @@ export async function getCategoryAchievementRate(year = new Date().getFullYear()
  */
 export async function getMonthlyCompletionTimeline(year = new Date().getFullYear()) {
   try {
-    const userId = getUserId()
     const startDate = new Date(year, 0, 1).toISOString()
     const endDate = new Date(year, 11, 31, 23, 59, 59, 999).toISOString()
 
     const { data, error } = await supabase
       .from('bucketlists')
       .select('completed_at')
-      .eq('user_id', userId)
       .eq('status', BUCKETLIST_STATUS.COMPLETED)
       .not('completed_at', 'is', null)
       .gte('completed_at', startDate)

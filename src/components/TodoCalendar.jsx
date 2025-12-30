@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { getCompletedCountsByDate, getCompletedTasksByDate } from '../services/taskService.js'
-import { generateDailyWorkReport } from '../services/workReportService.js'
+import { generateDailyWorkReport, saveWorkReport, getWorkReport, getWorkReportDatesByMonth } from '../services/workReportService.js'
 
 /**
  * 할 일 달력 컴포넌트
@@ -16,8 +16,7 @@ export default function TodoCalendar() {
   const [isLoadingTasks, setIsLoadingTasks] = useState(false)
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
   const [workReport, setWorkReport] = useState(null)
-  const [workReports, setWorkReports] = useState({}) // 날짜별 업무일지 저장 { 'YYYY-MM-DD': report }
-  const [workReportDates, setWorkReportDates] = useState(new Set()) // 업무일지가 있는 날짜들
+  const [workReportDates, setWorkReportDates] = useState([]) // 업무일지가 있는 날짜들
 
   /**
    * 완료 개수 로드
@@ -37,38 +36,22 @@ export default function TodoCalendar() {
   }
 
   /**
-   * localStorage에서 업무일지 로드
+   * DB에서 업무일지 날짜 목록 로드
    */
-  const loadWorkReports = () => {
+  const loadWorkReportDates = async () => {
     try {
-      const saved = localStorage.getItem('workReports')
-      if (saved) {
-        const reports = JSON.parse(saved)
-        setWorkReports(reports)
-        setWorkReportDates(new Set(Object.keys(reports)))
-      }
+      const year = currentDate.getFullYear()
+      const month = currentDate.getMonth() + 1
+      const dates = await getWorkReportDatesByMonth(year, month)
+      setWorkReportDates(dates)
     } catch (error) {
-      console.error('업무일지 로드 오류:', error)
-    }
-  }
-
-  /**
-   * 업무일지를 localStorage에 저장
-   */
-  const saveWorkReport = (dateString, report) => {
-    try {
-      const updated = { ...workReports, [dateString]: report }
-      setWorkReports(updated)
-      setWorkReportDates(new Set(Object.keys(updated)))
-      localStorage.setItem('workReports', JSON.stringify(updated))
-    } catch (error) {
-      console.error('업무일지 저장 오류:', error)
+      console.error('업무일지 날짜 로드 오류:', error)
     }
   }
 
   useEffect(() => {
     loadCompletedCounts()
-    loadWorkReports()
+    loadWorkReportDates()
   }, [currentDate])
 
   /**
@@ -101,15 +84,13 @@ export default function TodoCalendar() {
 
     setSelectedDate(dateString)
     setIsLoadingTasks(true)
+    setWorkReport(null) // 기존 업무일지 초기화
     try {
       const tasks = await getCompletedTasksByDate(dateString)
       setCompletedTasks(tasks)
-      // 해당 날짜의 업무일지가 있으면 로드
-      if (workReports[dateString]) {
-        setWorkReport(workReports[dateString])
-      } else {
-        setWorkReport(null)
-      }
+      // DB에서 해당 날짜의 업무일지 로드
+      const existingReport = await getWorkReport(dateString)
+      setWorkReport(existingReport)
     } catch (error) {
       console.error('완료된 할 일 로드 오류:', error)
     } finally {
@@ -148,9 +129,10 @@ export default function TodoCalendar() {
     try {
       const report = await generateDailyWorkReport(completedTasks, selectedDate)
       setWorkReport(report)
-      // localStorage에 저장
-      saveWorkReport(selectedDate, report)
-      // 모달 대신 팝업 하단에 표시되도록 함
+      // DB에 저장
+      await saveWorkReport(selectedDate, report)
+      // 달력 도장 표시를 위해 날짜 목록 업데이트
+      await loadWorkReportDates()
     } catch (error) {
       console.error('업무일지 생성 오류:', error)
       alert(error.message || '업무일지 생성에 실패했습니다.')
@@ -212,7 +194,7 @@ export default function TodoCalendar() {
     for (let day = 1; day <= daysInMonth; day++) {
       const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
       const count = completedCounts[dateString] || 0
-      const hasWorkReport = workReportDates.has(dateString)
+      const hasWorkReport = workReportDates.includes(dateString)
       const isToday =
         year === new Date().getFullYear() &&
         month === new Date().getMonth() &&

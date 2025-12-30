@@ -24,11 +24,12 @@ export default function BucketlistView() {
     setIsLoading(true)
     try {
       const data = await getAllBucketlists()
+      console.log('[버킷리스트 뷰] 로드된 데이터:', data)
       setBucketlists(data)
       filterBucketlists(data, selectedStatus)
     } catch (error) {
       console.error('버킷리스트 로드 오류:', error)
-      alert('버킷리스트를 불러오는데 실패했습니다.')
+      alert(`버킷리스트를 불러오는데 실패했습니다: ${error.message || '알 수 없는 오류'}`)
     } finally {
       setIsLoading(false)
     }

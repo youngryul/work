@@ -2,6 +2,20 @@
  * 업무일지 AI 요약 서비스
  * 완료한 할일들을 업무일지 형태로 요약 및 정리
  */
+import { supabase } from '../config/supabase.js'
+
+/**
+ * 임시 사용자 ID (향후 인증 시스템과 연동)
+ */
+function getUserId() {
+  // localStorage에서 사용자 ID 가져오기 (임시)
+  let userId = localStorage.getItem('userId')
+  if (!userId) {
+    userId = crypto.randomUUID()
+    localStorage.setItem('userId', userId)
+  }
+  return userId
+}
 
 /**
  * 특정 날짜의 완료한 할일 목록을 업무일지 형태로 AI 요약
@@ -84,6 +98,127 @@ ${tasksList}
     return data.choices[0].message.content.trim()
   } catch (error) {
     console.error('업무일지 생성 오류:', error)
+    throw error
+  }
+}
+
+/**
+ * 업무일지 저장 (DB)
+ * @param {string} dateString - 날짜 문자열 (YYYY-MM-DD)
+ * @param {string} reportContent - 업무일지 내용
+ * @returns {Promise<Object>} 저장된 업무일지
+ */
+export async function saveWorkReport(dateString, reportContent) {
+  try {
+    const userId = getUserId()
+    
+    // 기존 업무일지 확인
+    const existing = await getWorkReport(dateString)
+    
+    if (existing) {
+      // 업데이트
+      const { data, error } = await supabase
+        .from('work_reports')
+        .update({
+          report_content: reportContent,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId)
+        .eq('date', dateString)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('업무일지 업데이트 오류:', error)
+        throw error
+      }
+
+      return data
+    } else {
+      // 생성
+      const { data, error } = await supabase
+        .from('work_reports')
+        .insert({
+          user_id: userId,
+          date: dateString,
+          report_content: reportContent,
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('업무일지 생성 오류:', error)
+        throw error
+      }
+
+      return data
+    }
+  } catch (error) {
+    console.error('업무일지 저장 실패:', error)
+    throw error
+  }
+}
+
+/**
+ * 특정 날짜의 업무일지 조회 (DB)
+ * @param {string} dateString - 날짜 문자열 (YYYY-MM-DD)
+ * @returns {Promise<string|null>} 업무일지 내용 또는 null
+ */
+export async function getWorkReport(dateString) {
+  try {
+    const userId = getUserId()
+    
+    const { data, error } = await supabase
+      .from('work_reports')
+      .select('report_content')
+      .eq('user_id', userId)
+      .eq('date', dateString)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // 데이터가 없음
+        return null
+      }
+      console.error('업무일지 조회 오류:', error)
+      throw error
+    }
+
+    return data?.report_content || null
+  } catch (error) {
+    console.error('업무일지 조회 실패:', error)
+    throw error
+  }
+}
+
+/**
+ * 특정 월의 업무일지가 생성된 날짜 목록 조회 (DB)
+ * @param {number} year - 연도
+ * @param {number} month - 월 (1-12)
+ * @returns {Promise<Array<string>>} 날짜 문자열 배열 (YYYY-MM-DD)
+ */
+export async function getWorkReportDatesByMonth(year, month) {
+  try {
+    const userId = getUserId()
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`
+    const endDate = `${year}-${String(month).padStart(2, '0')}-31`
+
+    const { data, error } = await supabase
+      .from('work_reports')
+      .select('date')
+      .eq('user_id', userId)
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date', { ascending: true })
+
+    if (error) {
+      console.error('업무일지 날짜 조회 오류:', error)
+      throw error
+    }
+
+    return (data || []).map(item => item.date)
+  } catch (error) {
+    console.error('업무일지 날짜 조회 실패:', error)
     throw error
   }
 }
