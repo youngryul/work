@@ -155,8 +155,10 @@ export async function getDiaryByDate(date) {
  */
 export async function getDiariesByMonth(year, month) {
   try {
+    // 각 월의 실제 마지막 날짜 계산
+    const lastDay = new Date(year, month, 0).getDate()
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`
-    const endDate = `${year}-${String(month).padStart(2, '0')}-31`
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
     
     const { data, error } = await supabase
       .from('diaries')

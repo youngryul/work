@@ -30,6 +30,11 @@ export const NAVIGATION_MENU_ITEMS = [
     icon: '📊',
   },
   {
+    id: 'review-2026',
+    label: '2026 회고',
+    icon: '📝',
+  },
+  {
     id: 'records',
     label: '프로젝트 기록',
     icon: '📁',

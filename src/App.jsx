@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import TodayView from './components/TodayView.jsx'
 import BacklogView from './components/BacklogView.jsx'
 import TodoCalendarView from './components/TodoCalendarView.jsx'
 import CalendarView from './components/CalendarView.jsx'
 import AnnualReviewView from './components/AnnualReviewView.jsx'
+import Review2026View from './components/Review2026View.jsx'
 import RecordMainView from './components/RecordMainView.jsx'
 import RecordForm from './components/RecordForm.jsx'
 import GoalsDashboard from './components/goals/GoalsDashboard.jsx'
@@ -20,6 +21,8 @@ function App() {
   const [editingRecord, setEditingRecord] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false) // 모바일 사이드바 상태
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // 데스크톱 사이드바 접힘 상태
+  const [review2026Tab, setReview2026Tab] = useState(null) // 2026 회고록 탭 상태
+  const [review2026Params, setReview2026Params] = useState(null) // 2026 회고록 파라미터
 
   // 새 기록 작성
   const handleNewRecord = () => {
@@ -44,6 +47,28 @@ function App() {
     setRecordView('main')
     setEditingRecord(null)
   }
+
+  // 2026 회고록 네비게이션 이벤트 리스너 및 전역 함수 설정
+  useEffect(() => {
+    const handleNavigate = (event) => {
+      setCurrentView('review-2026')
+      setReview2026Tab(event.detail.tab)
+      setReview2026Params(event.detail)
+    }
+    
+    // 전역 함수 설정 (다른 컴포넌트에서 직접 호출 가능)
+    window.setCurrentView = setCurrentView
+    window.setReview2026Tab = setReview2026Tab
+    window.setReview2026Params = setReview2026Params
+    
+    window.addEventListener('navigateToReview2026', handleNavigate)
+    return () => {
+      window.removeEventListener('navigateToReview2026', handleNavigate)
+      delete window.setCurrentView
+      delete window.setReview2026Tab
+      delete window.setReview2026Params
+    }
+  }, [])
 
   return (
     <div className="min-h-screen flex">
@@ -78,6 +103,12 @@ function App() {
         {currentView === 'todo-calendar' && <TodoCalendarView />}
         {currentView === 'diary-calendar' && <CalendarView />}
         {currentView === 'review' && <AnnualReviewView />}
+        {currentView === 'review-2026' && (
+          <Review2026View 
+            initialTab={review2026Tab}
+            initialParams={review2026Params}
+          />
+        )}
         {currentView === 'records' && (
           <>
             {recordView === 'main' && (

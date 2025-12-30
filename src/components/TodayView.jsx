@@ -3,6 +3,18 @@ import { getTodayTasks, resetTodayTasks, moveToBacklog } from '../services/taskS
 import { getDiaryByDate } from '../services/diaryService.js'
 import TaskItem from './TaskItem.jsx'
 import DiaryReminderModal from './DiaryReminderModal.jsx'
+import SummaryReminderModal from './SummaryReminderModal.jsx'
+import { 
+  shouldShowWeeklyReminder, 
+  shouldShowMonthlyReminder,
+  markWeeklyReminderShown,
+  markMonthlyReminderShown,
+  getLastWeekInfo,
+  getLastMonthInfo
+} from '../utils/summaryReminder.js'
+import { getWeekStart, getWeekEnd } from '../services/workReportService.js'
+import { getWeeksWithWorkReports, getWeeksWithDiaries } from '../services/workReportService.js'
+import { getDiariesByMonth } from '../services/diaryService.js'
 
 /**
  * 오늘 날짜를 YYYY-MM-DD 형식으로 반환
@@ -43,6 +55,10 @@ export default function TodayView() {
   const [isLoading, setIsLoading] = useState(true)
   const [showDiaryReminder, setShowDiaryReminder] = useState(false)
   const [yesterdayDate, setYesterdayDate] = useState(null)
+  const [showWeeklySummaryReminder, setShowWeeklySummaryReminder] = useState(false)
+  const [showMonthlySummaryReminder, setShowMonthlySummaryReminder] = useState(false)
+  const [weeklyReminderInfo, setWeeklyReminderInfo] = useState(null)
+  const [monthlyReminderInfo, setMonthlyReminderInfo] = useState(null)
 
   /**
    * 날짜 변경 감지 및 리셋 처리
@@ -159,11 +175,53 @@ export default function TodayView() {
     }
   }
 
+  /**
+   * 주간/월간 요약 리마인더 확인
+   */
+  const checkSummaryReminders = async () => {
+    // 주간 요약 리마인더 (월요일)
+    if (shouldShowWeeklyReminder()) {
+      const lastWeek = getLastWeekInfo()
+      setWeeklyReminderInfo(lastWeek)
+      setShowWeeklySummaryReminder(true)
+      markWeeklyReminderShown()
+    }
+    
+    // 월간 요약 리마인더 (매월 1일)
+    if (shouldShowMonthlyReminder()) {
+      const lastMonth = getLastMonthInfo()
+      setMonthlyReminderInfo(lastMonth)
+      setShowMonthlySummaryReminder(true)
+      markMonthlyReminderShown()
+    }
+  }
+
+  /**
+   * 주간 요약 생성 핸들러
+   */
+  const handleGenerateWeeklySummary = () => {
+    // 2026 회고록 페이지로 이동하고 주간 탭 열기
+    window.dispatchEvent(new CustomEvent('navigateToReview2026', { 
+      detail: { tab: 'weekly-work', weekStart: weeklyReminderInfo.weekStart, weekEnd: weeklyReminderInfo.weekEnd }
+    }))
+  }
+
+  /**
+   * 월간 요약 생성 핸들러
+   */
+  const handleGenerateMonthlySummary = () => {
+    // 2026 회고록 페이지로 이동하고 월간 탭 열기
+    window.dispatchEvent(new CustomEvent('navigateToReview2026', { 
+      detail: { tab: 'monthly-diary', year: monthlyReminderInfo.year, month: monthlyReminderInfo.month }
+    }))
+  }
+
   useEffect(() => {
     loadTasks()
     // 전날 일기 확인 (약간의 지연을 두어 초기 로딩 후 실행)
     setTimeout(() => {
       checkYesterdayDiary()
+      checkSummaryReminders()
     }, 1000)
   }, [])
 
@@ -286,6 +344,30 @@ export default function TodayView() {
           loadTasks() // 할 일 목록 새로고침
         }}
         onWriteDiary={handleDiaryWritten}
+      />
+
+      {/* 주간 요약 리마인더 모달 */}
+      <SummaryReminderModal
+        type="weekly"
+        period={weeklyReminderInfo?.period || ''}
+        isOpen={showWeeklySummaryReminder}
+        onClose={() => {
+          setShowWeeklySummaryReminder(false)
+          loadTasks()
+        }}
+        onGenerate={handleGenerateWeeklySummary}
+      />
+
+      {/* 월간 요약 리마인더 모달 */}
+      <SummaryReminderModal
+        type="monthly"
+        period={monthlyReminderInfo?.period || ''}
+        isOpen={showMonthlySummaryReminder}
+        onClose={() => {
+          setShowMonthlySummaryReminder(false)
+          loadTasks()
+        }}
+        onGenerate={handleGenerateMonthlySummary}
       />
     </>
   )
