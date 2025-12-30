@@ -5,19 +5,6 @@
 import { supabase } from '../config/supabase.js'
 
 /**
- * 임시 사용자 ID (향후 인증 시스템과 연동)
- */
-function getUserId() {
-  // localStorage에서 사용자 ID 가져오기 (임시)
-  let userId = localStorage.getItem('userId')
-  if (!userId) {
-    userId = crypto.randomUUID()
-    localStorage.setItem('userId', userId)
-  }
-  return userId
-}
-
-/**
  * 특정 날짜의 완료한 할일 목록을 업무일지 형태로 AI 요약
  * @param {Array} tasks - 완료한 할일 목록
  * @param {string} dateString - 날짜 문자열 (YYYY-MM-DD)
@@ -110,8 +97,6 @@ ${tasksList}
  */
 export async function saveWorkReport(dateString, reportContent) {
   try {
-    const userId = getUserId()
-    
     // 기존 업무일지 확인
     const existing = await getWorkReport(dateString)
     
@@ -123,7 +108,6 @@ export async function saveWorkReport(dateString, reportContent) {
           report_content: reportContent,
           updated_at: new Date().toISOString(),
         })
-        .eq('user_id', userId)
         .eq('date', dateString)
         .select()
         .single()
@@ -139,7 +123,6 @@ export async function saveWorkReport(dateString, reportContent) {
       const { data, error } = await supabase
         .from('work_reports')
         .insert({
-          user_id: userId,
           date: dateString,
           report_content: reportContent,
         })
@@ -166,12 +149,9 @@ export async function saveWorkReport(dateString, reportContent) {
  */
 export async function getWorkReport(dateString) {
   try {
-    const userId = getUserId()
-    
     const { data, error } = await supabase
       .from('work_reports')
       .select('report_content')
-      .eq('user_id', userId)
       .eq('date', dateString)
       .single()
 
@@ -199,14 +179,12 @@ export async function getWorkReport(dateString) {
  */
 export async function getWorkReportDatesByMonth(year, month) {
   try {
-    const userId = getUserId()
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`
     const endDate = `${year}-${String(month).padStart(2, '0')}-31`
 
     const { data, error } = await supabase
       .from('work_reports')
       .select('date')
-      .eq('user_id', userId)
       .gte('date', startDate)
       .lte('date', endDate)
       .order('date', { ascending: true })

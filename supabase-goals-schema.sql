@@ -4,7 +4,6 @@
 -- 1. 연간 목표 테이블
 CREATE TABLE IF NOT EXISTS yearly_goals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL, -- 향후 사용자 인증 추가 시 사용
   year INTEGER NOT NULL DEFAULT 2026,
   category TEXT NOT NULL CHECK (category IN ('CAREER', 'HEALTH', 'RELATIONSHIP', 'MONEY', 'GROWTH')),
   title TEXT NOT NULL,
@@ -16,7 +15,7 @@ CREATE TABLE IF NOT EXISTS yearly_goals (
   status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'COMPLETED', 'PAUSED')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  UNIQUE(user_id, year, category) -- 한 해에 영역당 하나의 목표만
+  UNIQUE(year, category) -- 한 해에 영역당 하나의 목표만
 );
 
 -- 2. 월별 목표 테이블
@@ -78,7 +77,7 @@ CREATE TABLE IF NOT EXISTS monthly_reflections (
 );
 
 -- 인덱스 생성
-CREATE INDEX IF NOT EXISTS idx_yearly_goals_user_year ON yearly_goals(user_id, year);
+CREATE INDEX IF NOT EXISTS idx_yearly_goals_year ON yearly_goals(year);
 CREATE INDEX IF NOT EXISTS idx_yearly_goals_category ON yearly_goals(category);
 CREATE INDEX IF NOT EXISTS idx_monthly_goals_year_month ON monthly_goals(year, month);
 CREATE INDEX IF NOT EXISTS idx_monthly_goals_yearly_goal ON monthly_goals(yearly_goal_id);

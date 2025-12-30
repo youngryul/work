@@ -553,7 +553,6 @@ export async function canCreateNextMonthGoals(year, month) {
 function parseYearlyGoal(data) {
   return {
     id: data.id,
-    userId: data.user_id,
     year: data.year,
     category: data.category,
     title: data.title,
