@@ -46,26 +46,68 @@ export default function TodayView() {
 
   /**
    * 날짜 변경 감지 및 리셋 처리
+   * 날짜가 실제로 변경되었을 때만 백로그로 이동
+   * 재접속 시에는 리셋하지 않음
    */
   const checkAndResetIfNeeded = async () => {
     const todayDate = getTodayDateString()
     const lastResetDate = localStorage.getItem(LAST_RESET_DATE_KEY)
 
+    console.log('[날짜 확인] 오늘 날짜:', todayDate, '| 마지막 리셋 날짜:', lastResetDate)
+
     // localStorage에 값이 없으면 (첫 방문 또는 배포 후) 리셋하지 않고 오늘 날짜만 저장
-    if (lastResetDate === null) {
+    // 재접속 시에도 날짜가 변경되지 않았으면 리셋하지 않음
+    if (lastResetDate === null || lastResetDate === '') {
+      localStorage.setItem(LAST_RESET_DATE_KEY, todayDate)
+      console.log('[날짜 확인] 첫 방문 또는 localStorage 초기화: 오늘 날짜 저장, 리셋하지 않음')
+      return
+    }
+
+    // 날짜 형식 검증 (YYYY-MM-DD 형식인지 확인)
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/
+    if (!datePattern.test(lastResetDate)) {
+      console.warn('[날짜 확인] 잘못된 날짜 형식 감지, 오늘 날짜로 초기화:', lastResetDate)
       localStorage.setItem(LAST_RESET_DATE_KEY, todayDate)
       return
     }
 
     // 날짜가 실제로 변경되었을 때만 리셋 실행
+    // 이중 확인: 날짜가 정확히 다른지 확인
     if (lastResetDate !== todayDate) {
-      try {
-        await resetTodayTasks()
-        localStorage.setItem(LAST_RESET_DATE_KEY, todayDate)
-        console.log('오늘 할 일이 리셋되었습니다.')
-      } catch (error) {
-        console.error('날짜 리셋 오류:', error)
+      // 날짜 차이 계산 (하루 차이인지 확인)
+      const lastDate = new Date(lastResetDate + 'T00:00:00')
+      const today = new Date(todayDate + 'T00:00:00')
+      const diffTime = today - lastDate
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+
+      console.log(`[날짜 확인] 날짜 변경 감지: ${lastResetDate} → ${todayDate} (${diffDays}일 차이)`)
+      
+      // 날짜가 실제로 변경되었고 (1일 이상 차이), 오늘 할 일이 있는 경우에만 리셋
+      if (diffDays >= 1) {
+        try {
+          // 리셋 전에 오늘 할 일이 실제로 있는지 확인
+          const currentTasks = await getTodayTasks()
+          if (currentTasks && currentTasks.length > 0) {
+            console.log(`[리셋 실행] ${currentTasks.length}개의 오늘 할 일을 백로그로 이동합니다.`)
+            await resetTodayTasks()
+            localStorage.setItem(LAST_RESET_DATE_KEY, todayDate)
+            console.log('[리셋 완료] 오늘 할 일이 백로그로 이동되었습니다.')
+          } else {
+            console.log('[리셋 스킵] 오늘 할 일이 없어서 리셋하지 않습니다.')
+            localStorage.setItem(LAST_RESET_DATE_KEY, todayDate)
+          }
+        } catch (error) {
+          console.error('[리셋 오류] 날짜 리셋 중 오류 발생:', error)
+          // 오류 발생 시에도 날짜는 업데이트하지 않음 (다음에 다시 시도)
+        }
+      } else {
+        // 날짜 차이가 1일 미만이면 리셋하지 않음 (같은 날 재접속)
+        console.log(`[날짜 확인] 같은 날짜 또는 미래 날짜: 리셋하지 않습니다.`)
+        // 같은 날이면 localStorage 업데이트하지 않음 (기존 값 유지)
       }
+    } else {
+      // 같은 날짜면 리셋하지 않음 (재접속 시)
+      console.log(`[날짜 확인] 같은 날짜 (${todayDate}): 리셋하지 않음`)
     }
   }
 

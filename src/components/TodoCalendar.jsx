@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { getCompletedCountsByDate, getCompletedTasksByDate } from '../services/taskService.js'
+import { generateDailyWorkReport } from '../services/workReportService.js'
 
 /**
  * 할 일 달력 컴포넌트
@@ -12,6 +14,10 @@ export default function TodoCalendar() {
   const [selectedDate, setSelectedDate] = useState(null)
   const [completedTasks, setCompletedTasks] = useState([])
   const [isLoadingTasks, setIsLoadingTasks] = useState(false)
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false)
+  const [workReport, setWorkReport] = useState(null)
+  const [workReports, setWorkReports] = useState({}) // 날짜별 업무일지 저장 { 'YYYY-MM-DD': report }
+  const [workReportDates, setWorkReportDates] = useState(new Set()) // 업무일지가 있는 날짜들
 
   /**
    * 완료 개수 로드
@@ -30,8 +36,39 @@ export default function TodoCalendar() {
     }
   }
 
+  /**
+   * localStorage에서 업무일지 로드
+   */
+  const loadWorkReports = () => {
+    try {
+      const saved = localStorage.getItem('workReports')
+      if (saved) {
+        const reports = JSON.parse(saved)
+        setWorkReports(reports)
+        setWorkReportDates(new Set(Object.keys(reports)))
+      }
+    } catch (error) {
+      console.error('업무일지 로드 오류:', error)
+    }
+  }
+
+  /**
+   * 업무일지를 localStorage에 저장
+   */
+  const saveWorkReport = (dateString, report) => {
+    try {
+      const updated = { ...workReports, [dateString]: report }
+      setWorkReports(updated)
+      setWorkReportDates(new Set(Object.keys(updated)))
+      localStorage.setItem('workReports', JSON.stringify(updated))
+    } catch (error) {
+      console.error('업무일지 저장 오류:', error)
+    }
+  }
+
   useEffect(() => {
     loadCompletedCounts()
+    loadWorkReports()
   }, [currentDate])
 
   /**
@@ -67,6 +104,12 @@ export default function TodoCalendar() {
     try {
       const tasks = await getCompletedTasksByDate(dateString)
       setCompletedTasks(tasks)
+      // 해당 날짜의 업무일지가 있으면 로드
+      if (workReports[dateString]) {
+        setWorkReport(workReports[dateString])
+      } else {
+        setWorkReport(null)
+      }
     } catch (error) {
       console.error('완료된 할 일 로드 오류:', error)
     } finally {
@@ -80,6 +123,40 @@ export default function TodoCalendar() {
   const handleClosePopup = () => {
     setSelectedDate(null)
     setCompletedTasks([])
+    setWorkReport(null)
+  }
+
+  /**
+   * 선택된 날짜가 오늘 이전인지 확인
+   */
+  const isPastDate = (dateString) => {
+    const [year, month, day] = dateString.split('-').map(Number)
+    const selectedDateObj = new Date(year, month - 1, day)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    selectedDateObj.setHours(0, 0, 0, 0)
+    return selectedDateObj < today
+  }
+
+  /**
+   * 업무일지 생성
+   */
+  const handleGenerateWorkReport = async () => {
+    if (!selectedDate || completedTasks.length === 0) return
+
+    setIsGeneratingReport(true)
+    try {
+      const report = await generateDailyWorkReport(completedTasks, selectedDate)
+      setWorkReport(report)
+      // localStorage에 저장
+      saveWorkReport(selectedDate, report)
+      // 모달 대신 팝업 하단에 표시되도록 함
+    } catch (error) {
+      console.error('업무일지 생성 오류:', error)
+      alert(error.message || '업무일지 생성에 실패했습니다.')
+    } finally {
+      setIsGeneratingReport(false)
+    }
   }
 
   /**
@@ -135,6 +212,7 @@ export default function TodoCalendar() {
     for (let day = 1; day <= daysInMonth; day++) {
       const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
       const count = completedCounts[dateString] || 0
+      const hasWorkReport = workReportDates.has(dateString)
       const isToday =
         year === new Date().getFullYear() &&
         month === new Date().getMonth() &&
@@ -165,6 +243,14 @@ export default function TodoCalendar() {
             >
               {count}개
             </span>
+          )}
+          {/* 업무일지 도장 표시 */}
+          {hasWorkReport && (
+            <div className="absolute top-1 right-1">
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                <span className="text-white text-lg font-bold">✓</span>
+              </div>
+            </div>
           )}
         </div>
       )
@@ -240,7 +326,7 @@ export default function TodoCalendar() {
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
             {/* 팝업 헤더 */}
             <div className="flex items-center justify-between p-6 border-b">
-              <div>
+              <div className="flex-1">
                 <h3 className="text-3xl font-handwriting text-gray-800">
                   {formatDateForPopup(selectedDate)}
                 </h3>
@@ -248,13 +334,25 @@ export default function TodoCalendar() {
                   완료한 할 일 {completedTasks.length}개
                 </p>
               </div>
-              <button
-                onClick={handleClosePopup}
-                className="text-gray-400 hover:text-gray-600 text-4xl leading-none"
-                aria-label="닫기"
-              >
-                ×
-              </button>
+              <div className="flex items-center gap-3">
+                {/* 업무일지 생성 버튼 (이전 날짜에만 표시, 업무일지가 없을 때만) */}
+                {isPastDate(selectedDate) && completedTasks.length > 0 && !workReport && (
+                  <button
+                    onClick={handleGenerateWorkReport}
+                    disabled={isGeneratingReport}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 text-base font-medium shadow-md disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    {isGeneratingReport ? '생성 중...' : '📝 업무일지'}
+                  </button>
+                )}
+                <button
+                  onClick={handleClosePopup}
+                  className="text-gray-400 hover:text-gray-600 text-4xl leading-none"
+                  aria-label="닫기"
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             {/* 완료된 할 일 목록 */}
@@ -294,10 +392,46 @@ export default function TodoCalendar() {
                   ))}
                 </div>
               )}
+
+              {/* 업무일지 표시 (하단) */}
+              {workReport && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-xl font-semibold text-gray-800">📝 업무일지</h4>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(workReport)
+                        alert('업무일지가 클립보드에 복사되었습니다!')
+                      }}
+                      className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-200"
+                    >
+                      📋 복사
+                    </button>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-gray-800 font-sans leading-relaxed max-h-96 overflow-y-auto">
+                    <ReactMarkdown
+                      components={{
+                        h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-3 text-gray-900" {...props} />,
+                        h2: ({ node, ...props }) => <h2 className="text-xl font-bold mt-4 mb-2 text-gray-900" {...props} />,
+                        h3: ({ node, ...props }) => <h3 className="text-lg font-semibold mt-3 mb-2 text-gray-800" {...props} />,
+                        p: ({ node, ...props }) => <p className="mb-2 text-gray-700 text-sm" {...props} />,
+                        ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-2 space-y-1 text-gray-700 text-sm" {...props} />,
+                        ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-2 space-y-1 text-gray-700 text-sm" {...props} />,
+                        li: ({ node, ...props }) => <li className="ml-4" {...props} />,
+                        strong: ({ node, ...props }) => <strong className="font-semibold text-gray-900" {...props} />,
+                        em: ({ node, ...props }) => <em className="italic" {...props} />,
+                      }}
+                    >
+                      {workReport}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
+
     </div>
   )
 }

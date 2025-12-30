@@ -324,3 +324,52 @@ export async function getCompletedTasksByDate(dateString) {
   }
 }
 
+/**
+ * 특정 월에 완료한 모든 할 일 목록 조회
+ * @param {number} year - 연도
+ * @param {number} month - 월 (1-12)
+ * @returns {Promise<Array>} 완료한 할 일 목록 (날짜별로 그룹화된 객체)
+ */
+export async function getCompletedTasksByMonth(year, month) {
+  try {
+    // 해당 월의 시작과 끝 타임스탬프 계산
+    const startDate = new Date(year, month - 1, 1, 0, 0, 0, 0)
+    const endDate = new Date(year, month, 0, 23, 59, 59, 999)
+    const startTimestamp = startDate.getTime()
+    const endTimestamp = endDate.getTime()
+
+    // 해당 월에 완료된 항목 조회
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('completed', true)
+      .not('completedat', 'is', null)
+      .gte('completedat', startTimestamp)
+      .lte('completedat', endTimestamp)
+      .order('completedat', { ascending: true })
+
+    if (error) {
+      console.error('월별 완료된 할 일 조회 오류:', error)
+      throw error
+    }
+
+    const tasks = (data || []).map(normalizeTask)
+
+    // 날짜별로 그룹화
+    const tasksByDate = {}
+    tasks.forEach((task) => {
+      const date = new Date(task.completedAt)
+      const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+      if (!tasksByDate[dateString]) {
+        tasksByDate[dateString] = []
+      }
+      tasksByDate[dateString].push(task)
+    })
+
+    return tasksByDate
+  } catch (error) {
+    console.error('월별 완료된 할 일 조회 오류:', error)
+    throw error
+  }
+}
+
