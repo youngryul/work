@@ -1,6 +1,5 @@
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import MarkdownViewer from './MarkdownViewer.jsx'
 
 /**
  * 기록 상세 모달 컴포넌트
@@ -97,8 +96,8 @@ export default function RecordModal({ record, isOpen, onClose, onEdit, onDelete,
         {/* 본문 내용 */}
         <div className="flex-1 overflow-y-auto p-6">
           {(record.content || record.background) && (
-            <div className="text-gray-700 text-base font-sans">
-              <MarkdownViewer content={record.content || record.background || ''} />
+            <div className="text-gray-700 text-base font-sans whitespace-pre-wrap leading-relaxed">
+              {record.content || record.background || ''}
             </div>
           )}
         </div>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
-import MarkdownEditor from './MarkdownEditor.jsx'
 import { createRecord, updateRecord } from '../services/recordService.js'
 
 /**
@@ -147,11 +146,18 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
 
           {/* 본문 내용 */}
           <div className="space-y-4">
-            <MarkdownEditor
-              value={formData.content}
-              onChange={(value) => updateField('content', value)}
-              placeholder="기록 내용을 Markdown 형식으로 입력하세요..."
-            />
+            <div>
+              <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
+                내용
+              </label>
+              <textarea
+                value={formData.content}
+                onChange={(e) => updateField('content', e.target.value)}
+                placeholder="기록 내용을 입력하세요..."
+                rows={12}
+                className="w-full px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans resize-y"
+              />
+            </div>
           </div>
 
           {/* 버튼 */}

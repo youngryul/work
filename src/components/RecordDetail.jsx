@@ -1,6 +1,5 @@
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import MarkdownViewer from './MarkdownViewer.jsx'
 
 /**
  * 기록 상세 컴포넌트
@@ -61,8 +60,8 @@ export default function RecordDetail({ record, onEdit, onDelete }) {
 
         {/* 본문 내용 */}
         {(record.content || record.background) && (
-          <div className="text-gray-700 text-base font-sans">
-            <MarkdownViewer content={record.content || record.background || ''} />
+          <div className="text-gray-700 text-base font-sans whitespace-pre-wrap leading-relaxed">
+            {record.content || record.background || ''}
           </div>
         )}
       </div>
