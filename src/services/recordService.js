@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase.js'
+import { getCurrentUserId } from '../utils/authHelper.js'
 
 /**
  * 프로젝트 기록 서비스
@@ -15,9 +16,15 @@ import { supabase } from '../config/supabase.js'
  * @returns {Promise<Array>} 기록 목록
  */
 export async function getAllRecords(filters = {}) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
   let query = supabase
     .from('project_records')
     .select('*')
+    .eq('user_id', userId)
     .order('date', { ascending: false })
     .order('createdat', { ascending: false })
 
@@ -56,9 +63,15 @@ export async function getAllRecords(filters = {}) {
  * @returns {Promise<Array>} 프로젝트명 목록 (중복 제거, 정렬)
  */
 export async function getAllProjectNames() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
   const { data, error } = await supabase
     .from('project_records')
     .select('projectname')
+    .eq('user_id', userId)
     .order('projectname', { ascending: true })
 
   if (error) {
@@ -76,9 +89,15 @@ export async function getAllProjectNames() {
  * @returns {Promise<Array>} 프로젝트명과 기록 개수 배열 [{ projectName, count }]
  */
 export async function getProjectCounts() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
   const { data, error } = await supabase
     .from('project_records')
     .select('projectname')
+    .eq('user_id', userId)
 
   if (error) {
     console.error('프로젝트 개수 조회 오류:', error)
@@ -105,9 +124,15 @@ export async function getProjectCounts() {
  * @returns {Promise<Object|null>} 메인 기록 데이터
  */
 export async function getMainRecordByProject(projectName) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return null
+  }
+
   const { data, error } = await supabase
     .from('project_records')
     .select('*')
+    .eq('user_id', userId)
     .eq('projectname', projectName)
     .eq('is_main', true)
     .single()
@@ -131,10 +156,16 @@ export async function getMainRecordByProject(projectName) {
  * @returns {Promise<Object>} 업데이트된 기록
  */
 export async function setMainRecord(id, projectName) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   // 1. 해당 프로젝트의 기존 메인 기록 해제
   const { error: updateError } = await supabase
     .from('project_records')
     .update({ is_main: false })
+    .eq('user_id', userId)
     .eq('projectname', projectName)
     .eq('is_main', true)
 
@@ -148,6 +179,7 @@ export async function setMainRecord(id, projectName) {
     .from('project_records')
     .update({ is_main: true })
     .eq('id', id)
+    .eq('user_id', userId)
     .select()
     .single()
 
@@ -165,10 +197,16 @@ export async function setMainRecord(id, projectName) {
  * @returns {Promise<Object>} 업데이트된 기록
  */
 export async function unsetMainRecord(id) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   const { data, error } = await supabase
     .from('project_records')
     .update({ is_main: false })
     .eq('id', id)
+    .eq('user_id', userId)
     .select()
     .single()
 
@@ -186,10 +224,16 @@ export async function unsetMainRecord(id) {
  * @returns {Promise<Object|null>} 기록 데이터
  */
 export async function getRecordById(id) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return null
+  }
+
   const { data, error } = await supabase
     .from('project_records')
     .select('*')
     .eq('id', id)
+    .eq('user_id', userId)
     .single()
 
   if (error) {
@@ -210,6 +254,11 @@ export async function getRecordById(id) {
  * @returns {Promise<Object>} 생성된 기록
  */
 export async function createRecord(recordData) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   // 필드명 변환 (camelCase -> snake_case)
   // type 필드는 필수이므로 기본값 'MEETING' 설정
   const dataToInsert = {
@@ -223,6 +272,7 @@ export async function createRecord(recordData) {
     decision: null,
     actionitems: null,
     is_main: recordData.isMain || false,
+    user_id: userId,
   }
 
   const { data, error } = await supabase
@@ -246,6 +296,11 @@ export async function createRecord(recordData) {
  * @returns {Promise<Object>} 수정된 기록
  */
 export async function updateRecord(id, recordData) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   // 필드명 변환 (camelCase -> snake_case)
   const dataToUpdate = {
     projectname: recordData.projectName,
@@ -271,6 +326,7 @@ export async function updateRecord(id, recordData) {
     .from('project_records')
     .update(dataToUpdate)
     .eq('id', id)
+    .eq('user_id', userId)
     .select()
     .single()
 
@@ -288,10 +344,16 @@ export async function updateRecord(id, recordData) {
  * @returns {Promise<void>}
  */
 export async function deleteRecord(id) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   const { error } = await supabase
     .from('project_records')
     .delete()
     .eq('id', id)
+    .eq('user_id', userId)
 
   if (error) {
     console.error('기록 삭제 오류:', error)

@@ -3,6 +3,7 @@
  * 완료한 할일들을 업무일지 형태로 요약 및 정리
  */
 import { supabase } from '../config/supabase.js'
+import { getCurrentUserId } from '../utils/authHelper.js'
 
 /**
  * 특정 날짜의 완료한 할일 목록을 업무일지 형태로 AI 요약
@@ -96,6 +97,11 @@ ${tasksList}
  * @returns {Promise<Object>} 저장된 업무일지
  */
 export async function saveWorkReport(dateString, reportContent) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     // 기존 업무일지 확인
     const existing = await getWorkReport(dateString)
@@ -109,6 +115,7 @@ export async function saveWorkReport(dateString, reportContent) {
           updated_at: new Date().toISOString(),
         })
         .eq('date', dateString)
+        .eq('user_id', userId)
         .select()
         .single()
 
@@ -125,6 +132,7 @@ export async function saveWorkReport(dateString, reportContent) {
         .insert({
           date: dateString,
           report_content: reportContent,
+          user_id: userId,
         })
         .select()
         .single()
@@ -148,11 +156,17 @@ export async function saveWorkReport(dateString, reportContent) {
  * @returns {Promise<string|null>} 업무일지 내용 또는 null
  */
 export async function getWorkReport(dateString) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return null
+  }
+
   try {
     const { data, error } = await supabase
       .from('work_reports')
       .select('report_content')
       .eq('date', dateString)
+      .eq('user_id', userId)
       .single()
 
     if (error) {
@@ -178,6 +192,11 @@ export async function getWorkReport(dateString) {
  * @returns {Promise<Array<string>>} 날짜 문자열 배열 (YYYY-MM-DD)
  */
 export async function getWorkReportDatesByMonth(year, month) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
   try {
     // 각 월의 실제 마지막 날짜 계산
     const lastDay = new Date(year, month, 0).getDate()
@@ -187,6 +206,7 @@ export async function getWorkReportDatesByMonth(year, month) {
     const { data, error } = await supabase
       .from('work_reports')
       .select('date')
+      .eq('user_id', userId)
       .gte('date', startDate)
       .lte('date', endDate)
       .order('date', { ascending: true })
@@ -209,6 +229,11 @@ export async function getWorkReportDatesByMonth(year, month) {
  * @returns {Promise<Array<Object>>} 주 정보 배열 [{ weekStart, weekEnd, reportCount }]
  */
 export async function getWeeksWithWorkReports(year) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
   try {
     const startDate = `${year}-01-01`
     const endDate = `${year}-12-31`
@@ -216,6 +241,7 @@ export async function getWeeksWithWorkReports(year) {
     const { data, error } = await supabase
       .from('work_reports')
       .select('date')
+      .eq('user_id', userId)
       .gte('date', startDate)
       .lte('date', endDate)
       .order('date', { ascending: true })
@@ -286,6 +312,11 @@ export function getWeekEnd(date) {
  * @returns {Promise<Array<Object>>} 주 정보 배열 [{ weekStart, weekEnd, diaryCount, diaries }]
  */
 export async function getWeeksWithDiaries(year) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
   try {
     const startDate = `${year}-01-01`
     const endDate = `${year}-12-31`
@@ -836,6 +867,11 @@ ${diariesSummary}
  * @returns {Promise<Object>} 저장된 주간 업무일지
  */
 export async function saveWeeklyWorkReport(weekStart, weekEnd, reportContent) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     const year = new Date(weekStart).getFullYear()
     
@@ -852,6 +888,7 @@ export async function saveWeeklyWorkReport(weekStart, weekEnd, reportContent) {
         })
         .eq('week_start', weekStart)
         .eq('week_end', weekEnd)
+        .eq('user_id', userId)
         .select()
         .single()
 
@@ -870,6 +907,7 @@ export async function saveWeeklyWorkReport(weekStart, weekEnd, reportContent) {
           week_end: weekEnd,
           year: year,
           report_content: reportContent,
+          user_id: userId,
         })
         .select()
         .single()
@@ -894,12 +932,18 @@ export async function saveWeeklyWorkReport(weekStart, weekEnd, reportContent) {
  * @returns {Promise<Object|null>} 주간 업무일지 또는 null
  */
 export async function getWeeklyWorkReport(weekStart, weekEnd) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return null
+  }
+
   try {
     const { data, error } = await supabase
       .from('weekly_work_reports')
       .select('*')
       .eq('week_start', weekStart)
       .eq('week_end', weekEnd)
+      .eq('user_id', userId)
       .single()
 
     if (error) {
@@ -930,6 +974,11 @@ export async function getWeeklyWorkReport(weekStart, weekEnd) {
  * @returns {Promise<Object>} 저장된 월간 업무일지
  */
 export async function saveMonthlyWorkReport(year, month, reportContent) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     // 기존 월간 업무일지 확인
     const existing = await getMonthlyWorkReport(year, month)
@@ -944,6 +993,7 @@ export async function saveMonthlyWorkReport(year, month, reportContent) {
         })
         .eq('year', year)
         .eq('month', month)
+        .eq('user_id', userId)
         .select()
         .single()
 
@@ -961,6 +1011,7 @@ export async function saveMonthlyWorkReport(year, month, reportContent) {
           year: year,
           month: month,
           report_content: reportContent,
+          user_id: userId,
         })
         .select()
         .single()
@@ -985,12 +1036,18 @@ export async function saveMonthlyWorkReport(year, month, reportContent) {
  * @returns {Promise<Object|null>} 월간 업무일지 또는 null
  */
 export async function getMonthlyWorkReport(year, month) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return null
+  }
+
   try {
     const { data, error } = await supabase
       .from('monthly_work_reports')
       .select('*')
       .eq('year', year)
       .eq('month', month)
+      .eq('user_id', userId)
       .single()
 
     if (error) {
@@ -1019,6 +1076,11 @@ export async function getMonthlyWorkReport(year, month) {
  * @returns {Promise<Object>} 저장된 주간 일기 정리
  */
 export async function saveWeeklyDiarySummary(weekStart, weekEnd, summaryContent) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     const year = new Date(weekStart).getFullYear()
     
@@ -1035,6 +1097,7 @@ export async function saveWeeklyDiarySummary(weekStart, weekEnd, summaryContent)
         })
         .eq('week_start', weekStart)
         .eq('week_end', weekEnd)
+        .eq('user_id', userId)
         .select()
         .single()
 
@@ -1053,6 +1116,7 @@ export async function saveWeeklyDiarySummary(weekStart, weekEnd, summaryContent)
           week_end: weekEnd,
           year: year,
           summary_content: summaryContent,
+          user_id: userId,
         })
         .select()
         .single()
@@ -1077,12 +1141,18 @@ export async function saveWeeklyDiarySummary(weekStart, weekEnd, summaryContent)
  * @returns {Promise<Object|null>} 주간 일기 정리 또는 null
  */
 export async function getWeeklyDiarySummary(weekStart, weekEnd) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return null
+  }
+
   try {
     const { data, error } = await supabase
       .from('weekly_diary_summaries')
       .select('*')
       .eq('week_start', weekStart)
       .eq('week_end', weekEnd)
+      .eq('user_id', userId)
       .single()
 
     if (error) {
@@ -1113,6 +1183,11 @@ export async function getWeeklyDiarySummary(weekStart, weekEnd) {
  * @returns {Promise<Object>} 저장된 월간 일기 정리
  */
 export async function saveMonthlyDiarySummary(year, month, summaryContent) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     // 기존 월간 일기 정리 확인
     const existing = await getMonthlyDiarySummary(year, month)
@@ -1127,6 +1202,7 @@ export async function saveMonthlyDiarySummary(year, month, summaryContent) {
         })
         .eq('year', year)
         .eq('month', month)
+        .eq('user_id', userId)
         .select()
         .single()
 
@@ -1144,6 +1220,7 @@ export async function saveMonthlyDiarySummary(year, month, summaryContent) {
           year: year,
           month: month,
           summary_content: summaryContent,
+          user_id: userId,
         })
         .select()
         .single()
@@ -1168,12 +1245,18 @@ export async function saveMonthlyDiarySummary(year, month, summaryContent) {
  * @returns {Promise<Object|null>} 월간 일기 정리 또는 null
  */
 export async function getMonthlyDiarySummary(year, month) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return null
+  }
+
   try {
     const { data, error } = await supabase
       .from('monthly_diary_summaries')
       .select('*')
       .eq('year', year)
       .eq('month', month)
+      .eq('user_id', userId)
       .single()
 
     if (error) {

@@ -3,6 +3,7 @@
  * Google Books API를 활용한 책 검색 및 등록
  */
 import { supabase } from '../config/supabase.js'
+import { getCurrentUserId } from '../utils/authHelper.js'
 
 /**
  * Google Books API를 통한 책 검색
@@ -58,12 +59,18 @@ export async function searchBooks(query) {
  * @returns {Promise<Object>} 등록된 책
  */
 export async function createBook(bookData) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
-    // 기존 책 확인 (ISBN으로)
+    // 기존 책 확인 (ISBN으로, 같은 사용자의 책만)
     if (bookData.isbn) {
       const { data: existing } = await supabase
         .from('books')
         .select('*')
+        .eq('user_id', userId)
         .eq('isbn', bookData.isbn)
         .single()
 
@@ -85,6 +92,7 @@ export async function createBook(bookData) {
         published_date: bookData.publishedDate || null,
         api_source: bookData.apiSource || null,
         api_id: bookData.apiId || null,
+        user_id: userId,
       }])
       .select()
       .single()
@@ -106,10 +114,16 @@ export async function createBook(bookData) {
  * @returns {Promise<Array>} 책 목록
  */
 export async function getAllBooks() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
   try {
     const { data, error } = await supabase
       .from('books')
       .select('*')
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -130,11 +144,17 @@ export async function getAllBooks() {
  * @returns {Promise<Object|null>} 책 정보
  */
 export async function getBookById(id) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return null
+  }
+
   try {
     const { data, error } = await supabase
       .from('books')
       .select('*')
       .eq('id', id)
+      .eq('user_id', userId)
       .single()
 
     if (error) {

@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js'
 import { getDefaultCategory } from './categoryService.js'
+import { getCurrentUserId } from '../utils/authHelper.js'
 
 /**
  * 데이터베이스 컬럼명을 camelCase로 변환
@@ -23,9 +24,16 @@ function normalizeTask(task) {
  * @returns {Promise<Array>} 할 일 목록
  */
 export async function getAllTasks() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    console.warn('로그인이 필요합니다.')
+    return []
+  }
+
   const { data, error } = await supabase
     .from('tasks')
     .select('*')
+    .eq('user_id', userId)
     .order('createdat', { ascending: false })
 
   if (error) {
@@ -41,9 +49,16 @@ export async function getAllTasks() {
  * @returns {Promise<Array>} 오늘 할 일 목록
  */
 export async function getTodayTasks() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    console.warn('로그인이 필요합니다.')
+    return []
+  }
+
   const { data, error } = await supabase
     .from('tasks')
     .select('*')
+    .eq('user_id', userId)
     .eq('istoday', true)
     .order('movedtotodayat', { ascending: true, nullsFirst: true })
     .order('createdat', { ascending: true })
@@ -61,9 +76,16 @@ export async function getTodayTasks() {
  * @returns {Promise<Array>} 백로그 목록
  */
 export async function getBacklogTasks() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    console.warn('로그인이 필요합니다.')
+    return []
+  }
+
   const { data, error } = await supabase
     .from('tasks')
     .select('*')
+    .eq('user_id', userId)
     .eq('completed', false)
     .eq('istoday', false)
     .order('createdat', { ascending: true })
@@ -84,6 +106,11 @@ export async function getBacklogTasks() {
  * @returns {Promise<Object|null>} 생성된 할 일
  */
 export async function createTask(title, category, isToday = false) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   // 카테고리가 없으면 기본 카테고리 사용
   const finalCategory = category || (await getDefaultCategory())
 
@@ -93,6 +120,7 @@ export async function createTask(title, category, isToday = false) {
     istoday: isToday,
     category: finalCategory,
     createdat: Date.now(),
+    user_id: userId,
   }
 
   const { data, error } = await supabase
@@ -116,6 +144,11 @@ export async function createTask(title, category, isToday = false) {
  * @returns {Promise<Object|null>} 수정된 할 일
  */
 export async function updateTask(id, updates) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   // camelCase를 소문자 컬럼명으로 변환
   const dbUpdates = {}
   if ('isToday' in updates) {
@@ -152,6 +185,7 @@ export async function updateTask(id, updates) {
     .update(dbUpdates)
     .select()
     .eq('id', id)
+    .eq('user_id', userId)
     .single()
 
   if (error) {
@@ -168,10 +202,16 @@ export async function updateTask(id, updates) {
  * @returns {Promise<boolean>} 삭제 성공 여부
  */
 export async function deleteTask(id) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   const { error } = await supabase
     .from('tasks')
     .delete()
     .eq('id', id)
+    .eq('user_id', userId)
 
   if (error) {
     console.error('할 일 삭제 오류:', error)
@@ -205,11 +245,17 @@ export async function moveToBacklog(id) {
  * @returns {Promise<Object>} 리셋 결과 (백로그로 이동한 개수)
  */
 export async function resetTodayTasks() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     // 오늘 할 일 중 모든 항목 조회 (완료/미완료 모두)
     const { data: allTodayTasks, error: fetchError } = await supabase
       .from('tasks')
       .select('id')
+      .eq('user_id', userId)
       .eq('istoday', true)
 
     if (fetchError) {
@@ -225,6 +271,7 @@ export async function resetTodayTasks() {
         .from('tasks')
         .update({ istoday: false })
         .in('id', allIds)
+        .eq('user_id', userId)
 
       if (updateError) {
         console.error('백로그 이동 오류:', updateError)
@@ -249,6 +296,12 @@ export async function resetTodayTasks() {
  * @returns {Promise<Object>} 날짜별 완료 개수 객체 (키: 'YYYY-MM-DD', 값: 개수)
  */
 export async function getCompletedCountsByDate(year, month) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    console.warn('로그인이 필요합니다.')
+    return {}
+  }
+
   try {
     // 해당 월의 시작과 끝 타임스탬프 계산
     const startDate = new Date(year, month - 1, 1)
@@ -260,6 +313,7 @@ export async function getCompletedCountsByDate(year, month) {
     const { data, error } = await supabase
       .from('tasks')
       .select('completedat')
+      .eq('user_id', userId)
       .eq('completed', true)
       .not('completedat', 'is', null)
       .gte('completedat', startTimestamp)
@@ -293,6 +347,12 @@ export async function getCompletedCountsByDate(year, month) {
  * @returns {Promise<Array>} 완료한 할 일 목록
  */
 export async function getCompletedTasksByDate(dateString) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    console.warn('로그인이 필요합니다.')
+    return []
+  }
+
   try {
     // 날짜 문자열을 파싱하여 타임스탬프 범위 계산
     const [year, month, day] = dateString.split('-').map(Number)
@@ -306,6 +366,7 @@ export async function getCompletedTasksByDate(dateString) {
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
+      .eq('user_id', userId)
       .eq('completed', true)
       .not('completedat', 'is', null)
       .gte('completedat', startTimestamp)
@@ -331,6 +392,12 @@ export async function getCompletedTasksByDate(dateString) {
  * @returns {Promise<Array>} 완료한 할 일 목록 (날짜별로 그룹화된 객체)
  */
 export async function getCompletedTasksByMonth(year, month) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    console.warn('로그인이 필요합니다.')
+    return {}
+  }
+
   try {
     // 해당 월의 시작과 끝 타임스탬프 계산
     const startDate = new Date(year, month - 1, 1, 0, 0, 0, 0)
@@ -342,6 +409,7 @@ export async function getCompletedTasksByMonth(year, month) {
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
+      .eq('user_id', userId)
       .eq('completed', true)
       .not('completedat', 'is', null)
       .gte('completedat', startTimestamp)

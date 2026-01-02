@@ -3,6 +3,7 @@
  * 독서 활동 기록 및 통계 관리
  */
 import { supabase } from '../config/supabase.js'
+import { getCurrentUserId } from '../utils/authHelper.js'
 
 /**
  * 독서 기록 생성
@@ -10,6 +11,11 @@ import { supabase } from '../config/supabase.js'
  * @returns {Promise<Object>} 생성된 독서 기록
  */
 export async function createReadingRecord(recordData) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     const { data, error } = await supabase
       .from('reading_records')
@@ -21,6 +27,7 @@ export async function createReadingRecord(recordData) {
         reading_minutes: recordData.readingMinutes || null,
         pages_read: recordData.pagesRead || null,
         notes: recordData.notes || null,
+        user_id: userId,
       }])
       .select()
       .single()
@@ -43,10 +50,16 @@ export async function createReadingRecord(recordData) {
  * @returns {Promise<Array>} 독서 기록 목록
  */
 export async function getReadingRecordsByBook(bookId) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
   try {
     const { data, error } = await supabase
       .from('reading_records')
       .select('*')
+      .eq('user_id', userId)
       .eq('book_id', bookId)
       .order('reading_date', { ascending: false })
 
@@ -69,6 +82,11 @@ export async function getReadingRecordsByBook(bookId) {
  * @returns {Promise<Object>} 수정된 독서 기록
  */
 export async function updateReadingRecord(id, recordData) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     // 시작 시간과 종료 시간이 모두 있으면 실제 차이를 계산
     let finalReadingMinutes = recordData.readingMinutes
@@ -90,6 +108,7 @@ export async function updateReadingRecord(id, recordData) {
         notes: recordData.notes || null,
       })
       .eq('id', id)
+      .eq('user_id', userId)
       .select()
       .single()
 
@@ -111,11 +130,17 @@ export async function updateReadingRecord(id, recordData) {
  * @returns {Promise<boolean>} 삭제 성공 여부
  */
 export async function deleteReadingRecord(id) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     const { error } = await supabase
       .from('reading_records')
       .delete()
       .eq('id', id)
+      .eq('user_id', userId)
 
     if (error) {
       console.error('독서 기록 삭제 오류:', error)
@@ -136,6 +161,11 @@ export async function deleteReadingRecord(id) {
  * @returns {Promise<Array>} 독서 기록 목록
  */
 export async function getReadingRecordsByMonth(year, month) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
   try {
     // 각 월의 실제 마지막 날짜 계산
     const lastDay = new Date(year, month, 0).getDate()
@@ -145,6 +175,7 @@ export async function getReadingRecordsByMonth(year, month) {
     const { data, error } = await supabase
       .from('reading_records')
       .select('*')
+      .eq('user_id', userId)
       .gte('reading_date', startDate)
       .lte('reading_date', endDate)
       .order('reading_date', { ascending: false })
@@ -213,9 +244,15 @@ export async function generateMonthlyReadingAnalysis(year, month) {
     
     // 책 정보 가져오기
     const bookIds = [...new Set(records.map(r => r.bookId))]
+    const userId = await getCurrentUserId()
+    if (!userId) {
+      throw new Error('로그인이 필요합니다.')
+    }
+    
     const { data: booksData } = await supabase
       .from('books')
       .select('id, title')
+      .eq('user_id', userId)
       .in('id', bookIds)
     
     const booksMap = {}

@@ -1,4 +1,5 @@
 import { NAVIGATION_MENU_ITEMS, EXTERNAL_LINKS } from '../constants/navigationMenu.js'
+import { useAuth } from '../contexts/AuthContext.jsx'
 
 /**
  * 사이드바 네비게이션 컴포넌트
@@ -17,6 +18,8 @@ export default function NavigationSidebar({
   collapsed = false,
   onToggleCollapse
 }) {
+  const { signOut, user } = useAuth()
+
   /**
    * 메뉴 클릭 핸들러
    */
@@ -25,6 +28,18 @@ export default function NavigationSidebar({
     // 모바일에서 메뉴 클릭 시 사이드바 닫기
     if (window.innerWidth < 768 && onClose) {
       onClose()
+    }
+  }
+
+  /**
+   * 로그아웃 핸들러
+   */
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+    } catch (error) {
+      console.error('로그아웃 오류:', error)
+      alert('로그아웃에 실패했습니다.')
     }
   }
 
@@ -127,6 +142,33 @@ export default function NavigationSidebar({
                   )}
                 </a>
               ))}
+            </div>
+
+            {/* 구분선 */}
+            <div className={`border-t border-gray-200 ${collapsed ? 'my-4' : 'my-6'}`} />
+
+            {/* 사용자 정보 및 로그아웃 */}
+            <div className="space-y-2">
+              {!collapsed && user && (
+                <div className="px-4 py-2 text-sm text-gray-500 font-sans">
+                  {user.email}
+                </div>
+              )}
+              <button
+                onClick={handleSignOut}
+                className={`
+                  w-full rounded-lg transition-all duration-200 text-left
+                  flex items-center gap-3
+                  ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
+                  text-red-600 hover:bg-red-50 hover:text-red-700
+                `}
+                title={collapsed ? '로그아웃' : ''}
+              >
+                <span className="text-xl">🚪</span>
+                {!collapsed && (
+                  <span className="text-lg font-medium">로그아웃</span>
+                )}
+              </button>
             </div>
           </nav>
         </div>

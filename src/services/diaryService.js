@@ -1,7 +1,7 @@
 import { supabase } from '../config/supabase.js'
 import { generateDiaryImageFree } from './freeImageService.js'
-
 import { uploadImageFromUrl } from './imageService.js'
+import { getCurrentUserId } from '../utils/authHelper.js'
 
 /**
  * 일기 서비스
@@ -16,6 +16,11 @@ import { uploadImageFromUrl } from './imageService.js'
  * @returns {Promise<Object>} 저장된 일기
  */
 export async function saveDiary(date, content, regenerateImage = false) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     // 기존 일기 확인
     const existing = await getDiaryByDate(date)
@@ -77,6 +82,7 @@ export async function saveDiary(date, content, regenerateImage = false) {
     const upsertData = {
       date,
       content,
+      user_id: userId,
     }
     
     // image_url과 image_prompt는 null이 아닐 때만 포함
@@ -94,7 +100,7 @@ export async function saveDiary(date, content, regenerateImage = false) {
     const { data, error } = await supabase
       .from('diaries')
       .upsert(upsertData, {
-        onConflict: 'date',
+        onConflict: 'date,user_id',
       })
       .select()
       .single()
@@ -121,11 +127,17 @@ export async function saveDiary(date, content, regenerateImage = false) {
  * @returns {Promise<Object|null>} 일기 데이터
  */
 export async function getDiaryByDate(date) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return null
+  }
+
   try {
     const { data, error } = await supabase
       .from('diaries')
       .select('*')
       .eq('date', date)
+      .eq('user_id', userId)
       .single()
     
     if (error) {
@@ -154,6 +166,11 @@ export async function getDiaryByDate(date) {
  * @returns {Promise<Array>} 일기 목록 [{ date, content, imageUrl, ... }]
  */
 export async function getDiariesByMonth(year, month) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
   try {
     // 각 월의 실제 마지막 날짜 계산
     const lastDay = new Date(year, month, 0).getDate()
@@ -163,6 +180,7 @@ export async function getDiariesByMonth(year, month) {
     const { data, error } = await supabase
       .from('diaries')
       .select('*')
+      .eq('user_id', userId)
       .gte('date', startDate)
       .lte('date', endDate)
       .order('date', { ascending: true })
@@ -188,11 +206,17 @@ export async function getDiariesByMonth(year, month) {
  * @returns {Promise<void>}
  */
 export async function deleteDiary(date) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     const { error } = await supabase
       .from('diaries')
       .delete()
       .eq('date', date)
+      .eq('user_id', userId)
     
     if (error) {
       throw error

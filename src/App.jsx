@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
+import LoginForm from './components/LoginForm.jsx'
 import TodayView from './components/TodayView.jsx'
 import BacklogView from './components/BacklogView.jsx'
 import TodoCalendarView from './components/TodoCalendarView.jsx'
@@ -13,9 +15,10 @@ import ReadingView from './components/reading/ReadingView.jsx'
 import NavigationSidebar from './components/NavigationSidebar.jsx'
 
 /**
- * 메인 앱 컴포넌트
+ * 메인 앱 컨텐츠 컴포넌트 (인증 필요)
  */
-function App() {
+function AppContent() {
+  const { user, loading } = useAuth()
   const [currentView, setCurrentView] = useState('today')
   const [recordView, setRecordView] = useState('main') // 'main' | 'form'
   const [editingRecord, setEditingRecord] = useState(null)
@@ -70,6 +73,24 @@ function App() {
     }
   }, [])
 
+  // 로딩 중
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+          <p className="text-gray-600 font-sans">로딩 중...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 로그인하지 않은 경우
+  if (!user) {
+    return <LoginForm />
+  }
+
+  // 로그인한 경우 메인 앱 표시
   return (
     <div className="min-h-screen flex">
       {/* 사이드바 네비게이션 */}
@@ -132,6 +153,17 @@ function App() {
         </main>
       </div>
     </div>
+  )
+}
+
+/**
+ * 메인 앱 컴포넌트 (인증 프로바이더로 감싸기)
+ */
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
 

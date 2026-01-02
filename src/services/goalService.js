@@ -4,6 +4,7 @@
  */
 import { supabase } from '../config/supabase.js'
 import { MAX_YEARLY_GOALS, MAX_MONTHLY_GOALS } from '../constants/goalCategories.js'
+import { getCurrentUserId } from '../utils/authHelper.js'
 
 /**
  * 연간 목표 목록 조회
@@ -11,10 +12,16 @@ import { MAX_YEARLY_GOALS, MAX_MONTHLY_GOALS } from '../constants/goalCategories
  * @returns {Promise<Array>} 연간 목표 목록
  */
 export async function getYearlyGoals(year = 2026) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
   try {
     const { data, error } = await supabase
       .from('yearly_goals')
       .select('*')
+      .eq('user_id', userId)
       .eq('year', year)
       .order('created_at', { ascending: true })
 
@@ -35,6 +42,11 @@ export async function getYearlyGoals(year = 2026) {
  * @returns {Promise<Object>} 생성된 목표
  */
 export async function createYearlyGoal(goalData) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     // 최대 개수 확인
     const existingGoals = await getYearlyGoals(goalData.year || 2026)
@@ -60,6 +72,7 @@ export async function createYearlyGoal(goalData) {
         strategy: goalData.strategy || null,
         progress_percentage: 0,
         status: 'ACTIVE',
+        user_id: userId,
       }])
       .select()
       .single()
@@ -92,10 +105,16 @@ export async function updateYearlyGoal(id, goalData) {
     if (goalData.progressPercentage !== undefined) updateData.progress_percentage = goalData.progressPercentage
     if (goalData.status !== undefined) updateData.status = goalData.status
 
+    const userId = await getCurrentUserId()
+    if (!userId) {
+      throw new Error('로그인이 필요합니다.')
+    }
+
     const { data, error } = await supabase
       .from('yearly_goals')
       .update(updateData)
       .eq('id', id)
+      .eq('user_id', userId)
       .select()
       .single()
 
@@ -116,11 +135,17 @@ export async function updateYearlyGoal(id, goalData) {
  * @returns {Promise<void>}
  */
 export async function deleteYearlyGoal(id) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     const { error } = await supabase
       .from('yearly_goals')
       .delete()
       .eq('id', id)
+      .eq('user_id', userId)
 
     if (error) {
       throw error
@@ -138,10 +163,16 @@ export async function deleteYearlyGoal(id) {
  * @returns {Promise<Array>} 월별 목표 목록
  */
 export async function getMonthlyGoals(year, month) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
   try {
     const { data, error } = await supabase
       .from('monthly_goals')
       .select('*, yearly_goals(*)')
+      .eq('user_id', userId)
       .eq('year', year)
       .eq('month', month)
       .order('created_at', { ascending: true })
@@ -163,6 +194,11 @@ export async function getMonthlyGoals(year, month) {
  * @returns {Promise<Object>} 생성된 목표
  */
 export async function createMonthlyGoal(goalData) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     // 최대 개수 확인
     const existingGoals = await getMonthlyGoals(goalData.year, goalData.month)
@@ -180,6 +216,7 @@ export async function createMonthlyGoal(goalData) {
         description: goalData.description || null,
         status: 'IN_PROGRESS',
         progress_percentage: 0,
+        user_id: userId,
       }])
       .select('*, yearly_goals(*)')
       .single()
@@ -209,10 +246,16 @@ export async function updateMonthlyGoal(id, goalData) {
     if (goalData.status !== undefined) updateData.status = goalData.status
     if (goalData.progressPercentage !== undefined) updateData.progress_percentage = goalData.progressPercentage
 
+    const userId = await getCurrentUserId()
+    if (!userId) {
+      throw new Error('로그인이 필요합니다.')
+    }
+
     const { data, error } = await supabase
       .from('monthly_goals')
       .update(updateData)
       .eq('id', id)
+      .eq('user_id', userId)
       .select('*, yearly_goals(*)')
       .single()
 
@@ -233,11 +276,17 @@ export async function updateMonthlyGoal(id, goalData) {
  * @returns {Promise<void>}
  */
 export async function deleteMonthlyGoal(id) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     const { error } = await supabase
       .from('monthly_goals')
       .delete()
       .eq('id', id)
+      .eq('user_id', userId)
 
     if (error) {
       throw error
@@ -257,10 +306,16 @@ export async function deleteMonthlyGoal(id) {
  * @returns {Promise<Array>} 주간 행동 목록
  */
 export async function getWeeklyActions(monthlyGoalId, year, month, weekNumber) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
   try {
     const { data, error } = await supabase
       .from('weekly_actions')
       .select('*')
+      .eq('user_id', userId)
       .eq('monthly_goal_id', monthlyGoalId)
       .eq('year', year)
       .eq('month', month)
@@ -284,6 +339,11 @@ export async function getWeeklyActions(monthlyGoalId, year, month, weekNumber) {
  * @returns {Promise<Object>} 생성된 행동
  */
 export async function createWeeklyAction(actionData) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     const { data, error } = await supabase
       .from('weekly_actions')
@@ -294,6 +354,7 @@ export async function createWeeklyAction(actionData) {
         week_number: actionData.weekNumber,
         action_text: actionData.actionText,
         is_completed: false,
+        user_id: userId,
       }])
       .select()
       .single()
@@ -316,6 +377,11 @@ export async function createWeeklyAction(actionData) {
  * @returns {Promise<Object>} 업데이트된 행동
  */
 export async function toggleWeeklyAction(id, isCompleted) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     const updateData = {
       is_completed: isCompleted,
@@ -326,6 +392,7 @@ export async function toggleWeeklyAction(id, isCompleted) {
       .from('weekly_actions')
       .update(updateData)
       .eq('id', id)
+      .eq('user_id', userId)
       .select()
       .single()
 
@@ -346,10 +413,16 @@ export async function toggleWeeklyAction(id, isCompleted) {
  * @returns {Promise<Array>} 일간 체크리스트
  */
 export async function getDailyChecks(date) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
   try {
     const { data, error } = await supabase
       .from('daily_checks')
       .select('*')
+      .eq('user_id', userId)
       .eq('date', date)
       .order('created_at', { ascending: true })
 
@@ -370,6 +443,11 @@ export async function getDailyChecks(date) {
  * @returns {Promise<Object>} 생성된 체크리스트
  */
 export async function createDailyCheck(checkData) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     const { data, error } = await supabase
       .from('daily_checks')
@@ -378,6 +456,7 @@ export async function createDailyCheck(checkData) {
         date: checkData.date,
         content: checkData.content,
         is_completed: false,
+        user_id: userId,
       }])
       .select()
       .single()
@@ -445,6 +524,11 @@ export async function autoCreateDailyCheckFromWeeklyAction(weeklyActionId, actio
  * @returns {Promise<Object>} 업데이트된 체크리스트
  */
 export async function toggleDailyCheck(id, isCompleted) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     const updateData = {
       is_completed: isCompleted,
@@ -455,6 +539,7 @@ export async function toggleDailyCheck(id, isCompleted) {
       .from('daily_checks')
       .update(updateData)
       .eq('id', id)
+      .eq('user_id', userId)
       .select()
       .single()
 
@@ -476,10 +561,16 @@ export async function toggleDailyCheck(id, isCompleted) {
  * @returns {Promise<Object|null>} 월별 회고
  */
 export async function getMonthlyReflection(year, month) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return null
+  }
+
   try {
     const { data, error } = await supabase
       .from('monthly_reflections')
       .select('*')
+      .eq('user_id', userId)
       .eq('year', year)
       .eq('month', month)
       .single()
@@ -504,6 +595,11 @@ export async function getMonthlyReflection(year, month) {
  * @returns {Promise<Object>} 생성/수정된 회고
  */
 export async function saveMonthlyReflection(reflectionData) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     const { data, error } = await supabase
       .from('monthly_reflections')
@@ -516,8 +612,9 @@ export async function saveMonthlyReflection(reflectionData) {
         keep_next_month: reflectionData.keepNextMonth || null,
         drop_next_month: reflectionData.dropNextMonth || null,
         reflection_text: reflectionData.reflectionText || null,
+        user_id: userId,
       }, {
-        onConflict: 'year,month',
+        onConflict: 'year,month,user_id',
       })
       .select()
       .single()

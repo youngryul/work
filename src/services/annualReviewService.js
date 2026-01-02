@@ -6,9 +6,15 @@ import { supabase } from '../config/supabase.js'
  * @returns {Promise<Object|null>} 회고록 데이터
  */
 export async function getAnnualReview(year = '2025') {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return null
+  }
+
   const { data, error } = await supabase
     .from('annual_review')
     .select('*')
+    .eq('user_id', userId)
     .eq('year', year)
     .maybeSingle()
 
@@ -44,6 +50,11 @@ export async function getAnnualReview(year = '2025') {
  * @returns {Promise<Object|null>} 저장된 회고록 데이터
  */
 export async function saveAnnualReview(year = '2025', reviewData, completedDays) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   try {
     // 기존 데이터 확인
     const existing = await getAnnualReview(year)
@@ -62,6 +73,7 @@ export async function saveAnnualReview(year = '2025', reviewData, completedDays)
           updatedat: now,
         })
         .eq('id', existing.id)
+        .eq('user_id', userId)
         .select()
         .single()
 
@@ -88,6 +100,7 @@ export async function saveAnnualReview(year = '2025', reviewData, completedDays)
           completeddays: completedDaysJson,
           createdat: now,
           updatedat: now,
+          user_id: userId,
         })
         .select()
         .single()
@@ -111,5 +124,6 @@ export async function saveAnnualReview(year = '2025', reviewData, completedDays)
     throw error
   }
 }
+
 
 
