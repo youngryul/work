@@ -75,9 +75,23 @@ export default function ReadingRecordForm({ book, initialRecord, onSave, onCance
     }
 
     try {
-      // 시작 시간과 종료 시간이 모두 있으면 실제 차이를 다시 계산
+      // 시작 시간과 종료 시간 계산
+      let finalStartTime = startTime
+      let finalEndTime = endTime
       let finalReadingMinutes = readingMinutes
-      if (startTime && endTime) {
+      
+      // 시작 시간이 있지만 종료 시간이 없으면 현재 시간을 종료 시간으로 설정
+      if (startTime && !endTime) {
+        finalEndTime = new Date().toISOString()
+        const start = new Date(startTime)
+        const end = new Date(finalEndTime)
+        const diffMs = end.getTime() - start.getTime()
+        finalReadingMinutes = Math.max(0, Math.floor(diffMs / 60000))
+        console.log('[독서 기록 저장] 타이머 종료 없이 저장 - 시작:', startTime)
+        console.log('[독서 기록 저장] 타이머 종료 없이 저장 - 종료:', finalEndTime)
+        console.log('[독서 기록 저장] 타이머 종료 없이 저장 - 실제 차이:', diffMs, 'ms =', finalReadingMinutes, '분')
+      } else if (startTime && endTime) {
+        // 시작 시간과 종료 시간이 모두 있으면 실제 차이를 다시 계산
         const start = new Date(startTime)
         const end = new Date(endTime)
         const diffMs = end.getTime() - start.getTime()
@@ -94,8 +108,8 @@ export default function ReadingRecordForm({ book, initialRecord, onSave, onCance
         // 수정 모드
         await updateReadingRecord(initialRecord.id, {
           readingDate,
-          startTime: startTime || null,
-          endTime: endTime || null,
+          startTime: finalStartTime || null,
+          endTime: finalEndTime || null,
           readingMinutes: finalReadingMinutes,
           pagesRead: pagesRead ? parseInt(pagesRead) : null,
           notes: notes.trim() || null,
@@ -105,8 +119,8 @@ export default function ReadingRecordForm({ book, initialRecord, onSave, onCance
         await createReadingRecord({
           bookId: book.id,
           readingDate,
-          startTime: startTime || null,
-          endTime: endTime || null,
+          startTime: finalStartTime || null,
+          endTime: finalEndTime || null,
           readingMinutes: finalReadingMinutes,
           pagesRead: pagesRead ? parseInt(pagesRead) : null,
           notes: notes.trim() || null,
