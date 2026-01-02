@@ -62,7 +62,7 @@ export const NAVIGATION_MENU_ITEMS = [
 export const EXTERNAL_LINKS = [
   {
     id: 'tarot',
-    label: '타로',
+    label: '타로(개발중)',
     icon: '🔮',
     href: 'https://taro-gwzj.vercel.app/',
     target: '_blank',
