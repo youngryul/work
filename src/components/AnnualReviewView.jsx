@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { getAnnualReview, saveAnnualReview } from '../services/annualReviewService.js'
+import { uploadImage } from '../services/imageService.js'
 
 /**
  * Day별 섹션 정의
@@ -33,7 +34,7 @@ const DAY_SECTIONS = {
 const getInitialReviewData = () => ({
   '0': { oneLine: '', why: '', feeling: '' },
   '1': { keywords: ['', '', ''], scenes: ['', '', ''] },
-  '2': { months: Array.from({ length: 12 }, () => ({ event: '', state: '', meaning: '' })) },
+  '2': { months: Array.from({ length: 12 }, () => ({ event: '', state: '', meaning: '', imageUrl: '', oneLine: '' })) },
   '3': { keeps: Array.from({ length: 5 }, () => ({ action: '', reason: '' })), why: '' },
   '4': { problems: Array.from({ length: 3 }, () => ({ action: '', reason: '' })), why: '' },
   '5': { pattern: { signal: '', collapse: '', recovery: '' }, strengths: ['', '', ''] },
@@ -55,7 +56,9 @@ export default function AnnualReviewView() {
   const [currentDay, setCurrentDay] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [uploadingIndex, setUploadingIndex] = useState(null)
   const saveTimerRef = useRef(null)
+  const imageAreaRefs = useRef({})
 
   /**
    * 데이터 로드
@@ -66,7 +69,21 @@ export default function AnnualReviewView() {
       try {
         const data = await getAnnualReview('2025')
         if (data) {
-          setReviewData(data.reviewData)
+          // 기존 데이터에 새로운 필드 추가 (하위 호환성)
+          const loadedData = { ...data.reviewData }
+          if (loadedData['2'] && loadedData['2'].months) {
+            loadedData['2'] = {
+              ...loadedData['2'],
+              months: loadedData['2'].months.map((month) => ({
+                event: month.event || '',
+                state: month.state || '',
+                meaning: month.meaning || '',
+                imageUrl: month.imageUrl || '',
+                oneLine: month.oneLine || '',
+              }))
+            }
+          }
+          setReviewData(loadedData)
           setCompletedDays(new Set(data.completedDays))
           // 완료된 Day 중 가장 높은 Day의 다음 Day를 현재 Day로 설정
           const maxCompletedDay = Math.max(...data.completedDays, 0)
@@ -247,64 +264,122 @@ export default function AnnualReviewView() {
     const data = reviewData['2']
     const months = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
     
+    /**
+     * 이미지 붙여넣기 핸들러
+     */
+    const handlePaste = async (e, index) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+        if (item.type.indexOf('image') !== -1) {
+          e.preventDefault()
+          
+          const file = item.getAsFile()
+          if (!file) continue
+
+          setUploadingIndex(index)
+          try {
+            const imageUrl = await uploadImage(file, 'annual-review')
+            const newMonths = [...data.months]
+            newMonths[index] = { ...newMonths[index], imageUrl }
+            saveReviewData({ ...reviewData, '2': { ...data, months: newMonths } })
+          } catch (error) {
+            console.error('이미지 업로드 오류:', error)
+            alert('이미지 업로드에 실패했습니다: ' + (error.message || '알 수 없는 오류'))
+          } finally {
+            setUploadingIndex(null)
+          }
+          break
+        }
+      }
+    }
+    
     return (
       <div className="mb-12 p-6 bg-white rounded-lg shadow-sm">
         <h2 className="text-4xl font-bold mb-6 text-gray-800 font-sans">2️⃣ 월별 타임라인 회고</h2>
-        <p className="text-base text-gray-600 mb-6 font-sans">각 월은 '사건 1개 + 상태 1개'만 기록합니다.</p>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border-2 border-gray-300 p-3 text-left text-base font-sans">월</th>
-                <th className="border-2 border-gray-300 p-3 text-left text-base font-sans">했던 일 (사건)</th>
-                <th className="border-2 border-gray-300 p-3 text-left text-base font-sans">그때의 나 (상태/감정)</th>
-                <th className="border-2 border-gray-300 p-3 text-left text-base font-sans">한 줄 의미</th>
-              </tr>
-            </thead>
-            <tbody>
-              {months.map((month, index) => (
-                <tr key={index}>
-                  <td className="border-2 border-gray-300 p-3 font-semibold text-base font-sans">{month}</td>
-                  <td className="border-2 border-gray-300 p-3">
-                    <textarea
-                      value={data.months[index].event}
-                      onChange={(e) => {
+        <p className="text-base text-gray-600 mb-6 font-sans">각 월은 '사진 1장 + 한 줄'을 기록합니다. (이미지를 복사하여 붙여넣을 수 있습니다)</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {months.map((month, index) => (
+            <div
+              key={index}
+              className="bg-white border-2 border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow focus-within:border-pink-400"
+              onPaste={(e) => handlePaste(e, index)}
+              onClick={() => {
+                // 클릭 시 포커스를 주어 붙여넣기 가능하게 함
+                if (imageAreaRefs.current[index]) {
+                  imageAreaRefs.current[index].focus()
+                }
+              }}
+              tabIndex={0}
+              ref={(el) => {
+                if (el) {
+                  imageAreaRefs.current[index] = el
+                }
+              }}
+            >
+              <div className="text-center mb-3">
+                <h3 className="text-xl font-bold text-gray-800 font-sans">{month}</h3>
+              </div>
+              
+              {/* 사진 영역 */}
+              <div className="mb-4">
+                {data.months[index].imageUrl ? (
+                  <div className="relative">
+                    <img
+                      src={data.months[index].imageUrl}
+                      alt={`${month} 사진`}
+                      className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
                         const newMonths = [...data.months]
-                        newMonths[index] = { ...newMonths[index], event: e.target.value }
+                        newMonths[index] = { ...newMonths[index], imageUrl: '' }
                         saveReviewData({ ...reviewData, '2': { ...data, months: newMonths } })
                       }}
-                      className="w-full p-2 border border-gray-200 rounded text-base focus:border-pink-400 focus:outline-none font-sans"
-                      rows="2"
-                    />
-                  </td>
-                  <td className="border-2 border-gray-300 p-3">
-                    <textarea
-                      value={data.months[index].state}
-                      onChange={(e) => {
-                        const newMonths = [...data.months]
-                        newMonths[index] = { ...newMonths[index], state: e.target.value }
-                        saveReviewData({ ...reviewData, '2': { ...data, months: newMonths } })
-                      }}
-                      className="w-full p-2 border border-gray-200 rounded text-base focus:border-pink-400 focus:outline-none font-sans"
-                      rows="2"
-                    />
-                  </td>
-                  <td className="border-2 border-gray-300 p-3">
-                    <textarea
-                      value={data.months[index].meaning}
-                      onChange={(e) => {
-                        const newMonths = [...data.months]
-                        newMonths[index] = { ...newMonths[index], meaning: e.target.value }
-                        saveReviewData({ ...reviewData, '2': { ...data, months: newMonths } })
-                      }}
-                      className="w-full p-2 border border-gray-200 rounded text-base focus:border-pink-400 focus:outline-none font-sans"
-                      rows="2"
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
+                      title="사진 삭제"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center bg-gray-50">
+                    {uploadingIndex === index ? (
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-400 mx-auto mb-2"></div>
+                        <span className="text-sm text-gray-500 font-sans">업로드 중...</span>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <span className="text-3xl mb-2 block">📷</span>
+                        <span className="text-sm text-gray-500 font-sans">이미지를 복사하여</span>
+                        <span className="text-sm text-gray-500 font-sans">붙여넣기 (Ctrl+V)</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {/* 한 줄 입력 */}
+              <div>
+                <input
+                  type="text"
+                  value={data.months[index].oneLine || ''}
+                  onChange={(e) => {
+                    const newMonths = [...data.months]
+                    newMonths[index] = { ...newMonths[index], oneLine: e.target.value }
+                    saveReviewData({ ...reviewData, '2': { ...data, months: newMonths } })
+                  }}
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                  placeholder="한 줄 입력"
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     )
