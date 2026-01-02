@@ -13,5 +13,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
  * 브라우저 환경에서는 Supabase HTTP 클라이언트를 사용합니다.
  * Drizzle 스키마는 타입 안전성과 마이그레이션 관리를 위해 유지됩니다.
  */
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '')
+const appUrl = import.meta.env.VITE_APP_URL || 'https://work-sable-one.vercel.app/'
+
+export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
+  auth: {
+    redirectTo: appUrl,
+  },
+})
 

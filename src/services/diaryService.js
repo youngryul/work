@@ -97,6 +97,7 @@ export async function saveDiary(date, content, regenerateImage = false) {
     upsertData.updated_at = new Date().toISOString()
     
     // upsert 사용 (트리거 오류 방지를 위해 updated_at 명시)
+    // 복합 UNIQUE 제약 조건 (date, user_id) 사용
     const { data, error } = await supabase
       .from('diaries')
       .upsert(upsertData, {

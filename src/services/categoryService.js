@@ -1,13 +1,21 @@
 import { supabase } from '../config/supabase.js'
+import { getCurrentUserId } from '../utils/authHelper.js'
 
 /**
  * 모든 카테고리 조회
  * @returns {Promise<Array>} 카테고리 목록 [{ id, name, emoji }]
  */
 export async function getCategories() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    console.warn('로그인이 필요합니다.')
+    return []
+  }
+
   const { data, error } = await supabase
     .from('categories')
     .select('*')
+    .eq('user_id', userId)
     .order('name', { ascending: true })
 
   if (error) {
@@ -29,7 +37,12 @@ export async function getCategories() {
  * @returns {Promise<Object>} 생성된 카테고리
  */
 export async function addCategory(name, emoji) {
-  // 중복 확인
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  // 중복 확인 (같은 사용자의 카테고리만 확인)
   const existing = await getCategories()
   if (existing.some((cat) => cat.name === name)) {
     throw new Error('이미 존재하는 카테고리입니다.')
@@ -38,6 +51,7 @@ export async function addCategory(name, emoji) {
   const newCategory = {
     name: name.trim(),
     emoji: emoji.trim(),
+    user_id: userId,
   }
 
   const { data, error } = await supabase
@@ -60,10 +74,16 @@ export async function addCategory(name, emoji) {
  * @returns {Promise<boolean>} 삭제 성공 여부
  */
 export async function deleteCategory(name) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   const { error } = await supabase
     .from('categories')
     .delete()
     .eq('name', name)
+    .eq('user_id', userId)
 
   if (error) {
     console.error('카테고리 삭제 오류:', error)
@@ -79,10 +99,16 @@ export async function deleteCategory(name) {
  * @returns {Promise<string>} 이모지
  */
 export async function getCategoryEmoji(categoryName) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return '📝'
+  }
+
   const { data, error } = await supabase
     .from('categories')
     .select('emoji')
     .eq('name', categoryName)
+    .eq('user_id', userId)
     .single()
 
   if (error || !data) {

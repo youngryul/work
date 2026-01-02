@@ -30,6 +30,10 @@ ALTER TABLE monthly_goals ADD CONSTRAINT monthly_goals_yearly_goal_id_year_month
 ALTER TABLE daily_checks DROP CONSTRAINT IF EXISTS daily_checks_date_content_key;
 ALTER TABLE daily_checks ADD CONSTRAINT daily_checks_date_content_user_id_unique UNIQUE(date, content, user_id);
 
+-- categories 테이블: name만 UNIQUE에서 (name, user_id) 조합으로 변경
+ALTER TABLE categories DROP CONSTRAINT IF EXISTS categories_name_key;
+ALTER TABLE categories ADD CONSTRAINT categories_name_user_id_unique UNIQUE(name, user_id);
+
 -- weekly_work_reports 테이블: (week_start, week_end)만 UNIQUE에서 (week_start, week_end, user_id) 조합으로 변경
 ALTER TABLE weekly_work_reports DROP CONSTRAINT IF EXISTS weekly_work_reports_week_start_week_end_key;
 ALTER TABLE weekly_work_reports ADD CONSTRAINT weekly_work_reports_week_start_week_end_user_id_unique UNIQUE(week_start, week_end, user_id);
@@ -118,6 +122,10 @@ ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCAD
 ALTER TABLE annual_review 
 ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
 
+-- categories 테이블에 user_id 추가
+ALTER TABLE categories 
+ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+
 -- bucketlists 테이블은 이미 user_id가 있지만, 외래 키 제약 조건 추가
 ALTER TABLE bucketlists 
 DROP CONSTRAINT IF EXISTS bucketlists_user_id_fkey;
@@ -155,7 +163,17 @@ BEGIN
   UPDATE weekly_diary_summaries SET user_id = target_user_id WHERE user_id IS NULL;
   UPDATE monthly_diary_summaries SET user_id = target_user_id WHERE user_id IS NULL;
   UPDATE annual_review SET user_id = target_user_id WHERE user_id IS NULL;
+  UPDATE categories SET user_id = target_user_id WHERE user_id IS NULL;
   UPDATE bucketlists SET user_id = target_user_id WHERE user_id IS NULL OR user_id NOT IN (SELECT id FROM auth.users);
+  
+  -- 기본 카테고리가 없으면 생성
+  INSERT INTO categories (name, emoji, user_id)
+  VALUES 
+    ('작업', '💻', target_user_id),
+    ('공부', '📚', target_user_id),
+    ('생각', '🧠', target_user_id),
+    ('개인', '❤️', target_user_id)
+  ON CONFLICT (name, user_id) DO NOTHING;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -190,6 +208,7 @@ CREATE INDEX IF NOT EXISTS idx_monthly_work_reports_user_id ON monthly_work_repo
 CREATE INDEX IF NOT EXISTS idx_weekly_diary_summaries_user_id ON weekly_diary_summaries(user_id);
 CREATE INDEX IF NOT EXISTS idx_monthly_diary_summaries_user_id ON monthly_diary_summaries(user_id);
 CREATE INDEX IF NOT EXISTS idx_annual_review_user_id ON annual_review(user_id);
+CREATE INDEX IF NOT EXISTS idx_categories_user_id ON categories(user_id);
 
 -- ============================================
 -- 6단계: Row Level Security (RLS) 정책 설정
@@ -516,6 +535,26 @@ CREATE POLICY "Users can update own annual_review" ON annual_review
   FOR UPDATE USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can delete own annual_review" ON annual_review
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- categories 테이블 RLS
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all operations" ON categories;
+DROP POLICY IF EXISTS "Users can view own categories" ON categories;
+DROP POLICY IF EXISTS "Users can insert own categories" ON categories;
+DROP POLICY IF EXISTS "Users can update own categories" ON categories;
+DROP POLICY IF EXISTS "Users can delete own categories" ON categories;
+
+CREATE POLICY "Users can view own categories" ON categories
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own categories" ON categories
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own categories" ON categories
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own categories" ON categories
   FOR DELETE USING (auth.uid() = user_id);
 
 -- ============================================

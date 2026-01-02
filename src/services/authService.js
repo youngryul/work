@@ -44,9 +44,15 @@ export async function migrateExistingData() {
  */
 export async function signUp(email, password) {
   try {
+    // 프로덕션 URL 또는 환경 변수에서 가져오기
+    const redirectTo = import.meta.env.VITE_APP_URL || 'https://work-sable-one.vercel.app/'
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: redirectTo,
+      },
     })
     
     if (error) throw error
