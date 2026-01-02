@@ -167,13 +167,9 @@ export async function getWorkReport(dateString) {
       .select('report_content')
       .eq('date', dateString)
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        // 데이터가 없음
-        return null
-      }
       console.error('업무일지 조회 오류:', error)
       throw error
     }
@@ -224,9 +220,9 @@ export async function getWorkReportDatesByMonth(year, month) {
 }
 
 /**
- * 주간 업무일지가 생성된 주 목록 조회 (업무일지 1개 이상인 주)
+ * 주간 업무일지가 생성된 주 목록 조회 (업무일지 1개 이상인 주 또는 완료된 할 일이 있는 주)
  * @param {number} year - 연도
- * @returns {Promise<Array<Object>>} 주 정보 배열 [{ weekStart, weekEnd, reportCount }]
+ * @returns {Promise<Array<Object>>} 주 정보 배열 [{ weekStart, weekEnd, reportCount, dates, hasCompletedTasks }]
  */
 export async function getWeeksWithWorkReports(year) {
   const userId = await getCurrentUserId()
@@ -237,8 +233,11 @@ export async function getWeeksWithWorkReports(year) {
   try {
     const startDate = `${year}-01-01`
     const endDate = `${year}-12-31`
+    const startTimestamp = new Date(startDate).getTime()
+    const endTimestamp = new Date(`${year}-12-31 23:59:59`).getTime()
 
-    const { data, error } = await supabase
+    // 업무일지가 있는 주 조회
+    const { data: workReports, error: workReportsError } = await supabase
       .from('work_reports')
       .select('date')
       .eq('user_id', userId)
@@ -246,40 +245,102 @@ export async function getWeeksWithWorkReports(year) {
       .lte('date', endDate)
       .order('date', { ascending: true })
 
-    if (error) {
-      console.error('업무일지 조회 오류:', error)
-      throw error
+    if (workReportsError) {
+      console.error('업무일지 조회 오류:', workReportsError)
+      throw workReportsError
     }
 
-    if (!data || data.length === 0) {
-      return []
+    // 완료된 할 일이 있는 주 조회
+    const { data: completedTasks, error: tasksError } = await supabase
+      .from('tasks')
+      .select('completedat')
+      .eq('user_id', userId)
+      .eq('completed', true)
+      .not('completedat', 'is', null)
+      .gte('completedat', startTimestamp)
+      .lte('completedat', endTimestamp)
+
+    if (tasksError) {
+      console.error('완료된 할 일 조회 오류:', tasksError)
+      throw tasksError
     }
 
     // 주별로 그룹화
     const weeksMap = new Map()
     
-    data.forEach((item) => {
-      const date = new Date(item.date)
-      const weekStart = getWeekStart(date)
-      const weekEnd = getWeekEnd(date)
-      const weekKey = weekStart.toISOString().split('T')[0]
+    // 업무일지가 있는 주 추가
+    if (workReports && workReports.length > 0) {
+      workReports.forEach((item) => {
+        const date = new Date(item.date + 'T00:00:00') // 시간 명시적으로 설정
+        const weekStart = getWeekStart(date)
+        const weekEnd = getWeekEnd(date)
+        const weekKey = `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, '0')}-${String(weekStart.getDate()).padStart(2, '0')}`
 
-      if (!weeksMap.has(weekKey)) {
-        weeksMap.set(weekKey, {
-          weekStart: weekKey,
-          weekEnd: weekEnd.toISOString().split('T')[0],
-          reportCount: 0,
-          dates: []
-        })
+        if (!weeksMap.has(weekKey)) {
+          const weekEndStr = `${weekEnd.getFullYear()}-${String(weekEnd.getMonth() + 1).padStart(2, '0')}-${String(weekEnd.getDate()).padStart(2, '0')}`
+          weeksMap.set(weekKey, {
+            weekStart: weekKey,
+            weekEnd: weekEndStr,
+            reportCount: 0,
+            dates: [],
+            completedTaskDates: new Set(),
+            hasCompletedTasks: false
+          })
+        }
+        
+        const week = weeksMap.get(weekKey)
+        week.reportCount++
+        if (!week.dates.includes(item.date)) {
+          week.dates.push(item.date)
+        }
+      })
+    }
+
+    // 완료된 할 일이 있는 주 추가
+    if (completedTasks && completedTasks.length > 0) {
+      completedTasks.forEach((task) => {
+        const date = new Date(task.completedat)
+        const weekStart = getWeekStart(date)
+        const weekEnd = getWeekEnd(date)
+        const weekKey = `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, '0')}-${String(weekStart.getDate()).padStart(2, '0')}`
+        const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+
+        if (!weeksMap.has(weekKey)) {
+          const weekEndStr = `${weekEnd.getFullYear()}-${String(weekEnd.getMonth() + 1).padStart(2, '0')}-${String(weekEnd.getDate()).padStart(2, '0')}`
+          weeksMap.set(weekKey, {
+            weekStart: weekKey,
+            weekEnd: weekEndStr,
+            reportCount: 0,
+            dates: [],
+            completedTaskDates: new Set(), // 완료된 할 일이 있는 날짜 Set
+            hasCompletedTasks: true
+          })
+        }
+        
+        const week = weeksMap.get(weekKey)
+        week.hasCompletedTasks = true
+        // 완료된 할 일이 있는 날짜 추가
+        week.completedTaskDates.add(dateString)
+        // 업무일지 날짜가 없으면 추가 (중복 방지)
+        if (!week.dates.includes(dateString)) {
+          week.dates.push(dateString)
+        }
+      })
+    }
+
+    // Set을 배열로 변환하고 날짜 개수 계산
+    const weeksArray = Array.from(weeksMap.values())
+    weeksArray.forEach(week => {
+      if (week.completedTaskDates) {
+        week.completedTaskDates = Array.from(week.completedTaskDates)
+        week.completedTaskDayCount = week.completedTaskDates.length
+      } else {
+        week.completedTaskDayCount = week.dates.length
       }
-      
-      const week = weeksMap.get(weekKey)
-      week.reportCount++
-      week.dates.push(item.date)
     })
 
     // 주 시작일 기준으로 정렬
-    return Array.from(weeksMap.values()).sort((a, b) => 
+    return weeksArray.sort((a, b) => 
       a.weekStart.localeCompare(b.weekStart)
     )
   } catch (error) {
@@ -293,9 +354,12 @@ export async function getWeeksWithWorkReports(year) {
  */
 export function getWeekStart(date) {
   const d = new Date(date)
+  d.setHours(0, 0, 0, 0) // 시간을 00:00:00으로 설정
   const day = d.getDay()
   const diff = d.getDate() - day
-  return new Date(d.setDate(diff))
+  const weekStart = new Date(d)
+  weekStart.setDate(diff)
+  return weekStart
 }
 
 /**
@@ -303,7 +367,10 @@ export function getWeekStart(date) {
  */
 export function getWeekEnd(date) {
   const weekStart = getWeekStart(date)
-  return new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000)
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekStart.getDate() + 6)
+  weekEnd.setHours(23, 59, 59, 999) // 시간을 23:59:59로 설정
+  return weekEnd
 }
 
 /**
@@ -375,21 +442,48 @@ export async function getWeeksWithDiaries(year) {
  * @returns {Promise<string>} AI가 생성한 주간 업무일지
  */
 export async function generateWeeklyWorkReport(weekStart, weekEnd, reportDates) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   const apiKey = import.meta.env.VITE_OPENAI_API_KEY
   if (!apiKey) {
     throw new Error('OpenAI API 키가 설정되지 않았습니다.')
   }
 
-  if (!reportDates || reportDates.length === 0) {
-    throw new Error('업무일지가 없습니다.')
+  // 해당 주의 모든 업무일지 조회 (현재 사용자만)
+  const reports = []
+  
+  if (reportDates && reportDates.length > 0) {
+    // 기존 업무일지가 있는 경우 (현재 사용자의 것만)
+    for (const date of reportDates) {
+      const report = await getWorkReport(date)
+      if (report) {
+        reports.push({ date, content: report })
+      }
+    }
   }
 
-  // 해당 주의 모든 업무일지 조회
-  const reports = []
-  for (const date of reportDates) {
-    const report = await getWorkReport(date)
-    if (report) {
-      reports.push({ date, content: report })
+  // 업무일지가 없으면 완료된 할 일을 기반으로 일일 업무일지 생성
+  if (reports.length === 0) {
+    const { getCompletedTasksByDate } = await import('./taskService.js')
+    
+    // 주의 각 날짜에 대해 완료된 할 일 확인
+    const startDate = new Date(weekStart)
+    const endDate = new Date(weekEnd)
+    
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const dateString = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      const completedTasks = await getCompletedTasksByDate(dateString)
+      
+      if (completedTasks.length > 0) {
+        // 완료된 할 일이 있으면 일일 업무일지 생성
+        const dailyReport = await generateDailyWorkReport(completedTasks, dateString)
+        // 일일 업무일지 저장
+        await saveWorkReport(dateString, dailyReport)
+        reports.push({ date: dateString, content: dailyReport })
+      }
     }
   }
 
@@ -471,19 +565,24 @@ ${reportsSummary}
  * @returns {Promise<string>} AI가 생성한 월간 업무일지 (편지 형식)
  */
 export async function generateMonthlyWorkReport(year, month) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   const apiKey = import.meta.env.VITE_OPENAI_API_KEY
   if (!apiKey) {
     throw new Error('OpenAI API 키가 설정되지 않았습니다.')
   }
 
-  // 해당 월의 모든 업무일지 조회
+  // 해당 월의 모든 업무일지 조회 (현재 사용자만)
   const reportDates = await getWorkReportDatesByMonth(year, month)
   
   if (reportDates.length === 0) {
     throw new Error(`${year}년 ${month}월에는 업무일지가 없습니다.`)
   }
 
-  // 해당 월의 모든 업무일지 내용 조회
+  // 해당 월의 모든 업무일지 내용 조회 (현재 사용자만 - getWorkReport가 user_id 필터링함)
   const reports = []
   for (const date of reportDates) {
     const report = await getWorkReport(date)
@@ -569,6 +668,11 @@ ${reportsSummary}
  * @returns {Promise<string>} AI가 생성한 주간 일기 정리
  */
 export async function generateWeeklyDiarySummary(weekStart, weekEnd, diaries) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   const apiKey = import.meta.env.VITE_OPENAI_API_KEY
   if (!apiKey) {
     throw new Error('OpenAI API 키가 설정되지 않았습니다.')
@@ -655,6 +759,11 @@ ${diariesSummary}
  * @returns {Promise<string>} AI가 생성한 월간 일기 정리 (편지 형식)
  */
 export async function generateMonthlyDiarySummary(year, month, diaries) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
   const apiKey = import.meta.env.VITE_OPENAI_API_KEY
   if (!apiKey) {
     throw new Error('OpenAI API 키가 설정되지 않았습니다.')
@@ -944,12 +1053,9 @@ export async function getWeeklyWorkReport(weekStart, weekEnd) {
       .eq('week_start', weekStart)
       .eq('week_end', weekEnd)
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return null
-      }
       console.error('주간 업무일지 조회 오류:', error)
       throw error
     }
@@ -1048,12 +1154,9 @@ export async function getMonthlyWorkReport(year, month) {
       .eq('year', year)
       .eq('month', month)
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return null
-      }
       console.error('월간 업무일지 조회 오류:', error)
       throw error
     }
@@ -1153,12 +1256,9 @@ export async function getWeeklyDiarySummary(weekStart, weekEnd) {
       .eq('week_start', weekStart)
       .eq('week_end', weekEnd)
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return null
-      }
       console.error('주간 일기 정리 조회 오류:', error)
       throw error
     }
@@ -1257,12 +1357,9 @@ export async function getMonthlyDiarySummary(year, month) {
       .eq('year', year)
       .eq('month', month)
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return null
-      }
       console.error('월간 일기 정리 조회 오류:', error)
       throw error
     }

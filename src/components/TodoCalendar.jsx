@@ -317,16 +317,6 @@ export default function TodoCalendar() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                {/* 업무일지 생성 버튼 (이전 날짜에만 표시, 업무일지가 없을 때만) */}
-                {isPastDate(selectedDate) && completedTasks.length > 0 && !workReport && (
-                  <button
-                    onClick={handleGenerateWorkReport}
-                    disabled={isGeneratingReport}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 text-base font-medium shadow-md disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                  >
-                    {isGeneratingReport ? '생성 중...' : '📝 업무일지'}
-                  </button>
-                )}
                 <button
                   onClick={handleClosePopup}
                   className="text-gray-400 hover:text-gray-600 text-4xl leading-none"

@@ -3,55 +3,63 @@
 -- 주간 업무일지 테이블
 CREATE TABLE IF NOT EXISTS weekly_work_reports (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   week_start DATE NOT NULL, -- 주 시작일 (일요일)
   week_end DATE NOT NULL, -- 주 종료일 (토요일)
   year INTEGER NOT NULL, -- 연도
   report_content TEXT NOT NULL, -- 주간 업무일지 내용
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  UNIQUE(week_start, week_end)
+  UNIQUE(user_id, week_start, week_end)
 );
 
 -- 월간 업무일지 테이블
 CREATE TABLE IF NOT EXISTS monthly_work_reports (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   year INTEGER NOT NULL,
   month INTEGER NOT NULL CHECK (month >= 1 AND month <= 12),
   report_content TEXT NOT NULL, -- 월간 업무일지 내용 (편지 형식)
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  UNIQUE(year, month)
+  UNIQUE(user_id, year, month)
 );
 
 -- 주간 일기 정리 테이블
 CREATE TABLE IF NOT EXISTS weekly_diary_summaries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   week_start DATE NOT NULL, -- 주 시작일 (일요일)
   week_end DATE NOT NULL, -- 주 종료일 (토요일)
   year INTEGER NOT NULL, -- 연도
   summary_content TEXT NOT NULL, -- 주간 일기 정리 내용
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  UNIQUE(week_start, week_end)
+  UNIQUE(user_id, week_start, week_end)
 );
 
 -- 월간 일기 정리 테이블
 CREATE TABLE IF NOT EXISTS monthly_diary_summaries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   year INTEGER NOT NULL,
   month INTEGER NOT NULL CHECK (month >= 1 AND month <= 12),
   summary_content TEXT NOT NULL, -- 월간 일기 정리 내용 (편지 형식)
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  UNIQUE(year, month)
+  UNIQUE(user_id, year, month)
 );
 
 -- 인덱스 생성
+CREATE INDEX IF NOT EXISTS idx_weekly_work_reports_user_id ON weekly_work_reports(user_id);
 CREATE INDEX IF NOT EXISTS idx_weekly_work_reports_year ON weekly_work_reports(year);
 CREATE INDEX IF NOT EXISTS idx_weekly_work_reports_week_start ON weekly_work_reports(week_start);
+CREATE INDEX IF NOT EXISTS idx_monthly_work_reports_user_id ON monthly_work_reports(user_id);
 CREATE INDEX IF NOT EXISTS idx_monthly_work_reports_year_month ON monthly_work_reports(year, month);
+CREATE INDEX IF NOT EXISTS idx_weekly_diary_summaries_user_id ON weekly_diary_summaries(user_id);
 CREATE INDEX IF NOT EXISTS idx_weekly_diary_summaries_year ON weekly_diary_summaries(year);
 CREATE INDEX IF NOT EXISTS idx_weekly_diary_summaries_week_start ON weekly_diary_summaries(week_start);
+CREATE INDEX IF NOT EXISTS idx_monthly_diary_summaries_user_id ON monthly_diary_summaries(user_id);
 CREATE INDEX IF NOT EXISTS idx_monthly_diary_summaries_year_month ON monthly_diary_summaries(year, month);
 
 -- updated_at 자동 업데이트 트리거 함수 (기존 함수 재사용)
@@ -83,4 +91,84 @@ CREATE TRIGGER update_monthly_diary_summaries_updatedat
   BEFORE UPDATE ON monthly_diary_summaries
   FOR EACH ROW
   EXECUTE FUNCTION update_updatedat_column();
+
+-- ============================================
+-- Row Level Security (RLS) 정책 설정
+-- ============================================
+
+-- weekly_work_reports 테이블 RLS
+ALTER TABLE weekly_work_reports ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view own weekly_work_reports" ON weekly_work_reports;
+DROP POLICY IF EXISTS "Users can insert own weekly_work_reports" ON weekly_work_reports;
+DROP POLICY IF EXISTS "Users can update own weekly_work_reports" ON weekly_work_reports;
+DROP POLICY IF EXISTS "Users can delete own weekly_work_reports" ON weekly_work_reports;
+
+CREATE POLICY "Users can view own weekly_work_reports" ON weekly_work_reports
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own weekly_work_reports" ON weekly_work_reports
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own weekly_work_reports" ON weekly_work_reports
+  FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own weekly_work_reports" ON weekly_work_reports
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- monthly_work_reports 테이블 RLS
+ALTER TABLE monthly_work_reports ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view own monthly_work_reports" ON monthly_work_reports;
+DROP POLICY IF EXISTS "Users can insert own monthly_work_reports" ON monthly_work_reports;
+DROP POLICY IF EXISTS "Users can update own monthly_work_reports" ON monthly_work_reports;
+DROP POLICY IF EXISTS "Users can delete own monthly_work_reports" ON monthly_work_reports;
+
+CREATE POLICY "Users can view own monthly_work_reports" ON monthly_work_reports
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own monthly_work_reports" ON monthly_work_reports
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own monthly_work_reports" ON monthly_work_reports
+  FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own monthly_work_reports" ON monthly_work_reports
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- weekly_diary_summaries 테이블 RLS
+ALTER TABLE weekly_diary_summaries ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view own weekly_diary_summaries" ON weekly_diary_summaries;
+DROP POLICY IF EXISTS "Users can insert own weekly_diary_summaries" ON weekly_diary_summaries;
+DROP POLICY IF EXISTS "Users can update own weekly_diary_summaries" ON weekly_diary_summaries;
+DROP POLICY IF EXISTS "Users can delete own weekly_diary_summaries" ON weekly_diary_summaries;
+
+CREATE POLICY "Users can view own weekly_diary_summaries" ON weekly_diary_summaries
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own weekly_diary_summaries" ON weekly_diary_summaries
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own weekly_diary_summaries" ON weekly_diary_summaries
+  FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own weekly_diary_summaries" ON weekly_diary_summaries
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- monthly_diary_summaries 테이블 RLS
+ALTER TABLE monthly_diary_summaries ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view own monthly_diary_summaries" ON monthly_diary_summaries;
+DROP POLICY IF EXISTS "Users can insert own monthly_diary_summaries" ON monthly_diary_summaries;
+DROP POLICY IF EXISTS "Users can update own monthly_diary_summaries" ON monthly_diary_summaries;
+DROP POLICY IF EXISTS "Users can delete own monthly_diary_summaries" ON monthly_diary_summaries;
+
+CREATE POLICY "Users can view own monthly_diary_summaries" ON monthly_diary_summaries
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own monthly_diary_summaries" ON monthly_diary_summaries
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own monthly_diary_summaries" ON monthly_diary_summaries
+  FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own monthly_diary_summaries" ON monthly_diary_summaries
+  FOR DELETE USING (auth.uid() = user_id);
 

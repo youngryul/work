@@ -74,17 +74,42 @@ export default function Review2026View({ initialTab, initialParams }) {
     try {
       // 2025년 12월부터 현재 연도까지
       const allWeeks = []
+      const weeksMap = new Map() // 중복 제거를 위한 Map (weekStart-weekEnd를 키로 사용)
+      
       for (let year = startYear; year <= currentYear; year++) {
         const weeks = await getWeeksWithWorkReports(year)
         // 각 주에 대해 이미 생성된 업무일지가 있는지 확인
         for (const week of weeks) {
+          const weekKey = `${week.weekStart}-${week.weekEnd}`
+          
+          // 이미 같은 주가 있으면 건너뛰기 (현재 사용자의 것만 유지)
+          if (weeksMap.has(weekKey)) {
+            continue
+          }
+          
           const existing = await getWeeklyWorkReport(week.weekStart, week.weekEnd)
           week.hasReport = !!existing
           week.reportContent = existing?.reportContent || null
+          
+          // 완료된 할 일이 있지만 업무일지가 없는 이전 주는 자동으로 생성
+          if (!week.hasReport && isPastWeek(week.weekEnd) && (week.hasCompletedTasks || week.dates.length > 0)) {
+            try {
+              const report = await generateWeeklyWorkReport(week.weekStart, week.weekEnd, week.dates)
+              await saveWeeklyWorkReport(week.weekStart, week.weekEnd, report)
+              week.hasReport = true
+              week.reportContent = report
+            } catch (error) {
+              console.error('주간 업무일지 자동 생성 오류:', error)
+              // 자동 생성 실패해도 계속 진행
+            }
+          }
+          
+          weeksMap.set(weekKey, week)
         }
-        allWeeks.push(...weeks)
       }
-      setWorkWeeks(allWeeks)
+      
+      // Map의 값들을 배열로 변환
+      setWorkWeeks(Array.from(weeksMap.values()))
     } catch (error) {
       console.error('주 목록 로드 오류:', error)
       alert('주 목록을 불러오는데 실패했습니다.')
@@ -97,19 +122,30 @@ export default function Review2026View({ initialTab, initialParams }) {
   const loadDiaryWeeks = async () => {
     try {
       // 2025년 12월부터 현재 연도까지
-      const allWeeks = []
+      const weeksMap = new Map() // 중복 제거를 위한 Map (weekStart-weekEnd를 키로 사용)
       const { getWeeksWithDiaries } = await import('../services/workReportService.js')
+      
       for (let year = startYear; year <= currentYear; year++) {
         const weeks = await getWeeksWithDiaries(year)
         // 각 주에 대해 이미 생성된 일기 정리가 있는지 확인
         for (const week of weeks) {
+          const weekKey = `${week.weekStart}-${week.weekEnd}`
+          
+          // 이미 같은 주가 있으면 건너뛰기 (현재 사용자의 것만 유지)
+          if (weeksMap.has(weekKey)) {
+            continue
+          }
+          
           const existing = await getWeeklyDiarySummary(week.weekStart, week.weekEnd)
           week.hasSummary = !!existing
           week.summaryContent = existing?.summaryContent || null
+          
+          weeksMap.set(weekKey, week)
         }
-        allWeeks.push(...weeks)
       }
-      setDiaryWeeks(allWeeks)
+      
+      // Map의 값들을 배열로 변환
+      setDiaryWeeks(Array.from(weeksMap.values()))
     } catch (error) {
       console.error('주간 일기 주 목록 로드 오류:', error)
       alert('주간 일기 주 목록을 불러오는데 실패했습니다.')
@@ -421,7 +457,7 @@ export default function Review2026View({ initialTab, initialParams }) {
               <div className="space-y-3">
                 {workWeeks.map((week) => (
                   <div
-                    key={week.weekStart}
+                    key={`${week.weekStart}-${week.weekEnd}`}
                     className={`p-4 bg-gray-50 rounded-lg border border-gray-200 transition-colors ${
                       week.hasReport 
                         ? 'hover:bg-gray-100 cursor-pointer' 
@@ -435,7 +471,7 @@ export default function Review2026View({ initialTab, initialParams }) {
                           {week.weekStart} ~ {week.weekEnd}
                         </h3>
                         <p className="text-sm text-gray-600 font-sans">
-                          업무일지 {week.reportCount}개
+                          완료된 할 일이 있는 날 {week.completedTaskDayCount || week.dates.length || 0}일
                           {week.hasReport && <span className="ml-2 text-green-600">✓ 생성됨</span>}
                         </p>
                       </div>
@@ -545,7 +581,7 @@ export default function Review2026View({ initialTab, initialParams }) {
               <div className="space-y-3">
                 {diaryWeeks.map((week) => (
                   <div
-                    key={week.weekStart}
+                    key={`${week.weekStart}-${week.weekEnd}`}
                     className={`p-4 bg-gray-50 rounded-lg border border-gray-200 transition-colors ${
                       week.hasSummary 
                         ? 'hover:bg-gray-100 cursor-pointer' 
