@@ -54,6 +54,11 @@ export const NAVIGATION_MENU_ITEMS = [
     label: '독서',
     icon: '📚',
   },
+  {
+    id: 'travel',
+    label: '여행',
+    icon: '✈️',
+  },
 ]
 
 /**

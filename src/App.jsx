@@ -12,6 +12,7 @@ import RecordForm from './components/RecordForm.jsx'
 import GoalsDashboard from './components/goals/GoalsDashboard.jsx'
 import BucketlistView from './components/bucketlist/BucketlistView.jsx'
 import ReadingView from './components/reading/ReadingView.jsx'
+import TravelView from './components/travel/TravelView.jsx'
 import NavigationSidebar from './components/NavigationSidebar.jsx'
 
 /**
@@ -150,6 +151,7 @@ function AppContent() {
         {currentView === 'goals' && <GoalsDashboard />}
         {currentView === 'bucketlist' && <BucketlistView />}
         {currentView === 'reading' && <ReadingView />}
+        {currentView === 'travel' && <TravelView />}
         </main>
       </div>
     </div>
