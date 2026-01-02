@@ -298,13 +298,13 @@ export default function TodayView() {
     <>
       <div className="max-w-2xl mx-auto p-6">
         <div className="mb-8">
-          <h1 className="text-6xl font-handwriting text-gray-800 mb-2">
+          <h1 className="text-4xl font-handwriting text-gray-800 mb-2">
             오늘 할 일
           </h1>
-          <p className="text-2xl text-gray-500 mb-2">
+          <p className="text-lg text-gray-500 mb-2">
             {getCurrentDateString()}
           </p>
-          <p className="text-3xl text-gray-600">
+          <p className="text-xl text-gray-600">
             {tasks.length > 0
               ? `${completedCount}개 완료 / ${tasks.length}개`
               : '오늘은 무엇을 할까요?'}
@@ -313,9 +313,9 @@ export default function TodayView() {
 
         {/* 할 일 목록 */}
         {isLoading ? (
-          <div className="text-center py-8 text-gray-500 text-3xl">로딩 중...</div>
+          <div className="text-center py-8 text-gray-500 text-xl">로딩 중...</div>
         ) : incompleteTasks.length === 0 ? (
-          <div className="text-center py-12 text-gray-400 text-3xl">
+          <div className="text-center py-12 text-gray-400 text-xl">
             {tasks.length === 0
               ? '아직 할 일이 없어요. 백로그에서 추가 후 오늘 할 일로 이동해주세요! ✨'
               : '모든 할 일을 완료했어요! 🎉'}

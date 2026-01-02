@@ -37,10 +37,10 @@ export default function CalendarView() {
       ) : (
         <>
           <div className="mb-8">
-            <h1 className="text-6xl font-handwriting text-gray-800 mb-2">
+            <h1 className="text-4xl font-handwriting text-gray-800 mb-2">
               일기 달력
             </h1>
-            <p className="text-3xl text-gray-600">
+            <p className="text-xl text-gray-600">
               날짜를 클릭하여 일기를 작성하고 AI 그림을 생성해보세요
             </p>
           </div>

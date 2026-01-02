@@ -2,9 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 학교안심 보드마카 폰트 */
+@font-face {
+  font-family: 'SchoolSafeBoardMarker';
+  src: url('/fonts/Hakgyoansim_BoardmarkerR.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 body {
   margin: 0;
-  font-family: 'Nanum Pen Script', cursive;
+  font-family: 'SchoolSafeBoardMarker', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: linear-gradient(135deg, #fef5e7 0%, #f8d7da 50%, #d1ecf1 100%);

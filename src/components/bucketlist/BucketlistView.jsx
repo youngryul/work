@@ -201,7 +201,7 @@ export default function BucketlistView() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-6xl font-handwriting text-gray-800 mb-2">
+            <h1 className="text-4xl font-handwriting text-gray-800 mb-2">
               버킷리스트
             </h1>
           </div>

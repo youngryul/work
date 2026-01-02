@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase.js'
+import { getCurrentUserId } from '../utils/authHelper.js'
 
 /**
  * 연간 회고록 데이터 조회

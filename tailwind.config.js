@@ -7,7 +7,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        'handwriting': ['"Nanum Pen Script"', 'cursive'],
+        'sans': ['SchoolSafeBoardMarker', 'sans-serif'],
+        'handwriting': ['SchoolSafeBoardMarker', 'sans-serif'],
       },
     },
   },
