@@ -16,6 +16,7 @@ function normalizeTask(task) {
     completedAt: task.completedat ?? task.completedAt,
     movedToTodayAt: task.movedtotodayat ?? task.movedToTodayAt,
     memo: task.memo ?? null,
+    images: task.images ?? [],
   }
 }
 

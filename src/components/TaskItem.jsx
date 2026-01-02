@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { updateTask, deleteTask } from '../services/taskService.js'
 import { getCategoryEmoji } from '../services/categoryService.js'
 import CategorySelector from './CategorySelector.jsx'
+import { uploadImage } from '../services/imageService.js'
 
 /**
  * 할 일 항목 컴포넌트
@@ -19,7 +20,10 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
   const [editTitle, setEditTitle] = useState(task.title)
   const [editMemo, setEditMemo] = useState(task.memo || '')
   const [categoryEmoji, setCategoryEmoji] = useState('📝')
+  const [images, setImages] = useState(task.images || [])
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
   const memoSaveTimerRef = useRef(null)
+  const textareaRef = useRef(null)
 
   useEffect(() => {
     const loadEmoji = async () => {
@@ -34,7 +38,8 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
    */
   useEffect(() => {
     setEditMemo(task.memo || '')
-  }, [task.memo])
+    setImages(task.images || [])
+  }, [task.memo, task.images])
 
   /**
    * 완료 상태 토글
@@ -147,6 +152,60 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
     const newMemo = e.target.value
     setEditMemo(newMemo)
     saveMemo(newMemo)
+  }
+
+  /**
+   * 이미지 붙여넣기 핸들러
+   */
+  const handlePaste = async (e) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      if (item.type.indexOf('image') !== -1) {
+        e.preventDefault()
+        
+        const file = item.getAsFile()
+        if (!file) continue
+
+        setIsUploadingImage(true)
+        try {
+          // 이미지를 tasks 폴더에 업로드
+          const imageUrl = await uploadImage(file, 'tasks')
+          
+          // 이미지 URL을 배열에 추가
+          const newImages = [...images, imageUrl]
+          setImages(newImages)
+          
+          // 데이터베이스에 저장
+          const updated = await updateTask(task.id, { images: newImages })
+          onUpdate(updated)
+        } catch (error) {
+          console.error('이미지 업로드 오류:', error)
+          alert('이미지 업로드에 실패했습니다: ' + (error.message || '알 수 없는 오류'))
+        } finally {
+          setIsUploadingImage(false)
+        }
+        break
+      }
+    }
+  }
+
+  /**
+   * 이미지 삭제 핸들러
+   */
+  const handleDeleteImage = async (imageIndex) => {
+    const newImages = images.filter((_, index) => index !== imageIndex)
+    setImages(newImages)
+    
+    try {
+      const updated = await updateTask(task.id, { images: newImages })
+      onUpdate(updated)
+    } catch (error) {
+      console.error('이미지 삭제 오류:', error)
+      alert('이미지 삭제에 실패했습니다.')
+    }
   }
 
   /**
@@ -275,12 +334,12 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
         <button
           onClick={() => setIsEditingMemo(!isEditingMemo)}
           className={`text-xl transition-all duration-200 ${
-            task.memo
+            task.memo || (task.images && task.images.length > 0)
               ? 'text-pink-500 hover:text-pink-600'
               : 'text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100'
           }`}
           aria-label="메모"
-          title={task.memo ? '메모 보기/편집' : '메모 추가'}
+          title={task.memo || (task.images && task.images.length > 0) ? '메모 보기/편집' : '메모 추가'}
         >
           📝
         </button>
@@ -308,14 +367,50 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
 
       {/* 메모 입력 영역 (편집 모드일 때만 표시) */}
       {isEditingMemo && (
-        <div className="pt-2 border-t border-pink-100">
+        <div className="pt-2 border-t border-pink-100 space-y-2">
           <textarea
+            ref={textareaRef}
             value={editMemo}
             onChange={handleMemoChange}
-            placeholder="메모를 입력하세요..."
+            onPaste={handlePaste}
+            placeholder="메모를 입력하세요... (이미지를 복사하여 붙여넣을 수 있습니다)"
             className="w-full px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400 text-sm font-sans resize-none"
             rows="3"
+            disabled={isUploadingImage}
           />
+          
+          {/* 이미지 업로드 중 표시 */}
+          {isUploadingImage && (
+            <div className="text-sm text-pink-500 flex items-center gap-2">
+              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              이미지 업로드 중...
+            </div>
+          )}
+          
+          {/* 이미지 목록 표시 */}
+          {images.length > 0 && (
+            <div className="grid grid-cols-2 gap-2">
+              {images.map((imageUrl, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={imageUrl}
+                    alt={`첨부 이미지 ${index + 1}`}
+                    className="w-full h-32 object-cover rounded-lg border-2 border-pink-200"
+                  />
+                  <button
+                    onClick={() => handleDeleteImage(index)}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                    aria-label="이미지 삭제"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
