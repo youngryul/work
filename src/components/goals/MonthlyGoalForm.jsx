@@ -21,6 +21,7 @@ export default function MonthlyGoalForm({ initialGoal = null, year, month, onSav
     yearlyGoalId: '',
     title: '',
     description: '',
+    status: MONTHLY_GOAL_STATUS.IN_PROGRESS,
   })
 
   const [loading, setLoading] = useState(false)
@@ -37,6 +38,14 @@ export default function MonthlyGoalForm({ initialGoal = null, year, month, onSav
         yearlyGoalId: initialGoal.yearlyGoalId,
         title: initialGoal.title,
         description: initialGoal.description || '',
+        status: initialGoal.status || MONTHLY_GOAL_STATUS.IN_PROGRESS,
+      })
+    } else {
+      setFormData({
+        yearlyGoalId: '',
+        title: '',
+        description: '',
+        status: MONTHLY_GOAL_STATUS.IN_PROGRESS,
       })
     }
   }, [initialGoal])
@@ -168,6 +177,24 @@ export default function MonthlyGoalForm({ initialGoal = null, year, month, onSav
               className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans resize-none"
             />
           </div>
+
+          {/* 완료 여부 (수정 모드에서만) */}
+          {isEditMode && (
+            <div>
+              <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
+                완료 여부
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) => updateField('status', e.target.value)}
+                className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+              >
+                <option value={MONTHLY_GOAL_STATUS.IN_PROGRESS}>진행 중</option>
+                <option value={MONTHLY_GOAL_STATUS.COMPLETED}>완료</option>
+                <option value={MONTHLY_GOAL_STATUS.PAUSED}>보류</option>
+              </select>
+            </div>
+          )}
 
           {/* 버튼 */}
           <div className="flex gap-4 justify-end pt-4 border-t-2 border-pink-200">

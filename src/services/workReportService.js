@@ -465,30 +465,59 @@ export async function generateWeeklyWorkReport(weekStart, weekEnd, reportDates) 
     }
   }
 
-  // 업무일지가 없으면 완료된 할 일을 기반으로 일일 업무일지 생성
+  // 일일 업무일지가 없으면 완료된 할 일을 확인하여 주간 업무일지 생성 가능 여부 판단
   if (reports.length === 0) {
     const { getCompletedTasksByDate } = await import('./taskService.js')
     
     // 주의 각 날짜에 대해 완료된 할 일 확인
     const startDate = new Date(weekStart)
     const endDate = new Date(weekEnd)
+    const daysWithCompletedTasks = []
     
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
       const dateString = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
       const completedTasks = await getCompletedTasksByDate(dateString)
       
       if (completedTasks.length > 0) {
-        // 완료된 할 일이 있으면 일일 업무일지 생성
-        const dailyReport = await generateDailyWorkReport(completedTasks, dateString)
-        // 일일 업무일지 저장
-        await saveWorkReport(dateString, dailyReport)
-        reports.push({ date: dateString, content: dailyReport })
+        // 완료된 할 일이 있는 날짜와 할 일 목록 저장
+        daysWithCompletedTasks.push({
+          date: dateString,
+          tasks: completedTasks
+        })
       }
+    }
+
+    // 완료된 할 일이 있는 날이 1일 이상인지 확인
+    if (daysWithCompletedTasks.length === 0) {
+      throw new Error('해당 주에 완료된 할 일이 없습니다. 주간 업무일지를 생성할 수 없습니다.')
+    }
+
+    // 완료된 할 일이 있는 날의 정보를 직접 사용하여 주간 업무일지 생성
+    // 각 날짜별로 완료된 할 일 목록을 요약 형식으로 변환
+    for (const dayData of daysWithCompletedTasks) {
+      const tasksSummary = dayData.tasks.map(task => `- ${task.title}`).join('\n')
+      const [year, month, day] = dayData.date.split('-').map(Number)
+      const dateObj = new Date(year, month - 1, day)
+      const weekdays = ['일', '월', '화', '수', '목', '금', '토']
+      const weekday = weekdays[dateObj.getDay()]
+      
+      // 간단한 일일 요약 형식으로 변환 (일일 업무일지 생성 없이)
+      const dailySummary = `## ${year}년 ${month}월 ${day}일 (${weekday}) 업무일지
+
+### 완료한 할 일
+${tasksSummary}
+
+총 ${dayData.tasks.length}개의 할 일을 완료했습니다.`
+      
+      reports.push({ 
+        date: dayData.date, 
+        content: dailySummary 
+      })
     }
   }
 
   if (reports.length === 0) {
-    throw new Error('업무일지 내용을 불러올 수 없습니다.')
+    throw new Error('해당 주에 업무일지나 완료된 할 일이 없습니다. 주간 업무일지를 생성할 수 없습니다.')
   }
 
   // 날짜 포맷팅

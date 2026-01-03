@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import ReactMarkdown from 'react-markdown'
 import { getCompletedCountsByDate, getCompletedTasksByDate } from '../services/taskService.js'
-import { generateDailyWorkReport, saveWorkReport, getWorkReport, getWorkReportDatesByMonth } from '../services/workReportService.js'
+// 주간 업무일지만 사용하므로 일일 업무일지 생성 기능 제거
+// import { generateDailyWorkReport, saveWorkReport, getWorkReport, getWorkReportDatesByMonth } from '../services/workReportService.js'
 
 /**
  * 할 일 달력 컴포넌트
@@ -14,9 +14,10 @@ export default function TodoCalendar() {
   const [selectedDate, setSelectedDate] = useState(null)
   const [completedTasks, setCompletedTasks] = useState([])
   const [isLoadingTasks, setIsLoadingTasks] = useState(false)
-  const [isGeneratingReport, setIsGeneratingReport] = useState(false)
-  const [workReport, setWorkReport] = useState(null)
-  const [workReportDates, setWorkReportDates] = useState([]) // 업무일지가 있는 날짜들
+  // 주간 업무일지만 사용하므로 일일 업무일지 관련 상태 제거
+  // const [isGeneratingReport, setIsGeneratingReport] = useState(false)
+  // const [workReport, setWorkReport] = useState(null)
+  // const [workReportDates, setWorkReportDates] = useState([]) // 업무일지가 있는 날짜들
 
   /**
    * 완료 개수 로드
@@ -35,23 +36,21 @@ export default function TodoCalendar() {
     }
   }
 
-  /**
-   * DB에서 업무일지 날짜 목록 로드
-   */
-  const loadWorkReportDates = async () => {
-    try {
-      const year = currentDate.getFullYear()
-      const month = currentDate.getMonth() + 1
-      const dates = await getWorkReportDatesByMonth(year, month)
-      setWorkReportDates(dates)
-    } catch (error) {
-      console.error('업무일지 날짜 로드 오류:', error)
-    }
-  }
+  // 주간 업무일지만 사용하므로 일일 업무일지 날짜 로드 제거
+  // const loadWorkReportDates = async () => {
+  //   try {
+  //     const year = currentDate.getFullYear()
+  //     const month = currentDate.getMonth() + 1
+  //     const dates = await getWorkReportDatesByMonth(year, month)
+  //     setWorkReportDates(dates)
+  //   } catch (error) {
+  //     console.error('업무일지 날짜 로드 오류:', error)
+  //   }
+  // }
 
   useEffect(() => {
     loadCompletedCounts()
-    loadWorkReportDates()
+    // loadWorkReportDates() // 주간 업무일지만 사용
   }, [currentDate])
 
   /**
@@ -84,13 +83,13 @@ export default function TodoCalendar() {
 
     setSelectedDate(dateString)
     setIsLoadingTasks(true)
-    setWorkReport(null) // 기존 업무일지 초기화
+    // setWorkReport(null) // 주간 업무일지만 사용
     try {
       const tasks = await getCompletedTasksByDate(dateString)
       setCompletedTasks(tasks)
-      // DB에서 해당 날짜의 업무일지 로드
-      const existingReport = await getWorkReport(dateString)
-      setWorkReport(existingReport)
+      // 주간 업무일지만 사용하므로 일일 업무일지 로드 제거
+      // const existingReport = await getWorkReport(dateString)
+      // setWorkReport(existingReport)
     } catch (error) {
       console.error('완료된 할 일 로드 오류:', error)
     } finally {
@@ -104,7 +103,7 @@ export default function TodoCalendar() {
   const handleClosePopup = () => {
     setSelectedDate(null)
     setCompletedTasks([])
-    setWorkReport(null)
+    // setWorkReport(null) // 주간 업무일지만 사용
   }
 
   /**
@@ -119,27 +118,25 @@ export default function TodoCalendar() {
     return selectedDateObj < today
   }
 
-  /**
-   * 업무일지 생성
-   */
-  const handleGenerateWorkReport = async () => {
-    if (!selectedDate || completedTasks.length === 0) return
-
-    setIsGeneratingReport(true)
-    try {
-      const report = await generateDailyWorkReport(completedTasks, selectedDate)
-      setWorkReport(report)
-      // DB에 저장
-      await saveWorkReport(selectedDate, report)
-      // 달력 도장 표시를 위해 날짜 목록 업데이트
-      await loadWorkReportDates()
-    } catch (error) {
-      console.error('업무일지 생성 오류:', error)
-      alert(error.message || '업무일지 생성에 실패했습니다.')
-    } finally {
-      setIsGeneratingReport(false)
-    }
-  }
+  // 주간 업무일지만 사용하므로 일일 업무일지 생성 함수 제거
+  // const handleGenerateWorkReport = async () => {
+  //   if (!selectedDate || completedTasks.length === 0) return
+  //
+  //   setIsGeneratingReport(true)
+  //   try {
+  //     const report = await generateDailyWorkReport(completedTasks, selectedDate)
+  //     setWorkReport(report)
+  //     // DB에 저장
+  //     await saveWorkReport(selectedDate, report)
+  //     // 달력 도장 표시를 위해 날짜 목록 업데이트
+  //     await loadWorkReportDates()
+  //   } catch (error) {
+  //     console.error('업무일지 생성 오류:', error)
+  //     alert(error.message || '업무일지 생성에 실패했습니다.')
+  //   } finally {
+  //     setIsGeneratingReport(false)
+  //   }
+  // }
 
   /**
    * 날짜 포맷팅 (팝업 제목용)
@@ -194,7 +191,8 @@ export default function TodoCalendar() {
     for (let day = 1; day <= daysInMonth; day++) {
       const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
       const count = completedCounts[dateString] || 0
-      const hasWorkReport = workReportDates.includes(dateString)
+      // 주간 업무일지만 사용하므로 일일 업무일지 도장 표시 제거
+      // const hasWorkReport = workReportDates.includes(dateString)
       const isToday =
         year === new Date().getFullYear() &&
         month === new Date().getMonth() &&
@@ -226,14 +224,14 @@ export default function TodoCalendar() {
               {count}개
             </span>
           )}
-          {/* 업무일지 도장 표시 */}
-          {hasWorkReport && (
+          {/* 주간 업무일지만 사용하므로 일일 업무일지 도장 표시 제거 */}
+          {/* {hasWorkReport && (
             <div className="absolute top-1 right-1">
               <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-md border-2 border-white">
                 <span className="text-white text-lg font-bold">✓</span>
               </div>
             </div>
-          )}
+          )} */}
         </div>
       )
     }
@@ -365,8 +363,8 @@ export default function TodoCalendar() {
                 </div>
               )}
 
-              {/* 업무일지 표시 (하단) */}
-              {workReport && (
+              {/* 주간 업무일지만 사용하므로 일일 업무일지 표시 제거 */}
+              {/* {workReport && (
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-xl font-semibold text-gray-800">📝 업무일지</h4>
@@ -398,7 +396,7 @@ export default function TodoCalendar() {
                     </ReactMarkdown>
                   </div>
                 </div>
-              )}
+              )} */}
             </div>
           </div>
         </div>

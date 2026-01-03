@@ -2,15 +2,43 @@
  * 월별 목표 리스트 컴포넌트
  * 월별 목표를 리스트 형태로 표시
  */
-import { MONTHLY_GOAL_STATUS_LABEL } from '../../constants/goalCategories.js'
+import { useState } from 'react'
+import { MONTHLY_GOAL_STATUS, MONTHLY_GOAL_STATUS_LABEL } from '../../constants/goalCategories.js'
+import { updateMonthlyGoal } from '../../services/goalService.js'
 
 /**
  * @param {Array} goals - 월별 목표 목록
+ * @param {number} year - 연도
+ * @param {number} month - 월
  * @param {Function} onGoalClick - 목표 클릭 핸들러
  * @param {Function} onEdit - 수정 핸들러
  * @param {Function} onDelete - 삭제 핸들러
+ * @param {Function} onUpdate - 업데이트 완료 핸들러
  */
-export default function MonthlyGoalList({ goals, onGoalClick, onEdit, onDelete }) {
+export default function MonthlyGoalList({ goals, year, month, onGoalClick, onEdit, onDelete, onUpdate }) {
+  const [updatingStatus, setUpdatingStatus] = useState({})
+
+  const handleStatusToggle = async (goal, e) => {
+    e.stopPropagation()
+    
+    const newStatus = goal.status === MONTHLY_GOAL_STATUS.COMPLETED 
+      ? MONTHLY_GOAL_STATUS.IN_PROGRESS 
+      : MONTHLY_GOAL_STATUS.COMPLETED
+
+    setUpdatingStatus(prev => ({ ...prev, [goal.id]: true }))
+    
+    try {
+      await updateMonthlyGoal(goal.id, {
+        status: newStatus,
+      })
+      onUpdate?.()
+    } catch (error) {
+      console.error('상태 업데이트 실패:', error)
+      alert('상태 업데이트에 실패했습니다.')
+    } finally {
+      setUpdatingStatus(prev => ({ ...prev, [goal.id]: false }))
+    }
+  }
   if (!goals || goals.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500 font-sans">
@@ -67,29 +95,29 @@ export default function MonthlyGoalList({ goals, onGoalClick, onEdit, onDelete }
             </div>
           </div>
 
-          {/* 진행률 */}
-          <div className="mb-3">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-gray-600 font-sans">진행률</span>
-              <span className="text-xs font-bold text-gray-800 font-sans">{goal.progressPercentage}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-pink-400 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${goal.progressPercentage}%` }}
-              />
-            </div>
-          </div>
-
-          {/* 상태 */}
+          {/* 완료 여부 */}
           <div className="flex items-center justify-between">
-            <span className={`px-2 py-1 text-xs rounded font-sans ${
-              goal.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-              goal.status === 'PAUSED' ? 'bg-gray-100 text-gray-800' :
-              'bg-blue-100 text-blue-800'
-            }`}>
-              {MONTHLY_GOAL_STATUS_LABEL[goal.status] || goal.status}
-            </span>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={goal.status === MONTHLY_GOAL_STATUS.COMPLETED}
+                  onChange={(e) => handleStatusToggle(goal, e)}
+                  disabled={updatingStatus[goal.id]}
+                  className="w-5 h-5 text-pink-600 border-gray-300 rounded focus:ring-pink-500 cursor-pointer disabled:opacity-50"
+                />
+                <span className={`text-sm font-medium font-sans ${
+                  goal.status === MONTHLY_GOAL_STATUS.COMPLETED ? 'text-green-700' : 'text-gray-700'
+                }`}>
+                  {goal.status === MONTHLY_GOAL_STATUS.COMPLETED ? '완료' : '미완료'}
+                </span>
+              </label>
+              {goal.status === MONTHLY_GOAL_STATUS.PAUSED && (
+                <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded font-sans">
+                  보류
+                </span>
+              )}
+            </div>
             <span className="text-xs text-gray-500 font-sans">
               {goal.year}년 {goal.month}월
             </span>

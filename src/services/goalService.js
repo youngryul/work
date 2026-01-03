@@ -214,8 +214,8 @@ export async function createMonthlyGoal(goalData) {
         month: goalData.month,
         title: goalData.title,
         description: goalData.description || null,
-        status: 'IN_PROGRESS',
-        progress_percentage: 0,
+        status: goalData.status || 'IN_PROGRESS',
+        progress_percentage: 0, // 기존 데이터 호환성을 위해 유지 (사용하지 않음)
         user_id: userId,
       }])
       .select('*, yearly_goals(*)')
@@ -244,7 +244,8 @@ export async function updateMonthlyGoal(id, goalData) {
     if (goalData.title !== undefined) updateData.title = goalData.title
     if (goalData.description !== undefined) updateData.description = goalData.description
     if (goalData.status !== undefined) updateData.status = goalData.status
-    if (goalData.progressPercentage !== undefined) updateData.progress_percentage = goalData.progressPercentage
+    // progress_percentage는 더 이상 사용하지 않음 (기존 데이터 호환성을 위해 유지)
+    // if (goalData.progressPercentage !== undefined) updateData.progress_percentage = goalData.progressPercentage
 
     const userId = await getCurrentUserId()
     if (!userId) {
@@ -722,5 +723,353 @@ function parseMonthlyReflection(data) {
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   }
+}
+
+/**
+ * Habit Tracker 목록 조회
+ * @param {number} year - 연도
+ * @param {number} month - 월 (1-12)
+ * @returns {Promise<Array>} Habit Tracker 목록
+ */
+export async function getHabitTrackers(year, month) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
+  try {
+    const { data, error } = await supabase
+        .from('habit_trackers')
+        .select('*, monthly_goals(*)')
+        .eq('user_id', userId)
+        .eq('year', year)
+        .eq('month', month)
+        .order('created_at', { ascending: true })
+
+    if (error) {
+      throw error
+    }
+
+    const trackers = (data || []).map(parseHabitTracker)
+
+    // 각 tracker의 일별 체크 데이터 로드
+    for (const tracker of trackers) {
+      tracker.days = await getHabitTrackerDays(tracker.id)
+    }
+
+    return trackers
+  } catch (error) {
+    console.error('Habit Tracker 조회 오류:', error)
+    throw error
+  }
+}
+
+/**
+ * 특정 월별 목표의 Habit Tracker 조회
+ * @param {string} monthlyGoalId - 월별 목표 ID
+ * @returns {Promise<Array>} Habit Tracker 목록
+ */
+export async function getHabitTrackersByMonthlyGoal(monthlyGoalId) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
+  try {
+    const { data, error } = await supabase
+        .from('habit_trackers')
+        .select('*, monthly_goals(*)')
+        .eq('user_id', userId)
+        .eq('monthly_goal_id', monthlyGoalId)
+        .order('created_at', { ascending: true })
+
+    if (error) {
+      throw error
+    }
+
+    const trackers = (data || []).map(parseHabitTracker)
+
+    // 각 tracker의 일별 체크 데이터 로드
+    for (const tracker of trackers) {
+      tracker.days = await getHabitTrackerDays(tracker.id)
+    }
+
+    return trackers
+  } catch (error) {
+    console.error('Habit Tracker 조회 오류:', error)
+    throw error
+  }
+}
+
+/**
+ * Habit Tracker 생성
+ * @param {Object} trackerData - Tracker 데이터
+ * @returns {Promise<Object>} 생성된 Tracker
+ */
+export async function createHabitTracker(trackerData) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  try {
+    const insertData = {
+      user_id: userId,
+      year: trackerData.year,
+      month: trackerData.month,
+      title: trackerData.title,
+      color: trackerData.color || '#FFB6C1',
+    }
+
+    // monthly_goal_id가 있으면 추가
+    if (trackerData.monthlyGoalId) {
+      insertData.monthly_goal_id = trackerData.monthlyGoalId
+    }
+
+    const { data, error } = await supabase
+        .from('habit_trackers')
+        .insert([insertData])
+        .select('*, monthly_goals(*)')
+        .single()
+
+    if (error) {
+      throw error
+    }
+
+    const tracker = parseHabitTracker(data)
+    tracker.days = []
+    return tracker
+  } catch (error) {
+    console.error('Habit Tracker 생성 오류:', error)
+    throw error
+  }
+}
+
+/**
+ * Habit Tracker 삭제
+ * @param {string} id - Tracker ID
+ * @returns {Promise<void>}
+ */
+export async function deleteHabitTracker(id) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  try {
+    const { error } = await supabase
+        .from('habit_trackers')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId)
+
+    if (error) {
+      throw error
+    }
+  } catch (error) {
+    console.error('Habit Tracker 삭제 오류:', error)
+    throw error
+  }
+}
+
+/**
+ * Habit Tracker 일별 체크 조회
+ * @param {string} habitTrackerId - Habit Tracker ID
+ * @returns {Promise<Array>} 일별 체크 목록
+ */
+export async function getHabitTrackerDays(habitTrackerId) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
+  try {
+    // habit_tracker의 user_id 확인
+    const { data: tracker } = await supabase
+        .from('habit_trackers')
+        .select('user_id')
+        .eq('id', habitTrackerId)
+        .eq('user_id', userId)
+        .single()
+
+    if (!tracker) {
+      return []
+    }
+
+    // habit_tracker_days 조회
+    const { data, error } = await supabase
+        .from('habit_tracker_days')
+        .select('*')
+        .eq('habit_tracker_id', habitTrackerId)
+        .eq('user_id', userId)
+        .order('day', { ascending: true })
+
+    if (error) {
+      throw error
+    }
+
+    return (data || []).map(parseHabitTrackerDay)
+  } catch (error) {
+    console.error('Habit Tracker 일별 체크 조회 오류:', error)
+    throw error
+  }
+}
+
+/**
+ * Habit Tracker 일별 체크 토글
+ * @param {string} habitTrackerId - Habit Tracker ID
+ * @param {number} day - 일 (1-31)
+ * @param {boolean} isCompleted - 완료 여부
+ * @returns {Promise<Object>} 업데이트된 체크
+ */
+export async function toggleHabitTrackerDay(habitTrackerId, day, isCompleted) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  try {
+    // habit_tracker의 user_id 확인
+    const { data: tracker } = await supabase
+        .from('habit_trackers')
+        .select('user_id')
+        .eq('id', habitTrackerId)
+        .eq('user_id', userId)
+        .single()
+
+    if (!tracker) {
+      throw new Error('권한이 없습니다.')
+    }
+
+    // 기존 체크 확인
+    const { data: existing } = await supabase
+        .from('habit_tracker_days')
+        .select('*')
+        .eq('habit_tracker_id', habitTrackerId)
+        .eq('day', day)
+        .eq('user_id', userId)
+        .single()
+
+    let result
+
+    if (existing) {
+      // 업데이트
+      const { data, error } = await supabase
+          .from('habit_tracker_days')
+          .update({
+            is_completed: isCompleted,
+            completed_at: isCompleted ? new Date().toISOString() : null,
+          })
+          .eq('id', existing.id)
+          .eq('user_id', userId)
+          .select()
+          .single()
+
+      if (error) {
+        throw error
+      }
+
+      result = parseHabitTrackerDay(data)
+    } else {
+      // 생성
+      const { data, error } = await supabase
+          .from('habit_tracker_days')
+          .insert([{
+            user_id: userId,
+            habit_tracker_id: habitTrackerId,
+            day: day,
+            is_completed: isCompleted,
+            completed_at: isCompleted ? new Date().toISOString() : null,
+          }])
+          .select()
+          .single()
+
+      if (error) {
+        throw error
+      }
+
+      result = parseHabitTrackerDay(data)
+    }
+
+    return result
+  } catch (error) {
+    console.error('Habit Tracker 일별 체크 업데이트 오류:', error)
+    throw error
+  }
+}
+
+/**
+ * 이전 달 Habit Tracker 완료 종합 조회
+ * @param {number} year - 연도
+ * @param {number} month - 월 (1-12)
+ * @returns {Promise<Array>} 완료 종합 목록
+ */
+export async function getPreviousMonthHabitTrackerSummary(year, month) {
+  try {
+    // 이전 달 계산
+    let prevYear = year
+    let prevMonth = month - 1
+    if (prevMonth < 1) {
+      prevMonth = 12
+      prevYear = year - 1
+    }
+
+    const trackers = await getHabitTrackers(prevYear, prevMonth)
+
+    // 각 tracker의 완료율 계산
+    return trackers.map(tracker => {
+      const totalDays = getDaysInMonth(prevYear, prevMonth)
+      const completedDays = tracker.days.filter(d => d.isCompleted).length
+      const completionRate = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0
+
+      return {
+        ...tracker,
+        totalDays,
+        completedDays,
+        completionRate,
+      }
+    })
+  } catch (error) {
+    console.error('이전 달 Habit Tracker 종합 조회 오류:', error)
+    throw error
+  }
+}
+
+// 데이터 파싱 헬퍼 함수들
+function parseHabitTracker(data) {
+  return {
+    id: data.id,
+    monthlyGoalId: data.monthly_goal_id,
+    monthlyGoal: data.monthly_goals ? parseMonthlyGoal(data.monthly_goals) : null,
+    year: data.year,
+    month: data.month,
+    title: data.title,
+    color: data.color,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+    days: [], // 별도로 로드됨
+  }
+}
+
+function parseHabitTrackerDay(data) {
+  return {
+    id: data.id,
+    habitTrackerId: data.habit_tracker_id,
+    day: data.day,
+    isCompleted: data.is_completed,
+    completedAt: data.completed_at,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  }
+}
+
+/**
+ * 특정 연도/월의 일수 계산
+ * @param {number} year - 연도
+ * @param {number} month - 월 (1-12)
+ * @returns {number} 일수
+ */
+function getDaysInMonth(year, month) {
+  return new Date(year, month, 0).getDate()
 }
 
