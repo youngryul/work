@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { saveDiary, getDiaryByDate } from '../services/diaryService.js'
+import { uploadImage } from '../services/imageService.js'
 
 /**
  * 일기 작성/수정 폼 컴포넌트
@@ -18,6 +19,9 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
   const [existingDiary, setExistingDiary] = useState(null)
   const [imageLoadError, setImageLoadError] = useState(false) // 이미지 로드 실패 상태
   const [showPrompt, setShowPrompt] = useState(false) // 프롬프트 표시 여부
+  const [attachedImages, setAttachedImages] = useState([]) // 첨부된 이미지 URL 목록
+  const [uploadingImages, setUploadingImages] = useState({}) // 업로드 중인 이미지 상태
+  const fileInputRef = useRef(null)
 
   // 기존 일기 로드
   useEffect(() => {
@@ -33,10 +37,12 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
         setContent(diary.content)
         setExistingDiary(diary)
         setImageLoadError(false) // 이미지 로드 상태 초기화
+        setAttachedImages(diary.attachedImages || [])
       } else {
         setContent('')
         setExistingDiary(null)
         setImageLoadError(false)
+        setAttachedImages([])
       }
     } catch (error) {
       console.error('일기 로드 실패:', error)
@@ -57,7 +63,7 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
     setError(null)
 
     try {
-      await saveDiary(selectedDate, content, false)
+      await saveDiary(selectedDate, content, false, attachedImages)
       alert('일기가 저장되었습니다. 이미지 생성 중...')
       onSave?.()
     } catch (error) {
@@ -68,6 +74,79 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
       setIsLoading(false)
       setIsGeneratingImage(false)
     }
+  }
+
+  /**
+   * 파일 업로드 핸들러
+   */
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files)
+    if (files.length === 0) return
+
+    for (const file of files) {
+      const fileId = `${Date.now()}-${Math.random().toString(36).substring(2)}`
+      setUploadingImages(prev => ({ ...prev, [fileId]: true }))
+
+      try {
+        const imageUrl = await uploadImage(file, 'diaries')
+        setAttachedImages(prev => [...prev, imageUrl])
+      } catch (error) {
+        console.error('이미지 업로드 실패:', error)
+        alert(`이미지 업로드 실패: ${error.message || '알 수 없는 오류'}`)
+      } finally {
+        setUploadingImages(prev => {
+          const newState = { ...prev }
+          delete newState[fileId]
+          return newState
+        })
+      }
+    }
+
+    // 파일 입력 초기화
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  /**
+   * 클립보드에서 이미지 붙여넣기
+   */
+  const handlePaste = async (e) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      if (item.type.startsWith('image/')) {
+        e.preventDefault()
+        const file = item.getAsFile()
+        if (!file) continue
+
+        const fileId = `${Date.now()}-${Math.random().toString(36).substring(2)}`
+        setUploadingImages(prev => ({ ...prev, [fileId]: true }))
+
+        try {
+          const imageUrl = await uploadImage(file, 'diaries')
+          setAttachedImages(prev => [...prev, imageUrl])
+        } catch (error) {
+          console.error('이미지 업로드 실패:', error)
+          alert(`이미지 업로드 실패: ${error.message || '알 수 없는 오류'}`)
+        } finally {
+          setUploadingImages(prev => {
+            const newState = { ...prev }
+            delete newState[fileId]
+            return newState
+          })
+        }
+      }
+    }
+  }
+
+  /**
+   * 첨부 이미지 삭제
+   */
+  const handleRemoveImage = (index) => {
+    setAttachedImages(prev => prev.filter((_, i) => i !== index))
   }
 
   // 이미지 재생성
@@ -82,7 +161,7 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
 
     try {
       // 재생성된 일기 데이터를 받아옴
-      const updatedDiary = await saveDiary(selectedDate, content, true)
+      const updatedDiary = await saveDiary(selectedDate, content, true, attachedImages)
       
       // 반환된 데이터로 즉시 상태 업데이트
       if (updatedDiary) {
@@ -148,7 +227,8 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="오늘 하루를 기록해보세요..."
+              onPaste={handlePaste}
+              placeholder="오늘 하루를 기록해보세요... (이미지를 복사해서 붙여넣을 수 있습니다)"
               className="w-full h-64 p-4 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans resize-none"
               required
             />
@@ -156,6 +236,71 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
               일기를 저장하면 AI가 자동으로 그림을 생성합니다.
             </p>
           </div>
+
+          {/* 첨부 이미지 업로드 */}
+          <div>
+            <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
+              사진 첨부
+            </label>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="diary-image-upload"
+                />
+                <label
+                  htmlFor="diary-image-upload"
+                  className="px-4 py-2 bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 transition-colors text-sm font-medium cursor-pointer font-sans"
+                >
+                  📷 사진 선택
+                </label>
+                <p className="text-xs text-gray-500 font-sans">
+                  또는 이미지를 복사해서 붙여넣으세요 (Ctrl+V / Cmd+V)
+                </p>
+              </div>
+
+              {/* 업로드 중 표시 */}
+              {Object.keys(uploadingImages).length > 0 && (
+                <div className="flex items-center gap-2 text-sm text-gray-600 font-sans">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-pink-400"></div>
+                  <span>이미지 업로드 중...</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 첨부 이미지 표시 */}
+          {attachedImages.length > 0 && (
+            <div>
+              <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
+                첨부된 사진 ({attachedImages.length}개)
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {attachedImages.map((imageUrl, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={imageUrl}
+                      alt={`첨부 이미지 ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg border-2 border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index)}
+                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors text-xs font-bold opacity-0 group-hover:opacity-100"
+                      title="삭제"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* 기존 이미지 표시 */}
           {(existingDiary?.imageUrl || isGeneratingImage) && (

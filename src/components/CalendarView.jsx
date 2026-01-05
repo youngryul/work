@@ -8,6 +8,7 @@ import DiaryForm from './DiaryForm.jsx'
 export default function CalendarView() {
   const [selectedDate, setSelectedDate] = useState(null)
   const [showDiaryForm, setShowDiaryForm] = useState(false)
+  const [calendarKey, setCalendarKey] = useState(0) // 달력 새로고침을 위한 key
 
   const handleDateClick = (dateString) => {
     setSelectedDate(dateString)
@@ -17,8 +18,8 @@ export default function CalendarView() {
   const handleSave = () => {
     setShowDiaryForm(false)
     setSelectedDate(null)
-    // 달력 새로고침을 위해 페이지 리로드 또는 상태 업데이트
-    window.location.reload()
+    // 달력 새로고침을 위해 key 변경 (페이지 리로드 없이)
+    setCalendarKey(prev => prev + 1)
   }
 
   const handleCancel = () => {
@@ -44,7 +45,7 @@ export default function CalendarView() {
               날짜를 클릭하여 일기를 작성하고 AI 그림을 생성해보세요
             </p>
           </div>
-          <DiaryCalendar onDateClick={handleDateClick} />
+          <DiaryCalendar key={calendarKey} onDateClick={handleDateClick} />
         </>
       )}
     </div>

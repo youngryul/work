@@ -65,7 +65,7 @@ export default function DiaryReminderModal({ yesterdayDate, isOpen, onClose, onW
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
       {showDiaryForm ? (
         // 일기 작성 폼 팝업
         <div 

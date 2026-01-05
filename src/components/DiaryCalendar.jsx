@@ -290,8 +290,10 @@ export default function DiaryCalendar({ onDateClick }) {
 
             {/* 일기 내용 */}
             <div className="flex-1 overflow-y-auto p-6">
+              {/* AI 생성 이미지 */}
               {selectedDiary.imageUrl && (
                 <div className="mb-6">
+                  <h4 className="text-sm font-medium text-gray-600 mb-2 font-sans">AI 생성 이미지</h4>
                   <img
                     src={selectedDiary.imageUrl}
                     alt="일기 이미지"
@@ -299,6 +301,27 @@ export default function DiaryCalendar({ onDateClick }) {
                   />
                 </div>
               )}
+              
+              {/* 첨부된 사진 */}
+              {selectedDiary.attachedImages && selectedDiary.attachedImages.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-gray-600 mb-2 font-sans">
+                    첨부된 사진 ({selectedDiary.attachedImages.length}개)
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {selectedDiary.attachedImages.map((imageUrl, index) => (
+                      <img
+                        key={index}
+                        src={imageUrl}
+                        alt={`첨부 이미지 ${index + 1}`}
+                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* 일기 내용 */}
               <div className="text-lg text-gray-700 whitespace-pre-wrap font-sans">
                 {selectedDiary.content}
               </div>

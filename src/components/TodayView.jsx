@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { getTodayTasks, resetTodayTasks, moveToBacklog } from '../services/taskService.js'
 import { getDiaryByDate } from '../services/diaryService.js'
 import TaskItem from './TaskItem.jsx'
+import NotificationCenter from './NotificationCenter.jsx'
 import DiaryReminderModal from './DiaryReminderModal.jsx'
-import SummaryReminderModal from './SummaryReminderModal.jsx'
 import { 
   shouldShowWeeklyReminder, 
   shouldShowMonthlyReminder,
@@ -59,6 +59,7 @@ export default function TodayView() {
   const [showMonthlySummaryReminder, setShowMonthlySummaryReminder] = useState(false)
   const [weeklyReminderInfo, setWeeklyReminderInfo] = useState(null)
   const [monthlyReminderInfo, setMonthlyReminderInfo] = useState(null)
+  const [showDiaryForm, setShowDiaryForm] = useState(false) // 일기 작성 폼 표시 여부
 
   /**
    * 날짜 변경 감지 및 리셋 처리
@@ -177,8 +178,14 @@ export default function TodayView() {
 
   /**
    * 주간/월간 요약 리마인더 확인
+   * 일기 리마인더가 열려있지 않을 때만 표시
    */
   const checkSummaryReminders = async () => {
+    // 일기 리마인더가 열려있으면 요약 리마인더는 표시하지 않음
+    if (showDiaryReminder) {
+      return
+    }
+    
     // 주간 요약 리마인더 (월요일)
     if (shouldShowWeeklyReminder()) {
       const lastWeek = getLastWeekInfo()
@@ -335,40 +342,55 @@ export default function TodayView() {
         )}
       </div>
 
-      {/* 전날 일기 작성 리마인더 모달 */}
-      <DiaryReminderModal
-        yesterdayDate={yesterdayDate}
-        isOpen={showDiaryReminder}
-        onClose={() => {
+      {/* 알림 센터 */}
+      <NotificationCenter
+        diaryReminder={{
+          isOpen: showDiaryReminder,
+          yesterdayDate: yesterdayDate,
+        }}
+        weeklySummaryReminder={{
+          isOpen: showWeeklySummaryReminder,
+          period: weeklyReminderInfo?.period || '',
+        }}
+        monthlySummaryReminder={{
+          isOpen: showMonthlySummaryReminder,
+          period: monthlyReminderInfo?.period || '',
+        }}
+        onDiaryReminderClose={() => {
           setShowDiaryReminder(false)
-          loadTasks() // 할 일 목록 새로고침
+          loadTasks()
+          // 일기 리마인더가 닫힌 후 요약 리마인더 확인
+          setTimeout(() => {
+            checkSummaryReminders()
+          }, 500)
         }}
-        onWriteDiary={handleDiaryWritten}
-      />
-
-      {/* 주간 요약 리마인더 모달 */}
-      <SummaryReminderModal
-        type="weekly"
-        period={weeklyReminderInfo?.period || ''}
-        isOpen={showWeeklySummaryReminder}
-        onClose={() => {
+        onWeeklySummaryGenerate={() => {
+          handleGenerateWeeklySummary()
           setShowWeeklySummaryReminder(false)
-          loadTasks()
         }}
-        onGenerate={handleGenerateWeeklySummary}
+        onMonthlySummaryGenerate={() => {
+          handleGenerateMonthlySummary()
+          setShowMonthlySummaryReminder(false)
+        }}
+        onDiaryWritten={handleDiaryWritten}
+        onShowDiaryForm={setShowDiaryForm}
+        onWeeklySummaryClose={() => setShowWeeklySummaryReminder(false)}
+        onMonthlySummaryClose={() => setShowMonthlySummaryReminder(false)}
       />
 
-      {/* 월간 요약 리마인더 모달 */}
-      <SummaryReminderModal
-        type="monthly"
-        period={monthlyReminderInfo?.period || ''}
-        isOpen={showMonthlySummaryReminder}
-        onClose={() => {
-          setShowMonthlySummaryReminder(false)
-          loadTasks()
-        }}
-        onGenerate={handleGenerateMonthlySummary}
-      />
+      {/* 일기 작성 모달 (알림 센터에서 열 때만 표시) */}
+      {showDiaryForm && (
+        <DiaryReminderModal
+          yesterdayDate={yesterdayDate}
+          isOpen={true}
+          onClose={() => {
+            setShowDiaryForm(false)
+            setShowDiaryReminder(false)
+            loadTasks()
+          }}
+          onWriteDiary={handleDiaryWritten}
+        />
+      )}
     </>
   )
 }

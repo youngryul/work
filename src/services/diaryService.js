@@ -13,9 +13,10 @@ import { getCurrentUserId } from '../utils/authHelper.js'
  * @param {string} date - 날짜 (YYYY-MM-DD)
  * @param {string} content - 일기 내용
  * @param {boolean} regenerateImage - 이미지 재생성 여부 (기본값: false)
+ * @param {Array<string>} attachedImages - 첨부된 이미지 URL 배열 (기본값: [])
  * @returns {Promise<Object>} 저장된 일기
  */
-export async function saveDiary(date, content, regenerateImage = false) {
+export async function saveDiary(date, content, regenerateImage = false, attachedImages = []) {
   const userId = await getCurrentUserId()
   if (!userId) {
     throw new Error('로그인이 필요합니다.')
@@ -93,6 +94,14 @@ export async function saveDiary(date, content, regenerateImage = false) {
       upsertData.image_prompt = imagePrompt
     }
     
+    // 첨부 이미지 저장 (JSON 배열)
+    if (attachedImages && attachedImages.length > 0) {
+      upsertData.attached_images = attachedImages
+    } else {
+      // 빈 배열로 초기화
+      upsertData.attached_images = []
+    }
+    
     // updated_at을 명시적으로 설정하여 트리거 오류 방지
     upsertData.updated_at = new Date().toISOString()
     
@@ -115,6 +124,7 @@ export async function saveDiary(date, content, regenerateImage = false) {
       ...data,
       imageUrl: data.image_url,
       imagePrompt: data.image_prompt,
+      attachedImages: data.attached_images || [],
     }
   } catch (error) {
     console.error('일기 저장 실패:', error)
@@ -153,6 +163,7 @@ export async function getDiaryByDate(date) {
       ...data,
       imageUrl: data.image_url,
       imagePrompt: data.image_prompt,
+      attachedImages: data.attached_images || [],
     } : null
   } catch (error) {
     console.error('일기 조회 오류:', error)
@@ -194,6 +205,7 @@ export async function getDiariesByMonth(year, month) {
       ...item,
       imageUrl: item.image_url,
       imagePrompt: item.image_prompt,
+      attachedImages: item.attached_images || [],
     }))
   } catch (error) {
     console.error('월별 일기 조회 오류:', error)
