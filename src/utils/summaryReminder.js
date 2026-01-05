@@ -1,9 +1,7 @@
 /**
  * 주간/월간 요약 생성 리마인더 유틸리티
+ * DB 기반으로 변경됨 (summaryReminderService.js 사용)
  */
-
-const LAST_WEEKLY_REMINDER_DATE_KEY = 'lastWeeklySummaryReminderDate'
-const LAST_MONTHLY_REMINDER_DATE_KEY = 'lastMonthlySummaryReminderDate'
 
 /**
  * 오늘 날짜를 YYYY-MM-DD 형식으로 반환
@@ -33,57 +31,53 @@ export function isFirstDayOfMonth() {
 }
 
 /**
- * 주간 요약 리마인더를 표시해야 하는지 확인
+ * 주간 요약 리마인더를 표시해야 하는지 확인 (비동기 - DB 확인)
+ * @returns {Promise<boolean>}
  */
-export function shouldShowWeeklyReminder() {
+export async function shouldShowWeeklyReminder() {
   if (!isMonday()) {
     return false
   }
 
-  const todayDate = getTodayDateString()
-  const lastReminderDate = localStorage.getItem(LAST_WEEKLY_REMINDER_DATE_KEY)
+  // DB에서 오늘 리마인더 표시 여부 확인
+  const { hasSummaryReminderToday } = await import('../services/summaryReminderService.js')
+  const alreadyShown = await hasSummaryReminderToday('weekly')
   
-  // 오늘 이미 리마인더를 표시했으면 스킵
-  if (lastReminderDate === todayDate) {
-    return false
-  }
-
-  return true
+  return !alreadyShown
 }
 
 /**
- * 월간 요약 리마인더를 표시해야 하는지 확인
+ * 월간 요약 리마인더를 표시해야 하는지 확인 (비동기 - DB 확인)
+ * @returns {Promise<boolean>}
  */
-export function shouldShowMonthlyReminder() {
+export async function shouldShowMonthlyReminder() {
   if (!isFirstDayOfMonth()) {
     return false
   }
 
-  const todayDate = getTodayDateString()
-  const lastReminderDate = localStorage.getItem(LAST_MONTHLY_REMINDER_DATE_KEY)
+  // DB에서 오늘 리마인더 표시 여부 확인
+  const { hasSummaryReminderToday } = await import('../services/summaryReminderService.js')
+  const alreadyShown = await hasSummaryReminderToday('monthly')
   
-  // 오늘 이미 리마인더를 표시했으면 스킵
-  if (lastReminderDate === todayDate) {
-    return false
-  }
-
-  return true
+  return !alreadyShown
 }
 
 /**
- * 주간 요약 리마인더 표시 완료 처리
+ * 주간 요약 리마인더 표시 완료 처리 (DB 저장)
+ * @returns {Promise<void>}
  */
-export function markWeeklyReminderShown() {
-  const todayDate = getTodayDateString()
-  localStorage.setItem(LAST_WEEKLY_REMINDER_DATE_KEY, todayDate)
+export async function markWeeklyReminderShown() {
+  const { markSummaryReminderShown } = await import('../services/summaryReminderService.js')
+  await markSummaryReminderShown('weekly')
 }
 
 /**
- * 월간 요약 리마인더 표시 완료 처리
+ * 월간 요약 리마인더 표시 완료 처리 (DB 저장)
+ * @returns {Promise<void>}
  */
-export function markMonthlyReminderShown() {
-  const todayDate = getTodayDateString()
-  localStorage.setItem(LAST_MONTHLY_REMINDER_DATE_KEY, todayDate)
+export async function markMonthlyReminderShown() {
+  const { markSummaryReminderShown } = await import('../services/summaryReminderService.js')
+  await markSummaryReminderShown('monthly')
 }
 
 /**

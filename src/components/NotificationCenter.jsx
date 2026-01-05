@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { createTask } from '../services/taskService.js'
 import { getDefaultCategory } from '../services/categoryService.js'
+import { markDiaryReminderShown } from '../services/diaryReminderService.js'
+import { markSummaryReminderShown } from '../services/summaryReminderService.js'
 
 /**
  * 알림 타입 정의
@@ -60,33 +62,33 @@ export default function NotificationCenter({
 
   return (
     <>
-      {/* 알림 버튼 (플로팅 버튼) - SummaryQuickAction 위에 배치 */}
-      <button
-        onClick={toggleNotifications}
-        className={`fixed bottom-24 right-6 w-14 h-14 bg-pink-500 text-white rounded-full shadow-lg hover:bg-pink-600 transition-all duration-200 flex items-center justify-center z-50 ${
-          hasNotifications ? 'animate-pulse' : ''
-        }`}
-        aria-label="알림"
-      >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      {/* 알림 버튼 (플로팅 버튼) - SummaryQuickAction 위에 배치 - 알림이 있을 때만 표시 */}
+      {hasNotifications && (
+        <button
+          onClick={toggleNotifications}
+          className="fixed bottom-24 right-6 w-14 h-14 bg-pink-500 text-white rounded-full shadow-lg hover:bg-pink-600 transition-all duration-200 flex items-center justify-center z-50"
+          aria-label="알림"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-          />
-        </svg>
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
-      </button>
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </button>
+      )}
 
       {/* 알림 목록 패널 */}
       {isOpen && (
@@ -153,9 +155,30 @@ export default function NotificationCenter({
                               지금 작성하기
                             </button>
                             <button
-                              onClick={() => {
-                                onDiaryReminderClose()
-                                handleClose()
+                              onClick={async () => {
+                                try {
+                                  const defaultCategory = await getDefaultCategory()
+                                  const yesterdayDate = diaryReminder.yesterdayDate
+                                  if (yesterdayDate) {
+                                    const date = new Date(yesterdayDate + 'T00:00:00')
+                                    const formattedDate = date.toLocaleDateString('ko-KR', {
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric',
+                                      weekday: 'short'
+                                    })
+                                    await createTask(`${formattedDate} 일기 작성`, defaultCategory, true)
+                                  }
+                                  // 리마인더 표시 기록
+                                  await markDiaryReminderShown()
+                                  onDiaryReminderClose()
+                                  handleClose()
+                                  // 오늘 할일 화면 새로고침
+                                  window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
+                                } catch (error) {
+                                  console.error('할 일 추가 실패:', error)
+                                  alert('할 일 추가에 실패했습니다.')
+                                }
                               }}
                               className="px-3 py-1.5 border border-gray-300 text-gray-700 text-xs rounded-lg hover:bg-gray-50 transition-colors font-sans"
                             >
@@ -190,9 +213,26 @@ export default function NotificationCenter({
                               지금 생성하기
                             </button>
                             <button
-                              onClick={() => {
-                                // 나중에 처리 (할 일에 추가)
-                                handleClose()
+                              onClick={async () => {
+                                try {
+                                  const defaultCategory = await getDefaultCategory()
+                                  await createTask(
+                                    `주간 업무/일기 요약 생성 (${weeklySummaryReminder.period})`,
+                                    defaultCategory,
+                                    true
+                                  )
+                                  // 리마인더 표시 기록
+                                  await markSummaryReminderShown('weekly')
+                                  if (onWeeklySummaryClose) {
+                                    onWeeklySummaryClose()
+                                  }
+                                  handleClose()
+                                  // 오늘 할일 화면 새로고침
+                                  window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
+                                } catch (error) {
+                                  console.error('할 일 추가 실패:', error)
+                                  alert('할 일 추가에 실패했습니다.')
+                                }
                               }}
                               className="px-3 py-1.5 border border-gray-300 text-gray-700 text-xs rounded-lg hover:bg-gray-50 transition-colors font-sans"
                             >
@@ -235,10 +275,14 @@ export default function NotificationCenter({
                                     defaultCategory,
                                     true
                                   )
+                                  // 리마인더 표시 기록
+                                  await markSummaryReminderShown('monthly')
                                   if (onMonthlySummaryClose) {
                                     onMonthlySummaryClose()
                                   }
                                   handleClose()
+                                  // 오늘 할일 화면 새로고침
+                                  window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
                                 } catch (error) {
                                   console.error('할 일 추가 실패:', error)
                                   alert('할 일 추가에 실패했습니다.')

@@ -14,6 +14,11 @@ import BucketlistView from './components/bucketlist/BucketlistView.jsx'
 import ReadingView from './components/reading/ReadingView.jsx'
 import TravelView from './components/travel/TravelView.jsx'
 import NavigationSidebar from './components/NavigationSidebar.jsx'
+import NotificationCenter from './components/NotificationCenter.jsx'
+import DiaryReminderModal from './components/DiaryReminderModal.jsx'
+import { useNotifications } from './hooks/useNotifications.js'
+import { markDiaryReminderShown } from './services/diaryReminderService.js'
+import { markWeeklyReminderShown, markMonthlyReminderShown } from './utils/summaryReminder.js'
 
 /**
  * 메인 앱 컨텐츠 컴포넌트 (인증 필요)
@@ -27,6 +32,18 @@ function AppContent() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // 데스크톱 사이드바 접힘 상태
   const [review2026Tab, setReview2026Tab] = useState(null) // 2026 회고록 탭 상태
   const [review2026Params, setReview2026Params] = useState(null) // 2026 회고록 파라미터
+  const [showDiaryForm, setShowDiaryForm] = useState(false) // 일기 작성 폼 표시 여부
+  
+  // 알림 상태 관리
+  const {
+    diaryReminder,
+    weeklySummaryReminder,
+    monthlySummaryReminder,
+    setDiaryReminder,
+    setWeeklySummaryReminder,
+    setMonthlySummaryReminder,
+    refreshNotifications,
+  } = useNotifications()
 
   // 새 기록 작성
   const handleNewRecord = () => {
@@ -154,6 +171,100 @@ function AppContent() {
         {currentView === 'travel' && <TravelView />}
         </main>
       </div>
+
+      {/* 알림 센터 (모든 페이지에서 표시) */}
+      <NotificationCenter
+        diaryReminder={diaryReminder}
+        weeklySummaryReminder={weeklySummaryReminder}
+        monthlySummaryReminder={monthlySummaryReminder}
+        onDiaryReminderClose={async () => {
+          setDiaryReminder({ isOpen: false, yesterdayDate: null })
+          // 리마인더가 닫혔을 때도 DB에 기록 (나중에 버튼 클릭 시)
+          try {
+            await markDiaryReminderShown()
+          } catch (error) {
+            console.error('리마인더 기록 실패:', error)
+          }
+          // 알림 상태 새로고침
+          setTimeout(() => {
+            refreshNotifications()
+          }, 500)
+        }}
+        onWeeklySummaryGenerate={async () => {
+          // 2026 회고록 페이지로 이동하고 주간 탭 열기
+          window.dispatchEvent(new CustomEvent('navigateToReview2026', { 
+            detail: { 
+              tab: 'weekly-work', 
+              weekStart: weeklySummaryReminder.weekStart, 
+              weekEnd: weeklySummaryReminder.weekEnd 
+            }
+          }))
+          // 리마인더 표시 기록
+          try {
+            await markWeeklyReminderShown()
+          } catch (error) {
+            console.error('리마인더 기록 실패:', error)
+          }
+          setWeeklySummaryReminder({ isOpen: false, period: '', weekStart: null, weekEnd: null })
+        }}
+        onMonthlySummaryGenerate={async () => {
+          // 2026 회고록 페이지로 이동하고 월간 탭 열기
+          window.dispatchEvent(new CustomEvent('navigateToReview2026', { 
+            detail: { 
+              tab: 'monthly-diary', 
+              year: monthlySummaryReminder.year, 
+              month: monthlySummaryReminder.month 
+            }
+          }))
+          // 리마인더 표시 기록
+          try {
+            await markMonthlyReminderShown()
+          } catch (error) {
+            console.error('리마인더 기록 실패:', error)
+          }
+          setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
+        }}
+        onDiaryWritten={() => {
+          // 일기 작성 완료 시 알림 상태 새로고침
+          refreshNotifications()
+        }}
+        onShowDiaryForm={setShowDiaryForm}
+        onWeeklySummaryClose={async () => {
+          // 나중에 버튼 클릭 시에도 DB에 기록
+          try {
+            await markWeeklyReminderShown()
+          } catch (error) {
+            console.error('리마인더 기록 실패:', error)
+          }
+          setWeeklySummaryReminder({ isOpen: false, period: '', weekStart: null, weekEnd: null })
+        }}
+        onMonthlySummaryClose={async () => {
+          // 나중에 버튼 클릭 시에도 DB에 기록
+          try {
+            await markMonthlyReminderShown()
+          } catch (error) {
+            console.error('리마인더 기록 실패:', error)
+          }
+          setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
+        }}
+      />
+
+      {/* 일기 작성 모달 (알림 센터에서 열 때만 표시) */}
+      {showDiaryForm && diaryReminder.yesterdayDate && (
+        <DiaryReminderModal
+          yesterdayDate={diaryReminder.yesterdayDate}
+          isOpen={true}
+          onClose={() => {
+            setShowDiaryForm(false)
+            setDiaryReminder({ isOpen: false, yesterdayDate: null })
+            refreshNotifications()
+          }}
+          onWriteDiary={() => {
+            setShowDiaryForm(false)
+            refreshNotifications()
+          }}
+        />
+      )}
     </div>
   )
 }

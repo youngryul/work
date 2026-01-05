@@ -1,17 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getTodayTasks, resetTodayTasks, moveToBacklog } from '../services/taskService.js'
-import { getDiaryByDate } from '../services/diaryService.js'
 import TaskItem from './TaskItem.jsx'
-import NotificationCenter from './NotificationCenter.jsx'
-import DiaryReminderModal from './DiaryReminderModal.jsx'
-import { 
-  shouldShowWeeklyReminder, 
-  shouldShowMonthlyReminder,
-  markWeeklyReminderShown,
-  markMonthlyReminderShown,
-  getLastWeekInfo,
-  getLastMonthInfo
-} from '../utils/summaryReminder.js'
 import { getWeekStart, getWeekEnd } from '../services/workReportService.js'
 import { getWeeksWithWorkReports, getWeeksWithDiaries } from '../services/workReportService.js'
 import { getDiariesByMonth } from '../services/diaryService.js'
@@ -32,7 +21,6 @@ const getTodayDateString = () => {
  * localStorage 키 상수
  */
 const LAST_RESET_DATE_KEY = 'lastResetDate'
-const LAST_DIARY_REMINDER_DATE_KEY = 'lastDiaryReminderDate'
 
 /**
  * 어제 날짜를 YYYY-MM-DD 형식으로 반환
@@ -53,13 +41,6 @@ const getYesterdayDateString = () => {
 export default function TodayView() {
   const [tasks, setTasks] = useState([])
   const [isLoading, setIsLoading] = useState(true)
-  const [showDiaryReminder, setShowDiaryReminder] = useState(false)
-  const [yesterdayDate, setYesterdayDate] = useState(null)
-  const [showWeeklySummaryReminder, setShowWeeklySummaryReminder] = useState(false)
-  const [showMonthlySummaryReminder, setShowMonthlySummaryReminder] = useState(false)
-  const [weeklyReminderInfo, setWeeklyReminderInfo] = useState(null)
-  const [monthlyReminderInfo, setMonthlyReminderInfo] = useState(null)
-  const [showDiaryForm, setShowDiaryForm] = useState(false) // 일기 작성 폼 표시 여부
 
   /**
    * 날짜 변경 감지 및 리셋 처리
@@ -70,20 +51,16 @@ export default function TodayView() {
     const todayDate = getTodayDateString()
     const lastResetDate = localStorage.getItem(LAST_RESET_DATE_KEY)
 
-    console.log('[날짜 확인] 오늘 날짜:', todayDate, '| 마지막 리셋 날짜:', lastResetDate)
-
     // localStorage에 값이 없으면 (첫 방문 또는 배포 후) 리셋하지 않고 오늘 날짜만 저장
     // 재접속 시에도 날짜가 변경되지 않았으면 리셋하지 않음
     if (lastResetDate === null || lastResetDate === '') {
       localStorage.setItem(LAST_RESET_DATE_KEY, todayDate)
-      console.log('[날짜 확인] 첫 방문 또는 localStorage 초기화: 오늘 날짜 저장, 리셋하지 않음')
       return
     }
 
     // 날짜 형식 검증 (YYYY-MM-DD 형식인지 확인)
     const datePattern = /^\d{4}-\d{2}-\d{2}$/
     if (!datePattern.test(lastResetDate)) {
-      console.warn('[날짜 확인] 잘못된 날짜 형식 감지, 오늘 날짜로 초기화:', lastResetDate)
       localStorage.setItem(LAST_RESET_DATE_KEY, todayDate)
       return
     }
@@ -96,8 +73,6 @@ export default function TodayView() {
       const today = new Date(todayDate + 'T00:00:00')
       const diffTime = today - lastDate
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-
-      console.log(`[날짜 확인] 날짜 변경 감지: ${lastResetDate} → ${todayDate} (${diffDays}일 차이)`)
       
       // 날짜가 실제로 변경되었고 (1일 이상 차이), 오늘 할 일이 있는 경우에만 리셋
       if (diffDays >= 1) {
@@ -105,58 +80,19 @@ export default function TodayView() {
           // 리셋 전에 오늘 할 일이 실제로 있는지 확인
           const currentTasks = await getTodayTasks()
           if (currentTasks && currentTasks.length > 0) {
-            console.log(`[리셋 실행] ${currentTasks.length}개의 오늘 할 일을 백로그로 이동합니다.`)
             await resetTodayTasks()
             localStorage.setItem(LAST_RESET_DATE_KEY, todayDate)
-            console.log('[리셋 완료] 오늘 할 일이 백로그로 이동되었습니다.')
           } else {
-            console.log('[리셋 스킵] 오늘 할 일이 없어서 리셋하지 않습니다.')
             localStorage.setItem(LAST_RESET_DATE_KEY, todayDate)
           }
         } catch (error) {
           console.error('[리셋 오류] 날짜 리셋 중 오류 발생:', error)
           // 오류 발생 시에도 날짜는 업데이트하지 않음 (다음에 다시 시도)
         }
-      } else {
-        // 날짜 차이가 1일 미만이면 리셋하지 않음 (같은 날 재접속)
-        console.log(`[날짜 확인] 같은 날짜 또는 미래 날짜: 리셋하지 않습니다.`)
-        // 같은 날이면 localStorage 업데이트하지 않음 (기존 값 유지)
       }
-    } else {
-      // 같은 날짜면 리셋하지 않음 (재접속 시)
-      console.log(`[날짜 확인] 같은 날짜 (${todayDate}): 리셋하지 않음`)
     }
   }
 
-  /**
-   * 전날 일기 작성 여부 확인 및 리마인더 표시
-   */
-  const checkYesterdayDiary = async () => {
-    const todayDate = getTodayDateString()
-    const lastReminderDate = localStorage.getItem(LAST_DIARY_REMINDER_DATE_KEY)
-    
-    // 오늘 이미 리마인더를 표시했으면 스킵
-    if (lastReminderDate === todayDate) {
-      return
-    }
-
-    // 어제 날짜 확인
-    const yesterday = getYesterdayDateString()
-    
-    try {
-      // 어제 일기 확인
-      const diary = await getDiaryByDate(yesterday)
-      
-      // 일기가 없으면 리마인더 표시
-      if (!diary) {
-        setYesterdayDate(yesterday)
-        setShowDiaryReminder(true)
-        localStorage.setItem(LAST_DIARY_REMINDER_DATE_KEY, todayDate)
-      }
-    } catch (error) {
-      console.error('일기 확인 오류:', error)
-    }
-  }
 
   /**
    * 할 일 목록 로드
@@ -176,60 +112,19 @@ export default function TodayView() {
     }
   }
 
-  /**
-   * 주간/월간 요약 리마인더 확인
-   * 일기 리마인더가 열려있지 않을 때만 표시
-   */
-  const checkSummaryReminders = async () => {
-    // 일기 리마인더가 열려있으면 요약 리마인더는 표시하지 않음
-    if (showDiaryReminder) {
-      return
-    }
-    
-    // 주간 요약 리마인더 (월요일)
-    if (shouldShowWeeklyReminder()) {
-      const lastWeek = getLastWeekInfo()
-      setWeeklyReminderInfo(lastWeek)
-      setShowWeeklySummaryReminder(true)
-      markWeeklyReminderShown()
-    }
-    
-    // 월간 요약 리마인더 (매월 1일)
-    if (shouldShowMonthlyReminder()) {
-      const lastMonth = getLastMonthInfo()
-      setMonthlyReminderInfo(lastMonth)
-      setShowMonthlySummaryReminder(true)
-      markMonthlyReminderShown()
-    }
-  }
-
-  /**
-   * 주간 요약 생성 핸들러
-   */
-  const handleGenerateWeeklySummary = () => {
-    // 2026 회고록 페이지로 이동하고 주간 탭 열기
-    window.dispatchEvent(new CustomEvent('navigateToReview2026', { 
-      detail: { tab: 'weekly-work', weekStart: weeklyReminderInfo.weekStart, weekEnd: weeklyReminderInfo.weekEnd }
-    }))
-  }
-
-  /**
-   * 월간 요약 생성 핸들러
-   */
-  const handleGenerateMonthlySummary = () => {
-    // 2026 회고록 페이지로 이동하고 월간 탭 열기
-    window.dispatchEvent(new CustomEvent('navigateToReview2026', { 
-      detail: { tab: 'monthly-diary', year: monthlyReminderInfo.year, month: monthlyReminderInfo.month }
-    }))
-  }
-
   useEffect(() => {
     loadTasks()
-    // 전날 일기 확인 (약간의 지연을 두어 초기 로딩 후 실행)
-    setTimeout(() => {
-      checkYesterdayDiary()
-      checkSummaryReminders()
-    }, 1000)
+    
+    // 오늘 할일 새로고침 이벤트 리스너
+    const handleRefreshTasks = () => {
+      loadTasks()
+    }
+    
+    window.addEventListener('refreshTodayTasks', handleRefreshTasks)
+    
+    return () => {
+      window.removeEventListener('refreshTodayTasks', handleRefreshTasks)
+    }
   }, [])
 
   /**
@@ -293,13 +188,6 @@ export default function TodayView() {
     return `${year}년 ${month}월 ${day}일 (${weekday})`
   }
 
-  /**
-   * 일기 작성 완료 핸들러
-   */
-  const handleDiaryWritten = () => {
-    // 할 일 목록 새로고침 (일기 작성 todo가 추가되었을 수 있음)
-    loadTasks()
-  }
 
   return (
     <>
@@ -342,55 +230,6 @@ export default function TodayView() {
         )}
       </div>
 
-      {/* 알림 센터 */}
-      <NotificationCenter
-        diaryReminder={{
-          isOpen: showDiaryReminder,
-          yesterdayDate: yesterdayDate,
-        }}
-        weeklySummaryReminder={{
-          isOpen: showWeeklySummaryReminder,
-          period: weeklyReminderInfo?.period || '',
-        }}
-        monthlySummaryReminder={{
-          isOpen: showMonthlySummaryReminder,
-          period: monthlyReminderInfo?.period || '',
-        }}
-        onDiaryReminderClose={() => {
-          setShowDiaryReminder(false)
-          loadTasks()
-          // 일기 리마인더가 닫힌 후 요약 리마인더 확인
-          setTimeout(() => {
-            checkSummaryReminders()
-          }, 500)
-        }}
-        onWeeklySummaryGenerate={() => {
-          handleGenerateWeeklySummary()
-          setShowWeeklySummaryReminder(false)
-        }}
-        onMonthlySummaryGenerate={() => {
-          handleGenerateMonthlySummary()
-          setShowMonthlySummaryReminder(false)
-        }}
-        onDiaryWritten={handleDiaryWritten}
-        onShowDiaryForm={setShowDiaryForm}
-        onWeeklySummaryClose={() => setShowWeeklySummaryReminder(false)}
-        onMonthlySummaryClose={() => setShowMonthlySummaryReminder(false)}
-      />
-
-      {/* 일기 작성 모달 (알림 센터에서 열 때만 표시) */}
-      {showDiaryForm && (
-        <DiaryReminderModal
-          yesterdayDate={yesterdayDate}
-          isOpen={true}
-          onClose={() => {
-            setShowDiaryForm(false)
-            setShowDiaryReminder(false)
-            loadTasks()
-          }}
-          onWriteDiary={handleDiaryWritten}
-        />
-      )}
     </>
   )
 }
