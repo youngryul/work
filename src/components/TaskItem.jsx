@@ -234,7 +234,7 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
 
   return (
     <div
-      className={`group flex flex-col gap-3 p-4 rounded-lg transition-all duration-300 animate-fade-in ${
+      className={`group flex flex-col gap-3 p-4 rounded-lg transition-all duration-300 animate-fade-in cursor-move ${
         task.completed
           ? 'bg-pink-100 opacity-60'
           : isOld
@@ -243,9 +243,25 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
       }`}
     >
       <div className="flex items-center gap-3">
+      {/* 드래그 핸들 */}
+      <div className="flex-shrink-0 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          className="opacity-50 group-hover:opacity-100 transition-opacity"
+        >
+          <circle cx="7" cy="7" r="1.5" />
+          <circle cx="13" cy="7" r="1.5" />
+          <circle cx="7" cy="13" r="1.5" />
+          <circle cx="13" cy="13" r="1.5" />
+        </svg>
+      </div>
       {/* 체크박스 */}
       <button
         onClick={handleToggleComplete}
+        onMouseDown={(e) => e.stopPropagation()}
         className={`flex-shrink-0 w-8 h-8 rounded-full border-2 transition-all duration-200 ${
           task.completed
             ? isOld
@@ -279,6 +295,7 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
       {/* 카테고리 이모지 */}
       <button
         onClick={() => setIsEditingCategory(!isEditingCategory)}
+        onMouseDown={(e) => e.stopPropagation()}
         className="flex-shrink-0 text-3xl hover:scale-110 transition-transform duration-200"
         aria-label="카테고리 변경"
         title="카테고리를 변경하려면 클릭하세요"
@@ -314,6 +331,7 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
         {onMoveToToday && (
           <button
             onClick={onMoveToToday}
+            onMouseDown={(e) => e.stopPropagation()}
             className="px-3 py-1 bg-pink-200 text-pink-700 rounded-lg text-sm hover:bg-pink-300 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm whitespace-nowrap"
           >
             오늘로
@@ -324,6 +342,7 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
         {onMoveToBacklog && (
           <button
             onClick={onMoveToBacklog}
+            onMouseDown={(e) => e.stopPropagation()}
             className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm whitespace-nowrap"
           >
             백로그로
@@ -333,6 +352,7 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
         {/* 메모 아이콘 버튼 */}
         <button
           onClick={() => setIsEditingMemo(!isEditingMemo)}
+          onMouseDown={(e) => e.stopPropagation()}
           className={`text-xl transition-all duration-200 ${
             task.memo || (task.images && task.images.length > 0)
               ? 'text-pink-500 hover:text-pink-600'
@@ -347,6 +367,7 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
         {/* 삭제 버튼 */}
         <button
           onClick={handleDelete}
+          onMouseDown={(e) => e.stopPropagation()}
           className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-red-400 hover:text-red-600 text-3xl"
           aria-label="삭제"
         >

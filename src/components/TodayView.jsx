@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { getTodayTasks, resetTodayTasks, moveToBacklog } from '../services/taskService.js'
+import { useState, useEffect, useRef } from 'react'
+import { getTodayTasks, resetTodayTasks, moveToBacklog, updateTaskPriorities } from '../services/taskService.js'
 import TaskItem from './TaskItem.jsx'
 import { getWeekStart, getWeekEnd } from '../services/workReportService.js'
 import { getWeeksWithWorkReports, getWeeksWithDiaries } from '../services/workReportService.js'
@@ -41,6 +41,9 @@ const getYesterdayDateString = () => {
 export default function TodayView() {
   const [tasks, setTasks] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [draggedTaskId, setDraggedTaskId] = useState(null)
+  const [dragOverIndex, setDragOverIndex] = useState(null)
+  const dragStartIndexRef = useRef(null)
 
   /**
    * 날짜 변경 감지 및 리셋 처리
@@ -81,16 +84,22 @@ export default function TodayView() {
           const currentTasks = await getTodayTasks()
           if (currentTasks && currentTasks.length > 0) {
             await resetTodayTasks()
-            localStorage.setItem(LAST_RESET_DATE_KEY, todayDate)
-          } else {
-            localStorage.setItem(LAST_RESET_DATE_KEY, todayDate)
           }
+          // 리셋 성공 여부와 관계없이 날짜 업데이트 (다음 날짜 변경 시 올바르게 동작하도록)
+          localStorage.setItem(LAST_RESET_DATE_KEY, todayDate)
         } catch (error) {
           console.error('[리셋 오류] 날짜 리셋 중 오류 발생:', error)
           // 오류 발생 시에도 날짜는 업데이트하지 않음 (다음에 다시 시도)
+          // 하지만 날짜가 실제로 변경된 경우에는 업데이트해야 함
+          // 단, 오류가 발생한 경우에는 다음에 다시 시도할 수 있도록 날짜를 업데이트하지 않음
         }
+      } else {
+        // 날짜가 변경되지 않았지만 localStorage의 날짜가 다른 경우 (예: 시간대 변경 등)
+        // 오늘 날짜로 업데이트만 하고 리셋하지 않음
+        localStorage.setItem(LAST_RESET_DATE_KEY, todayDate)
       }
     }
+    // 날짜가 같으면 아무것도 하지 않음 (재접속 시 정상 동작)
   }
 
 
@@ -165,6 +174,12 @@ export default function TodayView() {
   const incompleteTasks = tasks
     .filter((task) => !task.completed)
     .sort((a, b) => {
+      // priority 기준 오름차순
+      const aPriority = a.priority || 0
+      const bPriority = b.priority || 0
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority
+      }
       // movedtotodayat 기준 오름차순
       const aMoved = a.movedToTodayAt || a.createdAt
       const bMoved = b.movedToTodayAt || b.createdAt
@@ -174,6 +189,96 @@ export default function TodayView() {
       // createdat 기준 오름차순
       return a.createdAt - b.createdAt
     })
+
+  /**
+   * 드래그 시작 핸들러
+   */
+  const handleDragStart = (e, taskId, index) => {
+    setDraggedTaskId(taskId)
+    dragStartIndexRef.current = index
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/html', taskId)
+  }
+
+  /**
+   * 드래그 오버 핸들러
+   */
+  const handleDragOver = (e, index) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverIndex(index)
+  }
+
+  /**
+   * 드래그 리브 핸들러
+   */
+  const handleDragLeave = () => {
+    setDragOverIndex(null)
+  }
+
+  /**
+   * 드롭 핸들러
+   */
+  const handleDrop = async (e, dropIndex) => {
+    e.preventDefault()
+    setDragOverIndex(null)
+
+    if (draggedTaskId === null || dragStartIndexRef.current === null) {
+      return
+    }
+
+    const startIndex = dragStartIndexRef.current
+    if (startIndex === dropIndex) {
+      setDraggedTaskId(null)
+      dragStartIndexRef.current = null
+      return
+    }
+
+    // 로컬 상태 업데이트 (즉시 반영)
+    const newTasks = [...incompleteTasks]
+    const [draggedTask] = newTasks.splice(startIndex, 1)
+    newTasks.splice(dropIndex, 0, draggedTask)
+
+    // priority 재계산
+    const priorityUpdates = newTasks.map((task, index) => ({
+      id: task.id,
+      priority: index,
+    }))
+
+    // 로컬 상태 먼저 업데이트
+    const updatedTasks = newTasks.map((task, index) => ({
+      ...task,
+      priority: index,
+    }))
+    
+    // 전체 tasks 배열 업데이트
+    const allTasks = tasks.map((task) => {
+      const updated = updatedTasks.find((t) => t.id === task.id)
+      return updated || task
+    })
+    setTasks(allTasks)
+
+    // DB 업데이트
+    try {
+      await updateTaskPriorities(priorityUpdates)
+    } catch (error) {
+      console.error('우선순위 업데이트 오류:', error)
+      // 에러 발생 시 원래 상태로 복구
+      loadTasks()
+    }
+
+    setDraggedTaskId(null)
+    dragStartIndexRef.current = null
+  }
+
+  /**
+   * 드래그 종료 핸들러
+   */
+  const handleDragEnd = () => {
+    setDraggedTaskId(null)
+    setDragOverIndex(null)
+    dragStartIndexRef.current = null
+  }
 
   /**
    * 현재 날짜 포맷팅
@@ -217,14 +322,30 @@ export default function TodayView() {
           </div>
         ) : (
           <div className="space-y-3">
-            {incompleteTasks.map((task) => (
-              <TaskItem
+            {incompleteTasks.map((task, index) => (
+              <div
                 key={task.id}
-                task={task}
-                onUpdate={handleTaskUpdate}
-                onDelete={handleTaskDelete}
-                onMoveToBacklog={() => handleMoveToBacklog(task.id)}
-              />
+                draggable
+                onDragStart={(e) => handleDragStart(e, task.id, index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
+                className={`transition-all duration-200 ${
+                  draggedTaskId === task.id
+                    ? 'opacity-50'
+                    : dragOverIndex === index
+                    ? 'transform translate-y-1'
+                    : ''
+                }`}
+              >
+                <TaskItem
+                  task={task}
+                  onUpdate={handleTaskUpdate}
+                  onDelete={handleTaskDelete}
+                  onMoveToBacklog={() => handleMoveToBacklog(task.id)}
+                />
+              </div>
             ))}
           </div>
         )}

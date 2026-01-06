@@ -17,6 +17,7 @@ function normalizeTask(task) {
     movedToTodayAt: task.movedtotodayat ?? task.movedToTodayAt,
     memo: task.memo ?? null,
     images: task.images ?? [],
+    priority: task.priority ?? 0,
   }
 }
 
@@ -61,6 +62,7 @@ export async function getTodayTasks() {
     .select('*')
     .eq('user_id', userId)
     .eq('istoday', true)
+    .order('priority', { ascending: true })
     .order('movedtotodayat', { ascending: true, nullsFirst: true })
     .order('createdat', { ascending: true })
 
@@ -115,6 +117,22 @@ export async function createTask(title, category, isToday = false) {
   // 카테고리가 없으면 기본 카테고리 사용
   const finalCategory = category || (await getDefaultCategory())
 
+  // 오늘 할일로 추가하는 경우 최대 priority 값 가져오기
+  let priority = 0
+  if (isToday) {
+    const { data: todayTasks } = await supabase
+      .from('tasks')
+      .select('priority')
+      .eq('user_id', userId)
+      .eq('istoday', true)
+      .order('priority', { ascending: false })
+      .limit(1)
+    
+    if (todayTasks && todayTasks.length > 0) {
+      priority = (todayTasks[0].priority || 0) + 1
+    }
+  }
+
   const newTask = {
     title: title.trim(),
     completed: false,
@@ -122,6 +140,7 @@ export async function createTask(title, category, isToday = false) {
     category: finalCategory,
     createdat: Date.now(),
     user_id: userId,
+    priority: priority,
   }
 
   const { data, error } = await supabase
@@ -164,6 +183,9 @@ export async function updateTask(id, updates) {
   if ('movedToTodayAt' in updates) {
     dbUpdates.movedtotodayat = updates.movedToTodayAt
   }
+  if ('priority' in updates) {
+    dbUpdates.priority = updates.priority
+  }
   
   // completed가 true로 변경될 때 completedAt 설정
   if ('completed' in updates && updates.completed === true) {
@@ -179,6 +201,7 @@ export async function updateTask(id, updates) {
   delete dbUpdates.createdAt
   delete dbUpdates.completedAt
   delete dbUpdates.movedToTodayAt
+  delete dbUpdates.priority
   // memo는 그대로 사용 (소문자 컬럼명과 동일)
 
   const { data, error } = await supabase
@@ -228,7 +251,26 @@ export async function deleteTask(id) {
  * @returns {Promise<Object|null>} 수정된 할 일
  */
 export async function moveToToday(id) {
-  return updateTask(id, { istoday: true, movedToTodayAt: Date.now() })
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  // 최대 priority 값 가져오기
+  const { data: todayTasks } = await supabase
+    .from('tasks')
+    .select('priority')
+    .eq('user_id', userId)
+    .eq('istoday', true)
+    .order('priority', { ascending: false })
+    .limit(1)
+  
+  let priority = 0
+  if (todayTasks && todayTasks.length > 0) {
+    priority = (todayTasks[0].priority || 0) + 1
+  }
+
+  return updateTask(id, { istoday: true, movedToTodayAt: Date.now(), priority })
 }
 
 /**
@@ -438,6 +480,41 @@ export async function getCompletedTasksByMonth(year, month) {
     return tasksByDate
   } catch (error) {
     console.error('월별 완료된 할 일 조회 오류:', error)
+    throw error
+  }
+}
+
+/**
+ * 여러 할 일의 우선순위를 일괄 업데이트
+ * @param {Array<{id: string, priority: number}>} updates - 업데이트할 할 일 목록
+ * @returns {Promise<void>}
+ */
+export async function updateTaskPriorities(updates) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  try {
+    // 각 할 일의 priority를 개별적으로 업데이트
+    const updatePromises = updates.map(({ id, priority }) =>
+      supabase
+        .from('tasks')
+        .update({ priority })
+        .eq('id', id)
+        .eq('user_id', userId)
+    )
+
+    const results = await Promise.all(updatePromises)
+    
+    // 에러 확인
+    const errors = results.filter(result => result.error)
+    if (errors.length > 0) {
+      console.error('우선순위 업데이트 오류:', errors)
+      throw new Error('일부 우선순위 업데이트에 실패했습니다.')
+    }
+  } catch (error) {
+    console.error('우선순위 일괄 업데이트 오류:', error)
     throw error
   }
 }
