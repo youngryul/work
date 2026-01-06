@@ -203,14 +203,12 @@ export async function getMonthlyReadingStats(year, month) {
     const records = await getReadingRecordsByMonth(year, month)
     
     const totalMinutes = records.reduce((sum, record) => sum + (record.readingMinutes || 0), 0)
-    const totalPages = records.reduce((sum, record) => sum + (record.pagesRead || 0), 0)
     const totalBooks = new Set(records.map(record => record.bookId)).size
     const totalSessions = records.length
 
     return {
       totalMinutes,
       totalHours: Math.round((totalMinutes / 60) * 10) / 10,
-      totalPages,
       totalBooks,
       totalSessions,
       averageMinutesPerSession: totalSessions > 0 ? Math.round(totalMinutes / totalSessions) : 0,
@@ -265,7 +263,7 @@ export async function generateMonthlyReadingAnalysis(year, month) {
     // 독서 기록 요약
     const readingSummary = records.map((record, index) => {
       const book = booksMap[record.bookId] || {}
-      return `${index + 1}. ${book.title || '알 수 없음'} - ${record.readingDate}: ${record.readingMinutes || 0}분, ${record.pagesRead || 0}페이지`
+      return `${index + 1}. ${book.title || '알 수 없음'} - ${record.readingDate}: ${record.readingMinutes || 0}분`
     }).join('\n')
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -302,7 +300,6 @@ export async function generateMonthlyReadingAnalysis(year, month) {
 
 통계:
 - 총 독서 시간: ${stats.totalHours}시간 (${stats.totalMinutes}분)
-- 총 읽은 페이지: ${stats.totalPages}페이지
 - 읽은 책 수: ${stats.totalBooks}권
 - 독서 세션: ${stats.totalSessions}회
 - 세션당 평균 시간: ${stats.averageMinutesPerSession}분

@@ -253,18 +253,12 @@ export default function ReadingView() {
 
       {/* 월별 통계 */}
       {monthlyStats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
             <div className="text-4xl font-bold text-blue-600 mb-2">
               {monthlyStats.totalHours}시간
             </div>
             <div className="text-xl text-gray-700">총 독서 시간</div>
-          </div>
-          <div className="bg-green-50 rounded-lg p-6 border border-green-200">
-            <div className="text-4xl font-bold text-green-600 mb-2">
-              {monthlyStats.totalPages}페이지
-            </div>
-            <div className="text-xl text-gray-700">총 읽은 페이지</div>
           </div>
           <div className="bg-purple-50 rounded-lg p-6 border border-purple-200">
             <div className="text-4xl font-bold text-purple-600 mb-2">
