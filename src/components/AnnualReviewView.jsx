@@ -71,7 +71,23 @@ export default function AnnualReviewView() {
         if (data) {
           // 기존 데이터에 새로운 필드 추가 (하위 호환성)
           const loadedData = { ...data.reviewData }
-          if (loadedData['2'] && loadedData['2'].months) {
+          
+          // 섹션 0: 올해 한 줄 정의
+          if (!loadedData['0']) {
+            loadedData['0'] = { oneLine: '', why: '', feeling: '' }
+          } else {
+            loadedData['0'] = {
+              oneLine: loadedData['0'].oneLine || '',
+              why: loadedData['0'].why || '',
+              feeling: loadedData['0'].feeling || '',
+            }
+          }
+          
+          // 섹션 2: 월별 타임라인
+          if (!loadedData['2']) {
+            loadedData['2'] = { months: Array.from({ length: 12 }, () => ({ event: '', state: '', meaning: '', imageUrl: '', oneLine: '' })) }
+          } else if (loadedData['2'].months) {
+            // 기존 months 배열이 있으면 필드 보완
             loadedData['2'] = {
               ...loadedData['2'],
               months: loadedData['2'].months.map((month) => ({
@@ -82,7 +98,14 @@ export default function AnnualReviewView() {
                 oneLine: month.oneLine || '',
               }))
             }
+          } else {
+            // months 배열이 없으면 초기화
+            loadedData['2'] = {
+              ...loadedData['2'],
+              months: Array.from({ length: 12 }, () => ({ event: '', state: '', meaning: '', imageUrl: '', oneLine: '' }))
+            }
           }
+          
           setReviewData(loadedData)
           setCompletedDays(new Set(data.completedDays))
           // 완료된 Day 중 가장 높은 Day의 다음 Day를 현재 Day로 설정
@@ -163,7 +186,7 @@ export default function AnnualReviewView() {
    * 섹션 0: 올해 한 줄 정의
    */
   const renderSection0 = () => {
-    const data = reviewData['0']
+    const data = reviewData['0'] || { oneLine: '', why: '', feeling: '' }
     return (
       <div className="mb-12 p-6 bg-white rounded-lg shadow-sm">
         <h2 className="text-3xl font-bold mb-6 text-gray-800 font-sans">0️⃣ 올해 한 줄 정의</h2>
@@ -171,7 +194,7 @@ export default function AnnualReviewView() {
           <div>
             <label className="block text-base mb-2 text-gray-700 font-sans">2025년은 나에게 __________________________ 한 해였다.</label>
             <textarea
-              value={data.oneLine}
+              value={data.oneLine || ''}
               onChange={(e) => saveReviewData({ ...reviewData, '0': { ...data, oneLine: e.target.value } })}
               className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
               rows="2"
@@ -181,7 +204,7 @@ export default function AnnualReviewView() {
           <div>
             <label className="block text-base mb-2 text-gray-700 font-sans">왜 이 문장이 나에게 가장 맞는가?</label>
             <textarea
-              value={data.why}
+              value={data.why || ''}
               onChange={(e) => saveReviewData({ ...reviewData, '0': { ...data, why: e.target.value } })}
               className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
               rows="3"
@@ -190,7 +213,7 @@ export default function AnnualReviewView() {
           <div>
             <label className="block text-base mb-2 text-gray-700 font-sans">이 문장을 1년 뒤 다시 읽는다면 어떤 기분일까?</label>
             <textarea
-              value={data.feeling}
+              value={data.feeling || ''}
               onChange={(e) => saveReviewData({ ...reviewData, '0': { ...data, feeling: e.target.value } })}
               className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
               rows="3"
@@ -261,8 +284,13 @@ export default function AnnualReviewView() {
    * 섹션 2: 월별 타임라인 회고
    */
   const renderSection2 = () => {
-    const data = reviewData['2']
+    const data = reviewData['2'] || { months: Array.from({ length: 12 }, () => ({ event: '', state: '', meaning: '', imageUrl: '', oneLine: '' })) }
     const months = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
+    
+    // months 배열이 없거나 길이가 맞지 않으면 초기화
+    if (!data.months || data.months.length !== 12) {
+      data.months = Array.from({ length: 12 }, () => ({ event: '', state: '', meaning: '', imageUrl: '', oneLine: '' }))
+    }
     
     /**
      * 이미지 붙여넣기 핸들러
@@ -282,7 +310,8 @@ export default function AnnualReviewView() {
           setUploadingIndex(index)
           try {
             const imageUrl = await uploadImage(file, 'annual-review')
-            const newMonths = [...data.months]
+            const currentMonths = data.months || Array.from({ length: 12 }, () => ({ event: '', state: '', meaning: '', imageUrl: '', oneLine: '' }))
+            const newMonths = [...currentMonths]
             newMonths[index] = { ...newMonths[index], imageUrl }
             saveReviewData({ ...reviewData, '2': { ...data, months: newMonths } })
           } catch (error) {
@@ -325,7 +354,7 @@ export default function AnnualReviewView() {
               
               {/* 사진 영역 */}
               <div className="mb-4">
-                {data.months[index].imageUrl ? (
+                {(data.months && data.months[index] && data.months[index].imageUrl) ? (
                   <div className="relative">
                     <img
                       src={data.months[index].imageUrl}
@@ -336,7 +365,8 @@ export default function AnnualReviewView() {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation()
-                        const newMonths = [...data.months]
+                        const currentMonths = data.months || Array.from({ length: 12 }, () => ({ event: '', state: '', meaning: '', imageUrl: '', oneLine: '' }))
+                        const newMonths = [...currentMonths]
                         newMonths[index] = { ...newMonths[index], imageUrl: '' }
                         saveReviewData({ ...reviewData, '2': { ...data, months: newMonths } })
                       }}
@@ -368,12 +398,15 @@ export default function AnnualReviewView() {
               <div>
                 <input
                   type="text"
-                  value={data.months[index].oneLine || ''}
+                  value={(data.months && data.months[index] && data.months[index].oneLine) || ''}
                   onChange={(e) => {
-                    const newMonths = [...data.months]
+                    const currentMonths = data.months || Array.from({ length: 12 }, () => ({ event: '', state: '', meaning: '', imageUrl: '', oneLine: '' }))
+                    const newMonths = [...currentMonths]
                     newMonths[index] = { ...newMonths[index], oneLine: e.target.value }
                     saveReviewData({ ...reviewData, '2': { ...data, months: newMonths } })
                   }}
+                  onFocus={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
                   className="w-full p-2 border-2 border-gray-200 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
                   placeholder="한 줄 입력"
                 />
