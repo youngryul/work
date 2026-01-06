@@ -51,6 +51,11 @@ export default function Review2026View({ initialTab, initialParams }) {
   const [weeklyWorkReport, setWeeklyWorkReport] = useState(null)
   const [isGeneratingWeeklyWork, setIsGeneratingWeeklyWork] = useState(false)
   const [showWeeklyWorkModal, setShowWeeklyWorkModal] = useState(false)
+  const [selectedWorkMonth, setSelectedWorkMonth] = useState(() => {
+    // 기본값: 현재 달
+    const today = new Date()
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+  })
   
   // 월간 업무일지 관련
   const [monthlyWorkReport, setMonthlyWorkReport] = useState(null)
@@ -61,6 +66,11 @@ export default function Review2026View({ initialTab, initialParams }) {
   const [weeklyDiarySummary, setWeeklyDiarySummary] = useState(null)
   const [isGeneratingWeeklyDiary, setIsGeneratingWeeklyDiary] = useState(false)
   const [showWeeklyDiaryModal, setShowWeeklyDiaryModal] = useState(false)
+  const [selectedDiaryMonth, setSelectedDiaryMonth] = useState(() => {
+    // 기본값: 현재 달
+    const today = new Date()
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+  })
   
   // 월간 일기 정리 관련
   const [selectedMonth, setSelectedMonth] = useState(null)
@@ -453,45 +463,104 @@ export default function Review2026View({ initialTab, initialParams }) {
               <div className="text-center py-8 text-gray-400 text-xl font-sans">
                 업무일지가 생성된 주가 없습니다.
               </div>
-            ) : (
-              <div className="space-y-3">
-                {workWeeks.map((week) => (
-                  <div
-                    key={`${week.weekStart}-${week.weekEnd}`}
-                    className={`p-4 bg-gray-50 rounded-lg border border-gray-200 transition-colors ${
-                      week.hasReport 
-                        ? 'hover:bg-gray-100 cursor-pointer' 
-                        : 'hover:bg-gray-100'
-                    }`}
-                    onClick={() => week.hasReport && handleShowWeeklyWorkModal(week)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-800 font-sans">
-                          {week.weekStart} ~ {week.weekEnd}
-                        </h3>
-                        <p className="text-sm text-gray-600 font-sans">
-                          완료된 할 일이 있는 날 {week.completedTaskDayCount || week.dates.length || 0}일
-                          {week.hasReport && <span className="ml-2 text-green-600">✓ 생성됨</span>}
-                        </p>
-                      </div>
-                      {!week.hasReport && isPastWeek(week.weekEnd) && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleGenerateWeeklyWorkReport(week)
-                          }}
-                          disabled={isGeneratingWeeklyWork && week.isGenerating}
-                          className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors duration-200 text-base font-medium font-sans disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {(isGeneratingWeeklyWork && week.isGenerating) ? '생성 중...' : '주간 업무일지 생성'}
-                        </button>
-                      )}
-                    </div>
+            ) : (() => {
+              // 주간 업무일지를 월별로 그룹화
+              const groupedByMonth = {}
+              workWeeks.forEach((week) => {
+                // weekStart에서 연도와 월 추출
+                const [year, month] = week.weekStart.split('-').slice(0, 2)
+                const monthKey = `${year}-${month}`
+                
+                if (!groupedByMonth[monthKey]) {
+                  groupedByMonth[monthKey] = []
+                }
+                groupedByMonth[monthKey].push(week)
+              })
+              
+              // 월별로 정렬 (최신순)
+              const sortedMonths = Object.keys(groupedByMonth).sort().reverse()
+              
+              const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
+              
+              // 선택한 달의 주간 업무일지만 필터링
+              const selectedWeeks = groupedByMonth[selectedWorkMonth] || []
+              
+              return (
+                <div className="space-y-6">
+                  {/* 월 선택 드롭다운 */}
+                  <div className="flex items-center gap-4">
+                    <label className="text-base font-semibold text-gray-700 font-sans">
+                      월 선택:
+                    </label>
+                    <select
+                      value={selectedWorkMonth}
+                      onChange={(e) => setSelectedWorkMonth(e.target.value)}
+                      className="px-4 py-2 border-2 border-gray-300 rounded-lg text-base focus:border-indigo-400 focus:outline-none font-sans"
+                    >
+                      {sortedMonths.map((monthKey) => {
+                        const [year, month] = monthKey.split('-')
+                        const monthName = monthNames[parseInt(month) - 1]
+                        return (
+                          <option key={monthKey} value={monthKey}>
+                            {year}년 {monthName}
+                          </option>
+                        )
+                      })}
+                    </select>
                   </div>
-                ))}
-              </div>
-            )}
+                  
+                  {/* 선택한 달의 주간 업무일지 표시 */}
+                  {selectedWeeks.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400 text-lg font-sans">
+                      선택한 달에 업무일지가 생성된 주가 없습니다.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <h3 className="text-xl font-bold text-gray-800 font-sans border-b-2 border-gray-300 pb-2">
+                        {selectedWorkMonth.split('-')[0]}년 {monthNames[parseInt(selectedWorkMonth.split('-')[1]) - 1]}
+                      </h3>
+                      <div className="space-y-3">
+                        {selectedWeeks.map((week) => (
+                          <div
+                            key={`${week.weekStart}-${week.weekEnd}`}
+                            className={`p-4 bg-gray-50 rounded-lg border border-gray-200 transition-colors ${
+                              week.hasReport 
+                                ? 'hover:bg-gray-100 cursor-pointer' 
+                                : 'hover:bg-gray-100'
+                            }`}
+                            onClick={() => week.hasReport && handleShowWeeklyWorkModal(week)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="text-lg font-bold text-gray-800 font-sans">
+                                  {week.weekStart} ~ {week.weekEnd}
+                                </h4>
+                                <p className="text-sm text-gray-600 font-sans">
+                                  완료된 할 일이 있는 날 {week.completedTaskDayCount || week.dates.length || 0}일
+                                  {week.hasReport && <span className="ml-2 text-green-600">✓ 생성됨</span>}
+                                </p>
+                              </div>
+                              {!week.hasReport && isPastWeek(week.weekEnd) && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleGenerateWeeklyWorkReport(week)
+                                  }}
+                                  disabled={isGeneratingWeeklyWork && week.isGenerating}
+                                  className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors duration-200 text-base font-medium font-sans disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {(isGeneratingWeeklyWork && week.isGenerating) ? '생성 중...' : '주간 업무일지 생성'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
           </div>
 
         </div>
@@ -577,45 +646,104 @@ export default function Review2026View({ initialTab, initialParams }) {
               <div className="text-center py-8 text-gray-400 text-xl font-sans">
                 일기가 작성된 주가 없습니다.
               </div>
-            ) : (
-              <div className="space-y-3">
-                {diaryWeeks.map((week) => (
-                  <div
-                    key={`${week.weekStart}-${week.weekEnd}`}
-                    className={`p-4 bg-gray-50 rounded-lg border border-gray-200 transition-colors ${
-                      week.hasSummary 
-                        ? 'hover:bg-gray-100 cursor-pointer' 
-                        : 'hover:bg-gray-100'
-                    }`}
-                    onClick={() => week.hasSummary && handleShowWeeklyDiaryModal(week)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-800 font-sans">
-                          {week.weekStart} ~ {week.weekEnd}
-                        </h3>
-                        <p className="text-sm text-gray-600 font-sans">
-                          일기 {week.diaryCount}개
-                          {week.hasSummary && <span className="ml-2 text-green-600">✓ 생성됨</span>}
-                        </p>
-                      </div>
-                      {!week.hasSummary && isPastWeek(week.weekEnd) && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleGenerateWeeklyDiarySummary(week)
-                          }}
-                          disabled={isGeneratingWeeklyDiary && week.isGenerating}
-                          className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors duration-200 text-base font-medium font-sans disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {(isGeneratingWeeklyDiary && week.isGenerating) ? '생성 중...' : '주간 일기 정리 생성'}
-                        </button>
-                      )}
-                    </div>
+            ) : (() => {
+              // 주간 일기를 월별로 그룹화
+              const groupedByMonth = {}
+              diaryWeeks.forEach((week) => {
+                // weekStart에서 연도와 월 추출
+                const [year, month] = week.weekStart.split('-').slice(0, 2)
+                const monthKey = `${year}-${month}`
+                
+                if (!groupedByMonth[monthKey]) {
+                  groupedByMonth[monthKey] = []
+                }
+                groupedByMonth[monthKey].push(week)
+              })
+              
+              // 월별로 정렬 (최신순)
+              const sortedMonths = Object.keys(groupedByMonth).sort().reverse()
+              
+              const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
+              
+              // 선택한 달의 주간 일기만 필터링
+              const selectedWeeks = groupedByMonth[selectedDiaryMonth] || []
+              
+              return (
+                <div className="space-y-6">
+                  {/* 월 선택 드롭다운 */}
+                  <div className="flex items-center gap-4">
+                    <label className="text-base font-semibold text-gray-700 font-sans">
+                      월 선택:
+                    </label>
+                    <select
+                      value={selectedDiaryMonth}
+                      onChange={(e) => setSelectedDiaryMonth(e.target.value)}
+                      className="px-4 py-2 border-2 border-gray-300 rounded-lg text-base focus:border-indigo-400 focus:outline-none font-sans"
+                    >
+                      {sortedMonths.map((monthKey) => {
+                        const [year, month] = monthKey.split('-')
+                        const monthName = monthNames[parseInt(month) - 1]
+                        return (
+                          <option key={monthKey} value={monthKey}>
+                            {year}년 {monthName}
+                          </option>
+                        )
+                      })}
+                    </select>
                   </div>
-                ))}
-              </div>
-            )}
+                  
+                  {/* 선택한 달의 주간 일기 표시 */}
+                  {selectedWeeks.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400 text-lg font-sans">
+                      선택한 달에 일기가 작성된 주가 없습니다.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <h3 className="text-xl font-bold text-gray-800 font-sans border-b-2 border-gray-300 pb-2">
+                        {selectedDiaryMonth.split('-')[0]}년 {monthNames[parseInt(selectedDiaryMonth.split('-')[1]) - 1]}
+                      </h3>
+                      <div className="space-y-3">
+                        {selectedWeeks.map((week) => (
+                          <div
+                            key={`${week.weekStart}-${week.weekEnd}`}
+                            className={`p-4 bg-gray-50 rounded-lg border border-gray-200 transition-colors ${
+                              week.hasSummary 
+                                ? 'hover:bg-gray-100 cursor-pointer' 
+                                : 'hover:bg-gray-100'
+                            }`}
+                            onClick={() => week.hasSummary && handleShowWeeklyDiaryModal(week)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="text-lg font-bold text-gray-800 font-sans">
+                                  {week.weekStart} ~ {week.weekEnd}
+                                </h4>
+                                <p className="text-sm text-gray-600 font-sans">
+                                  일기 {week.diaryCount}개
+                                  {week.hasSummary && <span className="ml-2 text-green-600">✓ 생성됨</span>}
+                                </p>
+                              </div>
+                              {!week.hasSummary && isPastWeek(week.weekEnd) && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleGenerateWeeklyDiarySummary(week)
+                                  }}
+                                  disabled={isGeneratingWeeklyDiary && week.isGenerating}
+                                  className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors duration-200 text-base font-medium font-sans disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {(isGeneratingWeeklyDiary && week.isGenerating) ? '생성 중...' : '주간 일기 정리 생성'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
           </div>
         </div>
       )}
