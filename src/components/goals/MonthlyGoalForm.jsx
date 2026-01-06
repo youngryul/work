@@ -11,8 +11,9 @@ import { MONTHLY_GOAL_STATUS, MAX_MONTHLY_GOALS } from '../../constants/goalCate
  * @param {number} month - 월
  * @param {Function} onSave - 저장 완료 핸들러
  * @param {Function} onCancel - 취소 핸들러
+ * @param {string|null} defaultYearlyGoalId - 기본 연간 목표 ID (연간 목표 클릭 시)
  */
-export default function MonthlyGoalForm({ initialGoal = null, year, month, onSave, onCancel }) {
+export default function MonthlyGoalForm({ initialGoal = null, year, month, onSave, onCancel, defaultYearlyGoalId = null }) {
   const isEditMode = !!initialGoal
   const [yearlyGoals, setYearlyGoals] = useState([])
   const [existingGoals, setExistingGoals] = useState([])
@@ -42,7 +43,7 @@ export default function MonthlyGoalForm({ initialGoal = null, year, month, onSav
       })
     } else {
       setFormData({
-        yearlyGoalId: '',
+        yearlyGoalId: defaultYearlyGoalId || '',
         title: '',
         description: '',
         status: MONTHLY_GOAL_STATUS.IN_PROGRESS,

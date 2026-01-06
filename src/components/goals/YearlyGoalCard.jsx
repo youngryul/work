@@ -2,7 +2,7 @@
  * 연간 목표 카드 컴포넌트
  * 영역별 목표를 카드 형태로 표시
  */
-import { GOAL_CATEGORY_ICON, GOAL_CATEGORY_LABEL, GOAL_CATEGORY_COLOR, GOAL_STATUS_LABEL } from '../../constants/goalCategories.js'
+import { GOAL_CATEGORY_ICON, GOAL_CATEGORY_LABEL, GOAL_CATEGORY_COLOR } from '../../constants/goalCategories.js'
 
 /**
  * @param {Object} goal - 연간 목표 데이터
@@ -58,33 +58,12 @@ export default function YearlyGoalCard({ goal, onClick, onEdit, onDelete }) {
         <p className="text-sm text-gray-700 mb-4 line-clamp-2 font-sans">{goal.description}</p>
       )}
 
-      {/* 진행률 */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700 font-sans">진행률</span>
-          <span className="text-sm font-bold text-gray-800 font-sans">{goal.progressPercentage}%</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2.5">
-          <div
-            className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-            style={{ width: `${goal.progressPercentage}%` }}
-          />
-        </div>
-      </div>
-
-      {/* 상태 */}
-      <div className="flex items-center justify-between">
-        <span className={`px-2 py-1 text-xs rounded font-sans ${
-          goal.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-          goal.status === 'PAUSED' ? 'bg-gray-100 text-gray-800' :
-          'bg-blue-100 text-blue-800'
-        }`}>
-          {GOAL_STATUS_LABEL[goal.status] || goal.status}
-        </span>
-        {goal.measurementCriteria && (
+      {/* 측정 기준 */}
+      {goal.measurementCriteria && (
+        <div className="flex items-center justify-end">
           <span className="text-xs text-gray-500 font-sans">측정: {goal.measurementCriteria.substring(0, 20)}...</span>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

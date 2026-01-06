@@ -6,18 +6,29 @@ import { useState, useEffect } from 'react'
 import { toggleHabitTrackerDay } from '../../services/goalService.js'
 
 /**
- * 하트 모양 그리드 패턴
- * 각 행의 셀 위치를 정의 (1부터 시작, 0은 빈 셀)
+ * 바둑판 형태의 그리드 생성 함수
+ * 해당 월의 일수에 맞춰 격자 형태로 날짜를 배치
  */
-const HEART_GRID_PATTERN = [
-  [0, 0, 1, 2, 3, 0, 0],   // Row 1
-  [0, 0, 4, 5, 6, 0, 0],   // Row 2
-  [7, 8, 9, 10, 11, 12, 13], // Row 3
-  [14, 15, 16, 17, 18, 19, 20], // Row 4
-  [0, 21, 22, 23, 24, 25, 0], // Row 5
-  [0, 0, 26, 27, 28, 0, 0], // Row 6
-  [0, 0, 0, 29, 0, 0, 0],   // Row 7
-]
+const generateGridPattern = (totalDays) => {
+  const rows = []
+  const daysPerRow = 7 // 주 7일
+  let currentDay = 1
+  
+  while (currentDay <= totalDays) {
+    const row = []
+    for (let i = 0; i < daysPerRow && currentDay <= totalDays; i++) {
+      row.push(currentDay)
+      currentDay++
+    }
+    // 마지막 행이 7개가 아니면 빈 셀로 채움
+    while (row.length < daysPerRow) {
+      row.push(0)
+    }
+    rows.push(row)
+  }
+  
+  return rows
+}
 
 /**
  * @param {Object} tracker - Habit Tracker 데이터
@@ -111,10 +122,10 @@ export default function HabitTracker({ tracker, year, month, onUpdate }) {
         </h3>
       </div>
 
-      {/* 하트 모양 달력 */}
+      {/* 바둑판 형태 달력 */}
       <div className="flex flex-col items-center mb-4">
         <div className="grid grid-cols-7 gap-1">
-          {HEART_GRID_PATTERN.map((row, rowIndex) => (
+          {generateGridPattern(totalDays).map((row, rowIndex) => (
             row.map((day, colIndex) => {
               if (day === 0) {
                 return <div key={`${rowIndex}-${colIndex}`} className="w-8 h-8" />

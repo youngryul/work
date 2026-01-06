@@ -189,6 +189,39 @@ export async function getMonthlyGoals(year, month) {
 }
 
 /**
+ * 특정 연간 목표에 연결된 모든 월별 목표 조회
+ * @param {number} year - 연도
+ * @param {string} yearlyGoalId - 연간 목표 ID
+ * @returns {Promise<Array>} 월별 목표 목록
+ */
+export async function getMonthlyGoalsByYearlyGoal(year, yearlyGoalId) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('monthly_goals')
+      .select('*, yearly_goals(*)')
+      .eq('user_id', userId)
+      .eq('year', year)
+      .eq('yearly_goal_id', yearlyGoalId)
+      .order('month', { ascending: true })
+      .order('created_at', { ascending: true })
+
+    if (error) {
+      throw error
+    }
+
+    return (data || []).map(parseMonthlyGoal)
+  } catch (error) {
+    console.error('연간 목표별 월별 목표 조회 오류:', error)
+    throw error
+  }
+}
+
+/**
  * 월별 목표 생성
  * @param {Object} goalData - 목표 데이터
  * @returns {Promise<Object>} 생성된 목표

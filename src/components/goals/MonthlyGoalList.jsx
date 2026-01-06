@@ -3,7 +3,7 @@
  * 월별 목표를 리스트 형태로 표시
  */
 import { useState } from 'react'
-import { MONTHLY_GOAL_STATUS, MONTHLY_GOAL_STATUS_LABEL } from '../../constants/goalCategories.js'
+import { MONTHLY_GOAL_STATUS } from '../../constants/goalCategories.js'
 import { updateMonthlyGoal } from '../../services/goalService.js'
 
 /**

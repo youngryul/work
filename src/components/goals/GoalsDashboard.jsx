@@ -13,6 +13,7 @@ import HabitTrackerList from './HabitTrackerList.jsx'
 import {
   getYearlyGoals,
   getMonthlyGoals,
+  getMonthlyGoalsByYearlyGoal,
   deleteYearlyGoal,
   deleteMonthlyGoal,
   canCreateNextMonthGoals,
@@ -31,6 +32,10 @@ export default function GoalsDashboard() {
   const [editingGoal, setEditingGoal] = useState(null)
   const [loading, setLoading] = useState(false)
   const [showHabitTrackerSummary, setShowHabitTrackerSummary] = useState(false)
+  const [selectedYearlyGoalId, setSelectedYearlyGoalId] = useState(null) // 선택된 연간 목표 ID
+  const [showYearlyGoalModal, setShowYearlyGoalModal] = useState(false) // 연간 목표 상세 모달
+  const [selectedYearlyGoal, setSelectedYearlyGoal] = useState(null) // 선택된 연간 목표
+  const [yearlyGoalMonthlyGoals, setYearlyGoalMonthlyGoals] = useState([]) // 선택된 연간 목표의 모든 월별 목표
 
   // 데이터 로드
   useEffect(() => {
@@ -73,6 +78,36 @@ export default function GoalsDashboard() {
   // 월 변경
   const handleMonthChange = (month) => {
     setCurrentMonth(month)
+  }
+
+  // 특정 연간 목표에 연결된 모든 월별 목표 로드
+  const loadMonthlyGoalsByYearlyGoal = async (yearlyGoalId) => {
+    try {
+      // 데이터베이스에서 직접 필터링하여 조회
+      const monthlyGoals = await getMonthlyGoalsByYearlyGoal(currentYear, yearlyGoalId)
+      
+      // month 필드가 이미 있으므로 그대로 사용
+      setYearlyGoalMonthlyGoals(monthlyGoals)
+    } catch (error) {
+      console.error('월별 목표 로드 실패:', error)
+      alert('월별 목표를 불러오는데 실패했습니다.')
+    }
+  }
+
+  // 연간 목표 클릭 핸들러
+  const handleYearlyGoalClick = async (goal) => {
+    // 모달을 먼저 열기
+    setSelectedYearlyGoal(goal)
+    setShowYearlyGoalModal(true)
+    setYearlyGoalMonthlyGoals([]) // 초기화
+    
+    // 백그라운드에서 데이터 로드
+    try {
+      await loadMonthlyGoalsByYearlyGoal(goal.id)
+    } catch (error) {
+      console.error('월별 목표 로드 오류:', error)
+      // 에러가 발생해도 모달은 유지
+    }
   }
 
   // 연간 목표 삭제
@@ -182,6 +217,7 @@ export default function GoalsDashboard() {
           month={currentMonth}
           onSave={handleGoalSave}
           onCancel={handleGoalCancel}
+          defaultYearlyGoalId={selectedYearlyGoalId}
         />
       )}
 
@@ -223,7 +259,7 @@ export default function GoalsDashboard() {
                   <YearlyGoalCard
                     key={goal.id}
                     goal={goal}
-                    onClick={() => setSelectedView('monthly')}
+                    onClick={() => handleYearlyGoalClick(goal)}
                     onEdit={(goal) => {
                       setEditingGoal(goal)
                       setGoalFormView('yearly')
@@ -333,6 +369,109 @@ export default function GoalsDashboard() {
           currentMonth={currentMonth}
           onClose={() => setShowHabitTrackerSummary(false)}
         />
+      )}
+
+      {/* 연간 목표 상세 모달 (월별 목표 리스트) */}
+      {showYearlyGoalModal && selectedYearlyGoal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* 헤더 */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-800 font-sans mb-1">
+                    {selectedYearlyGoal.title}
+                  </h3>
+                  {selectedYearlyGoal.description && (
+                    <p className="text-sm text-gray-500 font-sans">
+                      {selectedYearlyGoal.description}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setShowYearlyGoalModal(false)
+                    setSelectedYearlyGoal(null)
+                    setYearlyGoalMonthlyGoals([])
+                  }}
+                  className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* 월별 목표 목록 */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {yearlyGoalMonthlyGoals.length === 0 ? (
+                <div className="text-center py-12 text-gray-400 font-sans">
+                  <p className="text-lg mb-2">등록된 월별 목표가 없습니다.</p>
+                  <p className="text-sm">이 연간 목표와 연결된 월별 목표를 등록해보세요.</p>
+                </div>
+              ) : (() => {
+                // 월별로 그룹화
+                const groupedByMonth = {}
+                yearlyGoalMonthlyGoals.forEach((goal) => {
+                  if (!groupedByMonth[goal.month]) {
+                    groupedByMonth[goal.month] = []
+                  }
+                  groupedByMonth[goal.month].push(goal)
+                })
+
+                const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
+                const sortedMonths = Object.keys(groupedByMonth).sort((a, b) => parseInt(a) - parseInt(b))
+
+                return (
+                  <div className="space-y-6">
+                    {sortedMonths.map((month) => {
+                      const goals = groupedByMonth[month]
+                      return (
+                        <div key={month} className="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
+                          <h4 className="text-xl font-bold text-gray-800 mb-4 font-sans">
+                            {monthNames[parseInt(month) - 1]}
+                          </h4>
+                          <div className="space-y-3">
+                            {goals.map((goal) => (
+                              <div
+                                key={goal.id}
+                                className="bg-gray-50 rounded-lg border border-gray-200 p-4 hover:bg-gray-100 transition-colors"
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <h5 className="text-lg font-semibold text-gray-800 mb-1 font-sans">
+                                      {goal.title}
+                                    </h5>
+                                    {goal.description && (
+                                      <p className="text-sm text-gray-600 mb-2 font-sans">
+                                        {goal.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-2 ml-4">
+                                    <button
+                                      onClick={() => {
+                                        setEditingGoal(goal)
+                                        setGoalFormView('monthly')
+                                        setShowYearlyGoalModal(false)
+                                      }}
+                                      className="px-3 py-1 text-sm bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors font-sans"
+                                    >
+                                      수정
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
