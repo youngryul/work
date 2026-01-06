@@ -59,6 +59,11 @@ export const NAVIGATION_MENU_ITEMS = [
     label: '여행',
     icon: '✈️',
   },
+  {
+    id: 'five-year-questions',
+    label: '5년 질문',
+    icon: '📖',
+  },
 ]
 
 /**

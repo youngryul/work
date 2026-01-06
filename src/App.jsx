@@ -13,11 +13,14 @@ import GoalsDashboard from './components/goals/GoalsDashboard.jsx'
 import BucketlistView from './components/bucketlist/BucketlistView.jsx'
 import ReadingView from './components/reading/ReadingView.jsx'
 import TravelView from './components/travel/TravelView.jsx'
+import FiveYearQuestionView from './components/FiveYearQuestionView.jsx'
 import NavigationSidebar from './components/NavigationSidebar.jsx'
 import NotificationCenter from './components/NotificationCenter.jsx'
 import DiaryReminderModal from './components/DiaryReminderModal.jsx'
+import FiveYearQuestionReminderModal from './components/FiveYearQuestionReminderModal.jsx'
 import { useNotifications } from './hooks/useNotifications.js'
 import { markDiaryReminderShown } from './services/diaryReminderService.js'
+import { markFiveYearQuestionReminderShown } from './services/fiveYearQuestionReminderService.js'
 import { markWeeklyReminderShown, markMonthlyReminderShown } from './utils/summaryReminder.js'
 
 /**
@@ -39,9 +42,11 @@ function AppContent() {
     diaryReminder,
     weeklySummaryReminder,
     monthlySummaryReminder,
+    fiveYearQuestionReminder,
     setDiaryReminder,
     setWeeklySummaryReminder,
     setMonthlySummaryReminder,
+    setFiveYearQuestionReminder,
     refreshNotifications,
   } = useNotifications()
 
@@ -169,6 +174,7 @@ function AppContent() {
         {currentView === 'bucketlist' && <BucketlistView />}
         {currentView === 'reading' && <ReadingView />}
         {currentView === 'travel' && <TravelView />}
+        {currentView === 'five-year-questions' && <FiveYearQuestionView />}
         </main>
       </div>
 
@@ -177,6 +183,7 @@ function AppContent() {
         diaryReminder={diaryReminder}
         weeklySummaryReminder={weeklySummaryReminder}
         monthlySummaryReminder={monthlySummaryReminder}
+        fiveYearQuestionReminder={fiveYearQuestionReminder}
         onDiaryReminderClose={async () => {
           setDiaryReminder({ isOpen: false, yesterdayDate: null })
           // 리마인더가 닫혔을 때도 DB에 기록 (나중에 버튼 클릭 시)
@@ -247,6 +254,23 @@ function AppContent() {
           }
           setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
         }}
+        onFiveYearQuestionAnswer={() => {
+          // 5년 질문 페이지로 이동
+          setCurrentView('five-year-questions')
+        }}
+        onFiveYearQuestionClose={async () => {
+          setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
+          // 리마인더가 닫혔을 때도 DB에 기록
+          try {
+            await markFiveYearQuestionReminderShown()
+          } catch (error) {
+            console.error('리마인더 기록 실패:', error)
+          }
+          // 알림 상태 새로고침
+          setTimeout(() => {
+            refreshNotifications()
+          }, 500)
+        }}
       />
 
       {/* 일기 작성 모달 (알림 센터에서 열 때만 표시) */}
@@ -261,6 +285,31 @@ function AppContent() {
           }}
           onWriteDiary={() => {
             setShowDiaryForm(false)
+            refreshNotifications()
+          }}
+        />
+      )}
+
+      {/* 5년 질문 일기 리마인더 모달 */}
+      {fiveYearQuestionReminder.isOpen && fiveYearQuestionReminder.question && (
+        <FiveYearQuestionReminderModal
+          todayDate={fiveYearQuestionReminder.todayDate}
+          question={fiveYearQuestionReminder.question}
+          isOpen={true}
+          onClose={async () => {
+            setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
+            // 리마인더가 닫혔을 때도 DB에 기록
+            try {
+              await markFiveYearQuestionReminderShown()
+            } catch (error) {
+              console.error('리마인더 기록 실패:', error)
+            }
+            refreshNotifications()
+          }}
+          onAnswerQuestion={() => {
+            // 5년 질문 페이지로 이동
+            setCurrentView('five-year-questions')
+            setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
             refreshNotifications()
           }}
         />

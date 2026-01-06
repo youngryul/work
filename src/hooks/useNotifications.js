@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { getDiaryByDate } from '../services/diaryService.js'
 import { hasDiaryReminderToday } from '../services/diaryReminderService.js'
 import { hasSummaryReminderToday } from '../services/summaryReminderService.js'
+import { hasFiveYearQuestionReminderToday } from '../services/fiveYearQuestionReminderService.js'
+import { getQuestionAndAnswersByDate } from '../services/fiveYearQuestionService.js'
 import { 
   shouldShowWeeklyReminder, 
   shouldShowMonthlyReminder, 
@@ -38,6 +40,11 @@ export function useNotifications() {
     year: null,
     month: null,
   })
+  const [fiveYearQuestionReminder, setFiveYearQuestionReminder] = useState({ 
+    isOpen: false, 
+    todayDate: null,
+    question: null,
+  })
   const [isLoading, setIsLoading] = useState(true)
 
   /**
@@ -48,17 +55,11 @@ export function useNotifications() {
     try {
       // 일기 리마인더 확인
       const alreadyShownDiary = await hasDiaryReminderToday()
-      // DB에서 이미 표시된 경우 상태를 명시적으로 false로 설정
-      if (alreadyShownDiary) {
-        setDiaryReminder({ isOpen: false, yesterdayDate: null })
-      } else {
+      if (!alreadyShownDiary) {
         const yesterday = getYesterdayDateString()
         const diary = await getDiaryByDate(yesterday)
         if (!diary) {
           setDiaryReminder({ isOpen: true, yesterdayDate: yesterday })
-        } else {
-          // 어제 일기가 이미 있으면 리마인더를 표시하지 않음
-          setDiaryReminder({ isOpen: false, yesterdayDate: null })
         }
       }
 
@@ -72,8 +73,6 @@ export function useNotifications() {
           weekStart: lastWeek.weekStart,
           weekEnd: lastWeek.weekEnd,
         })
-      } else {
-        setWeeklySummaryReminder({ isOpen: false, period: '', weekStart: null, weekEnd: null })
       }
 
       // 월간 요약 리마인더 확인
@@ -86,13 +85,29 @@ export function useNotifications() {
           year: lastMonth.year,
           month: lastMonth.month,
         })
-      } else {
-        setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
+      }
+
+      // 5년 질문 일기 리마인더 확인
+      const alreadyShownFiveYear = await hasFiveYearQuestionReminderToday()
+      if (!alreadyShownFiveYear) {
+        const today = new Date()
+        const todayDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+        const { question, answers } = await getQuestionAndAnswersByDate(today)
+        // 오늘 질문에 대한 올해 답변이 없으면 리마인더 표시
+        if (question) {
+          const currentYear = today.getFullYear()
+          const hasAnswerForToday = answers.some(answer => answer.year === currentYear)
+          if (!hasAnswerForToday) {
+            setFiveYearQuestionReminder({ 
+              isOpen: true, 
+              todayDate: todayDateString,
+              question: question,
+            })
+          }
+        }
       }
     } catch (error) {
       console.error('알림 확인 오류:', error)
-      // 에러 발생 시에도 상태를 명시적으로 설정
-      setDiaryReminder({ isOpen: false, yesterdayDate: null })
     } finally {
       setIsLoading(false)
     }
@@ -112,10 +127,12 @@ export function useNotifications() {
     diaryReminder,
     weeklySummaryReminder,
     monthlySummaryReminder,
+    fiveYearQuestionReminder,
     isLoading,
     setDiaryReminder,
     setWeeklySummaryReminder,
     setMonthlySummaryReminder,
+    setFiveYearQuestionReminder,
     refreshNotifications: checkNotifications,
   }
 }

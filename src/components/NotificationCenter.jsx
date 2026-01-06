@@ -3,6 +3,7 @@ import { createTask } from '../services/taskService.js'
 import { getDefaultCategory } from '../services/categoryService.js'
 import { markDiaryReminderShown } from '../services/diaryReminderService.js'
 import { markSummaryReminderShown } from '../services/summaryReminderService.js'
+import { markFiveYearQuestionReminderShown } from '../services/fiveYearQuestionReminderService.js'
 
 /**
  * 알림 타입 정의
@@ -11,6 +12,7 @@ export const NOTIFICATION_TYPES = {
   DIARY: 'diary',
   WEEKLY_SUMMARY: 'weekly_summary',
   MONTHLY_SUMMARY: 'monthly_summary',
+  FIVE_YEAR_QUESTION: 'five_year_question',
 }
 
 /**
@@ -21,6 +23,7 @@ export default function NotificationCenter({
   diaryReminder,
   weeklySummaryReminder,
   monthlySummaryReminder,
+  fiveYearQuestionReminder,
   onDiaryReminderClose,
   onWeeklySummaryGenerate,
   onMonthlySummaryGenerate,
@@ -28,6 +31,8 @@ export default function NotificationCenter({
   onShowDiaryForm,
   onWeeklySummaryClose,
   onMonthlySummaryClose,
+  onFiveYearQuestionAnswer,
+  onFiveYearQuestionClose,
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
@@ -38,8 +43,9 @@ export default function NotificationCenter({
     if (diaryReminder?.isOpen) count++
     if (weeklySummaryReminder?.isOpen) count++
     if (monthlySummaryReminder?.isOpen) count++
+    if (fiveYearQuestionReminder?.isOpen) count++
     setUnreadCount(count)
-  }, [diaryReminder?.isOpen, weeklySummaryReminder?.isOpen, monthlySummaryReminder?.isOpen])
+  }, [diaryReminder?.isOpen, weeklySummaryReminder?.isOpen, monthlySummaryReminder?.isOpen, fiveYearQuestionReminder?.isOpen])
 
   // 알림 목록 토글
   const toggleNotifications = () => {
@@ -279,6 +285,70 @@ export default function NotificationCenter({
                                   await markSummaryReminderShown('monthly')
                                   if (onMonthlySummaryClose) {
                                     onMonthlySummaryClose()
+                                  }
+                                  handleClose()
+                                  // 오늘 할일 화면 새로고침
+                                  window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
+                                } catch (error) {
+                                  console.error('할 일 추가 실패:', error)
+                                  alert('할 일 추가에 실패했습니다.')
+                                }
+                              }}
+                              className="px-3 py-1.5 border border-gray-300 text-gray-700 text-xs rounded-lg hover:bg-gray-50 transition-colors font-sans"
+                            >
+                              나중에
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 5년 질문 일기 알림 */}
+                  {fiveYearQuestionReminder?.isOpen && fiveYearQuestionReminder?.question && (
+                    <div className="p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-pink-500 rounded-full mt-2 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 font-sans mb-1">
+                            오늘의 질문에 답하세요
+                          </p>
+                          <p className="text-xs text-gray-600 font-sans mb-2">
+                            {fiveYearQuestionReminder.todayDate && 
+                              new Date(fiveYearQuestionReminder.todayDate + 'T00:00:00').toLocaleDateString('ko-KR', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                weekday: 'short'
+                              })
+                            }의 질문입니다.
+                          </p>
+                          <div className="bg-pink-50 border-l-4 border-pink-400 p-3 rounded mb-3">
+                            <p className="text-xs text-gray-800 font-medium font-sans">
+                              {fiveYearQuestionReminder.question.question_text}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                if (onFiveYearQuestionAnswer) {
+                                  onFiveYearQuestionAnswer()
+                                }
+                                handleClose()
+                              }}
+                              className="px-3 py-1.5 bg-pink-400 text-white text-xs rounded-lg hover:bg-pink-500 transition-colors font-sans"
+                            >
+                              지금 답하기
+                            </button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const defaultCategory = await getDefaultCategory()
+                                  await createTask('오늘의 5년 질문 답변하기', defaultCategory, true)
+                                  // 리마인더 표시 기록
+                                  await markFiveYearQuestionReminderShown()
+                                  if (onFiveYearQuestionClose) {
+                                    onFiveYearQuestionClose()
                                   }
                                   handleClose()
                                   // 오늘 할일 화면 새로고침
