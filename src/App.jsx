@@ -17,7 +17,6 @@ import FiveYearQuestionView from './components/FiveYearQuestionView.jsx'
 import NavigationSidebar from './components/NavigationSidebar.jsx'
 import NotificationCenter from './components/NotificationCenter.jsx'
 import DiaryReminderModal from './components/DiaryReminderModal.jsx'
-import FiveYearQuestionReminderModal from './components/FiveYearQuestionReminderModal.jsx'
 import { useNotifications } from './hooks/useNotifications.js'
 import { markDiaryReminderShown } from './services/diaryReminderService.js'
 import { markFiveYearQuestionReminderShown } from './services/fiveYearQuestionReminderService.js'
@@ -290,30 +289,6 @@ function AppContent() {
         />
       )}
 
-      {/* 5년 질문 일기 리마인더 모달 */}
-      {fiveYearQuestionReminder.isOpen && fiveYearQuestionReminder.question && (
-        <FiveYearQuestionReminderModal
-          todayDate={fiveYearQuestionReminder.todayDate}
-          question={fiveYearQuestionReminder.question}
-          isOpen={true}
-          onClose={async () => {
-            setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
-            // 리마인더가 닫혔을 때도 DB에 기록
-            try {
-              await markFiveYearQuestionReminderShown()
-            } catch (error) {
-              console.error('리마인더 기록 실패:', error)
-            }
-            refreshNotifications()
-          }}
-          onAnswerQuestion={() => {
-            // 5년 질문 페이지로 이동
-            setCurrentView('five-year-questions')
-            setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
-            refreshNotifications()
-          }}
-        />
-      )}
     </div>
   )
 }

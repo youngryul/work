@@ -1,5 +1,7 @@
+import React from 'react'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { parseTextWithLinks } from '../utils/linkParser.js'
 
 /**
  * 기록 상세 컴포넌트
@@ -23,6 +25,9 @@ export default function RecordDetail({ record, onEdit, onDelete }) {
       return dateString
     }
   }
+
+  const content = record.content || record.background || ''
+  const parsedLines = parseTextWithLinks(content)
 
   return (
     <div className="h-full overflow-y-auto">
@@ -59,9 +64,30 @@ export default function RecordDetail({ record, onEdit, onDelete }) {
         </div>
 
         {/* 본문 내용 */}
-        {(record.content || record.background) && (
+        {content && (
           <div className="text-gray-700 text-base font-sans whitespace-pre-wrap leading-relaxed">
-            {record.content || record.background || ''}
+            {parsedLines.map(({ lineIndex, parts }) => (
+              <React.Fragment key={lineIndex}>
+                {parts.map((part, partIndex) => {
+                  if (part.type === 'link') {
+                    return (
+                      <a
+                        key={partIndex}
+                        href={part.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline break-all"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {part.content}
+                      </a>
+                    )
+                  }
+                  return <span key={partIndex}>{part.content}</span>
+                })}
+                {lineIndex < parsedLines.length - 1 && '\n'}
+              </React.Fragment>
+            ))}
           </div>
         )}
       </div>

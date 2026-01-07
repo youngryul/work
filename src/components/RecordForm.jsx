@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { format } from 'date-fns'
 import { createRecord, updateRecord } from '../services/recordService.js'
+import { getAllProjectNames } from '../services/recordService.js'
 
 /**
  * 기록 작성/수정 폼 컴포넌트
@@ -19,6 +20,27 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
     content: '',
   })
 
+  // 프로젝트 자동완성 상태
+  const [projectNames, setProjectNames] = useState([])
+  const [filteredProjects, setFilteredProjects] = useState([])
+  const [showProjectDropdown, setShowProjectDropdown] = useState(false)
+  const [selectedProjectIndex, setSelectedProjectIndex] = useState(-1)
+  const projectInputRef = useRef(null)
+  const projectDropdownRef = useRef(null)
+
+  // 프로젝트명 목록 로드
+  useEffect(() => {
+    const loadProjectNames = async () => {
+      try {
+        const names = await getAllProjectNames()
+        setProjectNames(names)
+      } catch (error) {
+        console.error('프로젝트명 로드 실패:', error)
+      }
+    }
+    loadProjectNames()
+  }, [])
+
   // 초기 데이터 로드
   useEffect(() => {
     if (initialRecord) {
@@ -34,10 +56,72 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
     }
   }, [initialRecord])
 
+  // 프로젝트명 입력 시 필터링
+  useEffect(() => {
+    if (formData.projectName.trim() === '') {
+      setFilteredProjects([])
+      setShowProjectDropdown(false)
+      return
+    }
+
+    const filtered = projectNames.filter((name) =>
+      name.toLowerCase().includes(formData.projectName.toLowerCase())
+    )
+    setFilteredProjects(filtered)
+    setShowProjectDropdown(filtered.length > 0)
+    setSelectedProjectIndex(-1)
+  }, [formData.projectName, projectNames])
+
   // 폼 필드 업데이트
   const updateField = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
+
+  // 프로젝트명 선택
+  const handleProjectSelect = (projectName) => {
+    updateField('projectName', projectName)
+    setShowProjectDropdown(false)
+    setSelectedProjectIndex(-1)
+    projectInputRef.current?.blur()
+  }
+
+  // 프로젝트명 입력 필드 키보드 이벤트
+  const handleProjectKeyDown = (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setSelectedProjectIndex((prev) =>
+        prev < filteredProjects.length - 1 ? prev + 1 : prev
+      )
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setSelectedProjectIndex((prev) => (prev > 0 ? prev - 1 : -1))
+    } else if (e.key === 'Enter' && selectedProjectIndex >= 0) {
+      e.preventDefault()
+      handleProjectSelect(filteredProjects[selectedProjectIndex])
+    } else if (e.key === 'Escape') {
+      setShowProjectDropdown(false)
+      setSelectedProjectIndex(-1)
+    }
+  }
+
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        projectInputRef.current &&
+        !projectInputRef.current.contains(event.target) &&
+        projectDropdownRef.current &&
+        !projectDropdownRef.current.contains(event.target)
+      ) {
+        setShowProjectDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   // 저장
   const handleSubmit = async (e) => {
@@ -102,17 +186,46 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
             </h2>
 
             {/* 프로젝트명 */}
-            <div>
+            <div className="relative">
               <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
                 프로젝트명 *
               </label>
               <input
+                ref={projectInputRef}
                 type="text"
                 value={formData.projectName}
                 onChange={(e) => updateField('projectName', e.target.value)}
+                onFocus={() => {
+                  if (filteredProjects.length > 0) {
+                    setShowProjectDropdown(true)
+                  }
+                }}
+                onKeyDown={handleProjectKeyDown}
                 required
+                placeholder="프로젝트명을 입력하거나 선택하세요"
                 className="w-full px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
               />
+              
+              {/* 프로젝트 자동완성 드롭다운 */}
+              {showProjectDropdown && filteredProjects.length > 0 && (
+                <div
+                  ref={projectDropdownRef}
+                  className="absolute z-50 w-full mt-1 bg-white border-2 border-pink-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                >
+                  {filteredProjects.map((projectName, index) => (
+                    <button
+                      key={projectName}
+                      type="button"
+                      onClick={() => handleProjectSelect(projectName)}
+                      className={`w-full text-left px-4 py-2 hover:bg-pink-50 focus:bg-pink-50 focus:outline-none transition-colors ${
+                        index === selectedProjectIndex ? 'bg-pink-100' : ''
+                      }`}
+                    >
+                      <span className="text-gray-900 font-sans">{projectName}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* 작성일 */}
