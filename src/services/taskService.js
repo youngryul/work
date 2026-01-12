@@ -117,7 +117,7 @@ export async function createTask(title, category, isToday = false) {
   // 카테고리가 없으면 기본 카테고리 사용
   const finalCategory = category || (await getDefaultCategory())
 
-  // 오늘 할일로 추가하는 경우 최대 priority 값 가져오기
+  // 오늘 할일로 추가하는 경우 최대 priority 값 가져오기 (제일 하단에 배치하기 위해)
   let priority = 0
   if (isToday) {
     const { data: todayTasks } = await supabase
@@ -125,11 +125,19 @@ export async function createTask(title, category, isToday = false) {
       .select('priority')
       .eq('user_id', userId)
       .eq('istoday', true)
-      .order('priority', { ascending: false })
-      .limit(1)
     
     if (todayTasks && todayTasks.length > 0) {
-      priority = (todayTasks[0].priority || 0) + 1
+      // 모든 priority를 숫자로 변환하여 최대값 찾기 (null/undefined는 0으로 처리)
+      const priorities = todayTasks.map(t => {
+        const p = t.priority
+        if (p === null || p === undefined) return 0
+        return typeof p === 'number' ? p : Number(p) || 0
+      })
+      const maxPriority = Math.max(...priorities)
+      // 최대값 + 1로 설정하여 제일 하단에 배치
+      // 드래그앤드롭으로 순서를 변경하면 priority가 0, 1, 2, 3... 으로 재정렬되므로,
+      // 최대값 + 1을 하면 항상 마지막에 배치됨
+      priority = maxPriority + 1
     }
   }
 
@@ -196,13 +204,12 @@ export async function updateTask(id, updates) {
     dbUpdates.completedat = null
   }
   
-  Object.assign(dbUpdates, updates)
-  delete dbUpdates.isToday
-  delete dbUpdates.createdAt
-  delete dbUpdates.completedAt
-  delete dbUpdates.movedToTodayAt
-  delete dbUpdates.priority
-  // memo는 그대로 사용 (소문자 컬럼명과 동일)
+  // 나머지 필드들 병합 (camelCase 필드는 제외)
+  Object.keys(updates).forEach(key => {
+    if (!['isToday', 'createdAt', 'completedAt', 'movedToTodayAt', 'priority'].includes(key)) {
+      dbUpdates[key] = updates[key]
+    }
+  })
 
   const { data, error } = await supabase
     .from('tasks')
@@ -256,21 +263,39 @@ export async function moveToToday(id) {
     throw new Error('로그인이 필요합니다.')
   }
 
-  // 최대 priority 값 가져오기
+  // 미완료된 오늘 할일의 priority를 조회하여 최대값 찾기 (제일 하단에 배치하기 위해)
+  // 완료된 항목은 제외하고, 현재 이동하려는 항목도 제외한 미완료 항목의 priority를 확인
   const { data: todayTasks } = await supabase
     .from('tasks')
-    .select('priority')
+    .select('id, priority, title, completed')
     .eq('user_id', userId)
     .eq('istoday', true)
-    .order('priority', { ascending: false })
-    .limit(1)
+    .eq('completed', false)  // 미완료 항목만 조회
+    .neq('id', id)  // 현재 이동하려는 항목 제외
   
+  // priority는 오름차순 정렬이므로, 최대값보다 큰 값을 설정하면 제일 하단에 배치됨
   let priority = 0
   if (todayTasks && todayTasks.length > 0) {
-    priority = (todayTasks[0].priority || 0) + 1
+    // 모든 priority를 숫자로 변환하여 최대값 찾기 (null/undefined는 0으로 처리)
+    const priorities = todayTasks.map(t => {
+      const p = t.priority
+      if (p === null || p === undefined) return 0
+      return typeof p === 'number' ? p : Number(p) || 0
+    })
+    const maxPriority = Math.max(...priorities)
+    // 최대값 + 1로 설정하여 제일 하단에 배치
+    // 드래그앤드롭으로 순서를 변경하면 priority가 0, 1, 2, 3... 으로 재정렬되므로,
+    // 최대값 + 1을 하면 항상 마지막에 배치됨
+    priority = maxPriority + 1
   }
 
-  return updateTask(id, { istoday: true, movedToTodayAt: Date.now(), priority })
+  // 업데이트 실행
+  const result = await updateTask(id, { isToday: true, movedToTodayAt: Date.now(), priority })
+  
+  // 업데이트 후 오늘 할일 목록 새로고침 이벤트 발생
+  window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
+  
+  return result
 }
 
 /**

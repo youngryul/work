@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useAuth } from '../contexts/AuthContext.jsx'
 import { getDiaryByDate } from '../services/diaryService.js'
 import { hasDiaryReminderToday } from '../services/diaryReminderService.js'
 import { hasSummaryReminderToday } from '../services/summaryReminderService.js'
@@ -27,6 +28,7 @@ const getYesterdayDateString = () => {
  * 알림 상태를 관리하는 커스텀 훅
  */
 export function useNotifications() {
+  const { user } = useAuth()
   const [diaryReminder, setDiaryReminder] = useState({ isOpen: false, yesterdayDate: null })
   const [weeklySummaryReminder, setWeeklySummaryReminder] = useState({ 
     isOpen: false, 
@@ -50,7 +52,13 @@ export function useNotifications() {
   /**
    * 알림 상태 확인 및 업데이트
    */
-  const checkNotifications = async () => {
+  const checkNotifications = useCallback(async () => {
+    // 사용자가 없으면 알림 확인하지 않음
+    if (!user) {
+      setIsLoading(false)
+      return
+    }
+
     setIsLoading(true)
     try {
       // 일기 리마인더 확인
@@ -111,17 +119,28 @@ export function useNotifications() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [user])
 
-  // 컴포넌트 마운트 시 및 주기적으로 알림 확인
+  // 사용자가 변경될 때만 알림 확인 (재로그인 시 중복 확인 방지)
   useEffect(() => {
+    // 사용자가 없으면 알림 상태 초기화
+    if (!user) {
+      setDiaryReminder({ isOpen: false, yesterdayDate: null })
+      setWeeklySummaryReminder({ isOpen: false, period: '', weekStart: null, weekEnd: null })
+      setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
+      setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
+      setIsLoading(false)
+      return
+    }
+
+    // 사용자가 있으면 알림 확인
     checkNotifications()
     
     // 5분마다 알림 상태 확인
     const interval = setInterval(checkNotifications, 5 * 60 * 1000)
     
     return () => clearInterval(interval)
-  }, [])
+  }, [user?.id, checkNotifications]) // 사용자 ID가 변경될 때만 실행
 
   return {
     diaryReminder,
