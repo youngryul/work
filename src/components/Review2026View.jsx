@@ -101,19 +101,6 @@ export default function Review2026View({ initialTab, initialParams }) {
           week.hasReport = !!existing
           week.reportContent = existing?.reportContent || null
           
-          // 완료된 할 일이 있지만 업무일지가 없는 이전 주는 자동으로 생성
-          if (!week.hasReport && isPastWeek(week.weekEnd) && (week.hasCompletedTasks || week.dates.length > 0)) {
-            try {
-              const report = await generateWeeklyWorkReport(week.weekStart, week.weekEnd, week.dates)
-              await saveWeeklyWorkReport(week.weekStart, week.weekEnd, report)
-              week.hasReport = true
-              week.reportContent = report
-            } catch (error) {
-              console.error('주간 업무일지 자동 생성 오류:', error)
-              // 자동 생성 실패해도 계속 진행
-            }
-          }
-          
           weeksMap.set(weekKey, week)
         }
       }

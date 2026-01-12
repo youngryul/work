@@ -12,8 +12,16 @@ export default function CategorySelector({ selectedCategory, onChange }) {
 
   useEffect(() => {
     const loadCategories = async () => {
-      const cats = await getCategories()
-      setCategories(cats)
+      try {
+        const cats = await getCategories()
+        setCategories(cats)
+        // 카테고리가 로드되었는데 selectedCategory가 없으면 첫 번째 카테고리 선택
+        if (!selectedCategory && cats.length > 0 && onChange) {
+          onChange(cats[0].name)
+        }
+      } catch (error) {
+        console.error('카테고리 로드 오류:', error)
+      }
     }
 
     loadCategories()
@@ -25,20 +33,24 @@ export default function CategorySelector({ selectedCategory, onChange }) {
 
     window.addEventListener('categoryChanged', handleCategoryChange)
     return () => window.removeEventListener('categoryChanged', handleCategoryChange)
-  }, [])
+  }, [selectedCategory, onChange])
 
   return (
     <select
-      value={selectedCategory}
+      value={selectedCategory || ''}
       onChange={(e) => onChange(e.target.value)}
       className="px-4 py-3 text-2xl border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400 shadow-sm bg-white flex-shrink-0"
       style={{ minWidth: '180px' }}
     >
-      {categories.map((category) => (
-        <option key={category.name} value={category.name}>
-          {category.emoji} {category.name}
-        </option>
-      ))}
+      {categories.length === 0 ? (
+        <option>카테고리 없음</option>
+      ) : (
+        categories.map((category) => (
+          <option key={category.name} value={category.name}>
+            {category.emoji} {category.name}
+          </option>
+        ))
+      )}
     </select>
   )
 }

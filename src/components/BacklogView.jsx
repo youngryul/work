@@ -12,18 +12,34 @@ import { showToast, TOAST_TYPES } from './Toast.jsx'
 export default function BacklogView() {
   const [tasks, setTasks] = useState([])
   const [newTaskTitle, setNewTaskTitle] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('회사') // 기본값 먼저 설정
   const [isLoading, setIsLoading] = useState(true)
+  const [defaultCategory, setDefaultCategory] = useState('회사') // 기본값 먼저 설정
 
   /**
-   * 기본 카테고리 로드
+   * 기본 카테고리 로드 (비동기로 처리하여 UI 블로킹 방지)
    */
   useEffect(() => {
     const loadDefaultCategory = async () => {
-      const defaultCat = await getDefaultCategory()
-      setSelectedCategory(defaultCat)
+      try {
+        const defaultCat = await getDefaultCategory()
+        setSelectedCategory(defaultCat)
+        setDefaultCategory(defaultCat)
+      } catch (error) {
+        console.error('기본 카테고리 로드 오류:', error)
+        // 오류 발생 시 기본값 유지
+      }
     }
     loadDefaultCategory()
+    
+    // 카테고리 변경 이벤트 리스너
+    const handleCategoryChange = () => {
+      loadDefaultCategory()
+    }
+    window.addEventListener('categoryChanged', handleCategoryChange)
+    return () => {
+      window.removeEventListener('categoryChanged', handleCategoryChange)
+    }
   }, [])
 
   /**
@@ -63,9 +79,7 @@ export default function BacklogView() {
       const newTask = await createTask(newTaskTitle, selectedCategory, false)
       setTasks([newTask, ...tasks])
       setNewTaskTitle('')
-      // 기본 카테고리로 리셋
-      const defaultCat = await getDefaultCategory()
-      setSelectedCategory(defaultCat)
+      // 선택한 카테고리 유지 (기본 카테고리로 리셋하지 않음)
     } catch (error) {
       alert(error.message || '할 일 추가에 실패했습니다.')
     }
@@ -98,30 +112,6 @@ export default function BacklogView() {
     setTasks(tasks.filter((t) => t.id !== taskId))
   }
 
-  const [defaultCategory, setDefaultCategory] = useState('회사')
-
-  // 기본 카테고리 로드
-  useEffect(() => {
-    const loadDefaultCategory = async () => {
-      try {
-        const { getDefaultCategory } = await import('../services/categoryService.js')
-        const defaultCat = await getDefaultCategory()
-        setDefaultCategory(defaultCat)
-      } catch (error) {
-        console.error('기본 카테고리 로드 오류:', error)
-      }
-    }
-    loadDefaultCategory()
-    
-    // 카테고리 변경 이벤트 리스너
-    const handleCategoryChange = () => {
-      loadDefaultCategory()
-    }
-    window.addEventListener('categoryChanged', handleCategoryChange)
-    return () => {
-      window.removeEventListener('categoryChanged', handleCategoryChange)
-    }
-  }, [])
 
   /**
    * 카테고리별로 할 일 분리 및 정렬 (가장 오래된 것부터)
