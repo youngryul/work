@@ -57,3 +57,31 @@ body {
   animation: checkmark 0.3s ease-out;
 }
 
+/* 취소선 애니메이션 */
+@keyframes strikeThrough {
+  0% {
+    width: 0;
+    opacity: 0;
+  }
+  100% {
+    width: 100%;
+    opacity: 1;
+  }
+}
+
+.strike-through-animate {
+  position: relative;
+  overflow: hidden;
+}
+
+.strike-through-animate::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: currentColor;
+  animation: strikeThrough 0.5s ease-out forwards;
+  transform: translateY(-50%);
+}

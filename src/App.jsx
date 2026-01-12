@@ -14,6 +14,7 @@ import BucketlistView from './components/bucketlist/BucketlistView.jsx'
 import ReadingView from './components/reading/ReadingView.jsx'
 import TravelView from './components/travel/TravelView.jsx'
 import FiveYearQuestionView from './components/FiveYearQuestionView.jsx'
+import CategorySettingsModal from './components/CategorySettingsModal.jsx'
 import NavigationSidebar from './components/NavigationSidebar.jsx'
 import NotificationCenter from './components/NotificationCenter.jsx'
 import DiaryReminderModal from './components/DiaryReminderModal.jsx'
@@ -36,6 +37,7 @@ function AppContent() {
   const [review2026Tab, setReview2026Tab] = useState(null) // 2026 회고록 탭 상태
   const [review2026Params, setReview2026Params] = useState(null) // 2026 회고록 파라미터
   const [showDiaryForm, setShowDiaryForm] = useState(false) // 일기 작성 폼 표시 여부
+  const [showCategorySettingsModal, setShowCategorySettingsModal] = useState(false) // 카테고리 설정 모달 표시 여부
   
   // 알림 상태 관리
   const {
@@ -86,6 +88,7 @@ function AppContent() {
     window.setCurrentView = setCurrentView
     window.setReview2026Tab = setReview2026Tab
     window.setReview2026Params = setReview2026Params
+    window.openCategorySettings = () => setShowCategorySettingsModal(true)
     
     // 알림 테스트 함수 설정
     window.showTestNotification = (type = 'diary') => {
@@ -330,6 +333,12 @@ function AppContent() {
           }}
         />
       )}
+
+      {/* 카테고리 설정 모달 */}
+      <CategorySettingsModal
+        isOpen={showCategorySettingsModal}
+        onClose={() => setShowCategorySettingsModal(false)}
+      />
 
       {/* 토스트 메시지 컨테이너 */}
       <ToastContainer />

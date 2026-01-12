@@ -64,6 +64,11 @@ export const NAVIGATION_MENU_ITEMS = [
     label: '5년 질문',
     icon: '📖',
   },
+  {
+    id: 'category-settings',
+    label: '카테고리 설정',
+    icon: '⚙️',
+  },
 ]
 
 /**

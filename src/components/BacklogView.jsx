@@ -98,14 +98,39 @@ export default function BacklogView() {
     setTasks(tasks.filter((t) => t.id !== taskId))
   }
 
+  const [defaultCategory, setDefaultCategory] = useState('회사')
+
+  // 기본 카테고리 로드
+  useEffect(() => {
+    const loadDefaultCategory = async () => {
+      try {
+        const { getDefaultCategory } = await import('../services/categoryService.js')
+        const defaultCat = await getDefaultCategory()
+        setDefaultCategory(defaultCat)
+      } catch (error) {
+        console.error('기본 카테고리 로드 오류:', error)
+      }
+    }
+    loadDefaultCategory()
+    
+    // 카테고리 변경 이벤트 리스너
+    const handleCategoryChange = () => {
+      loadDefaultCategory()
+    }
+    window.addEventListener('categoryChanged', handleCategoryChange)
+    return () => {
+      window.removeEventListener('categoryChanged', handleCategoryChange)
+    }
+  }, [])
+
   /**
    * 카테고리별로 할 일 분리 및 정렬 (가장 오래된 것부터)
    */
-  const companyTasks = tasks
-    .filter((task) => task.category === '회사')
+  const defaultCategoryTasks = tasks
+    .filter((task) => task.category === defaultCategory)
     .sort((a, b) => (a.createdAt || a.createdat || 0) - (b.createdAt || b.createdat || 0))
   const otherTasks = tasks
-    .filter((task) => task.category !== '회사')
+    .filter((task) => task.category !== defaultCategory)
     .sort((a, b) => (a.createdAt || a.createdat || 0) - (b.createdAt || b.createdat || 0))
 
   return (
@@ -160,12 +185,12 @@ export default function BacklogView() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-6">
-          {/* 왼쪽: 회사 카테고리 */}
+          {/* 왼쪽: 기본 카테고리 */}
           <div className="space-y-3">
-            {companyTasks.length > 0 && (
-              <h2 className="text-2xl font-handwriting text-gray-700 mb-3">회사</h2>
+            {defaultCategoryTasks.length > 0 && (
+              <h2 className="text-2xl font-handwriting text-gray-700 mb-3">{defaultCategory}</h2>
             )}
-            {companyTasks.map((task) => (
+            {defaultCategoryTasks.map((task) => (
               <TaskItem
                 key={task.id}
                 task={task}
@@ -174,9 +199,9 @@ export default function BacklogView() {
                 onMoveToToday={() => handleMoveToToday(task.id)}
               />
             ))}
-            {companyTasks.length === 0 && (
+            {defaultCategoryTasks.length === 0 && (
               <div className="text-center py-8 text-gray-400 text-lg">
-                회사 할 일이 없어요
+                {defaultCategory} 할 일이 없어요
               </div>
             )}
           </div>

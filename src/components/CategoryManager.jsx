@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getCategories, addCategory, deleteCategory, getDefaultCategory } from '../services/categoryService.js'
+import CategorySettingsModal from './CategorySettingsModal.jsx'
 
 /**
  * 카테고리 관리 컴포넌트
@@ -12,6 +13,7 @@ export default function CategoryManager({ onCategoryChange, onCategorySelect }) 
   const [isAdding, setIsAdding] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCategoryEmoji, setNewCategoryEmoji] = useState('')
+  const [showSettingsModal, setShowSettingsModal] = useState(false)
 
   useEffect(() => {
     loadCategories()
@@ -65,8 +67,9 @@ export default function CategoryManager({ onCategoryChange, onCategorySelect }) 
    * 카테고리 삭제
    */
   const handleDeleteCategory = async (categoryName) => {
+    // 기본 카테고리는 삭제 불가
     if (categoryName === defaultCategory) {
-      alert('기본 카테고리는 삭제할 수 없습니다.')
+      alert('기본 카테고리는 삭제할 수 없습니다. 다른 카테고리를 기본으로 설정한 후 삭제해주세요.')
       return
     }
 
@@ -90,12 +93,21 @@ export default function CategoryManager({ onCategoryChange, onCategorySelect }) 
     <div className="mb-4 p-4 bg-white rounded-lg shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-2xl font-handwriting text-gray-800">카테고리 관리</h3>
-        <button
-          onClick={() => setIsAdding(!isAdding)}
-          className="px-4 py-2 text-xl bg-pink-200 text-pink-700 rounded-lg hover:bg-pink-300 transition-colors duration-200"
-        >
-          {isAdding ? '취소' : '+ 추가'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowSettingsModal(true)}
+            className="px-4 py-2 text-xl bg-blue-200 text-blue-700 rounded-lg hover:bg-blue-300 transition-colors duration-200 font-sans"
+            title="기본 카테고리 설정"
+          >
+            ⚙️ 기본 설정
+          </button>
+          <button
+            onClick={() => setIsAdding(!isAdding)}
+            className="px-4 py-2 text-xl bg-pink-200 text-pink-700 rounded-lg hover:bg-pink-300 transition-colors duration-200"
+          >
+            {isAdding ? '취소' : '+ 추가'}
+          </button>
+        </div>
       </div>
 
       {isAdding && (
@@ -139,7 +151,9 @@ export default function CategoryManager({ onCategoryChange, onCategorySelect }) 
           >
             <span className="text-2xl">{category.emoji}</span>
             <span className="text-xl">{category.name}</span>
-            {category.name !== defaultCategory && (
+            {category.name === defaultCategory ? (
+              <span className="ml-2 text-xs text-gray-500">(기본)</span>
+            ) : (
               <button
                 onClick={(e) => {
                   e.stopPropagation()
@@ -154,6 +168,17 @@ export default function CategoryManager({ onCategoryChange, onCategorySelect }) 
           </div>
         ))}
       </div>
+
+      {/* 카테고리 설정 모달 */}
+      <CategorySettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => {
+          setShowSettingsModal(false)
+          // 모달이 닫힐 때 카테고리 목록 새로고침
+          loadCategories()
+          loadDefaultCategory()
+        }}
+      />
     </div>
   )
 }

@@ -24,7 +24,7 @@ export async function getCategories() {
     return []
   }
 
-  const categories = (data || []).map((cat) => ({
+  let categories = (data || []).map((cat) => ({
     id: cat.id,
     name: cat.name,
     emoji: cat.emoji,
@@ -43,7 +43,7 @@ export async function getCategories() {
           .order('name', { ascending: true })
 
         if (!newError && newData) {
-          return newData.map((cat) => ({
+          categories = newData.map((cat) => ({
             id: cat.id,
             name: cat.name,
             emoji: cat.emoji,
@@ -53,6 +53,15 @@ export async function getCategories() {
     } catch (initError) {
       console.warn('기본 카테고리 자동 생성 실패:', initError)
     }
+  }
+
+  // 사용자가 설정한 기본 카테고리를 맨 앞으로 이동
+  const defaultCategory = await getDefaultCategory()
+  const defaultIndex = categories.findIndex(cat => cat.name === defaultCategory)
+  if (defaultIndex > 0) {
+    const defaultCat = categories[defaultIndex]
+    categories.splice(defaultIndex, 1)
+    categories.unshift(defaultCat)
   }
 
   return categories
@@ -147,12 +156,62 @@ export async function getCategoryEmoji(categoryName) {
 }
 
 /**
- * 기본 카테고리 가져오기 (첫 번째 카테고리)
+ * 기본 카테고리 가져오기 (사용자가 설정한 기본 카테고리 또는 첫 번째 카테고리)
  * @returns {Promise<string>} 기본 카테고리 이름
  */
 export async function getDefaultCategory() {
-  const categories = await getCategories()
-  return categories.length > 0 ? categories[0].name : '작업'
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return '회사'
+  }
+
+  try {
+    // 사용자 설정에서 기본 카테고리 조회
+    const { data: preferences, error } = await supabase
+      .from('user_preferences')
+      .select('default_category')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    // 테이블이 없거나 오류가 발생한 경우 무시하고 계속 진행
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116은 "no rows returned" 오류로, 정상적인 경우입니다
+      // 406 오류는 테이블이 없을 때 발생할 수 있으므로 무시
+      if (error.code !== '42P01') {
+        console.warn('user_preferences 조회 오류 (무시됨):', error)
+      }
+    }
+
+    if (!error && preferences && preferences.default_category) {
+      // 설정된 기본 카테고리가 존재하는지 확인
+      const { data: categories } = await supabase
+        .from('categories')
+        .select('name')
+        .eq('user_id', userId)
+      
+      if (categories && categories.some(cat => cat.name === preferences.default_category)) {
+        return preferences.default_category
+      }
+    }
+  } catch (err) {
+    // 테이블이 없거나 다른 오류가 발생한 경우 무시하고 계속 진행
+    console.warn('기본 카테고리 조회 중 오류 (무시됨):', err)
+  }
+
+  // 설정이 없거나 카테고리가 삭제된 경우, 첫 번째 카테고리 반환
+  try {
+    const { data: categories } = await supabase
+      .from('categories')
+      .select('name')
+      .eq('user_id', userId)
+      .order('name', { ascending: true })
+      .limit(1)
+
+    return categories && categories.length > 0 ? categories[0].name : '회사'
+  } catch (err) {
+    console.warn('카테고리 조회 중 오류:', err)
+    return '회사'
+  }
 }
 
 /**
@@ -183,11 +242,11 @@ export async function initializeDefaultCategories() {
       return false
     }
 
-    // 기본 카테고리 목록
+    // 기본 카테고리 목록 (회사를 맨 앞에 배치)
     const defaultCategories = [
+      { name: '회사', emoji: '🏢' },
       { name: '부업', emoji: '💰' },
       { name: '집안일', emoji: '🧹' },
-      { name: '회사', emoji: '🏢' },
       { name: '프로젝트', emoji: '💻' },
       { name: '운동', emoji: '💪' },
       { name: '공부', emoji: '📚' },
@@ -216,3 +275,75 @@ export async function initializeDefaultCategories() {
   }
 }
 
+/**
+ * 기본 카테고리 설정
+ * @param {string} categoryName - 기본 카테고리 이름
+ * @returns {Promise<boolean>} 설정 성공 여부
+ */
+export async function setDefaultCategory(categoryName) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  // 카테고리가 존재하는지 확인
+  const { data: categories } = await supabase
+    .from('categories')
+    .select('name')
+    .eq('user_id', userId)
+  
+  if (!categories || !categories.some(cat => cat.name === categoryName)) {
+    throw new Error('존재하지 않는 카테고리입니다.')
+  }
+
+  try {
+    // 기존 설정 확인
+    const { data: existing, error: checkError } = await supabase
+      .from('user_preferences')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    // 테이블이 없거나 오류가 발생한 경우 새로 생성
+    if (checkError && checkError.code !== 'PGRST116') {
+      // 42P01은 테이블이 없을 때 발생하는 오류
+      if (checkError.code === '42P01') {
+        throw new Error('user_preferences 테이블이 생성되지 않았습니다. Supabase에서 테이블을 생성해주세요.')
+      }
+      console.error('user_preferences 확인 오류:', checkError)
+      throw checkError
+    }
+
+    if (existing) {
+      // 업데이트
+      const { error } = await supabase
+        .from('user_preferences')
+        .update({ default_category: categoryName })
+        .eq('user_id', userId)
+
+      if (error) {
+        console.error('기본 카테고리 설정 오류:', error)
+        throw error
+      }
+    } else {
+      // 새로 생성
+      const { error } = await supabase
+        .from('user_preferences')
+        .insert({ user_id: userId, default_category: categoryName })
+
+      if (error) {
+        console.error('기본 카테고리 설정 오류:', error)
+        throw error
+      }
+    }
+
+    return true
+  } catch (err) {
+    // 테이블이 없는 경우 명확한 오류 메시지
+    if (err.message && err.message.includes('테이블이 생성되지 않았습니다')) {
+      throw err
+    }
+    console.error('기본 카테고리 설정 중 오류:', err)
+    throw new Error('기본 카테고리 설정에 실패했습니다. user_preferences 테이블이 생성되었는지 확인해주세요.')
+  }
+}

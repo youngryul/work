@@ -24,6 +24,18 @@ export default function NavigationSidebar({
    * 메뉴 클릭 핸들러
    */
   const handleMenuClick = (viewId) => {
+    // 카테고리 설정은 모달로 열기
+    if (viewId === 'category-settings') {
+      if (window.openCategorySettings) {
+        window.openCategorySettings()
+      }
+      // 모바일에서 메뉴 클릭 시 사이드바 닫기
+      if (window.innerWidth < 768 && onClose) {
+        onClose()
+      }
+      return
+    }
+    
     onViewChange(viewId)
     // 모바일에서 메뉴 클릭 시 사이드바 닫기
     if (window.innerWidth < 768 && onClose) {
