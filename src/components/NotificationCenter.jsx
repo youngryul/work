@@ -150,7 +150,18 @@ export default function NotificationCenter({
                           </p>
                           <div className="flex gap-2">
                             <button
-                              onClick={() => {
+                              onClick={async () => {
+                                // 리마인더 표시 기록
+                                try {
+                                  await markDiaryReminderShown()
+                                } catch (error) {
+                                  console.error('리마인더 기록 실패:', error)
+                                }
+                                // 알림 닫기
+                                if (onDiaryReminderClose) {
+                                  onDiaryReminderClose()
+                                }
+                                // 일기 작성 폼 표시
                                 if (onShowDiaryForm) {
                                   onShowDiaryForm(true)
                                 }
@@ -210,7 +221,18 @@ export default function NotificationCenter({
                           </p>
                           <div className="flex gap-2">
                             <button
-                              onClick={() => {
+                              onClick={async () => {
+                                // 리마인더 표시 기록
+                                try {
+                                  await markSummaryReminderShown('weekly')
+                                } catch (error) {
+                                  console.error('리마인더 기록 실패:', error)
+                                }
+                                // 알림 닫기
+                                if (onWeeklySummaryClose) {
+                                  onWeeklySummaryClose()
+                                }
+                                // 요약 생성 페이지로 이동
                                 onWeeklySummaryGenerate()
                                 handleClose()
                               }}
@@ -264,7 +286,18 @@ export default function NotificationCenter({
                           </p>
                           <div className="flex gap-2">
                             <button
-                              onClick={() => {
+                              onClick={async () => {
+                                // 리마인더 표시 기록
+                                try {
+                                  await markSummaryReminderShown('monthly')
+                                } catch (error) {
+                                  console.error('리마인더 기록 실패:', error)
+                                }
+                                // 알림 닫기
+                                if (onMonthlySummaryClose) {
+                                  onMonthlySummaryClose()
+                                }
+                                // 요약 생성 페이지로 이동
                                 onMonthlySummaryGenerate()
                                 handleClose()
                               }}
@@ -330,7 +363,18 @@ export default function NotificationCenter({
                           </div>
                           <div className="flex gap-2">
                             <button
-                              onClick={() => {
+                              onClick={async () => {
+                                // 리마인더 표시 기록
+                                try {
+                                  await markFiveYearQuestionReminderShown()
+                                } catch (error) {
+                                  console.error('리마인더 기록 실패:', error)
+                                }
+                                // 알림 닫기
+                                if (onFiveYearQuestionClose) {
+                                  onFiveYearQuestionClose()
+                                }
+                                // 5년 질문 페이지로 이동
                                 if (onFiveYearQuestionAnswer) {
                                   onFiveYearQuestionAnswer()
                                 }

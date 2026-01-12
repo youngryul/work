@@ -17,6 +17,7 @@ import FiveYearQuestionView from './components/FiveYearQuestionView.jsx'
 import NavigationSidebar from './components/NavigationSidebar.jsx'
 import NotificationCenter from './components/NotificationCenter.jsx'
 import DiaryReminderModal from './components/DiaryReminderModal.jsx'
+import ToastContainer from './components/Toast.jsx'
 import { useNotifications } from './hooks/useNotifications.js'
 import { markDiaryReminderShown } from './services/diaryReminderService.js'
 import { markFiveYearQuestionReminderShown } from './services/fiveYearQuestionReminderService.js'
@@ -86,14 +87,55 @@ function AppContent() {
     window.setReview2026Tab = setReview2026Tab
     window.setReview2026Params = setReview2026Params
     
+    // 알림 테스트 함수 설정
+    window.showTestNotification = (type = 'diary') => {
+      const today = new Date()
+      const todayDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+      const yesterday = new Date(today)
+      yesterday.setDate(yesterday.getDate() - 1)
+      const yesterdayDateString = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
+      
+      switch (type) {
+        case 'diary':
+          setDiaryReminder({ isOpen: true, yesterdayDate: yesterdayDateString })
+          break
+        case 'weekly':
+          setWeeklySummaryReminder({ 
+            isOpen: true, 
+            period: '2024년 1월 1주차',
+            weekStart: '2024-01-01',
+            weekEnd: '2024-01-07'
+          })
+          break
+        case 'monthly':
+          setMonthlySummaryReminder({ 
+            isOpen: true, 
+            period: '2024년 1월',
+            year: 2024,
+            month: 1
+          })
+          break
+        case 'five-year':
+          setFiveYearQuestionReminder({ 
+            isOpen: true, 
+            todayDate: todayDateString,
+            question: { question_text: '테스트 질문: 오늘 하루를 한 단어로 표현한다면?' }
+          })
+          break
+        default:
+          console.log('사용 가능한 타입: diary, weekly, monthly, five-year')
+      }
+    }
+    
     window.addEventListener('navigateToReview2026', handleNavigate)
     return () => {
       window.removeEventListener('navigateToReview2026', handleNavigate)
       delete window.setCurrentView
       delete window.setReview2026Tab
       delete window.setReview2026Params
+      delete window.showTestNotification
     }
-  }, [])
+  }, [setDiaryReminder, setWeeklySummaryReminder, setMonthlySummaryReminder, setFiveYearQuestionReminder])
 
   // 로딩 중
   if (loading) {
@@ -288,6 +330,9 @@ function AppContent() {
           }}
         />
       )}
+
+      {/* 토스트 메시지 컨테이너 */}
+      <ToastContainer />
 
     </div>
   )

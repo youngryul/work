@@ -4,6 +4,7 @@ import { getDefaultCategory } from '../services/categoryService.js'
 import TaskItem from './TaskItem.jsx'
 import CategorySelector from './CategorySelector.jsx'
 import CategoryManager from './CategoryManager.jsx'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * 백로그 화면 컴포넌트
@@ -77,9 +78,9 @@ export default function BacklogView() {
     try {
       await moveToToday(taskId)
       setTasks(tasks.filter((t) => t.id !== taskId))
-      alert('오늘 할 일로 이동했습니다!')
+      showToast('오늘 할 일로 이동했습니다!', TOAST_TYPES.SUCCESS)
     } catch (error) {
-      alert(error.message || '이동에 실패했습니다.')
+      showToast(error.message || '이동에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 
