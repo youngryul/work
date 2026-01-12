@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getCompletedCountsByDate, getCompletedTasksByDate } from '../services/taskService.js'
+import { getCompletedCountsByDate, getCompletedTasksByDate, restoreCompletedTaskToToday } from '../services/taskService.js'
 // 주간 업무일지만 사용하므로 일일 업무일지 생성 기능 제거
 // import { generateDailyWorkReport, saveWorkReport, getWorkReport, getWorkReportDatesByMonth } from '../services/workReportService.js'
 
@@ -107,15 +107,37 @@ export default function TodoCalendar() {
   }
 
   /**
-   * 선택된 날짜가 오늘 이전인지 확인
+   * 선택된 날짜가 오늘인지 확인
    */
-  const isPastDate = (dateString) => {
+  const isTodayDate = (dateString) => {
     const [year, month, day] = dateString.split('-').map(Number)
     const selectedDateObj = new Date(year, month - 1, day)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     selectedDateObj.setHours(0, 0, 0, 0)
-    return selectedDateObj < today
+    return selectedDateObj.getTime() === today.getTime()
+  }
+
+  /**
+   * 완료된 할 일을 오늘 할 일로 복구
+   */
+  const handleRestoreToToday = async (taskId) => {
+    try {
+      await restoreCompletedTaskToToday(taskId)
+      // 팝업 닫기
+      handleClosePopup()
+      // 오늘 할일 화면으로 이동
+      if (window.setCurrentView) {
+        window.setCurrentView('today')
+      }
+      // 완료 개수 새로고침
+      await loadCompletedCounts()
+      // 오늘 할일 목록 새로고침 이벤트 발생
+      window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
+    } catch (error) {
+      console.error('복구 오류:', error)
+      alert(error.message || '복구에 실패했습니다.')
+    }
   }
 
   // 주간 업무일지만 사용하므로 일일 업무일지 생성 함수 제거
@@ -338,26 +360,36 @@ export default function TodoCalendar() {
                   {completedTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="flex items-center gap-3 p-4 bg-pink-50 rounded-lg border border-pink-200"
+                      className="flex items-center justify-between gap-3 p-4 bg-pink-50 rounded-lg border border-pink-200"
                     >
-                      <div className="flex-shrink-0 w-6 h-6 bg-pink-400 rounded-full flex items-center justify-center">
-                        <svg
-                          className="w-4 h-4 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={3}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="flex-shrink-0 w-6 h-6 bg-pink-400 rounded-full flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={3}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        </div>
+                        <span className="text-lg text-gray-800">
+                          {task.title}
+                        </span>
                       </div>
-                      <span className="text-lg text-gray-800">
-                        {task.title}
-                      </span>
+                      {isTodayDate(selectedDate) && (
+                        <button
+                          onClick={() => handleRestoreToToday(task.id)}
+                          className="px-4 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors duration-200 text-sm font-semibold whitespace-nowrap"
+                        >
+                          오늘 할일로 복구
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>

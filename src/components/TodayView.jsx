@@ -39,6 +39,8 @@ export default function TodayView() {
   const [draggedTaskId, setDraggedTaskId] = useState(null)
   const [dragOverIndex, setDragOverIndex] = useState(null)
   const dragStartIndexRef = useRef(null)
+  const [completedTaskIds, setCompletedTaskIds] = useState(new Set()) // 완료된 항목 ID 추적
+  const completionTimersRef = useRef({}) // 완료 타이머 추적
 
   /**
    * 날짜 변경 감지 및 리셋 처리
@@ -116,8 +118,50 @@ export default function TodayView() {
    * 할 일 업데이트
    */
   const handleTaskUpdate = (updatedTask) => {
-    setTasks(tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)))
+    const updatedTasks = tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+    setTasks(updatedTasks)
+    
+    // 완료된 경우 3초 후 목록에서 제거
+    if (updatedTask.completed && !completedTaskIds.has(updatedTask.id)) {
+      setCompletedTaskIds(prev => new Set([...prev, updatedTask.id]))
+      
+      // 기존 타이머가 있으면 취소
+      if (completionTimersRef.current[updatedTask.id]) {
+        clearTimeout(completionTimersRef.current[updatedTask.id])
+      }
+      
+      // 3초 후 목록에서 제거
+      completionTimersRef.current[updatedTask.id] = setTimeout(() => {
+        setTasks(prevTasks => prevTasks.filter(t => t.id !== updatedTask.id))
+        setCompletedTaskIds(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(updatedTask.id)
+          return newSet
+        })
+        delete completionTimersRef.current[updatedTask.id]
+      }, 3000)
+    } else if (!updatedTask.completed && completedTaskIds.has(updatedTask.id)) {
+      // 완료 취소된 경우 타이머 취소 및 추적에서 제거
+      if (completionTimersRef.current[updatedTask.id]) {
+        clearTimeout(completionTimersRef.current[updatedTask.id])
+        delete completionTimersRef.current[updatedTask.id]
+      }
+      setCompletedTaskIds(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(updatedTask.id)
+        return newSet
+      })
+    }
   }
+  
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      Object.values(completionTimersRef.current).forEach(timer => {
+        if (timer) clearTimeout(timer)
+      })
+    }
+  }, [])
 
   /**
    * 할 일 삭제
@@ -145,10 +189,10 @@ export default function TodayView() {
   const completedCount = tasks.filter((t) => t.completed).length
 
   /**
-   * 미완료 할 일만 필터링 및 정렬
+   * 미완료 할 일만 필터링 및 정렬 (완료된 항목은 3초 동안 표시)
    */
   const incompleteTasks = tasks
-    .filter((task) => !task.completed)
+    .filter((task) => !task.completed || completedTaskIds.has(task.id))
     .sort((a, b) => {
       // priority 기준 오름차순
       const aPriority = a.priority || 0

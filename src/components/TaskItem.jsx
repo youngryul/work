@@ -317,11 +317,15 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
       ) : (
         <span
           onClick={handleStartEdit}
-          className={`flex-1 text-base cursor-pointer font-sans ${
-            task.completed ? 'line-through text-gray-500' : 'text-gray-800'
+          className={`flex-1 text-base cursor-pointer font-sans relative ${
+            task.completed 
+              ? 'text-gray-500' 
+              : 'text-gray-800'
           }`}
         >
-          {task.title}
+          <span className={task.completed ? 'line-through strike-through-animate' : ''}>
+            {task.title}
+          </span>
         </span>
       )}
 

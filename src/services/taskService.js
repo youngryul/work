@@ -253,6 +253,55 @@ export async function deleteTask(id) {
 }
 
 /**
+ * 완료된 할 일을 오늘 할 일로 복구
+ * @param {string} id - 할 일 ID
+ * @returns {Promise<Object|null>} 수정된 할 일
+ */
+export async function restoreCompletedTaskToToday(id) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  // 미완료된 오늘 할일의 priority를 조회하여 최대값 찾기 (제일 하단에 배치하기 위해)
+  const { data: todayTasks } = await supabase
+    .from('tasks')
+    .select('id, priority, title, completed')
+    .eq('user_id', userId)
+    .eq('istoday', true)
+    .eq('completed', false)  // 미완료 항목만 조회
+    .neq('id', id)  // 현재 복구하려는 항목 제외
+  
+  // priority는 오름차순 정렬이므로, 최대값보다 큰 값을 설정하면 제일 하단에 배치됨
+  let priority = 0
+  if (todayTasks && todayTasks.length > 0) {
+    // 모든 priority를 숫자로 변환하여 최대값 찾기 (null/undefined는 0으로 처리)
+    const priorities = todayTasks.map(t => {
+      const p = t.priority
+      if (p === null || p === undefined) return 0
+      return typeof p === 'number' ? p : Number(p) || 0
+    })
+    const maxPriority = Math.max(...priorities)
+    // 최대값 + 1로 설정하여 제일 하단에 배치
+    priority = maxPriority + 1
+  }
+
+  // 완료 상태 해제, 오늘 할일로 설정, completedAt 초기화
+  const result = await updateTask(id, { 
+    isToday: true, 
+    completed: false, 
+    completedAt: null,
+    movedToTodayAt: Date.now(),
+    priority 
+  })
+  
+  // 업데이트 후 오늘 할일 목록 새로고침 이벤트 발생
+  window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
+  
+  return result
+}
+
+/**
  * 오늘 할 일로 이동
  * @param {string} id - 할 일 ID
  * @returns {Promise<Object|null>} 수정된 할 일
