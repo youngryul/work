@@ -82,5 +82,12 @@ export const EXTERNAL_LINKS = [
     href: 'https://taro-gwzj.vercel.app/',
     target: '_blank',
   },
+  {
+    id: 'money',
+    label: '부부 가계부',
+    icon: '💰',
+    href: 'https://money-two-alpha.vercel.app/',
+    target: '_blank',
+  },
 ]
 
