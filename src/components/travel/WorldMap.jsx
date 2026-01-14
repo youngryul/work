@@ -11,6 +11,7 @@ import {
   getVisitedCountryCodes,
   toggleVisitedCountry,
 } from '../../services/visitedCountriesService.js'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 const geoUrl = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
 
@@ -115,7 +116,7 @@ export default function WorldMap({ onCountryClick }) {
       }
     } catch (error) {
       console.error('방문 국가 토글 오류:', error)
-      alert(`오류가 발생했습니다: ${error.message || '알 수 없는 오류'}`)
+      showToast(`오류가 발생했습니다: ${error.message || '알 수 없는 오류'}`, TOAST_TYPES.ERROR)
     }
   }
 

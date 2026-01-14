@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getCompletedBucketlistsByYear, getMonthlyCompletionTimeline } from '../../services/bucketlistService.js'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * 버킷리스트 회고 화면 컴포넌트
@@ -25,7 +26,7 @@ export default function BucketlistReflectionView() {
       setMonthlyTimeline(timeline)
     } catch (error) {
       console.error('회고 데이터 로드 오류:', error)
-      alert('데이터를 불러오는데 실패했습니다.')
+      showToast('데이터를 불러오는데 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setIsLoading(false)
     }

@@ -4,6 +4,7 @@ import { getDefaultCategory } from '../services/categoryService.js'
 import { markDiaryReminderShown } from '../services/diaryReminderService.js'
 import { markSummaryReminderShown } from '../services/summaryReminderService.js'
 import { markFiveYearQuestionReminderShown } from '../services/fiveYearQuestionReminderService.js'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * 알림 타입 정의
@@ -194,7 +195,7 @@ export default function NotificationCenter({
                                   window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
                                 } catch (error) {
                                   console.error('할 일 추가 실패:', error)
-                                  alert('할 일 추가에 실패했습니다.')
+                                  showToast('할 일 추가에 실패했습니다.', TOAST_TYPES.ERROR)
                                 }
                               }}
                               className="px-3 py-1.5 border border-gray-300 text-gray-700 text-xs rounded-lg hover:bg-gray-50 transition-colors font-sans"
@@ -259,7 +260,7 @@ export default function NotificationCenter({
                                   window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
                                 } catch (error) {
                                   console.error('할 일 추가 실패:', error)
-                                  alert('할 일 추가에 실패했습니다.')
+                                  showToast('할 일 추가에 실패했습니다.', TOAST_TYPES.ERROR)
                                 }
                               }}
                               className="px-3 py-1.5 border border-gray-300 text-gray-700 text-xs rounded-lg hover:bg-gray-50 transition-colors font-sans"
@@ -324,7 +325,7 @@ export default function NotificationCenter({
                                   window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
                                 } catch (error) {
                                   console.error('할 일 추가 실패:', error)
-                                  alert('할 일 추가에 실패했습니다.')
+                                  showToast('할 일 추가에 실패했습니다.', TOAST_TYPES.ERROR)
                                 }
                               }}
                               className="px-3 py-1.5 border border-gray-300 text-gray-700 text-xs rounded-lg hover:bg-gray-50 transition-colors font-sans"
@@ -399,7 +400,7 @@ export default function NotificationCenter({
                                   window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
                                 } catch (error) {
                                   console.error('할 일 추가 실패:', error)
-                                  alert('할 일 추가에 실패했습니다.')
+                                  showToast('할 일 추가에 실패했습니다.', TOAST_TYPES.ERROR)
                                 }
                               }}
                               className="px-3 py-1.5 border border-gray-300 text-gray-700 text-xs rounded-lg hover:bg-gray-50 transition-colors font-sans"

@@ -12,6 +12,7 @@ import {
   setMainRecord,
   unsetMainRecord
 } from '../services/recordService.js'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * 기록 메인 화면 컴포넌트
@@ -64,7 +65,7 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
       setRecords(parsedRecords)
     } catch (error) {
       console.error('프로젝트 데이터 로드 실패:', error)
-      alert('데이터를 불러오는데 실패했습니다.')
+      showToast('데이터를 불러오는데 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setLoading(false)
     }
@@ -128,7 +129,7 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
       }
     } catch (error) {
       console.error('기록 삭제 실패:', error)
-      alert('기록 삭제에 실패했습니다.')
+      showToast('기록 삭제에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 
@@ -140,10 +141,10 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
       await setMainRecord(id, selectedProject)
       // 프로젝트 데이터 다시 로드
       await loadProjectData(selectedProject)
-      alert('메인 기록으로 설정되었습니다.')
+      showToast('메인 기록으로 설정되었습니다.', TOAST_TYPES.SUCCESS)
     } catch (error) {
       console.error('메인 기록 설정 실패:', error)
-      alert('메인 기록 설정에 실패했습니다.')
+      showToast('메인 기록 설정에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 
@@ -155,10 +156,10 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
       if (selectedProject) {
         await loadProjectData(selectedProject)
       }
-      alert('메인 기록이 해제되었습니다.')
+      showToast('메인 기록이 해제되었습니다.', TOAST_TYPES.SUCCESS)
     } catch (error) {
       console.error('메인 기록 해제 실패:', error)
-      alert('메인 기록 해제에 실패했습니다.')
+      showToast('메인 기록 해제에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 

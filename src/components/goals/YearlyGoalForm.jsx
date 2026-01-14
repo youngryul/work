@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { GOAL_CATEGORY, GOAL_CATEGORY_LABEL, GOAL_CATEGORY_ICON, MAX_YEARLY_GOALS } from '../../constants/goalCategories.js'
 import { createYearlyGoal, updateYearlyGoal, getYearlyGoals } from '../../services/goalService.js'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * @param {Object|null} initialGoal - 초기 목표 데이터 (수정 모드)
@@ -63,11 +64,11 @@ export default function YearlyGoalForm({ initialGoal = null, year = 2026, onSave
 
     // 유효성 검사
     if (!formData.category) {
-      alert('영역을 선택해주세요.')
+      showToast('영역을 선택해주세요.', TOAST_TYPES.ERROR)
       return
     }
     if (!formData.title.trim()) {
-      alert('목표 제목을 입력해주세요.')
+      showToast('목표 제목을 입력해주세요.', TOAST_TYPES.ERROR)
       return
     }
 
@@ -75,11 +76,11 @@ export default function YearlyGoalForm({ initialGoal = null, year = 2026, onSave
     if (!isEditMode) {
       const duplicate = existingGoals.find(g => g.category === formData.category)
       if (duplicate) {
-        alert('해당 영역에는 이미 목표가 등록되어 있습니다.')
+        showToast('해당 영역에는 이미 목표가 등록되어 있습니다.', TOAST_TYPES.ERROR)
         return
       }
       if (existingGoals.length >= MAX_YEARLY_GOALS) {
-        alert(`연간 목표는 최대 ${MAX_YEARLY_GOALS}개까지 등록할 수 있습니다.`)
+        showToast(`연간 목표는 최대 ${MAX_YEARLY_GOALS}개까지 등록할 수 있습니다.`, TOAST_TYPES.ERROR)
         return
       }
     }
@@ -100,7 +101,7 @@ export default function YearlyGoalForm({ initialGoal = null, year = 2026, onSave
       onSave?.()
     } catch (error) {
       console.error('목표 저장 실패:', error)
-      alert(error.message || '목표 저장에 실패했습니다.')
+      showToast(error.message || '목표 저장에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setLoading(false)
     }

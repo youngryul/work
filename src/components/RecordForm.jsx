@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { format } from 'date-fns'
 import { createRecord, updateRecord } from '../services/recordService.js'
 import { getAllProjectNames } from '../services/recordService.js'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * 기록 작성/수정 폼 컴포넌트
@@ -129,11 +130,11 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
 
     // 유효성 검사
     if (!formData.projectName.trim()) {
-      alert('프로젝트명을 입력해주세요.')
+      showToast('프로젝트명을 입력해주세요.', TOAST_TYPES.ERROR)
       return
     }
     if (!formData.title.trim()) {
-      alert('제목을 입력해주세요.')
+      showToast('제목을 입력해주세요.', TOAST_TYPES.ERROR)
       return
     }
 
@@ -162,7 +163,7 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
       onSave?.()
     } catch (error) {
       console.error('기록 저장 실패:', error)
-      alert('기록 저장에 실패했습니다.')
+      showToast('기록 저장에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 

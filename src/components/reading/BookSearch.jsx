@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { searchBooks, createBook } from '../../services/bookService.js'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * 책 검색 컴포넌트
@@ -22,7 +23,7 @@ export default function BookSearch({ onBookSelect }) {
       setSearchResults(results)
     } catch (error) {
       console.error('책 검색 오류:', error)
-      alert('책 검색에 실패했습니다.')
+      showToast('책 검색에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setIsSearching(false)
     }
@@ -40,7 +41,7 @@ export default function BookSearch({ onBookSelect }) {
       setSearchResults([])
     } catch (error) {
       console.error('책 등록 오류:', error)
-      alert('책 등록에 실패했습니다.')
+      showToast('책 등록에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setIsRegistering(false)
     }

@@ -3,6 +3,7 @@ import { getAllBucketlists, createBucketlist, updateBucketlist, deleteBucketlist
 import { BUCKETLIST_STATUS, BUCKETLIST_STATUS_LABELS } from '../../constants/bucketlistConstants.js'
 import BucketlistCard from './BucketlistCard.jsx'
 import BucketlistForm from './BucketlistForm.jsx'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * 버킷리스트 메인 화면 컴포넌트
@@ -36,7 +37,7 @@ export default function BucketlistView() {
       filterBucketlists(data, selectedStatus)
     } catch (error) {
       console.error('버킷리스트 로드 오류:', error)
-      alert(`버킷리스트를 불러오는데 실패했습니다: ${error.message || '알 수 없는 오류'}`)
+      showToast(`버킷리스트를 불러오는데 실패했습니다: ${error.message || '알 수 없는 오류'}`, TOAST_TYPES.ERROR)
     } finally {
       setIsLoading(false)
     }
@@ -92,7 +93,7 @@ export default function BucketlistView() {
       await loadBucketlists()
     } catch (error) {
       console.error('버킷리스트 저장 오류:', error)
-      alert(error.message || '저장에 실패했습니다.')
+      showToast(error.message || '저장에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 
@@ -105,7 +106,7 @@ export default function BucketlistView() {
       await loadBucketlists()
     } catch (error) {
       console.error('버킷리스트 삭제 오류:', error)
-      alert('삭제에 실패했습니다.')
+      showToast('삭제에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 
@@ -136,7 +137,7 @@ export default function BucketlistView() {
       await loadBucketlists()
     } catch (error) {
       console.error('상태 변경 오류:', error)
-      alert('상태 변경에 실패했습니다.')
+      showToast('상태 변경에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 
@@ -162,7 +163,7 @@ export default function BucketlistView() {
       setMonthlyTimeline(timeline)
     } catch (error) {
       console.error('회고 데이터 로드 오류:', error)
-      alert('데이터를 불러오는데 실패했습니다.')
+      showToast('데이터를 불러오는데 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setIsLoadingReflection(false)
     }

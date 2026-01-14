@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { searchCountries, getCountryName } from '../../constants/countries.js'
 import { addVisitedCountry, isCountryVisited } from '../../services/visitedCountriesService.js'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * 국가 검색 컴포넌트
@@ -57,7 +58,7 @@ export default function CountrySearch({ onCountryAdded }) {
       // 이미 방문한 국가인지 확인
       const alreadyVisited = await isCountryVisited(countryCode)
       if (alreadyVisited) {
-        alert(`${getCountryName(countryCode)}은(는) 이미 방문한 국가입니다.`)
+        showToast(`${getCountryName(countryCode)}은(는) 이미 방문한 국가입니다.`, TOAST_TYPES.ERROR)
         setSearchQuery('')
         setSearchResults([])
         return
@@ -77,7 +78,7 @@ export default function CountrySearch({ onCountryAdded }) {
       searchInputRef.current?.blur()
     } catch (error) {
       console.error('방문 국가 추가 오류:', error)
-      alert(`오류가 발생했습니다: ${error.message || '알 수 없는 오류'}`)
+      showToast(`오류가 발생했습니다: ${error.message || '알 수 없는 오류'}`, TOAST_TYPES.ERROR)
     } finally {
       setIsSearching(false)
     }

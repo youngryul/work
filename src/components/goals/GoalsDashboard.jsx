@@ -18,6 +18,7 @@ import {
   deleteMonthlyGoal,
   canCreateNextMonthGoals,
 } from '../../services/goalService.js'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 import { GOAL_CATEGORY, MAX_YEARLY_GOALS, MAX_MONTHLY_GOALS } from '../../constants/goalCategories.js'
 
 const CURRENT_YEAR = 2026
@@ -69,7 +70,7 @@ export default function GoalsDashboard() {
       setMonthlyGoals(monthly)
     } catch (error) {
       console.error('데이터 로드 실패:', error)
-      alert('데이터를 불러오는데 실패했습니다.')
+      showToast('데이터를 불러오는데 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setLoading(false)
     }
@@ -90,7 +91,7 @@ export default function GoalsDashboard() {
       setYearlyGoalMonthlyGoals(monthlyGoals)
     } catch (error) {
       console.error('월별 목표 로드 실패:', error)
-      alert('월별 목표를 불러오는데 실패했습니다.')
+      showToast('월별 목표를 불러오는데 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 
@@ -117,7 +118,7 @@ export default function GoalsDashboard() {
       await loadData()
     } catch (error) {
       console.error('연간 목표 삭제 실패:', error)
-      alert('목표 삭제에 실패했습니다.')
+      showToast('목표 삭제에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 
@@ -128,7 +129,7 @@ export default function GoalsDashboard() {
       await loadData()
     } catch (error) {
       console.error('월별 목표 삭제 실패:', error)
-      alert('목표 삭제에 실패했습니다.')
+      showToast('목표 삭제에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 
@@ -308,7 +309,7 @@ export default function GoalsDashboard() {
                       // 회고 작성 확인
                       canCreateNextMonthGoals(currentYear, currentMonth - 1).then(canCreate => {
                         if (currentMonth > 1 && !canCreate) {
-                          alert('이전 달 회고를 먼저 작성해주세요.')
+                          showToast('이전 달 회고를 먼저 작성해주세요.', TOAST_TYPES.ERROR)
                           return
                         }
                         setEditingGoal(null)

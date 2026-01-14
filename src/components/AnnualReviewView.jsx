@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { getAnnualReview, saveAnnualReview } from '../services/annualReviewService.js'
 import { uploadImage } from '../services/imageService.js'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * Day별 섹션 정의
@@ -130,7 +131,7 @@ export default function AnnualReviewView() {
       await saveAnnualReview('2025', data, completedDaysArray)
     } catch (error) {
       console.error('회고록 저장 오류:', error)
-      alert('저장에 실패했습니다. 다시 시도해주세요.')
+      showToast('저장에 실패했습니다. 다시 시도해주세요.', TOAST_TYPES.ERROR)
     } finally {
       setIsSaving(false)
     }
@@ -316,7 +317,7 @@ export default function AnnualReviewView() {
             saveReviewData({ ...reviewData, '2': { ...data, months: newMonths } })
           } catch (error) {
             console.error('이미지 업로드 오류:', error)
-            alert('이미지 업로드에 실패했습니다: ' + (error.message || '알 수 없는 오류'))
+            showToast('이미지 업로드에 실패했습니다: ' + (error.message || '알 수 없는 오류'), TOAST_TYPES.ERROR)
           } finally {
             setUploadingIndex(null)
           }

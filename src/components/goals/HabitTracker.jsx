@@ -4,6 +4,7 @@
  */
 import { useState, useEffect } from 'react'
 import { toggleHabitTrackerDay } from '../../services/goalService.js'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * 바둑판 형태의 그리드 생성 함수
@@ -99,7 +100,7 @@ export default function HabitTracker({ tracker, year, month, onUpdate }) {
       onUpdate?.()
     } catch (error) {
       console.error('Habit Tracker 업데이트 실패:', error)
-      alert('업데이트에 실패했습니다.')
+      showToast('업데이트에 실패했습니다.', TOAST_TYPES.ERROR)
       setAnimatingDay(null)
     }
   }

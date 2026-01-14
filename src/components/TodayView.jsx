@@ -4,6 +4,7 @@ import TaskItem from './TaskItem.jsx'
 import { getWeekStart, getWeekEnd } from '../services/workReportService.js'
 import { getWeeksWithWorkReports, getWeeksWithDiaries } from '../services/workReportService.js'
 import { getDiariesByMonth } from '../services/diaryService.js'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * 오늘 날짜를 YYYY-MM-DD 형식으로 반환
@@ -177,9 +178,9 @@ export default function TodayView() {
     try {
       await moveToBacklog(taskId)
       setTasks(tasks.filter((t) => t.id !== taskId))
-      alert('백로그로 이동했습니다!')
+      showToast('백로그로 이동했습니다!', TOAST_TYPES.SUCCESS)
     } catch (error) {
-      alert(error.message || '이동에 실패했습니다.')
+      showToast(error.message || '이동에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 

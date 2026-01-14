@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createReadingRecord, updateReadingRecord } from '../../services/readingService.js'
 import ReadingTimer from './ReadingTimer.jsx'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * 독서 기록 폼 컴포넌트
@@ -70,7 +71,7 @@ export default function ReadingRecordForm({ book, initialRecord, onSave, onCance
     e.preventDefault()
     
     if (!book) {
-      alert('책을 선택해주세요.')
+      showToast('책을 선택해주세요.', TOAST_TYPES.ERROR)
       return
     }
 
@@ -136,7 +137,7 @@ export default function ReadingRecordForm({ book, initialRecord, onSave, onCance
       setEndTime(null)
     } catch (error) {
       console.error('독서 기록 저장 오류:', error)
-      alert('독서 기록 저장에 실패했습니다.')
+      showToast('독서 기록 저장에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 

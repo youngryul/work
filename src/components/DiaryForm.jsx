@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { saveDiary, getDiaryByDate } from '../services/diaryService.js'
 import { uploadImage } from '../services/imageService.js'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * 일기 작성/수정 폼 컴포넌트
@@ -54,7 +55,7 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
     e.preventDefault()
     
     if (!content.trim()) {
-      alert('일기 내용을 입력해주세요.')
+      showToast('일기 내용을 입력해주세요.', TOAST_TYPES.ERROR)
       return
     }
 
@@ -64,12 +65,12 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
 
     try {
       await saveDiary(selectedDate, content, false, attachedImages)
-      alert('일기가 저장되었습니다. 이미지 생성 중...')
+      showToast('일기가 저장되었습니다. 이미지 생성 중...', TOAST_TYPES.SUCCESS)
       onSave?.()
     } catch (error) {
       console.error('일기 저장 실패:', error)
       setError(error.message || '일기 저장에 실패했습니다.')
-      alert(error.message || '일기 저장에 실패했습니다.')
+      showToast(error.message || '일기 저장에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setIsLoading(false)
       setIsGeneratingImage(false)
@@ -92,7 +93,7 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
         setAttachedImages(prev => [...prev, imageUrl])
       } catch (error) {
         console.error('이미지 업로드 실패:', error)
-        alert(`이미지 업로드 실패: ${error.message || '알 수 없는 오류'}`)
+        showToast(`이미지 업로드 실패: ${error.message || '알 수 없는 오류'}`, TOAST_TYPES.ERROR)
       } finally {
         setUploadingImages(prev => {
           const newState = { ...prev }
@@ -130,7 +131,7 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
           setAttachedImages(prev => [...prev, imageUrl])
         } catch (error) {
           console.error('이미지 업로드 실패:', error)
-          alert(`이미지 업로드 실패: ${error.message || '알 수 없는 오류'}`)
+          showToast(`이미지 업로드 실패: ${error.message || '알 수 없는 오류'}`, TOAST_TYPES.ERROR)
         } finally {
           setUploadingImages(prev => {
             const newState = { ...prev }
@@ -152,7 +153,7 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
   // 이미지 재생성
   const handleRegenerateImage = async () => {
     if (!content.trim()) {
-      alert('일기 내용을 먼저 입력해주세요.')
+      showToast('일기 내용을 먼저 입력해주세요.', TOAST_TYPES.ERROR)
       return
     }
 
@@ -179,9 +180,9 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
       
       // 이미지가 성공적으로 생성되었는지 확인
       if (updatedDiary?.imageUrl) {
-        alert('이미지가 재생성되었습니다.')
+        showToast('이미지가 재생성되었습니다.', TOAST_TYPES.SUCCESS)
       } else {
-        alert('이미지 생성에 실패했습니다. 일기는 저장되었습니다.')
+        showToast('이미지 생성에 실패했습니다. 일기는 저장되었습니다.', TOAST_TYPES.ERROR)
       }
     } catch (error) {
       console.error('이미지 재생성 실패:', error)
@@ -190,9 +191,9 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
       
       // 사용자 친화적인 에러 메시지 표시
       if (errorMessage.includes('결제 한도') || errorMessage.includes('크레딧') || errorMessage.includes('billing')) {
-        alert(`⚠️ ${errorMessage}\n\n일기는 저장되었지만 이미지는 생성되지 않았습니다.`)
+        showToast(`⚠️ ${errorMessage}\n일기는 저장되었지만 이미지는 생성되지 않았습니다.`, TOAST_TYPES.ERROR)
       } else {
-        alert(`이미지 재생성 실패: ${errorMessage}`)
+        showToast(`이미지 재생성 실패: ${errorMessage}`, TOAST_TYPES.ERROR)
       }
     } finally {
       setIsGeneratingImage(false)

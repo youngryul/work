@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getQuestionAndAnswersByDate, saveAnswer, deleteAnswer } from '../services/fiveYearQuestionService.js'
 import FiveYearQuestionDashboard from './FiveYearQuestionDashboard.jsx'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * 5년 질문 일기 뷰 컴포넌트
@@ -50,7 +51,7 @@ export default function FiveYearQuestionView() {
       }
     } catch (error) {
       console.error('질문 및 답변 로드 오류:', error)
-      alert('데이터를 불러오는데 실패했습니다.')
+      showToast('데이터를 불러오는데 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setIsLoading(false)
     }
@@ -65,7 +66,7 @@ export default function FiveYearQuestionView() {
    */
   const handleSaveAnswer = async () => {
     if (!question || !currentAnswer.trim()) {
-      alert('답변을 입력해주세요.')
+      showToast('답변을 입력해주세요.', TOAST_TYPES.ERROR)
       return
     }
 
@@ -73,10 +74,10 @@ export default function FiveYearQuestionView() {
     try {
       await saveAnswer(question.id, currentYear, currentAnswer.trim())
       await loadQuestionAndAnswers()
-      alert('답변이 저장되었습니다.')
+      showToast('답변이 저장되었습니다.', TOAST_TYPES.SUCCESS)
     } catch (error) {
       console.error('답변 저장 오류:', error)
-      alert('답변 저장에 실패했습니다.')
+      showToast('답변 저장에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setIsSaving(false)
     }
@@ -93,10 +94,10 @@ export default function FiveYearQuestionView() {
     try {
       await deleteAnswer(answerId)
       await loadQuestionAndAnswers()
-      alert('답변이 삭제되었습니다.')
+      showToast('답변이 삭제되었습니다.', TOAST_TYPES.SUCCESS)
     } catch (error) {
       console.error('답변 삭제 오류:', error)
-      alert('답변 삭제에 실패했습니다.')
+      showToast('답변 삭제에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 

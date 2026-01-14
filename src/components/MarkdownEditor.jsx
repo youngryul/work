@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { uploadImage } from '../services/imageService.js'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * Markdown 에디터 컴포넌트
@@ -53,7 +54,7 @@ export default function MarkdownEditor({ value = '', onChange, placeholder = '' 
       const imageUrl = await uploadImage(file)
       insertImageAtCursor(imageUrl, file.name)
     } catch (error) {
-      alert(error.message || '이미지 업로드에 실패했습니다.')
+      showToast(error.message || '이미지 업로드에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setIsUploading(false)
       // 파일 input 초기화
@@ -85,7 +86,7 @@ export default function MarkdownEditor({ value = '', onChange, placeholder = '' 
           const fileName = `붙여넣은 이미지-${Date.now()}`
           insertImageAtCursor(imageUrl, fileName)
         } catch (error) {
-          alert(error.message || '이미지 업로드에 실패했습니다.')
+          showToast(error.message || '이미지 업로드에 실패했습니다.', TOAST_TYPES.ERROR)
         } finally {
           setIsUploading(false)
         }

@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { getDailyChecks, toggleDailyCheck, createDailyCheck } from '../../services/goalService.js'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * @param {string} date - 날짜 (YYYY-MM-DD)
@@ -47,7 +48,7 @@ export default function DailyChecklist({ date, onComplete }) {
       }
     } catch (error) {
       console.error('체크 토글 실패:', error)
-      alert('체크리스트 업데이트에 실패했습니다.')
+      showToast('체크리스트 업데이트에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 
@@ -65,7 +66,7 @@ export default function DailyChecklist({ date, onComplete }) {
       setNewCheckContent('')
     } catch (error) {
       console.error('체크리스트 추가 실패:', error)
-      alert('체크리스트 추가에 실패했습니다.')
+      showToast('체크리스트 추가에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 

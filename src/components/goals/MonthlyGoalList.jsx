@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import { MONTHLY_GOAL_STATUS } from '../../constants/goalCategories.js'
 import { updateMonthlyGoal } from '../../services/goalService.js'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * @param {Array} goals - 월별 목표 목록
@@ -34,7 +35,7 @@ export default function MonthlyGoalList({ goals, year, month, onGoalClick, onEdi
       onUpdate?.()
     } catch (error) {
       console.error('상태 업데이트 실패:', error)
-      alert('상태 업데이트에 실패했습니다.')
+      showToast('상태 업데이트에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setUpdatingStatus(prev => ({ ...prev, [goal.id]: false }))
     }

@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { createTask } from '../services/taskService.js'
 import { getDefaultCategory } from '../services/categoryService.js'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * 오늘 5년 질문 일기 작성 리마인더 모달 컴포넌트
@@ -43,7 +44,7 @@ export default function FiveYearQuestionReminderModal({ todayDate, question, isO
       onClose()
     } catch (error) {
       console.error('할 일 추가 실패:', error)
-      alert('할 일 추가에 실패했습니다.')
+      showToast('할 일 추가에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 

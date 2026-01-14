@@ -4,6 +4,7 @@
  */
 import { useState } from 'react'
 import { createHabitTracker } from '../../services/goalService.js'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * 기본 색상 팔레트
@@ -36,7 +37,7 @@ export default function HabitTrackerForm({ monthlyGoalId, year, month, monthlyGo
     e.preventDefault()
 
     if (!title.trim()) {
-      alert('습관 제목을 입력해주세요.')
+      showToast('습관 제목을 입력해주세요.', TOAST_TYPES.ERROR)
       return
     }
 
@@ -52,7 +53,7 @@ export default function HabitTrackerForm({ monthlyGoalId, year, month, monthlyGo
       onSave?.()
     } catch (error) {
       console.error('Habit Tracker 생성 실패:', error)
-      alert(error.message || 'Habit Tracker 생성에 실패했습니다.')
+      showToast(error.message || 'Habit Tracker 생성에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setLoading(false)
     }

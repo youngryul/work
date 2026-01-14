@@ -81,7 +81,7 @@ export default function BacklogView() {
       setNewTaskTitle('')
       // 선택한 카테고리 유지 (기본 카테고리로 리셋하지 않음)
     } catch (error) {
-      alert(error.message || '할 일 추가에 실패했습니다.')
+      showToast(error.message || '할 일 추가에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 

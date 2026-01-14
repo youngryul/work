@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getCategories, getDefaultCategory, setDefaultCategory } from '../services/categoryService.js'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * 카테고리 설정 모달
@@ -33,7 +34,7 @@ export default function CategorySettingsModal({ isOpen, onClose }) {
       setDefaultCategoryState(defaultCat)
     } catch (error) {
       console.error('데이터 로드 오류:', error)
-      alert('데이터를 불러오는 중 오류가 발생했습니다.')
+      showToast('데이터를 불러오는 중 오류가 발생했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setLoading(false)
     }
@@ -61,7 +62,7 @@ export default function CategorySettingsModal({ isOpen, onClose }) {
       }, 300)
     } catch (error) {
       console.error('기본 카테고리 설정 오류:', error)
-      alert(error.message || '기본 카테고리 설정에 실패했습니다.')
+      showToast(error.message || '기본 카테고리 설정에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setSaving(false)
     }

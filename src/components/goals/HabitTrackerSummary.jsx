@@ -4,6 +4,7 @@
  */
 import { useState, useEffect } from 'react'
 import { getPreviousMonthHabitTrackerSummary } from '../../services/goalService.js'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * @param {number} currentYear - 현재 연도
@@ -25,7 +26,7 @@ export default function HabitTrackerSummary({ currentYear, currentMonth, onClose
       setSummary(data)
     } catch (error) {
       console.error('종합판 로드 실패:', error)
-      alert('종합판을 불러오는데 실패했습니다.')
+      showToast('종합판을 불러오는데 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setLoading(false)
     }

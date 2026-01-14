@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { BUCKETLIST_STATUS, BUCKETLIST_STATUS_LABELS } from '../../constants/bucketlistConstants.js'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * 버킷리스트 추가/수정 폼 컴포넌트
@@ -24,7 +25,7 @@ export default function BucketlistForm({ initialData, onSave, onCancel }) {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!formData.title.trim()) {
-      alert('제목을 입력해주세요.')
+      showToast('제목을 입력해주세요.', TOAST_TYPES.ERROR)
       return
     }
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { createTask } from '../services/taskService.js'
 import { getDefaultCategory } from '../services/categoryService.js'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * 주간/월간 요약 생성 리마인더 모달 컴포넌트
@@ -31,7 +32,7 @@ export default function SummaryReminderModal({ type, period, isOpen, onClose, on
       onClose()
     } catch (error) {
       console.error('할 일 추가 실패:', error)
-      alert('할 일 추가에 실패했습니다.')
+      showToast('할 일 추가에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 

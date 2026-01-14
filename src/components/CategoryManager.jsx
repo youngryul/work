@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getCategories, addCategory, deleteCategory, getDefaultCategory } from '../services/categoryService.js'
 import CategorySettingsModal from './CategorySettingsModal.jsx'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * 카테고리 관리 컴포넌트
@@ -42,7 +43,7 @@ export default function CategoryManager({ onCategoryChange, onCategorySelect }) 
   const handleAddCategory = async (e) => {
     e.preventDefault()
     if (newCategoryName.trim() === '' || newCategoryEmoji.trim() === '') {
-      alert('카테고리 이름과 이모지를 모두 입력해주세요.')
+      showToast('카테고리 이름과 이모지를 모두 입력해주세요.', TOAST_TYPES.ERROR)
       return
     }
 
@@ -59,7 +60,7 @@ export default function CategoryManager({ onCategoryChange, onCategorySelect }) 
         onCategoryChange()
       }
     } catch (error) {
-      alert(error.message || '카테고리 추가에 실패했습니다.')
+      showToast(error.message || '카테고리 추가에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 
@@ -69,7 +70,7 @@ export default function CategoryManager({ onCategoryChange, onCategorySelect }) 
   const handleDeleteCategory = async (categoryName) => {
     // 기본 카테고리는 삭제 불가
     if (categoryName === defaultCategory) {
-      alert('기본 카테고리는 삭제할 수 없습니다. 다른 카테고리를 기본으로 설정한 후 삭제해주세요.')
+      showToast('기본 카테고리는 삭제할 수 없습니다. 다른 카테고리를 기본으로 설정한 후 삭제해주세요.', TOAST_TYPES.ERROR)
       return
     }
 
@@ -84,7 +85,7 @@ export default function CategoryManager({ onCategoryChange, onCategorySelect }) 
           onCategoryChange()
         }
       } catch (error) {
-        alert(error.message || '카테고리 삭제에 실패했습니다.')
+        showToast(error.message || '카테고리 삭제에 실패했습니다.', TOAST_TYPES.ERROR)
       }
     }
   }

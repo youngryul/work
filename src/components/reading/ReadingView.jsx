@@ -4,6 +4,7 @@ import { getReadingRecordsByBook, getMonthlyReadingStats, generateMonthlyReading
 import BookSearch from './BookSearch.jsx'
 import ReadingRecordForm from './ReadingRecordForm.jsx'
 import ReactMarkdown from 'react-markdown'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * 독서 관리 메인 뷰
@@ -155,7 +156,7 @@ export default function ReadingView() {
    */
   const handleGenerateAnalysis = async () => {
     if (!isPastMonth()) {
-      alert('현재 월과 미래 월은 분석을 생성할 수 없습니다. 이전 월만 분석 가능합니다.')
+      showToast('현재 월과 미래 월은 분석을 생성할 수 없습니다. 이전 월만 분석 가능합니다.', TOAST_TYPES.ERROR)
       return
     }
 
@@ -165,7 +166,7 @@ export default function ReadingView() {
       setMonthlyAnalysis(analysis)
     } catch (error) {
       console.error('AI 분석 생성 오류:', error)
-      alert('AI 분석 생성에 실패했습니다.')
+      showToast('AI 분석 생성에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setIsGeneratingAnalysis(false)
     }
@@ -390,10 +391,10 @@ export default function ReadingView() {
                             await deleteReadingRecord(record.id)
                             await loadReadingRecords()
                             await loadMonthlyStats()
-                            alert('독서 기록이 삭제되었습니다.')
+                            showToast('독서 기록이 삭제되었습니다.', TOAST_TYPES.SUCCESS)
                           } catch (error) {
                             console.error('독서 기록 삭제 오류:', error)
-                            alert('독서 기록 삭제에 실패했습니다.')
+                            showToast('독서 기록 삭제에 실패했습니다.', TOAST_TYPES.ERROR)
                           }
                         }
                       }}

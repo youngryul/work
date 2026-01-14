@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { getYearlyGoals, createMonthlyGoal, updateMonthlyGoal, getMonthlyGoals } from '../../services/goalService.js'
 import { MONTHLY_GOAL_STATUS, MAX_MONTHLY_GOALS } from '../../constants/goalCategories.js'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * @param {Object|null} initialGoal - 초기 목표 데이터 (수정 모드)
@@ -73,17 +74,17 @@ export default function MonthlyGoalForm({ initialGoal = null, year, month, onSav
 
     // 유효성 검사
     if (!formData.yearlyGoalId) {
-      alert('연간 목표를 선택해주세요.')
+      showToast('연간 목표를 선택해주세요.', TOAST_TYPES.ERROR)
       return
     }
     if (!formData.title.trim()) {
-      alert('목표 제목을 입력해주세요.')
+      showToast('목표 제목을 입력해주세요.', TOAST_TYPES.ERROR)
       return
     }
 
     // 최대 개수 확인 (수정 모드가 아닐 때)
     if (!isEditMode && existingGoals.length >= MAX_MONTHLY_GOALS) {
-      alert(`월별 목표는 최대 ${MAX_MONTHLY_GOALS}개까지 등록할 수 있습니다.`)
+      showToast(`월별 목표는 최대 ${MAX_MONTHLY_GOALS}개까지 등록할 수 있습니다.`, TOAST_TYPES.ERROR)
       return
     }
 
@@ -105,7 +106,7 @@ export default function MonthlyGoalForm({ initialGoal = null, year, month, onSav
       onSave?.()
     } catch (error) {
       console.error('목표 저장 실패:', error)
-      alert(error.message || '목표 저장에 실패했습니다.')
+      showToast(error.message || '목표 저장에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setLoading(false)
     }

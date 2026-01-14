@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getAnswersByYear, getQuestionByDate, getAnswersByQuestion } from '../services/fiveYearQuestionService.js'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * 날짜를 day_of_year로 변환
@@ -57,7 +58,7 @@ export default function FiveYearQuestionDashboard({ onDateClick }) {
         setAllAnswers(answerMap)
       } catch (error) {
         console.error('답변 로드 오류:', error)
-        alert('데이터를 불러오는데 실패했습니다.')
+        showToast('데이터를 불러오는데 실패했습니다.', TOAST_TYPES.ERROR)
       } finally {
         setIsLoading(false)
       }
@@ -109,7 +110,7 @@ export default function FiveYearQuestionDashboard({ onDateClick }) {
       setShowDetailModal(true)
     } catch (error) {
       console.error('질문 조회 오류:', error)
-      alert('질문을 불러오는데 실패했습니다.')
+      showToast('질문을 불러오는데 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 

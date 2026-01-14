@@ -18,6 +18,7 @@ import {
 } from '../services/workReportService.js'
 import { getDiariesByMonth } from '../services/diaryService.js'
 import ReactMarkdown from 'react-markdown'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * 2026년 회고록 뷰 컴포넌트 (2025년 12월부터 시작)
@@ -109,7 +110,7 @@ export default function Review2026View({ initialTab, initialParams }) {
       setWorkWeeks(Array.from(weeksMap.values()))
     } catch (error) {
       console.error('주 목록 로드 오류:', error)
-      alert('주 목록을 불러오는데 실패했습니다.')
+      showToast('주 목록을 불러오는데 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
   
@@ -145,7 +146,7 @@ export default function Review2026View({ initialTab, initialParams }) {
       setDiaryWeeks(Array.from(weeksMap.values()))
     } catch (error) {
       console.error('주간 일기 주 목록 로드 오류:', error)
-      alert('주간 일기 주 목록을 불러오는데 실패했습니다.')
+      showToast('주간 일기 주 목록을 불러오는데 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 
@@ -155,7 +156,7 @@ export default function Review2026View({ initialTab, initialParams }) {
   const handleGenerateWeeklyWorkReport = async (week) => {
     // 이전 주가 아니면 생성 불가
     if (!isPastWeek(week.weekEnd)) {
-      alert('현재 주나 미래 주의 업무일지는 생성할 수 없습니다. 이전 주만 생성 가능합니다.')
+      showToast('현재 주나 미래 주의 업무일지는 생성할 수 없습니다. 이전 주만 생성 가능합니다.', TOAST_TYPES.ERROR)
       return
     }
     
@@ -183,7 +184,7 @@ export default function Review2026View({ initialTab, initialParams }) {
       )
     } catch (error) {
       console.error('주간 업무일지 생성 오류:', error)
-      alert(error.message || '주간 업무일지 생성에 실패했습니다.')
+      showToast(error.message || '주간 업무일지 생성에 실패했습니다.', TOAST_TYPES.ERROR)
       // 에러 발생 시 생성 중 상태 해제
       setWorkWeeks(prevWeeks => 
         prevWeeks.map(w => 
@@ -232,7 +233,7 @@ export default function Review2026View({ initialTab, initialParams }) {
       }
     } catch (error) {
       console.error('월간 업무일지 생성 오류:', error)
-      alert(error.message || '월간 업무일지 생성에 실패했습니다.')
+      showToast(error.message || '월간 업무일지 생성에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setIsGeneratingMonthlyWork(false)
     }
@@ -244,7 +245,7 @@ export default function Review2026View({ initialTab, initialParams }) {
   const handleGenerateWeeklyDiarySummary = async (week) => {
     // 이전 주가 아니면 생성 불가
     if (!isPastWeek(week.weekEnd)) {
-      alert('현재 주나 미래 주의 일기 정리는 생성할 수 없습니다. 이전 주만 생성 가능합니다.')
+      showToast('현재 주나 미래 주의 일기 정리는 생성할 수 없습니다. 이전 주만 생성 가능합니다.', TOAST_TYPES.ERROR)
       return
     }
     
@@ -272,7 +273,7 @@ export default function Review2026View({ initialTab, initialParams }) {
       )
     } catch (error) {
       console.error('주간 일기 정리 생성 오류:', error)
-      alert(error.message || '주간 일기 정리 생성에 실패했습니다.')
+      showToast(error.message || '주간 일기 정리 생성에 실패했습니다.', TOAST_TYPES.ERROR)
       // 에러 발생 시 생성 중 상태 해제
       setDiaryWeeks(prevWeeks => 
         prevWeeks.map(w => 
@@ -305,7 +306,7 @@ export default function Review2026View({ initialTab, initialParams }) {
       // 해당 월의 일기 조회
       const diaries = await getDiariesByMonth(year, month)
       if (diaries.length === 0) {
-        alert(`${year}년 ${month}월에는 일기가 없습니다.`)
+        showToast(`${year}년 ${month}월에는 일기가 없습니다.`, TOAST_TYPES.ERROR)
         return
       }
 
@@ -327,7 +328,7 @@ export default function Review2026View({ initialTab, initialParams }) {
       setSelectedMonth(month)
     } catch (error) {
       console.error('월간 일기 정리 생성 오류:', error)
-      alert(error.message || '월간 일기 정리 생성에 실패했습니다.')
+      showToast(error.message || '월간 일기 정리 생성에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setIsGeneratingMonthlyDiary(false)
     }

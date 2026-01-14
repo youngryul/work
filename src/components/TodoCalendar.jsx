@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getCompletedCountsByDate, getCompletedTasksByDate, restoreCompletedTaskToToday } from '../services/taskService.js'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 // 주간 업무일지만 사용하므로 일일 업무일지 생성 기능 제거
 // import { generateDailyWorkReport, saveWorkReport, getWorkReport, getWorkReportDatesByMonth } from '../services/workReportService.js'
 
@@ -136,7 +137,7 @@ export default function TodoCalendar() {
       window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
     } catch (error) {
       console.error('복구 오류:', error)
-      alert(error.message || '복구에 실패했습니다.')
+      showToast(error.message || '복구에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 
@@ -154,7 +155,7 @@ export default function TodoCalendar() {
   //     await loadWorkReportDates()
   //   } catch (error) {
   //     console.error('업무일지 생성 오류:', error)
-  //     alert(error.message || '업무일지 생성에 실패했습니다.')
+  //     showToast(error.message || '업무일지 생성에 실패했습니다.', TOAST_TYPES.ERROR)
   //   } finally {
   //     setIsGeneratingReport(false)
   //   }
@@ -403,7 +404,7 @@ export default function TodoCalendar() {
                     <button
                       onClick={() => {
                         navigator.clipboard.writeText(workReport)
-                        alert('업무일지가 클립보드에 복사되었습니다!')
+                        showToast('업무일지가 클립보드에 복사되었습니다!', TOAST_TYPES.SUCCESS)
                       }}
                       className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-200"
                     >

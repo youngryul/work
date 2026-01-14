@@ -3,6 +3,7 @@ import { updateTask, deleteTask } from '../services/taskService.js'
 import { getCategoryEmoji } from '../services/categoryService.js'
 import CategorySelector from './CategorySelector.jsx'
 import { uploadImage } from '../services/imageService.js'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * 할 일 항목 컴포넌트
@@ -80,7 +81,7 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
    */
   const handleSaveEdit = async () => {
     if (editTitle.trim() === '') {
-      alert('할 일을 입력해주세요.')
+      showToast('할 일을 입력해주세요.', TOAST_TYPES.ERROR)
       return
     }
 
@@ -183,7 +184,7 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
           onUpdate(updated)
         } catch (error) {
           console.error('이미지 업로드 오류:', error)
-          alert('이미지 업로드에 실패했습니다: ' + (error.message || '알 수 없는 오류'))
+          showToast('이미지 업로드에 실패했습니다: ' + (error.message || '알 수 없는 오류'), TOAST_TYPES.ERROR)
         } finally {
           setIsUploadingImage(false)
         }
@@ -204,7 +205,7 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
       onUpdate(updated)
     } catch (error) {
       console.error('이미지 삭제 오류:', error)
-      alert('이미지 삭제에 실패했습니다.')
+      showToast('이미지 삭제에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 

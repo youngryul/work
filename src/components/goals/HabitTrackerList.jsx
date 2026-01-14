@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { getHabitTrackers, deleteHabitTracker } from '../../services/goalService.js'
 import HabitTracker from './HabitTracker.jsx'
 import HabitTrackerForm from './HabitTrackerForm.jsx'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * @param {number} year - 연도
@@ -29,7 +30,7 @@ export default function HabitTrackerList({ year, month, monthlyGoals = [] }) {
       setHabitTrackers(trackers)
     } catch (error) {
       console.error('Habit Tracker 로드 실패:', error)
-      alert('Habit Tracker를 불러오는데 실패했습니다.')
+      showToast('Habit Tracker를 불러오는데 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setLoading(false)
     }
@@ -43,7 +44,7 @@ export default function HabitTrackerList({ year, month, monthlyGoals = [] }) {
       await loadHabitTrackers()
     } catch (error) {
       console.error('Habit Tracker 삭제 실패:', error)
-      alert('삭제에 실패했습니다.')
+      showToast('삭제에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 

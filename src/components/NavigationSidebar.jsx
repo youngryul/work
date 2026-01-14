@@ -1,5 +1,6 @@
 import { NAVIGATION_MENU_ITEMS, EXTERNAL_LINKS } from '../constants/navigationMenu.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * 사이드바 네비게이션 컴포넌트
@@ -51,7 +52,7 @@ export default function NavigationSidebar({
       await signOut()
     } catch (error) {
       console.error('로그아웃 오류:', error)
-      alert('로그아웃에 실패했습니다.')
+      showToast('로그아웃에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 

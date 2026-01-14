@@ -4,6 +4,7 @@
  */
 import { useState, useEffect } from 'react'
 import { getMonthlyReflection, saveMonthlyReflection } from '../../services/goalService.js'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * @param {number} year - 연도
@@ -57,7 +58,7 @@ export default function MonthlyReflectionForm({ year, month, onSave }) {
 
     // 필수 필드 검증
     if (!formData.bestChoice.trim() || !formData.failureReason.trim()) {
-      alert('모든 필수 항목을 작성해주세요.')
+      showToast('모든 필수 항목을 작성해주세요.', TOAST_TYPES.ERROR)
       return
     }
 
@@ -68,11 +69,11 @@ export default function MonthlyReflectionForm({ year, month, onSave }) {
         month,
         ...formData,
       })
-      alert('회고가 저장되었습니다. 이제 다음 달 목표를 등록할 수 있습니다.')
+      showToast('회고가 저장되었습니다. 이제 다음 달 목표를 등록할 수 있습니다.', TOAST_TYPES.SUCCESS)
       onSave?.()
     } catch (error) {
       console.error('회고 저장 실패:', error)
-      alert('회고 저장에 실패했습니다.')
+      showToast('회고 저장에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setSaving(false)
     }
