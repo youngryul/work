@@ -16,6 +16,7 @@ import TravelView from './components/travel/TravelView.jsx'
 import FiveYearQuestionView from './components/FiveYearQuestionView.jsx'
 import CategorySettingsModal from './components/CategorySettingsModal.jsx'
 import FoodCalorieCalculator from './components/FoodCalorieCalculator.jsx'
+import CongratulatoryMoneyView from './components/CongratulatoryMoneyView.jsx'
 import NavigationSidebar from './components/NavigationSidebar.jsx'
 import NotificationCenter from './components/NotificationCenter.jsx'
 import DiaryReminderModal from './components/DiaryReminderModal.jsx'
@@ -221,6 +222,7 @@ function AppContent() {
         {currentView === 'travel' && <TravelView />}
         {currentView === 'five-year-questions' && <FiveYearQuestionView />}
         {currentView === 'food-calorie' && <FoodCalorieCalculator />}
+        {currentView === 'congratulatory-money' && <CongratulatoryMoneyView />}
         </main>
       </div>
 

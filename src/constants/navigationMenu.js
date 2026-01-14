@@ -69,6 +69,11 @@ export const NAVIGATION_MENU_ITEMS = [
     label: '음식 칼로리',
     icon: '🍽️',
   },
+  {
+    id: 'congratulatory-money',
+    label: '경조사 기록',
+    icon: '💐',
+  },
 ]
 
 /**
