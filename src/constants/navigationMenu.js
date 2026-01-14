@@ -65,9 +65,9 @@ export const NAVIGATION_MENU_ITEMS = [
     icon: '📖',
   },
   {
-    id: 'category-settings',
-    label: '카테고리 설정',
-    icon: '⚙️',
+    id: 'food-calorie',
+    label: '음식 칼로리',
+    icon: '🍽️',
   },
 ]
 
