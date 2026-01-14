@@ -9,34 +9,67 @@ const corsHeaders = {
 // 이미지 생성 프롬프트 생성 상수
 const DEFAULT_MODEL = "dall-e-3"
 
-// 고정 스타일 규칙
-const FIXED_STYLE = "simple black line art, colorful crayon-like fill, minimalist doodle style, clean lines, hand-drawn sketch, journal illustration, white background, cute bear character, adorable teddy bear, simple objects and scenes, bright colorful crayon-like texture, playful and cheerful"
+// 고정 스타일 규칙 (연필 제외)
+const FIXED_STYLE = "simple black line art, colorful crayon-like fill, minimalist doodle style, clean lines, hand-drawn sketch, journal illustration, white background, cute bear character, adorable teddy bear, simple objects and scenes, bright colorful crayon-like texture, playful and cheerful, no pencil, no writing tools, no pen, no stationery items"
 
-// 감정 타입 정의
-type Emotion = 'calm' | 'comfort' | 'happiness' | 'sadness' | 'anxiety' | 'loneliness' | 'hope' | 'tiredness'
+// 감정 타입 정의 (더 세분화)
+type Emotion = 
+  | 'calm' | 'comfort' | 'happiness' | 'sadness' | 'anxiety' | 'loneliness' | 'hope' | 'tiredness'
+  | 'excitement' | 'gratitude' | 'nostalgia' | 'frustration' | 'relief' | 'pride' | 'embarrassment'
+  | 'envy' | 'determination' | 'confusion' | 'peace' | 'love' | 'anger' | 'disappointment' | 'satisfaction'
 
-// 감정 키워드 매핑
+// 감정 키워드 매핑 (더 세분화)
 const EMOTION_KEYWORDS: Record<Emotion, string[]> = {
-  calm: ['평온', '차분', '고요', '평화', 'calm', 'peaceful', 'quiet', 'serene', 'tranquil'],
-  comfort: ['위로', '안정', '편안', '따뜻', 'comfort', 'comfortable', 'cozy', 'warm', 'safe'],
-  happiness: ['행복', '기쁨', '즐거움', '웃음', 'happiness', 'happy', 'joy', 'cheerful', 'delighted'],
-  sadness: ['슬픔', '우울', '눈물', '아픔', 'sadness', 'sad', 'depressed', 'melancholy', 'gloomy'],
-  anxiety: ['불안', '걱정', '초조', '두려움', 'anxiety', 'anxious', 'worried', 'nervous', 'fear'],
-  loneliness: ['외로움', '고독', '혼자', '쓸쓸', 'loneliness', 'lonely', 'alone', 'isolated', 'empty'],
-  hope: ['희망', '기대', '밝음', '미래', 'hope', 'hopeful', 'optimistic', 'bright', 'future'],
-  tiredness: ['지침', '피곤', '힘듦', '무기력', 'tiredness', 'tired', 'exhausted', 'weary', 'drained']
+  calm: ['평온', '차분', '고요', '평화', 'calm', 'peaceful', 'quiet', 'serene', 'tranquil', '조용', '안정'],
+  comfort: ['위로', '안정', '편안', '따뜻', 'comfort', 'comfortable', 'cozy', 'warm', 'safe', '안락', '포근'],
+  happiness: ['행복', '기쁨', '즐거움', '웃음', 'happiness', 'happy', 'joy', 'cheerful', 'delighted', '환희', '기쁨'],
+  sadness: ['슬픔', '우울', '눈물', '아픔', 'sadness', 'sad', 'depressed', 'melancholy', 'gloomy', '비애', '서글픔'],
+  anxiety: ['불안', '걱정', '초조', '두려움', 'anxiety', 'anxious', 'worried', 'nervous', 'fear', '불안감', '조마조마'],
+  loneliness: ['외로움', '고독', '혼자', '쓸쓸', 'loneliness', 'lonely', 'alone', 'isolated', 'empty', '고립', '단절'],
+  hope: ['희망', '기대', '밝음', '미래', 'hope', 'hopeful', 'optimistic', 'bright', 'future', '기대감', '밝은'],
+  tiredness: ['지침', '피곤', '힘듦', '무기력', 'tiredness', 'tired', 'exhausted', 'weary', 'drained', '지루', '권태'],
+  excitement: ['흥분', '설렘', '두근거림', '떨림', 'excitement', 'excited', 'thrilled', 'enthusiastic', 'eager', '흥미진진'],
+  gratitude: ['감사', '고마움', '감사함', '고마워', 'gratitude', 'grateful', 'thankful', 'appreciative', 'thanks', '감사한'],
+  nostalgia: ['그리움', '향수', '추억', '회상', 'nostalgia', 'nostalgic', 'homesick', 'longing', 'yearning', '그리워'],
+  frustration: ['답답', '좌절', '짜증', '불만', 'frustration', 'frustrated', 'annoyed', 'irritated', 'stuck', '막힘'],
+  relief: ['안도', '다행', '해소', '편안', 'relief', 'relieved', 'eased', 'comforted', 'peaceful', '안심'],
+  pride: ['자랑', '뿌듯', '자신감', '만족', 'pride', 'proud', 'confident', 'accomplished', 'achievement', '성취'],
+  embarrassment: ['부끄러움', '당황', '창피', '민망', 'embarrassment', 'embarrassed', 'ashamed', 'awkward', 'uncomfortable', '어색'],
+  envy: ['부러움', '질투', '선망', 'envy', 'envious', 'jealous', 'covetous', 'desire', '탐내'],
+  determination: ['의지', '결심', '의욕', '투지', 'determination', 'determined', 'resolved', 'motivated', 'persistent', '의지력'],
+  confusion: ['혼란', '당황', '어리둥절', '헷갈림', 'confusion', 'confused', 'bewildered', 'puzzled', 'uncertain', '막막'],
+  peace: ['평화', '고요', '안정', '평온', 'peace', 'peaceful', 'serene', 'calm', 'tranquil', '조화'],
+  love: ['사랑', '애정', '좋아함', '애착', 'love', 'loving', 'affectionate', 'fond', 'caring', '따뜻한'],
+  anger: ['화', '분노', '짜증', '성', 'anger', 'angry', 'mad', 'furious', 'irritated', '화남'],
+  disappointment: ['실망', '아쉬움', '낙담', '절망', 'disappointment', 'disappointed', 'let down', 'discouraged', 'disheartened', '좌절'],
+  satisfaction: ['만족', '보람', '성취감', '기쁨', 'satisfaction', 'satisfied', 'content', 'fulfilled', 'pleased', '충족']
 }
 
-// 감정 → 색감 매핑 (알록달록한 크레파스 느낌)
+// 감정 → 색감 매핑 (알록달록한 크레파스 느낌, 더 세분화된 표현)
 const EMOTION_ATMOSPHERE: Record<Emotion, string> = {
-  calm: 'soft pastel colors, gentle beige and light blue, peaceful and calm',
-  comfort: 'warm yellow and orange, cozy and inviting, bright and cheerful',
-  happiness: 'vibrant rainbow colors, bright and colorful, joyful and playful',
-  sadness: 'cool blue and purple tones, gentle and soft, melancholic but beautiful',
-  anxiety: 'muted pastels with hints of color, soft and gentle',
-  loneliness: 'cool blue and gray tones, spacious and quiet, peaceful',
-  hope: 'bright yellow and pink, warm and optimistic, cheerful sunrise colors',
-  tiredness: 'soft warm colors, gentle purple and blue, restful and calm'
+  calm: 'soft pastel colors, gentle beige and light blue, peaceful and calm atmosphere, serene and tranquil mood',
+  comfort: 'warm yellow and orange tones, cozy and inviting atmosphere, bright and cheerful, homey feeling',
+  happiness: 'vibrant rainbow colors, bright and colorful palette, joyful and playful atmosphere, energetic and lively',
+  sadness: 'cool blue and purple tones, gentle and soft colors, melancholic but beautiful, subdued and contemplative',
+  anxiety: 'muted pastels with hints of color, soft and gentle tones, slightly tense atmosphere, uncertain mood',
+  loneliness: 'cool blue and gray tones, spacious and quiet atmosphere, peaceful but empty, isolated feeling',
+  hope: 'bright yellow and pink colors, warm and optimistic atmosphere, cheerful sunrise colors, uplifting mood',
+  tiredness: 'soft warm colors, gentle purple and blue tones, restful and calm atmosphere, weary but peaceful',
+  excitement: 'vibrant red and orange colors, dynamic and energetic atmosphere, thrilling and exhilarating mood, intense colors',
+  gratitude: 'warm golden and amber colors, heartfelt and appreciative atmosphere, warm and glowing, thankful mood',
+  nostalgia: 'sepia and warm brown tones, vintage and sentimental atmosphere, soft and dreamy, reminiscent mood',
+  frustration: 'muted red and orange tones, tense and blocked atmosphere, slightly chaotic, stuck feeling',
+  relief: 'soft green and blue tones, relaxed and eased atmosphere, peaceful and light, unburdened mood',
+  pride: 'bold gold and purple colors, confident and accomplished atmosphere, strong and proud, victorious mood',
+  embarrassment: 'soft pink and peach tones, awkward and shy atmosphere, gentle and self-conscious, flustered mood',
+  envy: 'green and yellow tones, longing and desiring atmosphere, slightly bitter, covetous mood',
+  determination: 'strong red and orange colors, focused and resolute atmosphere, intense and driven, motivated mood',
+  confusion: 'mixed gray and muted colors, uncertain and puzzled atmosphere, chaotic and unclear, bewildered mood',
+  peace: 'soft white and light blue tones, harmonious and balanced atmosphere, serene and tranquil, unified mood',
+  love: 'warm pink and red tones, affectionate and caring atmosphere, tender and warm, loving mood',
+  anger: 'intense red and dark orange colors, heated and intense atmosphere, fiery and passionate, furious mood',
+  disappointment: 'dull gray and blue tones, let down and discouraged atmosphere, subdued and dejected, disheartened mood',
+  satisfaction: 'warm golden and green tones, content and fulfilled atmosphere, peaceful and accomplished, pleased mood'
 }
 
 /**
@@ -54,7 +87,22 @@ function analyzeEmotion(content: string): Emotion {
     anxiety: 0,
     loneliness: 0,
     hope: 0,
-    tiredness: 0
+    tiredness: 0,
+    excitement: 0,
+    gratitude: 0,
+    nostalgia: 0,
+    frustration: 0,
+    relief: 0,
+    pride: 0,
+    embarrassment: 0,
+    envy: 0,
+    determination: 0,
+    confusion: 0,
+    peace: 0,
+    love: 0,
+    anger: 0,
+    disappointment: 0,
+    satisfaction: 0
   }
 
   // 각 감정의 키워드 매칭
@@ -102,7 +150,7 @@ async function summarizeDiaryContent(content: string, apiKey: string): Promise<s
           messages: [
             {
               role: 'system',
-              content: 'You are a helpful assistant that summarizes diary entries into short, simple scene descriptions for image generation. Focus on the main activities, objects, and atmosphere. Keep it under 20 words. Do not include people or characters, only describe scenes and objects. Output only the summary in English, no additional text.'
+              content: 'You are a helpful assistant that summarizes diary entries into short, simple scene descriptions for image generation. Focus on the main activities, objects, and atmosphere. Keep it under 20 words. Do not include people or characters, only describe scenes and objects. Do not include pencils, pens, writing tools, or stationery items. Output only the summary in English, no additional text.'
             },
             {
               role: 'user',
@@ -149,8 +197,8 @@ async function createImagePrompt(content: string, apiKey: string): Promise<{ emo
   const scene = await summarizeDiaryContent(content, apiKey)
   const colors = EMOTION_ATMOSPHERE[emotion]
 
-  // 프롬프트를 더 간결하고 안전하게 구성 (귀여운 곰돌이 포함, 크레파스 느낌)
-  const prompt = `Simple black line art illustration with colorful crayon-like fill, ${scene}, ${colors}, minimalistic doodle style, clean lines, white background, cute adorable bear character, ${FIXED_STYLE}`
+  // 프롬프트를 더 간결하고 안전하게 구성 (귀여운 곰돌이 포함, 크레파스 느낌, 연필 제외)
+  const prompt = `Simple black line art illustration with colorful crayon-like fill, ${scene}, ${colors}, minimalistic doodle style, clean lines, white background, cute adorable bear character, ${FIXED_STYLE}, absolutely no pencil, no pen, no writing tools, no stationery, no office supplies`
 
   return {
     emotion,
