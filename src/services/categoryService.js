@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
+import { SYSTEM_CATEGORY_DAILY, SYSTEM_CATEGORY_DAILY_EMOJI } from '../constants/categories.js'
 
 /**
  * 모든 카테고리 조회
@@ -55,13 +56,31 @@ export async function getCategories() {
     }
   }
 
-  // 사용자가 설정한 기본 카테고리를 맨 앞으로 이동
+  // 시스템 카테고리(일상) 추가 (데이터베이스에 없어도 항상 표시)
+  const hasSystemCategory = categories.some(cat => cat.name === SYSTEM_CATEGORY_DAILY)
+  if (!hasSystemCategory) {
+    categories.unshift({
+      id: 'system_daily',
+      name: SYSTEM_CATEGORY_DAILY,
+      emoji: SYSTEM_CATEGORY_DAILY_EMOJI,
+    })
+  }
+
+  // 사용자가 설정한 기본 카테고리를 맨 앞으로 이동 (일상 제외)
   const defaultCategory = await getDefaultCategory()
-  const defaultIndex = categories.findIndex(cat => cat.name === defaultCategory)
-  if (defaultIndex > 0) {
-    const defaultCat = categories[defaultIndex]
-    categories.splice(defaultIndex, 1)
-    categories.unshift(defaultCat)
+  if (defaultCategory !== SYSTEM_CATEGORY_DAILY) {
+    const defaultIndex = categories.findIndex(cat => cat.name === defaultCategory)
+    if (defaultIndex > 0) {
+      const defaultCat = categories[defaultIndex]
+      categories.splice(defaultIndex, 1)
+      // 일상 다음에 배치
+      const systemIndex = categories.findIndex(cat => cat.name === SYSTEM_CATEGORY_DAILY)
+      if (systemIndex >= 0) {
+        categories.splice(systemIndex + 1, 0, defaultCat)
+      } else {
+        categories.unshift(defaultCat)
+      }
+    }
   }
 
   return categories
@@ -136,6 +155,11 @@ export async function deleteCategory(name) {
  * @returns {Promise<string>} 이모지
  */
 export async function getCategoryEmoji(categoryName) {
+  // 시스템 카테고리(일상) 처리
+  if (categoryName === SYSTEM_CATEGORY_DAILY) {
+    return SYSTEM_CATEGORY_DAILY_EMOJI
+  }
+
   const userId = await getCurrentUserId()
   if (!userId) {
     return '📝'

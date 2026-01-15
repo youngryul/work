@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createTask } from '../services/taskService.js'
-import { getDefaultCategory } from '../services/categoryService.js'
+import { SYSTEM_CATEGORY_DAILY } from '../constants/categories.js'
 import { markDiaryReminderShown } from '../services/diaryReminderService.js'
 import { markSummaryReminderShown } from '../services/summaryReminderService.js'
 import { markFiveYearQuestionReminderShown } from '../services/fiveYearQuestionReminderService.js'
@@ -175,7 +175,6 @@ export default function NotificationCenter({
                             <button
                               onClick={async () => {
                                 try {
-                                  const defaultCategory = await getDefaultCategory()
                                   const yesterdayDate = diaryReminder.yesterdayDate
                                   if (yesterdayDate) {
                                     const date = new Date(yesterdayDate + 'T00:00:00')
@@ -185,7 +184,7 @@ export default function NotificationCenter({
                                       day: 'numeric',
                                       weekday: 'short'
                                     })
-                                    await createTask(`${formattedDate} 일기 작성`, defaultCategory, true)
+                                    await createTask(`${formattedDate} 일기 작성`, SYSTEM_CATEGORY_DAILY, true)
                                   }
                                   // 리마인더 표시 기록
                                   await markDiaryReminderShown()
@@ -244,10 +243,9 @@ export default function NotificationCenter({
                             <button
                               onClick={async () => {
                                 try {
-                                  const defaultCategory = await getDefaultCategory()
                                   await createTask(
                                     `주간 업무/일기 요약 생성 (${weeklySummaryReminder.period})`,
-                                    defaultCategory,
+                                    SYSTEM_CATEGORY_DAILY,
                                     true
                                   )
                                   // 리마인더 표시 기록
@@ -309,10 +307,9 @@ export default function NotificationCenter({
                             <button
                               onClick={async () => {
                                 try {
-                                  const defaultCategory = await getDefaultCategory()
                                   await createTask(
                                     `월간 업무/일기 요약 생성 (${monthlySummaryReminder.period})`,
-                                    defaultCategory,
+                                    SYSTEM_CATEGORY_DAILY,
                                     true
                                   )
                                   // 리마인더 표시 기록
@@ -388,8 +385,7 @@ export default function NotificationCenter({
                             <button
                               onClick={async () => {
                                 try {
-                                  const defaultCategory = await getDefaultCategory()
-                                  await createTask('오늘의 5년 질문 답변하기', defaultCategory, true)
+                                  await createTask('오늘의 5년 질문 답변하기', SYSTEM_CATEGORY_DAILY, true)
                                   // 리마인더 표시 기록
                                   await markFiveYearQuestionReminderShown()
                                   if (onFiveYearQuestionClose) {

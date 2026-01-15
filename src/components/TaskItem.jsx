@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { updateTask, deleteTask } from '../services/taskService.js'
 import { getCategoryEmoji } from '../services/categoryService.js'
+import { SYSTEM_CATEGORY_DAILY } from '../constants/categories.js'
 import CategorySelector from './CategorySelector.jsx'
 import { uploadImage } from '../services/imageService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
@@ -294,15 +295,24 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
       </button>
 
       {/* 카테고리 이모지 */}
-      <button
-        onClick={() => setIsEditingCategory(!isEditingCategory)}
-        onMouseDown={(e) => e.stopPropagation()}
-        className="flex-shrink-0 text-3xl hover:scale-110 transition-transform duration-200"
-        aria-label="카테고리 변경"
-        title="카테고리를 변경하려면 클릭하세요"
-      >
-        {categoryEmoji}
-      </button>
+      {task.category === SYSTEM_CATEGORY_DAILY ? (
+        <span
+          className="flex-shrink-0 text-3xl"
+          title="일상 카테고리는 변경할 수 없습니다"
+        >
+          {categoryEmoji}
+        </span>
+      ) : (
+        <button
+          onClick={() => setIsEditingCategory(!isEditingCategory)}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="flex-shrink-0 text-3xl hover:scale-110 transition-transform duration-200"
+          aria-label="카테고리 변경"
+          title="카테고리를 변경하려면 클릭하세요"
+        >
+          {categoryEmoji}
+        </button>
+      )}
 
       {/* 할 일 제목 */}
       {isEditing ? (

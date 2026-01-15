@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getCategories, addCategory, deleteCategory, getDefaultCategory } from '../services/categoryService.js'
+import { SYSTEM_CATEGORY_DAILY, SYSTEM_CATEGORY_DAILY_EMOJI } from '../constants/categories.js'
 import CategorySettingsModal from './CategorySettingsModal.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
@@ -68,6 +69,12 @@ export default function CategoryManager({ onCategoryChange, onCategorySelect }) 
    * 카테고리 삭제
    */
   const handleDeleteCategory = async (categoryName) => {
+    // 시스템 카테고리(일상)는 삭제 불가
+    if (categoryName === SYSTEM_CATEGORY_DAILY) {
+      showToast('일상 카테고리는 삭제할 수 없습니다.', TOAST_TYPES.ERROR)
+      return
+    }
+
     // 기본 카테고리는 삭제 불가
     if (categoryName === defaultCategory) {
       showToast('기본 카테고리는 삭제할 수 없습니다. 다른 카테고리를 기본으로 설정한 후 삭제해주세요.', TOAST_TYPES.ERROR)
@@ -152,7 +159,9 @@ export default function CategoryManager({ onCategoryChange, onCategorySelect }) 
           >
             <span className="text-2xl">{category.emoji}</span>
             <span className="text-xl">{category.name}</span>
-            {category.name === defaultCategory ? (
+            {category.name === SYSTEM_CATEGORY_DAILY ? (
+              <span className="ml-2 text-xs text-gray-500">(시스템)</span>
+            ) : category.name === defaultCategory ? (
               <span className="ml-2 text-xs text-gray-500">(기본)</span>
             ) : (
               <button

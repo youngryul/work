@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getCategories, getDefaultCategory, setDefaultCategory } from '../services/categoryService.js'
+import { SYSTEM_CATEGORY_DAILY } from '../constants/categories.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
@@ -108,38 +109,55 @@ export default function CategorySettingsModal({ isOpen, onClose }) {
             </div>
           ) : (
             <div className="space-y-3">
-              {categories.map((category) => (
-                <div
-                  key={category.name}
-                  className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
-                    category.name === defaultCategory
-                      ? 'border-pink-400 bg-pink-50'
-                      : 'border-gray-200 bg-white hover:border-pink-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl">{category.emoji}</span>
-                    <span className="text-xl font-sans">{category.name}</span>
-                    {category.name === defaultCategory && (
-                      <span className="px-3 py-1 bg-pink-400 text-white text-sm rounded-full font-sans">
-                        기본 카테고리
-                      </span>
-                    )}
-                  </div>
-                  
-                  <button
-                    onClick={() => handleSetDefault(category.name)}
-                    disabled={category.name === defaultCategory || saving}
-                    className={`px-6 py-2 rounded-lg font-sans transition-colors ${
-                      category.name === defaultCategory
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-pink-400 text-white hover:bg-pink-500'
-                    } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
+              {categories.map((category) => {
+                const isSystemCategory = category.name === SYSTEM_CATEGORY_DAILY
+                const isDefault = category.name === defaultCategory
+                const isDisabled = isSystemCategory || isDefault || saving
+                
+                return (
+                  <div
+                    key={category.name}
+                    className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
+                      isDefault
+                        ? 'border-pink-400 bg-pink-50'
+                        : isSystemCategory
+                        ? 'border-gray-300 bg-gray-50'
+                        : 'border-gray-200 bg-white hover:border-pink-200'
+                    }`}
                   >
-                    {category.name === defaultCategory ? '현재 기본' : '기본으로 설정'}
-                  </button>
-                </div>
-              ))}
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{category.emoji}</span>
+                      <span className="text-xl font-sans">{category.name}</span>
+                      {isSystemCategory && (
+                        <span className="px-3 py-1 bg-gray-400 text-white text-sm rounded-full font-sans">
+                          시스템 카테고리
+                        </span>
+                      )}
+                      {isDefault && !isSystemCategory && (
+                        <span className="px-3 py-1 bg-pink-400 text-white text-sm rounded-full font-sans">
+                          기본 카테고리
+                        </span>
+                      )}
+                    </div>
+                    
+                    <button
+                      onClick={() => handleSetDefault(category.name)}
+                      disabled={isDisabled}
+                      className={`px-6 py-2 rounded-lg font-sans transition-colors ${
+                        isDisabled
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-pink-400 text-white hover:bg-pink-500'
+                      }`}
+                    >
+                      {isSystemCategory
+                        ? '설정 불가'
+                        : isDefault
+                        ? '현재 기본'
+                        : '기본으로 설정'}
+                    </button>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>

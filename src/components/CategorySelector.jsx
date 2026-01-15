@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getCategories } from '../services/categoryService.js'
+import { SYSTEM_CATEGORY_DAILY } from '../constants/categories.js'
 
 /**
  * 카테고리 선택 컴포넌트 (Select Box)
@@ -38,7 +39,13 @@ export default function CategorySelector({ selectedCategory, onChange }) {
   return (
     <select
       value={selectedCategory || ''}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => {
+        // 일상 카테고리는 변경 불가
+        if (e.target.value === SYSTEM_CATEGORY_DAILY && selectedCategory !== SYSTEM_CATEGORY_DAILY) {
+          return
+        }
+        onChange(e.target.value)
+      }}
       className="px-4 py-3 text-2xl border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400 shadow-sm bg-white flex-shrink-0"
       style={{ minWidth: '180px' }}
     >
@@ -46,7 +53,11 @@ export default function CategorySelector({ selectedCategory, onChange }) {
         <option>카테고리 없음</option>
       ) : (
         categories.map((category) => (
-          <option key={category.name} value={category.name}>
+          <option 
+            key={category.name} 
+            value={category.name}
+            disabled={category.name === SYSTEM_CATEGORY_DAILY && selectedCategory !== SYSTEM_CATEGORY_DAILY}
+          >
             {category.emoji} {category.name}
           </option>
         ))
