@@ -61,8 +61,14 @@ export function useNotifications() {
 
     setIsLoading(true)
     try {
-      // 일기 리마인더 확인
-      const alreadyShownDiary = await hasDiaryReminderToday()
+      // 사용자 ID가 없으면 알림 확인하지 않음
+      if (!user?.id) {
+        setIsLoading(false)
+        return
+      }
+
+      // 일기 리마인더 확인 (이미 있는 user.id 사용)
+      const alreadyShownDiary = await hasDiaryReminderToday(user.id)
       if (!alreadyShownDiary) {
         const yesterday = getYesterdayDateString()
         const diary = await getDiaryByDate(yesterday)
@@ -71,8 +77,8 @@ export function useNotifications() {
         }
       }
 
-      // 주간 요약 리마인더 확인
-      const alreadyShownWeekly = await hasSummaryReminderToday('weekly')
+      // 주간 요약 리마인더 확인 (이미 있는 user.id 사용)
+      const alreadyShownWeekly = await hasSummaryReminderToday('weekly', user.id)
       if (!alreadyShownWeekly && await shouldShowWeeklyReminder()) {
         const lastWeek = getLastWeekInfo()
         setWeeklySummaryReminder({ 
@@ -83,8 +89,8 @@ export function useNotifications() {
         })
       }
 
-      // 월간 요약 리마인더 확인
-      const alreadyShownMonthly = await hasSummaryReminderToday('monthly')
+      // 월간 요약 리마인더 확인 (이미 있는 user.id 사용)
+      const alreadyShownMonthly = await hasSummaryReminderToday('monthly', user.id)
       if (!alreadyShownMonthly && await shouldShowMonthlyReminder()) {
         const lastMonth = getLastMonthInfo()
         setMonthlySummaryReminder({ 
@@ -95,8 +101,8 @@ export function useNotifications() {
         })
       }
 
-      // 5년 질문 일기 리마인더 확인
-      const alreadyShownFiveYear = await hasFiveYearQuestionReminderToday()
+      // 5년 질문 일기 리마인더 확인 (이미 있는 user.id 사용)
+      const alreadyShownFiveYear = await hasFiveYearQuestionReminderToday(user.id)
       if (!alreadyShownFiveYear) {
         const today = new Date()
         const todayDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`

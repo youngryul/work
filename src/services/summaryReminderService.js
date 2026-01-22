@@ -4,10 +4,13 @@ import { getCurrentUserId } from '../utils/authHelper.js'
 /**
  * 오늘 요약 리마인더가 이미 표시되었는지 확인
  * @param {string} reminderType - 'weekly' | 'monthly'
+ * @param {string} [userId] - 사용자 ID (옵셔널, 없으면 자동으로 가져옴)
  * @returns {Promise<boolean>} 오늘 리마인더가 표시되었으면 true
  */
-export async function hasSummaryReminderToday(reminderType) {
-  const userId = await getCurrentUserId()
+export async function hasSummaryReminderToday(reminderType, userId = null) {
+  if (!userId) {
+    userId = await getCurrentUserId()
+  }
   if (!userId) {
     return false
   }
@@ -45,11 +48,15 @@ export async function hasSummaryReminderToday(reminderType) {
 /**
  * 오늘 요약 리마인더 표시 기록
  * @param {string} reminderType - 'weekly' | 'monthly'
+ * @param {string} [userId] - 사용자 ID (옵셔널, 없으면 자동으로 가져옴)
  * @returns {Promise<void>}
  */
-export async function markSummaryReminderShown(reminderType) {
-  const userId = await getCurrentUserId()
+export async function markSummaryReminderShown(reminderType, userId = null) {
   if (!userId) {
+    userId = await getCurrentUserId()
+  }
+  if (!userId) {
+    console.warn('사용자 ID가 없어 요약 리마인더를 기록할 수 없습니다.')
     return
   }
 

@@ -5,6 +5,7 @@ import DiaryForm from './DiaryForm.jsx'
 import { createTask } from '../services/taskService.js'
 import { getDefaultCategory } from '../services/categoryService.js'
 import { markDiaryReminderShown } from '../services/diaryReminderService.js'
+import { useAuth } from '../contexts/AuthContext.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
@@ -15,6 +16,7 @@ import { showToast, TOAST_TYPES } from './Toast.jsx'
  * @param {Function} onWriteDiary - 일기 작성 핸들러
  */
 export default function DiaryReminderModal({ yesterdayDate, isOpen, onClose, onWriteDiary }) {
+  const { user } = useAuth()
   const [showDiaryForm, setShowDiaryForm] = useState(false)
 
   if (!isOpen) return null
@@ -43,7 +45,7 @@ export default function DiaryReminderModal({ yesterdayDate, isOpen, onClose, onW
       await createTask(`${formatDate(yesterdayDate)} 일기 작성`, defaultCategory, true)
       // 리마인더 표시 기록
       try {
-        await markDiaryReminderShown()
+        await markDiaryReminderShown(user?.id)
       } catch (error) {
         console.error('리마인더 기록 실패:', error)
       }

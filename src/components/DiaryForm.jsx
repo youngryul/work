@@ -4,6 +4,7 @@ import { ko } from 'date-fns/locale'
 import { saveDiary, getDiaryByDate } from '../services/diaryService.js'
 import { uploadImage } from '../services/imageService.js'
 import { markDiaryReminderShown } from '../services/diaryReminderService.js'
+import { useAuth } from '../contexts/AuthContext.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
@@ -14,6 +15,7 @@ import { showToast, TOAST_TYPES } from './Toast.jsx'
  * @param {boolean} isModal - 모달 안에서 사용되는지 여부
  */
 export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = false }) {
+  const { user } = useAuth()
   const [content, setContent] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
@@ -76,7 +78,7 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
       
       if (selectedDate === yesterdayDateString) {
         try {
-          await markDiaryReminderShown()
+          await markDiaryReminderShown(user?.id)
           // 알림 상태 새로고침
           setTimeout(() => {
             window.dispatchEvent(new CustomEvent('refreshNotifications'))

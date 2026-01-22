@@ -4,6 +4,7 @@ import { SYSTEM_CATEGORY_DAILY } from '../constants/categories.js'
 import { markDiaryReminderShown } from '../services/diaryReminderService.js'
 import { markSummaryReminderShown } from '../services/summaryReminderService.js'
 import { markFiveYearQuestionReminderShown } from '../services/fiveYearQuestionReminderService.js'
+import { useAuth } from '../contexts/AuthContext.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
@@ -35,6 +36,7 @@ export default function NotificationCenter({
   onFiveYearQuestionAnswer,
   onFiveYearQuestionClose,
 }) {
+  const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
 
@@ -186,8 +188,14 @@ export default function NotificationCenter({
                                     })
                                     await createTask(`${formattedDate} 일기 작성`, SYSTEM_CATEGORY_DAILY, true)
                                   }
-                                  // 리마인더 표시 기록
-                                  await markDiaryReminderShown()
+                                  // 리마인더 표시 기록 (에러가 발생해도 계속 진행)
+                                  try {
+                                    await markDiaryReminderShown(user?.id)
+                                  } catch (error) {
+                                    console.error('리마인더 기록 실패:', error)
+                                    // 에러가 발생해도 계속 진행 (로컬 상태는 업데이트)
+                                  }
+                                  // 로컬 상태 즉시 업데이트 (알림 닫기)
                                   if (onDiaryReminderClose) {
                                     onDiaryReminderClose()
                                   }
@@ -400,8 +408,14 @@ export default function NotificationCenter({
                               onClick={async () => {
                                 try {
                                   await createTask('오늘의 5년 질문 답변하기', SYSTEM_CATEGORY_DAILY, true)
-                                  // 리마인더 표시 기록
-                                  await markFiveYearQuestionReminderShown()
+                                  // 리마인더 표시 기록 (에러가 발생해도 계속 진행)
+                                  try {
+                                    await markFiveYearQuestionReminderShown(user?.id)
+                                  } catch (error) {
+                                    console.error('리마인더 기록 실패:', error)
+                                    // 에러가 발생해도 계속 진행 (로컬 상태는 업데이트)
+                                  }
+                                  // 로컬 상태 즉시 업데이트 (알림 닫기)
                                   if (onFiveYearQuestionClose) {
                                     onFiveYearQuestionClose()
                                   }

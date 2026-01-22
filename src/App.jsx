@@ -256,7 +256,7 @@ function AppContent() {
           setDiaryReminder({ isOpen: false, yesterdayDate: null })
           // 리마인더가 닫혔을 때도 DB에 기록 (나중에 버튼 클릭 시)
           try {
-            await markDiaryReminderShown()
+            await markDiaryReminderShown(user?.id)
           } catch (error) {
             console.error('리마인더 기록 실패:', error)
           }
@@ -276,7 +276,7 @@ function AppContent() {
           }))
           // 리마인더 표시 기록 (NotificationCenter에서도 호출하지만, 확실하게 하기 위해)
           try {
-            await markWeeklyReminderShown()
+            await markWeeklyReminderShown(user?.id)
           } catch (error) {
             console.error('리마인더 기록 실패:', error)
           }
@@ -297,7 +297,7 @@ function AppContent() {
           }))
           // 리마인더 표시 기록 (NotificationCenter에서도 호출하지만, 확실하게 하기 위해)
           try {
-            await markMonthlyReminderShown()
+            await markMonthlyReminderShown(user?.id)
           } catch (error) {
             console.error('리마인더 기록 실패:', error)
           }
@@ -315,7 +315,7 @@ function AppContent() {
         onWeeklySummaryClose={async () => {
           // 나중에 버튼 클릭 시에도 DB에 기록
           try {
-            await markWeeklyReminderShown()
+            await markWeeklyReminderShown(user?.id)
           } catch (error) {
             console.error('리마인더 기록 실패:', error)
           }
@@ -328,7 +328,7 @@ function AppContent() {
         onMonthlySummaryClose={async () => {
           // 나중에 버튼 클릭 시에도 DB에 기록
           try {
-            await markMonthlyReminderShown()
+            await markMonthlyReminderShown(user?.id)
           } catch (error) {
             console.error('리마인더 기록 실패:', error)
           }
@@ -343,7 +343,7 @@ function AppContent() {
           setCurrentView('five-year-questions')
           // 리마인더 표시 기록 (NotificationCenter에서도 호출하지만, 확실하게 하기 위해)
           try {
-            await markFiveYearQuestionReminderShown()
+            await markFiveYearQuestionReminderShown(user?.id)
           } catch (error) {
             console.error('리마인더 기록 실패:', error)
           }
@@ -356,7 +356,7 @@ function AppContent() {
           setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
           // 리마인더가 닫혔을 때도 DB에 기록
           try {
-            await markFiveYearQuestionReminderShown()
+            await markFiveYearQuestionReminderShown(user?.id)
           } catch (error) {
             console.error('리마인더 기록 실패:', error)
           }

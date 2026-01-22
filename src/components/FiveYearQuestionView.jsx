@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getQuestionAndAnswersByDate, saveAnswer, deleteAnswer } from '../services/fiveYearQuestionService.js'
 import { markFiveYearQuestionReminderShown } from '../services/fiveYearQuestionReminderService.js'
+import { useAuth } from '../contexts/AuthContext.jsx'
 import FiveYearQuestionDashboard from './FiveYearQuestionDashboard.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
@@ -8,6 +9,7 @@ import { showToast, TOAST_TYPES } from './Toast.jsx'
  * 5년 질문 일기 뷰 컴포넌트
  */
 export default function FiveYearQuestionView() {
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('dashboard') // 'question' | 'dashboard'
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [question, setQuestion] = useState(null)
@@ -84,7 +86,7 @@ export default function FiveYearQuestionView() {
       
       if (selectedDateString === todayDateString) {
         try {
-          await markFiveYearQuestionReminderShown()
+          await markFiveYearQuestionReminderShown(user?.id)
           // 알림 상태 새로고침
           setTimeout(() => {
             window.dispatchEvent(new CustomEvent('refreshNotifications'))

@@ -64,20 +64,22 @@ export async function shouldShowMonthlyReminder() {
 
 /**
  * 주간 요약 리마인더 표시 완료 처리 (DB 저장)
+ * @param {string} [userId] - 사용자 ID (옵셔널, 없으면 자동으로 가져옴)
  * @returns {Promise<void>}
  */
-export async function markWeeklyReminderShown() {
+export async function markWeeklyReminderShown(userId = null) {
   const { markSummaryReminderShown } = await import('../services/summaryReminderService.js')
-  await markSummaryReminderShown('weekly')
+  await markSummaryReminderShown('weekly', userId)
 }
 
 /**
  * 월간 요약 리마인더 표시 완료 처리 (DB 저장)
+ * @param {string} [userId] - 사용자 ID (옵셔널, 없으면 자동으로 가져옴)
  * @returns {Promise<void>}
  */
-export async function markMonthlyReminderShown() {
+export async function markMonthlyReminderShown(userId = null) {
   const { markSummaryReminderShown } = await import('../services/summaryReminderService.js')
-  await markSummaryReminderShown('monthly')
+  await markSummaryReminderShown('monthly', userId)
 }
 
 /**

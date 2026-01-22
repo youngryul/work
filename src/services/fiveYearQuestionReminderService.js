@@ -3,10 +3,13 @@ import { getCurrentUserId } from '../utils/authHelper.js'
 
 /**
  * 오늘 5년 질문 일기 리마인더가 이미 표시되었는지 확인
+ * @param {string} [userId] - 사용자 ID (옵셔널, 없으면 자동으로 가져옴)
  * @returns {Promise<boolean>} 오늘 리마인더가 표시되었으면 true
  */
-export async function hasFiveYearQuestionReminderToday() {
-  const userId = await getCurrentUserId()
+export async function hasFiveYearQuestionReminderToday(userId = null) {
+  if (!userId) {
+    userId = await getCurrentUserId()
+  }
   if (!userId) {
     return false
   }
@@ -15,37 +18,59 @@ export async function hasFiveYearQuestionReminderToday() {
     const today = new Date()
     const todayDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
-    const { data, error } = await supabase
+    // DATE 타입 비교: 전체 레코드 조회 후 필터링
+    const { data: allData, error: listError } = await supabase
       .from('five_year_question_reminders')
-      .select('id')
+      .select('id, reminder_date')
       .eq('user_id', userId)
-      .eq('reminder_date', todayDateString)
-      .maybeSingle()
-
-    // maybeSingle은 레코드가 없을 때 에러를 던지지 않지만, RLS 정책 문제로 406 에러가 발생할 수 있음
-    // 에러가 발생해도 조용히 처리 (리마인더가 표시되지 않은 것으로 간주)
-    if (error) {
-      // 406 오류는 RLS 정책 문제일 수 있음 - 조용히 처리
-      if (error.status === 406 || error.code === 'PGRST116') {
+    
+    if (listError) {
+      // 전체 조회 실패 시 기존 방식으로 시도
+      const { data, error } = await supabase
+        .from('five_year_question_reminders')
+        .select('id, reminder_date')
+        .eq('user_id', userId)
+        .eq('reminder_date', todayDateString)
+        .maybeSingle()
+      
+      if (error) {
+        if (error.status === 406 || error.code === 'PGRST116') {
+          return false
+        }
         return false
       }
-      // 기타 에러도 조용히 처리 (앱이 계속 동작하도록)
-      return false
+      
+      if (data) {
+        return true
+      } else {
+        return false
+      }
     }
+    
+    // 전체 레코드에서 오늘 날짜 찾기
+    const found = allData?.some(record => {
+      const recordDate = typeof record.reminder_date === 'string' 
+        ? record.reminder_date.split('T')[0] 
+        : record.reminder_date
+      return recordDate === todayDateString
+    })
+    
+    return found
 
-    return !!data
   } catch (error) {
-    console.error('5년 질문 일기 리마인더 확인 오류:', error)
     return false
   }
 }
 
 /**
  * 오늘 5년 질문 일기 리마인더 표시 기록
+ * @param {string} [userId] - 사용자 ID (옵셔널, 없으면 자동으로 가져옴)
  * @returns {Promise<void>}
  */
-export async function markFiveYearQuestionReminderShown() {
-  const userId = await getCurrentUserId()
+export async function markFiveYearQuestionReminderShown(userId = null) {
+  if (!userId) {
+    userId = await getCurrentUserId()
+  }
   if (!userId) {
     return
   }
@@ -62,23 +87,19 @@ export async function markFiveYearQuestionReminderShown() {
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'user_id,reminder_date',
+        ignoreDuplicates: false, // 중복 시 업데이트
       })
 
-    // 406 에러는 RLS 정책 문제일 수 있음 - 조용히 처리 (앱이 계속 동작하도록)
     if (error) {
-      if (error.status === 406) {
-        // RLS 정책 문제로 인한 에러는 조용히 처리
+      // 406 에러는 RLS 정책 문제일 수 있음 - 조용히 처리
+      if (error.status === 406 || error.code === 'PGRST116') {
         return
       }
-      console.error('5년 질문 일기 리마인더 기록 오류:', error)
-      // 에러를 던지지 않고 조용히 처리
+      // 다른 에러는 재시도하지 않고 조용히 처리
       return
     }
   } catch (error) {
     // 예외 발생 시에도 조용히 처리 (앱이 계속 동작하도록)
-    if (error.status !== 406) {
-      console.error('5년 질문 일기 리마인더 기록 실패:', error)
-    }
   }
 }
 
