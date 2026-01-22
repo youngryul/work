@@ -106,7 +106,7 @@ export default function NavigationSidebar({
           {/* 메뉴 목록 */}
           <nav className="flex-1 overflow-y-auto p-4">
             <div className="space-y-2">
-              {NAVIGATION_MENU_ITEMS.map((item) => (
+              {NAVIGATION_MENU_ITEMS.filter(item => item.id !== 'announcements').map((item) => (
                 <button
                   key={item.id}
                   onClick={() => handleMenuClick(item.id)}
@@ -167,19 +167,46 @@ export default function NavigationSidebar({
                   {user.email}
                 </div>
               )}
+
+              {/* 공지사항 (로그아웃 바로 위) */}
+              <div className="space-y-2">
+                {NAVIGATION_MENU_ITEMS.filter(item => item.id === 'announcements').map((item) => (
+                    <button
+                        key={item.id}
+                        onClick={() => handleMenuClick(item.id)}
+                        className={`
+                    w-full rounded-lg transition-all duration-200 text-left
+                    flex items-center gap-3
+                    ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
+                    ${
+                            currentView === item.id
+                                ? 'bg-indigo-500 text-white shadow-md'
+                                : 'text-gray-600 hover:bg-indigo-50'
+                        }
+                  `}
+                        title={collapsed ? item.label : ''}
+                    >
+                      <span className="text-xl flex-shrink-0">{item.icon || '📌'}</span>
+                      {!collapsed && (
+                          <span className="text-lg font-medium">{item.label}</span>
+                      )}
+                    </button>
+                ))}
+              </div>
+
               <button
-                onClick={handleSignOut}
-                className={`
+                  onClick={handleSignOut}
+                  className={`
                   w-full rounded-lg transition-all duration-200 text-left
                   flex items-center gap-3
                   ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
                   text-red-600 hover:bg-red-50 hover:text-red-700
                 `}
-                title={collapsed ? '로그아웃' : ''}
+                  title={collapsed ? '로그아웃' : ''}
               >
                 <span className="text-xl">🚪</span>
                 {!collapsed && (
-                  <span className="text-lg font-medium">로그아웃</span>
+                    <span className="text-lg font-medium">로그아웃</span>
                 )}
               </button>
             </div>

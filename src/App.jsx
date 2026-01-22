@@ -17,6 +17,7 @@ import FiveYearQuestionView from './components/FiveYearQuestionView.jsx'
 import CategorySettingsModal from './components/CategorySettingsModal.jsx'
 import FoodCalorieCalculator from './components/FoodCalorieCalculator.jsx'
 import CongratulatoryMoneyView from './components/CongratulatoryMoneyView.jsx'
+import AnnouncementView from './components/AnnouncementView.jsx'
 import NavigationSidebar from './components/NavigationSidebar.jsx'
 import NotificationCenter from './components/NotificationCenter.jsx'
 import AnnouncementBanner from './components/AnnouncementBanner.jsx'
@@ -227,6 +228,7 @@ function AppContent() {
         {currentView === 'five-year-questions' && <FiveYearQuestionView />}
         {currentView === 'food-calorie' && <FoodCalorieCalculator />}
         {currentView === 'congratulatory-money' && <CongratulatoryMoneyView />}
+        {currentView === 'announcements' && <AnnouncementView />}
         </main>
       </div>
 

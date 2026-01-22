@@ -74,6 +74,11 @@ export const NAVIGATION_MENU_ITEMS = [
     label: '경조사 기록',
     icon: '💐',
   },
+  {
+    id: 'announcements',
+    label: '공지사항',
+    icon: '📢',
+  },
 ]
 
 /**
