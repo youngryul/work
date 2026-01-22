@@ -90,7 +90,7 @@ export async function markAnnouncementAsRead(announcementId) {
 }
 
 /**
- * 모든 활성화된 공지사항 조회 (관리자용)
+ * 모든 활성화된 공지사항 조회 (일반 사용자용)
  * @returns {Promise<Array>} 공지사항 목록
  */
 export async function getAllActiveAnnouncements() {
@@ -110,6 +110,113 @@ export async function getAllActiveAnnouncements() {
     return data || []
   } catch (error) {
     console.error('공지사항 조회 실패:', error)
+    throw error
+  }
+}
+
+/**
+ * 모든 공지사항 조회 (관리자용 - 활성/비활성 모두)
+ * @returns {Promise<Array>} 공지사항 목록
+ */
+export async function getAllAnnouncements() {
+  try {
+    const { data, error } = await supabase
+      .from('announcements')
+      .select('*')
+      .order('priority', { ascending: false })
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      throw error
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('공지사항 조회 실패:', error)
+    throw error
+  }
+}
+
+/**
+ * 공지사항 생성 (관리자용)
+ * @param {Object} announcement - 공지사항 데이터
+ * @param {string} announcement.title - 제목
+ * @param {string} announcement.content - 내용
+ * @param {string} [announcement.version] - 버전
+ * @param {boolean} [announcement.is_active] - 활성화 여부
+ * @param {number} [announcement.priority] - 우선순위
+ * @param {string} [announcement.expires_at] - 만료일 (ISO 문자열)
+ * @returns {Promise<Object>} 생성된 공지사항
+ */
+export async function createAnnouncement(announcement) {
+  try {
+    const { data, error } = await supabase
+      .from('announcements')
+      .insert({
+        title: announcement.title,
+        content: announcement.content,
+        version: announcement.version || null,
+        is_active: announcement.is_active !== undefined ? announcement.is_active : true,
+        priority: announcement.priority || 0,
+        expires_at: announcement.expires_at || null,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      throw error
+    }
+
+    return data
+  } catch (error) {
+    console.error('공지사항 생성 실패:', error)
+    throw error
+  }
+}
+
+/**
+ * 공지사항 수정 (관리자용)
+ * @param {string} id - 공지사항 ID
+ * @param {Object} updates - 수정할 데이터
+ * @returns {Promise<Object>} 수정된 공지사항
+ */
+export async function updateAnnouncement(id, updates) {
+  try {
+    const { data, error } = await supabase
+      .from('announcements')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      throw error
+    }
+
+    return data
+  } catch (error) {
+    console.error('공지사항 수정 실패:', error)
+    throw error
+  }
+}
+
+/**
+ * 공지사항 삭제 (관리자용)
+ * @param {string} id - 공지사항 ID
+ * @returns {Promise<void>}
+ */
+export async function deleteAnnouncement(id) {
+  try {
+    const { error } = await supabase
+      .from('announcements')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      throw error
+    }
+  } catch (error) {
+    console.error('공지사항 삭제 실패:', error)
     throw error
   }
 }

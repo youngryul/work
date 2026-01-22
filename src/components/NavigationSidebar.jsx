@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react'
 import { NAVIGATION_MENU_ITEMS, EXTERNAL_LINKS } from '../constants/navigationMenu.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { isAdmin } from '../services/adminService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
@@ -20,6 +22,26 @@ export default function NavigationSidebar({
   onToggleCollapse
 }) {
   const { signOut, user } = useAuth()
+  const [isAdminUser, setIsAdminUser] = useState(false)
+
+  // 관리자 권한 확인
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) {
+        setIsAdminUser(false)
+        return
+      }
+
+      try {
+        const admin = await isAdmin(user.id)
+        setIsAdminUser(admin)
+      } catch (error) {
+        setIsAdminUser(false)
+      }
+    }
+
+    checkAdminStatus()
+  }, [user])
 
   /**
    * 메뉴 클릭 핸들러
@@ -193,6 +215,31 @@ export default function NavigationSidebar({
                     </button>
                 ))}
               </div>
+
+              {/* 관리자 메뉴 (관리자만 표시, 공지사항 아래) */}
+              {isAdminUser && (
+                <div className="space-y-2">
+                  <button
+                    onClick={() => handleMenuClick('admin')}
+                    className={`
+                      w-full rounded-lg transition-all duration-200 text-left
+                      flex items-center gap-3
+                      ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
+                      ${
+                        currentView === 'admin'
+                          ? 'bg-blue-500 text-white shadow-md'
+                          : 'text-blue-600 hover:bg-blue-50'
+                      }
+                    `}
+                    title={collapsed ? '관리자' : ''}
+                  >
+                    <span className="text-xl flex-shrink-0">🔐</span>
+                    {!collapsed && (
+                      <span className="text-lg font-medium">관리자</span>
+                    )}
+                  </button>
+                </div>
+              )}
 
               <button
                   onClick={handleSignOut}

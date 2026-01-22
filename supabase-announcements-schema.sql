@@ -47,10 +47,14 @@ CREATE TRIGGER update_announcements_updatedat
 ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE announcement_views ENABLE ROW LEVEL SECURITY;
 
--- 공지사항 조회 정책 (모든 인증된 사용자가 조회 가능)
+-- 공지사항 조회 정책 (모든 인증된 사용자가 활성화된 공지사항 조회 가능)
 DROP POLICY IF EXISTS "Authenticated users can view active announcements" ON announcements;
 CREATE POLICY "Authenticated users can view active announcements" ON announcements
-  FOR SELECT USING (auth.role() = 'authenticated' AND is_active = TRUE AND (expires_at IS NULL OR expires_at > NOW()));
+  FOR SELECT USING (
+    auth.role() = 'authenticated' 
+    AND is_active = TRUE 
+    AND (expires_at IS NULL OR expires_at > NOW())
+  );
 
 -- 공지사항 조회 기록 정책 (사용자는 자신의 조회 기록만 조회/생성 가능)
 DROP POLICY IF EXISTS "Users can view own announcement views" ON announcement_views;
