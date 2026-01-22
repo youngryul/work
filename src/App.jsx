@@ -80,6 +80,13 @@ function AppContent() {
     setEditingRecord(null)
   }
 
+  // 로그인 시 기본 화면을 '오늘'로 설정
+  useEffect(() => {
+    if (user && !loading) {
+      setCurrentView('today')
+    }
+  }, [user, loading])
+
   // 2026 회고록 네비게이션 이벤트 리스너 및 전역 함수 설정
   useEffect(() => {
     const handleNavigate = (event) => {

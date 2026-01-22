@@ -32,12 +32,18 @@ export default function AnnouncementBanner() {
   const handleClose = async (announcementId) => {
     try {
       await markAnnouncementAsRead(announcementId)
-      // 현재 공지사항을 목록에서 제거
-      setAnnouncements(prev => prev.filter(a => a.id !== announcementId))
-      // 인덱스 조정
-      if (currentIndex >= announcements.length - 1) {
-        setCurrentIndex(Math.max(0, announcements.length - 2))
-      }
+      // 현재 공지사항을 목록에서 제거하고 인덱스 조정
+      setAnnouncements(prev => {
+        const newAnnouncements = prev.filter(a => a.id !== announcementId)
+        // 인덱스 조정
+        setCurrentIndex(prevIndex => {
+          if (prevIndex >= prev.length - 1) {
+            return Math.max(0, newAnnouncements.length - 1)
+          }
+          return prevIndex
+        })
+        return newAnnouncements
+      })
     } catch (error) {
       console.error('공지사항 닫기 실패:', error)
     }
