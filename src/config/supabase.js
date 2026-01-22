@@ -18,6 +18,11 @@ const appUrl = import.meta.env.VITE_APP_URL || 'https://work-sable-one.vercel.ap
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
   auth: {
     redirectTo: appUrl,
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'sb-auth-token',
   },
 })
 

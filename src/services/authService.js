@@ -114,15 +114,33 @@ export async function signOut() {
 
 /**
  * 현재 사용자 정보 가져오기
+ * 배포 환경에서 세션이 로드되기 전에 호출될 수 있으므로 재시도 로직 포함
  */
 export async function getCurrentUser() {
   try {
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error) throw error
-    return user
+    // 먼저 getUser() 시도
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (!userError && user) {
+      return user
+    }
+    
+    // getUser() 실패 시 세션 확인 (재시도)
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (!sessionError && session?.user) {
+      return session.user
+    }
+    
+    // 둘 다 실패하면 null 반환 (에러를 던지지 않음)
+    return null
   } catch (error) {
-    console.error('사용자 정보 조회 오류:', error)
-    throw error
+    // AuthSessionMissingError는 조용히 처리
+    if (error.name === 'AuthSessionMissingError' || error.message?.includes('Auth session missing')) {
+      return null
+    }
+    // 다른 에러도 조용히 처리 (배포 환경에서 발생할 수 있음)
+    return null
   }
 }
 
