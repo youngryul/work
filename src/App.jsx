@@ -19,6 +19,7 @@ import FoodCalorieCalculator from './components/FoodCalorieCalculator.jsx'
 import CongratulatoryMoneyView from './components/CongratulatoryMoneyView.jsx'
 import NavigationSidebar from './components/NavigationSidebar.jsx'
 import NotificationCenter from './components/NotificationCenter.jsx'
+import AnnouncementBanner from './components/AnnouncementBanner.jsx'
 import DiaryReminderModal from './components/DiaryReminderModal.jsx'
 import ToastContainer from './components/Toast.jsx'
 import { useNotifications } from './hooks/useNotifications.js'
@@ -174,6 +175,9 @@ function AppContent() {
 
       {/* 메인 컨텐츠 영역 */}
       <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+        {/* 공지사항 배너 */}
+        <AnnouncementBanner />
+
         {/* 모바일 헤더 (햄버거 메뉴) */}
         <header className="md:hidden bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-30">
           <div className="px-4 py-3">

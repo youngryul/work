@@ -1,0 +1,89 @@
+name: Auto Announcement on Deploy
+
+on:
+  push:
+    branches:
+      - main  # 또는 배포 브랜치 이름
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - 'README.md'
+
+jobs:
+  create-announcement:
+    runs-on: ubuntu-latest
+    if: github.event.head_commit.message != '' && !contains(github.event.head_commit.message, '[skip-announcement]')
+    
+    steps:
+      - name: Extract commit message
+        id: commit
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          echo "message=$COMMIT_MSG" >> $GITHUB_OUTPUT
+      
+      - name: Parse version from commit
+        id: version
+        run: |
+          COMMIT_MSG="${{ steps.commit.outputs.message }}"
+          # 버전 형식 추출 (예: v1.2.3, version 1.2.3, 1.2.3)
+          VERSION=$(echo "$COMMIT_MSG" | grep -oE '(v?[0-9]+\.[0-9]+\.[0-9]+|version [0-9]+\.[0-9]+\.[0-9]+)' | head -1 | sed 's/version //' | sed 's/^v//')
+          if [ -z "$VERSION" ]; then
+            # 버전이 없으면 날짜 형식 사용
+            VERSION=$(date +'%Y-%m-%d')
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Create announcement
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ANNOUNCEMENT_API_KEY: ${{ secrets.ANNOUNCEMENT_API_KEY }}
+        run: |
+          COMMIT_MSG="${{ steps.commit.outputs.message }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # 커밋 메시지에서 제목과 내용 추출
+          # 첫 줄을 제목으로, 나머지를 내용으로 사용
+          TITLE=$(echo "$COMMIT_MSG" | head -1 | sed 's/^# //' | sed 's/^v[0-9]\+\.[0-9]\+\.[0-9]\+: //' | sed 's/^version [0-9]\+\.[0-9]\+\.[0-9]\+: //' | cut -c1-100)
+          
+          # 두 번째 줄부터를 내용으로 사용 (빈 줄 제외)
+          CONTENT=$(echo "$COMMIT_MSG" | tail -n +2 | grep -v '^[[:space:]]*$' | head -2 | tr '\n' ' ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          
+          # 내용이 비어있으면 기본 메시지 사용
+          if [ -z "$CONTENT" ]; then
+            CONTENT="새로운 업데이트가 배포되었습니다."
+          fi
+          
+          # JSON 이스케이프 처리
+          TITLE_ESCAPED=$(echo "$TITLE" | sed 's/"/\\"/g')
+          CONTENT_ESCAPED=$(echo "$CONTENT" | sed 's/"/\\"/g')
+          
+          # Edge Function 호출
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "$SUPABASE_URL/functions/v1/create-announcement" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "x-api-key: $ANNOUNCEMENT_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"title\": \"$TITLE_ESCAPED\",
+              \"content\": \"$CONTENT_ESCAPED\",
+              \"version\": \"$VERSION\",
+              \"priority\": 10
+            }")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✅ 공지사항이 성공적으로 생성되었습니다!"
+            echo "$BODY" | jq '.' 2>/dev/null || echo "$BODY"
+          else
+            echo "❌ 공지사항 생성 실패 (HTTP $HTTP_CODE)"
+            echo "$BODY"
+            exit 1
+          fi
+      
+      - name: Announcement created
+        run: |
+          echo "✅ 공지사항이 자동으로 생성되었습니다!"
+          echo "버전: ${{ steps.version.outputs.version }}"
