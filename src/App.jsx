@@ -141,15 +141,22 @@ function AppContent() {
       }
     }
     
+    // 알림 상태 새로고침 이벤트 리스너
+    const handleRefreshNotifications = () => {
+      refreshNotifications()
+    }
+    
     window.addEventListener('navigateToReview2026', handleNavigate)
+    window.addEventListener('refreshNotifications', handleRefreshNotifications)
     return () => {
       window.removeEventListener('navigateToReview2026', handleNavigate)
+      window.removeEventListener('refreshNotifications', handleRefreshNotifications)
       delete window.setCurrentView
       delete window.setReview2026Tab
       delete window.setReview2026Params
       delete window.showTestNotification
     }
-  }, [setDiaryReminder, setWeeklySummaryReminder, setMonthlySummaryReminder, setFiveYearQuestionReminder])
+  }, [setDiaryReminder, setWeeklySummaryReminder, setMonthlySummaryReminder, setFiveYearQuestionReminder, refreshNotifications])
 
   // 로딩 중
   if (loading) {
@@ -267,13 +274,17 @@ function AppContent() {
               weekEnd: weeklySummaryReminder.weekEnd 
             }
           }))
-          // 리마인더 표시 기록
+          // 리마인더 표시 기록 (NotificationCenter에서도 호출하지만, 확실하게 하기 위해)
           try {
             await markWeeklyReminderShown()
           } catch (error) {
             console.error('리마인더 기록 실패:', error)
           }
           setWeeklySummaryReminder({ isOpen: false, period: '', weekStart: null, weekEnd: null })
+          // 알림 상태 새로고침
+          setTimeout(() => {
+            refreshNotifications()
+          }, 500)
         }}
         onMonthlySummaryGenerate={async () => {
           // 2026 회고록 페이지로 이동하고 월간 탭 열기
@@ -284,13 +295,17 @@ function AppContent() {
               month: monthlySummaryReminder.month 
             }
           }))
-          // 리마인더 표시 기록
+          // 리마인더 표시 기록 (NotificationCenter에서도 호출하지만, 확실하게 하기 위해)
           try {
             await markMonthlyReminderShown()
           } catch (error) {
             console.error('리마인더 기록 실패:', error)
           }
           setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
+          // 알림 상태 새로고침
+          setTimeout(() => {
+            refreshNotifications()
+          }, 500)
         }}
         onDiaryWritten={() => {
           // 일기 작성 완료 시 알림 상태 새로고침
@@ -305,6 +320,10 @@ function AppContent() {
             console.error('리마인더 기록 실패:', error)
           }
           setWeeklySummaryReminder({ isOpen: false, period: '', weekStart: null, weekEnd: null })
+          // 알림 상태 새로고침
+          setTimeout(() => {
+            refreshNotifications()
+          }, 500)
         }}
         onMonthlySummaryClose={async () => {
           // 나중에 버튼 클릭 시에도 DB에 기록
@@ -314,10 +333,24 @@ function AppContent() {
             console.error('리마인더 기록 실패:', error)
           }
           setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
+          // 알림 상태 새로고침
+          setTimeout(() => {
+            refreshNotifications()
+          }, 500)
         }}
-        onFiveYearQuestionAnswer={() => {
+        onFiveYearQuestionAnswer={async () => {
           // 5년 질문 페이지로 이동
           setCurrentView('five-year-questions')
+          // 리마인더 표시 기록 (NotificationCenter에서도 호출하지만, 확실하게 하기 위해)
+          try {
+            await markFiveYearQuestionReminderShown()
+          } catch (error) {
+            console.error('리마인더 기록 실패:', error)
+          }
+          // 알림 상태 새로고침
+          setTimeout(() => {
+            refreshNotifications()
+          }, 500)
         }}
         onFiveYearQuestionClose={async () => {
           setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })

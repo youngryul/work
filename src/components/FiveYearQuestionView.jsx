@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getQuestionAndAnswersByDate, saveAnswer, deleteAnswer } from '../services/fiveYearQuestionService.js'
+import { markFiveYearQuestionReminderShown } from '../services/fiveYearQuestionReminderService.js'
 import FiveYearQuestionDashboard from './FiveYearQuestionDashboard.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
@@ -75,6 +76,23 @@ export default function FiveYearQuestionView() {
       await saveAnswer(question.id, currentYear, currentAnswer.trim())
       await loadQuestionAndAnswers()
       showToast('답변이 저장되었습니다.', TOAST_TYPES.SUCCESS)
+      
+      // 오늘 날짜의 질문에 답변을 저장한 경우 리마인더 표시 기록
+      const today = new Date()
+      const todayDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+      const selectedDateString = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
+      
+      if (selectedDateString === todayDateString) {
+        try {
+          await markFiveYearQuestionReminderShown()
+          // 알림 상태 새로고침
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('refreshNotifications'))
+          }, 500)
+        } catch (error) {
+          console.error('리마인더 기록 실패:', error)
+        }
+      }
     } catch (error) {
       console.error('답변 저장 오류:', error)
       showToast('답변 저장에 실패했습니다.', TOAST_TYPES.ERROR)

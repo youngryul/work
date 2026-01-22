@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { saveDiary, getDiaryByDate } from '../services/diaryService.js'
 import { uploadImage } from '../services/imageService.js'
+import { markDiaryReminderShown } from '../services/diaryReminderService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
@@ -66,6 +67,25 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
     try {
       await saveDiary(selectedDate, content, false, attachedImages)
       showToast('일기가 저장되었습니다. 이미지 생성 중...', TOAST_TYPES.SUCCESS)
+      
+      // 어제 일기를 작성한 경우 리마인더 표시 기록
+      const today = new Date()
+      const yesterday = new Date(today)
+      yesterday.setDate(yesterday.getDate() - 1)
+      const yesterdayDateString = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
+      
+      if (selectedDate === yesterdayDateString) {
+        try {
+          await markDiaryReminderShown()
+          // 알림 상태 새로고침
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('refreshNotifications'))
+          }, 500)
+        } catch (error) {
+          console.error('리마인더 기록 실패:', error)
+        }
+      }
+      
       onSave?.()
     } catch (error) {
       console.error('일기 저장 실패:', error)

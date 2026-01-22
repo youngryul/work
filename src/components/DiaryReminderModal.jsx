@@ -4,6 +4,7 @@ import { ko } from 'date-fns/locale'
 import DiaryForm from './DiaryForm.jsx'
 import { createTask } from '../services/taskService.js'
 import { getDefaultCategory } from '../services/categoryService.js'
+import { markDiaryReminderShown } from '../services/diaryReminderService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
@@ -40,7 +41,17 @@ export default function DiaryReminderModal({ yesterdayDate, isOpen, onClose, onW
     try {
       const defaultCategory = await getDefaultCategory()
       await createTask(`${formatDate(yesterdayDate)} 일기 작성`, defaultCategory, true)
+      // 리마인더 표시 기록
+      try {
+        await markDiaryReminderShown()
+      } catch (error) {
+        console.error('리마인더 기록 실패:', error)
+      }
       onClose()
+      // 알림 상태 새로고침
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('refreshNotifications'))
+      }, 500)
     } catch (error) {
       console.error('할 일 추가 실패:', error)
       showToast('할 일 추가에 실패했습니다.', TOAST_TYPES.ERROR)

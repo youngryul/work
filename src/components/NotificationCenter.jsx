@@ -188,10 +188,16 @@ export default function NotificationCenter({
                                   }
                                   // 리마인더 표시 기록
                                   await markDiaryReminderShown()
-                                  onDiaryReminderClose()
+                                  if (onDiaryReminderClose) {
+                                    onDiaryReminderClose()
+                                  }
                                   handleClose()
                                   // 오늘 할일 화면 새로고침
                                   window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
+                                  // 알림 상태 새로고침
+                                  setTimeout(() => {
+                                    window.dispatchEvent(new CustomEvent('refreshNotifications'))
+                                  }, 500)
                                 } catch (error) {
                                   console.error('할 일 추가 실패:', error)
                                   showToast('할 일 추가에 실패했습니다.', TOAST_TYPES.ERROR)
@@ -256,6 +262,10 @@ export default function NotificationCenter({
                                   handleClose()
                                   // 오늘 할일 화면 새로고침
                                   window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
+                                  // 알림 상태 새로고침
+                                  setTimeout(() => {
+                                    window.dispatchEvent(new CustomEvent('refreshNotifications'))
+                                  }, 500)
                                 } catch (error) {
                                   console.error('할 일 추가 실패:', error)
                                   showToast('할 일 추가에 실패했습니다.', TOAST_TYPES.ERROR)
@@ -320,6 +330,10 @@ export default function NotificationCenter({
                                   handleClose()
                                   // 오늘 할일 화면 새로고침
                                   window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
+                                  // 알림 상태 새로고침
+                                  setTimeout(() => {
+                                    window.dispatchEvent(new CustomEvent('refreshNotifications'))
+                                  }, 500)
                                 } catch (error) {
                                   console.error('할 일 추가 실패:', error)
                                   showToast('할 일 추가에 실패했습니다.', TOAST_TYPES.ERROR)
@@ -394,6 +408,10 @@ export default function NotificationCenter({
                                   handleClose()
                                   // 오늘 할일 화면 새로고침
                                   window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
+                                  // 알림 상태 새로고침
+                                  setTimeout(() => {
+                                    window.dispatchEvent(new CustomEvent('refreshNotifications'))
+                                  }, 500)
                                 } catch (error) {
                                   console.error('할 일 추가 실패:', error)
                                   showToast('할 일 추가에 실패했습니다.', TOAST_TYPES.ERROR)
