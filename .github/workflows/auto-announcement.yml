@@ -42,21 +42,29 @@ jobs:
           COMMIT_MSG="${{ steps.commit.outputs.message }}"
           VERSION="${{ steps.version.outputs.version }}"
           
-          # 커밋 메시지에서 제목과 내용 추출
-          # 첫 줄을 제목으로, 나머지를 내용으로 사용
-          TITLE=$(echo "$COMMIT_MSG" | head -1 | sed 's/^# //' | sed 's/^v[0-9]\+\.[0-9]\+\.[0-9]\+: //' | sed 's/^version [0-9]\+\.[0-9]\+\.[0-9]\+: //' | cut -c1-100)
+          # 커밋 메시지를 임시 파일에 저장 (멀티라인 처리용)
+          echo "$COMMIT_MSG" > /tmp/commit_msg.txt
           
-          # 두 번째 줄부터를 내용으로 사용 (빈 줄 제외)
-          CONTENT=$(echo "$COMMIT_MSG" | tail -n +2 | grep -v '^[[:space:]]*$' | head -2 | tr '\n' ' ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          # 첫 줄을 제목으로 사용 (버전 정보 제거)
+          TITLE=$(head -1 /tmp/commit_msg.txt | sed 's/^# //' | sed 's/^v[0-9]\+\.[0-9]\+\.[0-9]\+: //' | sed 's/^version [0-9]\+\.[0-9]\+\.[0-9]\+: //' | sed 's/^\[.*\] //' | cut -c1-100)
           
-          # 내용이 비어있으면 기본 메시지 사용
-          if [ -z "$CONTENT" ]; then
+          # 두 번째 줄부터 빈 줄을 제외하고 내용 추출
+          # awk를 사용하여 빈 줄을 제외하고 첫 번째 비어있지 않은 줄부터 최대 500자까지 추출
+          CONTENT=$(tail -n +2 /tmp/commit_msg.txt | awk 'NF > 0 {print; count++; if (count >= 3) exit}' | tr '\n' ' ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | cut -c1-500)
+          
+          # 내용이 비어있거나 너무 짧으면 기본 메시지 사용
+          if [ -z "$CONTENT" ] || [ ${#CONTENT} -lt 5 ]; then
             CONTENT="새로운 업데이트가 배포되었습니다."
           fi
           
-          # JSON 이스케이프 처리
-          TITLE_ESCAPED=$(echo "$TITLE" | sed 's/"/\\"/g')
-          CONTENT_ESCAPED=$(echo "$CONTENT" | sed 's/"/\\"/g')
+          # JSON 이스케이프 처리 (특수 문자 처리)
+          TITLE_ESCAPED=$(echo "$TITLE" | sed 's/"/\\"/g' | sed 's/\\/\\\\/g' | sed "s/'/\\'/g")
+          CONTENT_ESCAPED=$(echo "$CONTENT" | sed 's/"/\\"/g' | sed 's/\\/\\\\/g' | sed "s/'/\\'/g")
+          
+          echo "📝 공지사항 생성 중..."
+          echo "제목: $TITLE"
+          echo "내용: $CONTENT"
+          echo "버전: $VERSION"
           
           # Edge Function 호출
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
@@ -79,9 +87,16 @@ jobs:
             echo "$BODY" | jq '.' 2>/dev/null || echo "$BODY"
           else
             echo "❌ 공지사항 생성 실패 (HTTP $HTTP_CODE)"
-            echo "$BODY"
+            echo "응답: $BODY"
+            echo "요청 데이터:"
+            echo "  제목: $TITLE_ESCAPED"
+            echo "  내용: $CONTENT_ESCAPED"
+            echo "  버전: $VERSION"
             exit 1
           fi
+          
+          # 임시 파일 정리
+          rm -f /tmp/commit_msg.txt
       
       - name: Announcement created
         run: |
