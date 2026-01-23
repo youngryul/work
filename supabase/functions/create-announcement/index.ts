@@ -7,8 +7,15 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  console.log('🚀 Edge Function 실행 시작:', {
+    method: req.method,
+    url: req.url,
+    timestamp: new Date().toISOString(),
+  })
+
   // CORS preflight 요청 처리
   if (req.method === 'OPTIONS') {
+    console.log('✅ CORS preflight 요청 처리')
     return new Response('ok', { headers: corsHeaders })
   }
 
@@ -17,25 +24,60 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization')
     const apiKey = req.headers.get('x-api-key')
     
+    console.log('🔐 인증 확인:', {
+      hasAuthHeader: !!authHeader,
+      hasApiKey: !!apiKey,
+      authHeaderPrefix: authHeader?.substring(0, 20),
+    })
+    
     // 환경 변수에서 API 키 가져오기
     const expectedApiKey = Deno.env.get('ANNOUNCEMENT_API_KEY')
     
     if (!expectedApiKey) {
+      console.error('❌ ANNOUNCEMENT_API_KEY 환경 변수가 설정되지 않았습니다.')
       throw new Error('ANNOUNCEMENT_API_KEY 환경 변수가 설정되지 않았습니다.')
     }
 
+    console.log('✅ ANNOUNCEMENT_API_KEY 환경 변수 확인됨')
+
     // API 키 검증
-    if (apiKey !== expectedApiKey && authHeader !== `Bearer ${expectedApiKey}`) {
+    const isValidAuth = apiKey === expectedApiKey || authHeader === `Bearer ${expectedApiKey}`
+    
+    if (!isValidAuth) {
+      console.error('❌ API 키 검증 실패:', {
+        providedApiKey: apiKey ? '있음' : '없음',
+        providedAuthHeader: authHeader ? '있음' : '없음',
+      })
       return new Response(
-        JSON.stringify({ error: '인증 실패' }),
+        JSON.stringify({ error: '인증 실패: 올바른 API 키를 제공해주세요.' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
+    console.log('✅ API 키 검증 성공')
+
     // 요청 본문 파싱
-    const { title, content, version, priority = 10, expires_at = null } = await req.json()
+    let requestBody
+    try {
+      requestBody = await req.json()
+      console.log('📥 요청 본문 파싱 성공:', { 
+        hasTitle: !!requestBody.title, 
+        hasContent: !!requestBody.content,
+        titleLength: requestBody.title?.length || 0,
+        contentLength: requestBody.content?.length || 0,
+      })
+    } catch (error) {
+      console.error('❌ 요청 본문 파싱 실패:', error)
+      return new Response(
+        JSON.stringify({ error: '요청 본문을 파싱할 수 없습니다. JSON 형식이 올바른지 확인해주세요.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const { title, content, version, priority = 10, expires_at = null } = requestBody
 
     if (!title || !content) {
+      console.error('❌ 필수 필드 누락:', { hasTitle: !!title, hasContent: !!content })
       return new Response(
         JSON.stringify({ error: 'title과 content는 필수입니다.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -46,8 +88,19 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     
+    console.log('🔧 Supabase 환경 변수 확인:', {
+      hasSupabaseUrl: !!supabaseUrl,
+      hasServiceKey: !!supabaseServiceKey,
+      urlLength: supabaseUrl.length,
+      serviceKeyLength: supabaseServiceKey.length,
+    })
+    
     if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Supabase 환경 변수가 설정되지 않았습니다.')
+      console.error('❌ Supabase 환경 변수 누락:', {
+        hasSupabaseUrl: !!supabaseUrl,
+        hasServiceKey: !!supabaseServiceKey,
+      })
+      throw new Error('Supabase 환경 변수가 설정되지 않았습니다. SUPABASE_URL과 SUPABASE_SERVICE_ROLE_KEY를 확인해주세요.')
     }
 
     const supabaseClient = createClient(
@@ -94,9 +147,18 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('공지사항 생성 실패:', error)
+    console.error('❌ 공지사항 생성 실패:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      timestamp: new Date().toISOString(),
+    })
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || '알 수 없는 오류가 발생했습니다.',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
