@@ -173,6 +173,49 @@ export async function getBookById(id) {
 }
 
 /**
+ * 책 완료 상태 업데이트 및 한줄 인사이트 저장
+ * @param {string} bookId - 책 ID
+ * @param {boolean} isCompleted - 완료 여부
+ * @param {string} oneLineInsight - 한줄 인사이트 (선택사항)
+ * @returns {Promise<Object>} 업데이트된 책 정보
+ */
+export async function updateBookCompletion(bookId, isCompleted, oneLineInsight = null) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  try {
+    const updateData = {
+      is_completed: isCompleted,
+      updated_at: new Date().toISOString(),
+    }
+
+    if (oneLineInsight !== null) {
+      updateData.one_line_insight = oneLineInsight || null
+    }
+
+    const { data, error } = await supabase
+      .from('books')
+      .update(updateData)
+      .eq('id', bookId)
+      .eq('user_id', userId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('책 완료 상태 업데이트 오류:', error)
+      throw error
+    }
+
+    return normalizeBook(data)
+  } catch (error) {
+    console.error('책 완료 상태 업데이트 실패:', error)
+    throw error
+  }
+}
+
+/**
  * 데이터베이스 컬럼명을 camelCase로 변환
  */
 function normalizeBook(book) {
@@ -184,6 +227,8 @@ function normalizeBook(book) {
     publishedDate: book.published_date ?? book.publishedDate,
     apiSource: book.api_source ?? book.apiSource,
     apiId: book.api_id ?? book.apiId,
+    isCompleted: book.is_completed ?? book.isCompleted ?? false,
+    oneLineInsight: book.one_line_insight ?? book.oneLineInsight ?? null,
     createdAt: book.created_at ?? book.createdAt,
     updatedAt: book.updated_at ?? book.updatedAt,
   }

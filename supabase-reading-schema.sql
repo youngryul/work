@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS books (
   published_date TEXT, -- 출판일
   api_source TEXT, -- API 출처 (google_books, aladin 등)
   api_id TEXT, -- API에서 제공하는 책 ID
+  is_completed BOOLEAN DEFAULT false, -- 완료 여부
+  one_line_insight TEXT, -- 한줄 인사이트
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   UNIQUE(isbn) -- ISBN으로 중복 방지

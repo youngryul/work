@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { getAllBooks } from '../../services/bookService.js'
+import { getAllBooks, updateBookCompletion } from '../../services/bookService.js'
 import { getReadingRecordsByBook, getMonthlyReadingStats, generateMonthlyReadingAnalysis, deleteReadingRecord } from '../../services/readingService.js'
 import BookSearch from './BookSearch.jsx'
 import ReadingRecordForm from './ReadingRecordForm.jsx'
+import OneLineInsightModal from './OneLineInsightModal.jsx'
 import ReactMarkdown from 'react-markdown'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
@@ -22,6 +23,8 @@ export default function ReadingView() {
   const [monthlyStats, setMonthlyStats] = useState(null)
   const [monthlyAnalysis, setMonthlyAnalysis] = useState(null)
   const [isGeneratingAnalysis, setIsGeneratingAnalysis] = useState(false)
+  const [showInsightModal, setShowInsightModal] = useState(false)
+  const [bookToComplete, setBookToComplete] = useState(null)
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth() + 1
@@ -204,6 +207,60 @@ export default function ReadingView() {
     setCurrentDate(new Date())
   }
 
+  /**
+   * 책 완료 처리
+   */
+  const handleCompleteBook = (book) => {
+    if (book.isCompleted) {
+      // 이미 완료된 책은 완료 해제
+      handleUncompleteBook(book)
+      return
+    }
+
+    setBookToComplete(book)
+    setShowInsightModal(true)
+  }
+
+  /**
+   * 책 완료 해제
+   */
+  const handleUncompleteBook = async (book) => {
+    try {
+      await updateBookCompletion(book.id, false, null)
+      await loadBooks()
+      showToast('완료 상태가 해제되었습니다.', TOAST_TYPES.SUCCESS)
+    } catch (error) {
+      console.error('책 완료 해제 오류:', error)
+      showToast('완료 해제에 실패했습니다.', TOAST_TYPES.ERROR)
+    }
+  }
+
+  /**
+   * 한줄 인사이트 저장
+   */
+  const handleSaveInsight = async (oneLineInsight) => {
+    if (!bookToComplete) return
+
+    try {
+      await updateBookCompletion(bookToComplete.id, true, oneLineInsight)
+      await loadBooks()
+      setShowInsightModal(false)
+      setBookToComplete(null)
+      showToast('책이 완료 처리되었습니다.', TOAST_TYPES.SUCCESS)
+    } catch (error) {
+      console.error('책 완료 처리 오류:', error)
+      showToast('완료 처리에 실패했습니다.', TOAST_TYPES.ERROR)
+    }
+  }
+
+  /**
+   * 한줄 인사이트 모달 취소
+   */
+  const handleCancelInsight = () => {
+    setShowInsightModal(false)
+    setBookToComplete(null)
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       {/* 헤더 */}
@@ -291,9 +348,11 @@ export default function ReadingView() {
                 <div
                   key={book.id}
                   onClick={() => setSelectedBook(book)}
-                  className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                  className={`p-4 rounded-lg border transition-colors cursor-pointer ${
                     selectedBook?.id === book.id
                       ? 'bg-blue-100 border-blue-400'
+                      : book.isCompleted
+                      ? 'bg-green-50 border-green-200 hover:bg-green-100'
                       : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
                   }`}
                 >
@@ -306,10 +365,35 @@ export default function ReadingView() {
                       />
                     )}
                     <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-800 mb-1">{book.title}</h3>
+                      <div className="flex items-start justify-between mb-1">
+                        <h3 className="text-lg font-bold text-gray-800 flex-1">
+                          {book.title}
+                          {book.isCompleted && (
+                            <span className="ml-2 text-green-600 text-base">✓ 완료</span>
+                          )}
+                        </h3>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleCompleteBook(book)
+                          }}
+                          className={`px-3 py-1 text-sm rounded-lg transition-colors duration-200 ${
+                            book.isCompleted
+                              ? 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                              : 'bg-green-500 text-white hover:bg-green-600'
+                          }`}
+                        >
+                          {book.isCompleted ? '완료 해제' : '완료'}
+                        </button>
+                      </div>
                       <p className="text-gray-600 text-sm">저자: {book.author || '알 수 없음'}</p>
                       {book.pageCount > 0 && (
                         <p className="text-gray-600 text-sm">페이지: {book.pageCount}페이지</p>
+                      )}
+                      {book.isCompleted && book.oneLineInsight && (
+                        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-gray-700">
+                          <span className="font-semibold">💡 한줄 인사이트:</span> {book.oneLineInsight}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -588,74 +672,13 @@ export default function ReadingView() {
         </div>
       )}
 
-      {/* 독서 기록 상세 팝업 */}
-      {showRecordDetail && selectedRecord && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-3xl font-bold text-gray-800">독서 기록 상세</h2>
-                <button
-                  onClick={() => {
-                    setShowRecordDetail(false)
-                    setSelectedRecord(null)
-                  }}
-                  className="text-gray-400 hover:text-gray-600 text-4xl leading-none"
-                >
-                  ×
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">독서 날짜</label>
-                  <p className="text-lg font-bold text-gray-800">{selectedRecord.readingDate}</p>
-                </div>
-                
-                {formatReadingTime(selectedRecord) && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">독서 시간</label>
-                    <p className="text-2xl font-bold text-blue-600">{formatReadingTime(selectedRecord)}</p>
-                  </div>
-                )}
-                
-                {selectedRecord.pagesRead && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">읽은 페이지</label>
-                    <p className="text-lg font-bold text-gray-800">{selectedRecord.pagesRead}페이지</p>
-                  </div>
-                )}
-                
-                {selectedRecord.startTime && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">시작 시간</label>
-                    <p className="text-lg text-gray-800">
-                      {new Date(selectedRecord.startTime).toLocaleString('ko-KR')}
-                    </p>
-                  </div>
-                )}
-                
-                {selectedRecord.endTime && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">종료 시간</label>
-                    <p className="text-lg text-gray-800">
-                      {new Date(selectedRecord.endTime).toLocaleString('ko-KR')}
-                    </p>
-                  </div>
-                )}
-                
-                {selectedRecord.notes && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">메모</label>
-                    <p className="text-lg text-gray-800 whitespace-pre-wrap mt-2 p-4 bg-gray-50 rounded-lg">
-                      {selectedRecord.notes}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* 한줄 인사이트 모달 */}
+      {showInsightModal && bookToComplete && (
+        <OneLineInsightModal
+          book={bookToComplete}
+          onSave={handleSaveInsight}
+          onCancel={handleCancelInsight}
+        />
       )}
     </div>
   )
