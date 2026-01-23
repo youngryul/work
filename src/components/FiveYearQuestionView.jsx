@@ -125,7 +125,10 @@ export default function FiveYearQuestionView() {
    * 날짜 변경
    */
   const handleDateChange = (e) => {
-    const newDate = new Date(e.target.value)
+    // 날짜 입력값을 로컬 시간으로 파싱 (타임존 문제 방지)
+    const dateString = e.target.value // YYYY-MM-DD 형식
+    const [year, month, day] = dateString.split('-').map(Number)
+    const newDate = new Date(year, month - 1, day)
     setSelectedDate(newDate)
   }
 
@@ -227,7 +230,7 @@ export default function FiveYearQuestionView() {
               </button>
               <input
                 type="date"
-                value={selectedDate.toISOString().split('T')[0]}
+                value={`${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`}
                 onChange={handleDateChange}
                 className="px-4 py-2 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
               />
