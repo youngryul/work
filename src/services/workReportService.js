@@ -4,6 +4,9 @@
  */
 import { supabase } from '../config/supabase.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
+import { useCredits, checkSufficientCredits } from './creditService.js'
+import { checkFeatureAccess } from './premiumFeatureService.js'
+import { CREDIT_COSTS, PREMIUM_FEATURES } from '../constants/paymentConstants.js'
 
 /**
  * 특정 날짜의 완료한 할일 목록을 업무일지 형태로 AI 요약
@@ -19,6 +22,19 @@ export async function generateDailyWorkReport(tasks, dateString) {
 
   if (!tasks || tasks.length === 0) {
     return `${dateString}에는 완료한 할일이 없습니다.`
+  }
+
+  // 프리미엄 기능 접근 확인 (구독 또는 잠금 해제)
+  const hasPremiumAccess = await checkFeatureAccess(PREMIUM_FEATURES.AI_WORK_REPORT)
+  
+  // 프리미엄 접근이 없으면 크레딧 확인 및 차감
+  if (!hasPremiumAccess) {
+    const requiredCredits = CREDIT_COSTS.AI_WORK_REPORT
+    const hasCredits = await checkSufficientCredits(requiredCredits)
+    
+    if (!hasCredits) {
+      throw new Error('크레딧이 부족합니다. 크레딧을 충전해주세요.')
+    }
   }
 
   // 날짜 포맷팅
@@ -83,7 +99,19 @@ ${tasksList}
     }
 
     const data = await response.json()
-    return data.choices[0].message.content.trim()
+    const reportContent = data.choices[0].message.content.trim()
+
+    // 성공 시 크레딧 차감 (프리미엄 접근이 없는 경우만)
+    if (!hasPremiumAccess) {
+      try {
+        await useCredits(CREDIT_COSTS.AI_WORK_REPORT, 'AI 업무일지 생성')
+      } catch (creditError) {
+        console.warn('크레딧 차감 실패 (업무일지는 생성됨):', creditError)
+        // 크레딧 차감 실패는 경고만 하고 계속 진행
+      }
+    }
+
+    return reportContent
   } catch (error) {
     console.error('업무일지 생성 오류:', error)
     throw error

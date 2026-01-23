@@ -1,6 +1,9 @@
 import OpenAI from 'openai'
 import { supabase } from '../config/supabase.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
+import { useCredits, checkSufficientCredits } from './creditService.js'
+import { checkFeatureAccess } from './premiumFeatureService.js'
+import { CREDIT_COSTS, PREMIUM_FEATURES } from '../constants/paymentConstants.js'
 
 /**
  * 음식 칼로리 계산 서비스
@@ -24,6 +27,18 @@ export async function recognizeFoodFromImage(imageFile) {
   }
 
   try {
+    // 프리미엄 기능 접근 확인 (구독 또는 잠금 해제)
+    const hasPremiumAccess = await checkFeatureAccess(PREMIUM_FEATURES.AI_FOOD_RECOGNITION)
+    
+    // 프리미엄 접근이 없으면 크레딧 확인 및 차감
+    if (!hasPremiumAccess) {
+      const requiredCredits = CREDIT_COSTS.AI_FOOD_RECOGNITION
+      const hasCredits = await checkSufficientCredits(requiredCredits)
+      
+      if (!hasCredits) {
+        throw new Error('크레딧이 부족합니다. 크레딧을 충전해주세요.')
+      }
+    }
     let imageUrl
     
     // File 객체인 경우 base64로 변환
@@ -62,6 +77,16 @@ export async function recognizeFoodFromImage(imageFile) {
     
     if (!foodName) {
       throw new Error('음식을 인식할 수 없습니다.')
+    }
+
+    // 성공 시 크레딧 차감 (프리미엄 접근이 없는 경우만)
+    if (!hasPremiumAccess) {
+      try {
+        await useCredits(CREDIT_COSTS.AI_FOOD_RECOGNITION, 'AI 음식 인식')
+      } catch (creditError) {
+        console.warn('크레딧 차감 실패 (인식은 완료됨):', creditError)
+        // 크레딧 차감 실패는 경고만 하고 계속 진행
+      }
     }
 
     return foodName

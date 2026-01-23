@@ -19,15 +19,20 @@ import FoodCalorieCalculator from './components/FoodCalorieCalculator.jsx'
 import CongratulatoryMoneyView from './components/CongratulatoryMoneyView.jsx'
 import AnnouncementView from './components/AnnouncementView.jsx'
 import AdminDashboard from './components/admin/AdminDashboard.jsx'
+import PaymentView from './components/payment/PaymentView.jsx'
 import NavigationSidebar from './components/NavigationSidebar.jsx'
 import NotificationCenter from './components/NotificationCenter.jsx'
 import AnnouncementBanner from './components/AnnouncementBanner.jsx'
 import DiaryReminderModal from './components/DiaryReminderModal.jsx'
 import ToastContainer from './components/Toast.jsx'
+import PremiumFeatureGate from './components/payment/PremiumFeatureGate.jsx'
 import { useNotifications } from './hooks/useNotifications.js'
 import { markDiaryReminderShown } from './services/diaryReminderService.js'
 import { markFiveYearQuestionReminderShown } from './services/fiveYearQuestionReminderService.js'
 import { markWeeklyReminderShown, markMonthlyReminderShown } from './utils/summaryReminder.js'
+import { getUserSubscription, checkSubscriptionStatus } from './services/subscriptionService.js'
+import { canAccessMenu } from './utils/menuAccessControl.js'
+import { showToast, TOAST_TYPES } from './components/Toast.jsx'
 
 /**
  * 메인 앱 컨텐츠 컴포넌트 (인증 필요)
@@ -43,6 +48,7 @@ function AppContent() {
   const [review2026Params, setReview2026Params] = useState(null) // 2026 회고록 파라미터
   const [showDiaryForm, setShowDiaryForm] = useState(false) // 일기 작성 폼 표시 여부
   const [showCategorySettingsModal, setShowCategorySettingsModal] = useState(false) // 카테고리 설정 모달 표시 여부
+  const [subscriptionTier, setSubscriptionTier] = useState(null) // 'BASIC', 'PREMIUM', 'PRO', null
   
   // 알림 상태 관리
   const {
@@ -87,6 +93,44 @@ function AppContent() {
       setCurrentView('today')
     }
   }, [user, loading])
+
+  // 구독 플랜 확인
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!user) {
+        setSubscriptionTier(null)
+        return
+      }
+
+      try {
+        const hasActiveSubscription = await checkSubscriptionStatus(user.id)
+        if (hasActiveSubscription) {
+          const subscription = await getUserSubscription(user.id)
+          if (subscription?.subscription_plans?.name) {
+            setSubscriptionTier(subscription.subscription_plans.name)
+          } else {
+            setSubscriptionTier(null)
+          }
+        } else {
+          setSubscriptionTier(null)
+        }
+      } catch (error) {
+        console.error('구독 확인 오류:', error)
+        setSubscriptionTier(null)
+      }
+    }
+
+    checkSubscription()
+  }, [user])
+
+  // 뷰 변경 시 접근 권한 확인
+  useEffect(() => {
+    if (user && currentView && !canAccessMenu(currentView, subscriptionTier)) {
+      // 접근 권한이 없으면 '오늘'로 리다이렉트
+      setCurrentView('today')
+      showToast('이 기능은 구독이 필요합니다. 결제/구독 메뉴에서 구독해주세요.', TOAST_TYPES.INFO)
+    }
+  }, [currentView, subscriptionTier, user])
 
   // 2026 회고록 네비게이션 이벤트 리스너 및 전역 함수 설정
   useEffect(() => {
@@ -212,14 +256,16 @@ function AppContent() {
         {currentView === 'backlog' && <BacklogView />}
         {currentView === 'todo-calendar' && <TodoCalendarView />}
         {currentView === 'diary-calendar' && <CalendarView />}
-        {currentView === 'review' && <AnnualReviewView />}
-        {currentView === 'review-2026' && (
+        {currentView === 'review' && canAccessMenu('review', subscriptionTier) && (
+          <AnnualReviewView />
+        )}
+        {currentView === 'review-2026' && canAccessMenu('review-2026', subscriptionTier) && (
           <Review2026View 
             initialTab={review2026Tab}
             initialParams={review2026Params}
           />
         )}
-        {currentView === 'records' && (
+        {currentView === 'records' && canAccessMenu('records', subscriptionTier) && (
           <>
             {recordView === 'main' && (
               <RecordMainView
@@ -236,14 +282,15 @@ function AppContent() {
             )}
           </>
         )}
-        {currentView === 'goals' && <GoalsDashboard />}
-        {currentView === 'bucketlist' && <BucketlistView />}
-        {currentView === 'reading' && <ReadingView />}
-        {currentView === 'travel' && <TravelView />}
-        {currentView === 'five-year-questions' && <FiveYearQuestionView />}
-        {currentView === 'food-calorie' && <FoodCalorieCalculator />}
-        {currentView === 'congratulatory-money' && <CongratulatoryMoneyView />}
+        {currentView === 'goals' && canAccessMenu('goals', subscriptionTier) && <GoalsDashboard />}
+        {currentView === 'bucketlist' && canAccessMenu('bucketlist', subscriptionTier) && <BucketlistView />}
+        {currentView === 'reading' && canAccessMenu('reading', subscriptionTier) && <ReadingView />}
+        {currentView === 'travel' && canAccessMenu('travel', subscriptionTier) && <TravelView />}
+        {currentView === 'five-year-questions' && canAccessMenu('five-year-questions', subscriptionTier) && <FiveYearQuestionView />}
+        {currentView === 'food-calorie' && canAccessMenu('food-calorie', subscriptionTier) && <FoodCalorieCalculator />}
+        {currentView === 'congratulatory-money' && canAccessMenu('congratulatory-money', subscriptionTier) && <CongratulatoryMoneyView />}
         {currentView === 'announcements' && <AnnouncementView />}
+        {currentView === 'payment' && <PaymentView />}
         {currentView === 'admin' && <AdminDashboard />}
         </main>
       </div>

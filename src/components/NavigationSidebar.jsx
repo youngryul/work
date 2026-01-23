@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react'
-import { NAVIGATION_MENU_ITEMS, EXTERNAL_LINKS } from '../constants/navigationMenu.js'
+import { 
+  BASIC_MENU_ITEMS, 
+  BASIC_TIER_MENU_ITEMS, 
+  PREMIUM_TIER_MENU_ITEMS, 
+  PRO_TIER_MENU_ITEMS, 
+  ALWAYS_ACCESSIBLE_MENU_ITEMS,
+  EXTERNAL_LINKS 
+} from '../constants/navigationMenu.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { isAdmin } from '../services/adminService.js'
+import { getUserSubscription, checkSubscriptionStatus } from '../services/subscriptionService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
@@ -23,6 +31,7 @@ export default function NavigationSidebar({
 }) {
   const { signOut, user } = useAuth()
   const [isAdminUser, setIsAdminUser] = useState(false)
+  const [subscriptionTier, setSubscriptionTier] = useState(null) // 'BASIC', 'PREMIUM', 'PRO', null
 
   // 관리자 권한 확인
   useEffect(() => {
@@ -42,6 +51,61 @@ export default function NavigationSidebar({
 
     checkAdminStatus()
   }, [user])
+
+  // 구독 플랜 확인
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!user) {
+        setSubscriptionTier(null)
+        return
+      }
+
+      try {
+        const hasActiveSubscription = await checkSubscriptionStatus(user.id)
+        if (hasActiveSubscription) {
+          const subscription = await getUserSubscription(user.id)
+          if (subscription?.subscription_plans?.name) {
+            setSubscriptionTier(subscription.subscription_plans.name)
+          } else {
+            setSubscriptionTier(null)
+          }
+        } else {
+          setSubscriptionTier(null)
+        }
+      } catch (error) {
+        console.error('구독 확인 오류:', error)
+        setSubscriptionTier(null)
+      }
+    }
+
+    checkSubscription()
+  }, [user])
+
+  // 구독 플랜에 따라 접근 가능한 메뉴 필터링
+  const getAccessibleMenuItems = () => {
+    const accessibleItems = [...BASIC_MENU_ITEMS]
+
+    // 관리자는 모든 메뉴 접근 가능
+    if (isAdminUser) {
+      accessibleItems.push(...BASIC_TIER_MENU_ITEMS)
+      accessibleItems.push(...PREMIUM_TIER_MENU_ITEMS)
+      accessibleItems.push(...PRO_TIER_MENU_ITEMS)
+    } else if (subscriptionTier === 'BASIC') {
+      accessibleItems.push(...BASIC_TIER_MENU_ITEMS)
+    } else if (subscriptionTier === 'PREMIUM') {
+      accessibleItems.push(...BASIC_TIER_MENU_ITEMS)
+      accessibleItems.push(...PREMIUM_TIER_MENU_ITEMS)
+    } else if (subscriptionTier === 'PRO') {
+      accessibleItems.push(...BASIC_TIER_MENU_ITEMS)
+      accessibleItems.push(...PREMIUM_TIER_MENU_ITEMS)
+      accessibleItems.push(...PRO_TIER_MENU_ITEMS)
+    }
+
+    // 항상 접근 가능한 메뉴 추가
+    accessibleItems.push(...ALWAYS_ACCESSIBLE_MENU_ITEMS)
+
+    return accessibleItems
+  }
 
   /**
    * 메뉴 클릭 핸들러
@@ -128,7 +192,9 @@ export default function NavigationSidebar({
           {/* 메뉴 목록 */}
           <nav className="flex-1 overflow-y-auto p-4">
             <div className="space-y-2">
-              {NAVIGATION_MENU_ITEMS.filter(item => item.id !== 'announcements').map((item) => (
+              {getAccessibleMenuItems()
+                .filter(item => item.id !== 'announcements' && item.id !== 'payment')
+                .map((item) => (
                 <button
                   key={item.id}
                   onClick={() => handleMenuClick(item.id)}
@@ -190,30 +256,60 @@ export default function NavigationSidebar({
                 </div>
               )}
 
-              {/* 공지사항 (로그아웃 바로 위) */}
+              {/* 결제/구독 메뉴 */}
               <div className="space-y-2">
-                {NAVIGATION_MENU_ITEMS.filter(item => item.id === 'announcements').map((item) => (
+                {getAccessibleMenuItems()
+                  .filter(item => item.id === 'payment')
+                  .map((item) => (
                     <button
-                        key={item.id}
-                        onClick={() => handleMenuClick(item.id)}
-                        className={`
-                    w-full rounded-lg transition-all duration-200 text-left
-                    flex items-center gap-3
-                    ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
-                    ${
-                            currentView === item.id
-                                ? 'bg-indigo-500 text-white shadow-md'
-                                : 'text-gray-600 hover:bg-indigo-50'
+                      key={item.id}
+                      onClick={() => handleMenuClick(item.id)}
+                      className={`
+                        w-full rounded-lg transition-all duration-200 text-left
+                        flex items-center gap-3
+                        ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
+                        ${
+                          currentView === item.id
+                            ? 'bg-indigo-500 text-white shadow-md'
+                            : 'text-gray-600 hover:bg-indigo-50'
                         }
-                  `}
-                        title={collapsed ? item.label : ''}
+                      `}
+                      title={collapsed ? item.label : ''}
                     >
                       <span className="text-xl flex-shrink-0">{item.icon || '📌'}</span>
                       {!collapsed && (
-                          <span className="text-lg font-medium">{item.label}</span>
+                        <span className="text-lg font-medium">{item.label}</span>
                       )}
                     </button>
-                ))}
+                  ))}
+              </div>
+
+              {/* 공지사항 (로그아웃 바로 위) */}
+              <div className="space-y-2">
+                {getAccessibleMenuItems()
+                  .filter(item => item.id === 'announcements')
+                  .map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => handleMenuClick(item.id)}
+                      className={`
+                        w-full rounded-lg transition-all duration-200 text-left
+                        flex items-center gap-3
+                        ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
+                        ${
+                          currentView === item.id
+                            ? 'bg-indigo-500 text-white shadow-md'
+                            : 'text-gray-600 hover:bg-indigo-50'
+                        }
+                      `}
+                      title={collapsed ? item.label : ''}
+                    >
+                      <span className="text-xl flex-shrink-0">{item.icon || '📌'}</span>
+                      {!collapsed && (
+                        <span className="text-lg font-medium">{item.label}</span>
+                      )}
+                    </button>
+                  ))}
               </div>
 
               {/* 관리자 메뉴 (관리자만 표시, 공지사항 아래) */}
