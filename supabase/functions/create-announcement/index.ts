@@ -61,6 +61,8 @@ serve(async (req) => {
       }
     )
 
+    console.log('📝 공지사항 생성 시도:', { title, content, version, priority })
+
     // 공지사항 추가
     const { data, error } = await supabaseClient
       .from('announcements')
@@ -76,8 +78,16 @@ serve(async (req) => {
       .single()
 
     if (error) {
+      console.error('❌ 공지사항 INSERT 오류:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      })
       throw error
     }
+
+    console.log('✅ 공지사항 생성 성공:', data)
 
     return new Response(
       JSON.stringify({ success: true, data }),
