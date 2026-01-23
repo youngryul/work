@@ -19,7 +19,11 @@ jobs:
         id: commit
         run: |
           COMMIT_MSG="${{ github.event.head_commit.message }}"
-          echo "message=$COMMIT_MSG" >> $GITHUB_OUTPUT
+          # 멀티라인 출력을 올바른 형식으로 변환 (개행 문자를 이스케이프)
+          COMMIT_MSG_ESCAPED=$(echo "$COMMIT_MSG" | sed ':a;N;$!ba;s/\n/%0A/g')
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_MSG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
       
       - name: Parse version from commit
         id: version
