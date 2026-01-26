@@ -40,7 +40,7 @@ export default function TodayView() {
   const [draggedTaskId, setDraggedTaskId] = useState(null)
   const [dragOverIndex, setDragOverIndex] = useState(null)
   const dragStartIndexRef = useRef(null)
-  const [completedTaskIds, setCompletedTaskIds] = useState(new Set()) // 완료된 항목 ID 추적
+  const [completedTaskIds, setCompletedTaskIds] = useState(new Set()) // 완료된 항목 ID 추적 (3초 동안 표시)
   const completionTimersRef = useRef({}) // 완료 타이머 추적
 
   /**
@@ -118,12 +118,16 @@ export default function TodayView() {
   /**
    * 할 일 업데이트
    */
-  const handleTaskUpdate = (updatedTask) => {
+  const handleTaskUpdate = async (updatedTask) => {
     const updatedTasks = tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t))
     setTasks(updatedTasks)
     
-    // 완료된 경우 3초 후 목록에서 제거
+    // 완료된 경우 새로고침 후 3초 동안 표시
     if (updatedTask.completed && !completedTaskIds.has(updatedTask.id)) {
+      // 완료 처리 후 즉시 새로고침하여 최신 데이터 로드
+      await loadTasks()
+      
+      // 새로고침 후 업데이트된 tasks에서 해당 항목을 completedTaskIds에 추가
       setCompletedTaskIds(prev => new Set([...prev, updatedTask.id]))
       
       // 기존 타이머가 있으면 취소
@@ -131,9 +135,8 @@ export default function TodayView() {
         clearTimeout(completionTimersRef.current[updatedTask.id])
       }
       
-      // 3초 후 목록에서 제거
+      // 3초 후 화면에서 제거 (tasks 배열에는 유지하여 개수는 정확히 표시)
       completionTimersRef.current[updatedTask.id] = setTimeout(() => {
-        setTasks(prevTasks => prevTasks.filter(t => t.id !== updatedTask.id))
         setCompletedTaskIds(prev => {
           const newSet = new Set(prev)
           newSet.delete(updatedTask.id)
@@ -190,7 +193,7 @@ export default function TodayView() {
   const completedCount = tasks.filter((t) => t.completed).length
 
   /**
-   * 미완료 할 일만 필터링 및 정렬 (완료된 항목은 3초 동안 표시)
+   * 미완료 할 일만 필터링 및 정렬 (완료된 항목은 3초 동안 표시 후 제외)
    */
   const incompleteTasks = tasks
     .filter((task) => !task.completed || completedTaskIds.has(task.id))
