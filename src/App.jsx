@@ -19,6 +19,7 @@ import FoodCalorieCalculator from './components/FoodCalorieCalculator.jsx'
 import CongratulatoryMoneyView from './components/CongratulatoryMoneyView.jsx'
 import AnnouncementView from './components/AnnouncementView.jsx'
 import AdminDashboard from './components/admin/AdminDashboard.jsx'
+import NonogramView from './components/NonogramView.jsx'
 import NavigationSidebar from './components/NavigationSidebar.jsx'
 import NotificationCenter from './components/NotificationCenter.jsx'
 import AnnouncementBanner from './components/AnnouncementBanner.jsx'
@@ -244,6 +245,7 @@ function AppContent() {
         {currentView === 'food-calorie' && <FoodCalorieCalculator />}
         {currentView === 'congratulatory-money' && <CongratulatoryMoneyView />}
         {currentView === 'announcements' && <AnnouncementView />}
+        {currentView === 'nonogram' && <NonogramView />}
         {currentView === 'admin' && <AdminDashboard />}
         </main>
       </div>

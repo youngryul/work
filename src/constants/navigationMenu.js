@@ -79,6 +79,11 @@ export const NAVIGATION_MENU_ITEMS = [
     label: '공지사항',
     icon: '📢',
   },
+  {
+    id: 'nonogram',
+    label: '네모 로직',
+    icon: '🧩',
+  },
 ]
 
 /**
