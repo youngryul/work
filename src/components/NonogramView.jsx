@@ -45,11 +45,13 @@ export default function NonogramView() {
   const [drawMode, setDrawMode] = useState(true) // true: 칠하기, false: X 표시
   const [completedPuzzles, setCompletedPuzzles] = useState(new Set()) // 완료한 퍼즐 ID 목록
   const [wrongCells, setWrongCells] = useState(new Set()) // 틀린 칸의 좌표 (row-col 형식)
+  const [isLoadingCompletedPuzzles, setIsLoadingCompletedPuzzles] = useState(true) // 완료한 퍼즐 목록 로딩 중
 
   /**
    * 완료한 퍼즐 목록 로드
    */
   const loadCompletedPuzzles = async () => {
+    setIsLoadingCompletedPuzzles(true)
     try {
       const completions = await Promise.all(
         NONOGRAM_PUZZLES.map(puzzle => 
@@ -62,6 +64,8 @@ export default function NonogramView() {
       setCompletedPuzzles(completedSet)
     } catch (error) {
       console.error('완료한 퍼즐 목록 로드 오류:', error)
+    } finally {
+      setIsLoadingCompletedPuzzles(false)
     }
   }
 
@@ -93,6 +97,7 @@ export default function NonogramView() {
     setColHints(newColHints)
     
     setIsCompleted(false)
+    setIsDrawing(false) // 드래그 상태 초기화
     setWrongCells(new Set()) // 틀린 칸 초기화
   }
 
@@ -170,9 +175,55 @@ export default function NonogramView() {
       }
     }
     
+    // 힌트 완료 체크 후 자동으로 빈칸에 X 표시
+    autoMarkEmptyCells(newGrid)
+    
     setGrid(newGrid)
     checkCompletion(newGrid)
     return newGrid
+  }
+
+  /**
+   * 힌트가 완료된 행/열의 빈칸을 자동으로 X로 표시
+   */
+  const autoMarkEmptyCells = (currentGrid) => {
+    if (!selectedPuzzle) return
+    
+    // 각 행 확인
+    for (let rowIndex = 0; rowIndex < rowHints.length; rowIndex++) {
+      // 현재 행의 힌트 계산
+      const rowData = currentGrid[rowIndex] || []
+      const currentRowHints = calculateHints(rowData.map(cell => cell === true))
+      const targetRowHints = rowHints[rowIndex]
+      
+      // 행 힌트가 완료되었는지 확인
+      if (isHintComplete(currentRowHints, targetRowHints)) {
+        // 해당 행의 빈칸을 X로 표시
+        for (let col = 0; col < currentGrid[rowIndex].length; col++) {
+          if (currentGrid[rowIndex][col] === null) {
+            currentGrid[rowIndex][col] = false
+          }
+        }
+      }
+    }
+    
+    // 각 열 확인
+    for (let colIndex = 0; colIndex < colHints.length; colIndex++) {
+      // 현재 열의 힌트 계산
+      const column = currentGrid.map(row => row[colIndex])
+      const currentColHints = calculateHints(column.map(cell => cell === true))
+      const targetColHints = colHints[colIndex]
+      
+      // 열 힌트가 완료되었는지 확인
+      if (isHintComplete(currentColHints, targetColHints)) {
+        // 해당 열의 빈칸을 X로 표시
+        for (let rowIndex = 0; rowIndex < currentGrid.length; rowIndex++) {
+          if (currentGrid[rowIndex][colIndex] === null) {
+            currentGrid[rowIndex][colIndex] = false
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -196,6 +247,10 @@ export default function NonogramView() {
     
     if (newGrid[row][col] !== !drawMode) {
       newGrid[row][col] = drawMode
+      
+      // 힌트 완료 체크 후 자동으로 빈칸에 X 표시
+      autoMarkEmptyCells(newGrid)
+      
       setGrid(newGrid)
       checkCompletion(newGrid)
     }
@@ -289,11 +344,29 @@ export default function NonogramView() {
   }
 
   /**
-   * 힌트가 완료되었는지 확인
+   * 힌트가 완료되었는지 확인 (전체)
    */
   const isHintComplete = (currentHints, targetHints) => {
     if (currentHints.length !== targetHints.length) return false
     return currentHints.every((hint, i) => hint === targetHints[i])
+  }
+
+  /**
+   * 개별 힌트가 완료되었는지 확인
+   * @param {number} hintIndex - 확인할 힌트 인덱스
+   * @param {Array<number>} currentHints - 현재 힌트 배열
+   * @param {Array<number>} targetHints - 목표 힌트 배열
+   * @returns {boolean} 해당 힌트가 완료되었는지 여부
+   */
+  const isIndividualHintComplete = (hintIndex, currentHints, targetHints) => {
+    // 힌트 인덱스가 범위를 벗어나면 false
+    if (hintIndex >= targetHints.length) return false
+    
+    // 현재 힌트가 목표 힌트보다 적으면 해당 인덱스는 아직 미완료
+    if (hintIndex >= currentHints.length) return false
+    
+    // 해당 인덱스의 힌트 값이 일치하는지 확인
+    return currentHints[hintIndex] === targetHints[hintIndex]
   }
 
   return (
@@ -311,52 +384,64 @@ export default function NonogramView() {
       {!selectedPuzzle && (
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">퍼즐 선택</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {(() => {
-              // 완료되지 않은 퍼즐과 완료된 퍼즐 분리
-              const incompletePuzzles = NONOGRAM_PUZZLES.filter(
-                puzzle => !completedPuzzles.has(puzzle.id)
-              )
-              const completedPuzzlesList = NONOGRAM_PUZZLES.filter(
-                puzzle => completedPuzzles.has(puzzle.id)
-              )
-              
-              // 미완료 퍼즐 먼저, 완료된 퍼즐 나중에
-              const sortedPuzzles = [...incompletePuzzles, ...completedPuzzlesList]
-              
-              return sortedPuzzles.map((puzzle) => {
-                const isCompleted = completedPuzzles.has(puzzle.id)
-                return (
-                  <button
-                    key={puzzle.id}
-                    onClick={() => handleSelectPuzzle(puzzle)}
-                    className={`p-4 border-2 rounded-lg transition-all text-left relative ${
-                      isCompleted
-                        ? 'border-green-400 bg-green-50 hover:bg-green-100 opacity-75'
-                        : 'border-gray-200 hover:border-pink-400 hover:bg-pink-50'
-                    }`}
-                  >
-                    {isCompleted && (
-                      <div className="absolute top-2 right-2 text-green-600 text-xl">
-                        ✓
-                      </div>
-                    )}
-                    <div className={`font-bold text-lg mb-1 ${
-                      isCompleted ? 'text-green-800' : 'text-gray-800'
-                    }`}>
-                      {puzzle.name}
-                    </div>
-                    <div className="text-sm text-gray-500 mb-2">
-                      {puzzle.size} × {puzzle.size}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {puzzle.description}
-                    </div>
-                  </button>
+          {isLoadingCompletedPuzzles ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex flex-col items-center gap-3">
+                <svg className="animate-spin h-8 w-8 text-pink-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p className="text-gray-600 text-lg">완료 표기를 불러오는 중...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {(() => {
+                // 완료되지 않은 퍼즐과 완료된 퍼즐 분리
+                const incompletePuzzles = NONOGRAM_PUZZLES.filter(
+                  puzzle => !completedPuzzles.has(puzzle.id)
                 )
-              })
-            })()}
-          </div>
+                const completedPuzzlesList = NONOGRAM_PUZZLES.filter(
+                  puzzle => completedPuzzles.has(puzzle.id)
+                )
+                
+                // 미완료 퍼즐 먼저, 완료된 퍼즐 나중에
+                const sortedPuzzles = [...incompletePuzzles, ...completedPuzzlesList]
+                
+                return sortedPuzzles.map((puzzle) => {
+                  const isCompleted = completedPuzzles.has(puzzle.id)
+                  return (
+                    <button
+                      key={puzzle.id}
+                      onClick={() => handleSelectPuzzle(puzzle)}
+                      className={`p-4 border-2 rounded-lg transition-all text-left relative ${
+                        isCompleted
+                          ? 'border-green-400 bg-green-50 hover:bg-green-100 opacity-75'
+                          : 'border-gray-200 hover:border-pink-400 hover:bg-pink-50'
+                      }`}
+                    >
+                      {isCompleted && (
+                        <div className="absolute top-2 right-2 text-green-600 text-xl">
+                          ✓
+                        </div>
+                      )}
+                      <div className={`font-bold text-lg mb-1 ${
+                        isCompleted ? 'text-green-800' : 'text-gray-800'
+                      }`}>
+                        {puzzle.name}
+                      </div>
+                      <div className="text-sm text-gray-500 mb-2">
+                        {puzzle.size} × {puzzle.size}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {puzzle.description}
+                      </div>
+                    </button>
+                  )
+                })
+              })()}
+            </div>
+          )}
         </div>
       )}
 
@@ -405,6 +490,7 @@ export default function NonogramView() {
                   setSelectedPuzzle(null)
                   setGrid([])
                   setIsCompleted(false)
+                  setIsDrawing(false) // 드래그 상태 초기화
                   setWrongCells(new Set())
                 }}
                 className="px-4 py-2 bg-blue-200 text-blue-700 rounded-lg hover:bg-blue-300 transition-all"
@@ -447,29 +533,31 @@ export default function NonogramView() {
                   {colHints.map((hints, colIndex) => {
                     const maxHints = Math.max(...colHints.map(h => h.length), 1)
                     const currentHints = getCurrentColHints(colIndex)
-                    const isComplete = isHintComplete(currentHints, hints)
                     return (
                       <div
                         key={colIndex}
                         className="w-10 flex flex-col items-center justify-end pb-1"
                         style={{ minHeight: `${maxHints * 20 + 20}px` }}
                       >
-                        <div className="flex flex-col-reverse gap-0.5 items-center">
+                        <div className="flex flex-col gap-0.5 items-center">
                           {hints.length === 0 ? (
                             <span className="text-xs text-gray-300">·</span>
                           ) : (
-                            hints.map((hint, i) => (
-                              <div
-                                key={i}
-                                className={`text-xs font-bold leading-none min-h-[14px] flex items-center justify-center ${
-                                  isComplete
-                                    ? 'text-green-600'
-                                    : 'text-gray-700'
-                                }`}
-                              >
-                                {hint}
-                              </div>
-                            ))
+                            hints.map((hint, i) => {
+                              const isIndividualComplete = isIndividualHintComplete(i, currentHints, hints)
+                              return (
+                                <div
+                                  key={i}
+                                  className={`text-xs font-bold leading-none min-h-[14px] flex items-center justify-center ${
+                                    isIndividualComplete
+                                      ? 'text-green-600'
+                                      : 'text-gray-700'
+                                  }`}
+                                >
+                                  {hint}
+                                </div>
+                              )
+                            })
                           )}
                         </div>
                       </div>
@@ -484,7 +572,6 @@ export default function NonogramView() {
                 <div className="flex flex-col mr-2">
                   {rowHints.map((hints, rowIndex) => {
                     const currentHints = getCurrentRowHints(rowIndex)
-                    const isComplete = isHintComplete(currentHints, hints)
                     return (
                       <div
                         key={rowIndex}
@@ -494,18 +581,21 @@ export default function NonogramView() {
                           {hints.length === 0 ? (
                             <span className="text-xs text-gray-300">·</span>
                           ) : (
-                            hints.map((hint, i) => (
-                              <span
-                                key={i}
-                                className={`text-xs font-bold ${
-                                  isComplete
-                                    ? 'text-green-600'
-                                    : 'text-gray-700'
-                                }`}
-                              >
-                                {hint}
-                              </span>
-                            ))
+                            hints.map((hint, i) => {
+                              const isIndividualComplete = isIndividualHintComplete(i, currentHints, hints)
+                              return (
+                                <span
+                                  key={i}
+                                  className={`text-xs font-bold ${
+                                    isIndividualComplete
+                                      ? 'text-green-600'
+                                      : 'text-gray-700'
+                                  }`}
+                                >
+                                  {hint}
+                                </span>
+                              )
+                            })
                           )}
                         </div>
                       </div>

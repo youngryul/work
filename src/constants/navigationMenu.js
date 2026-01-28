@@ -25,16 +25,6 @@ export const NAVIGATION_MENU_ITEMS = [
     icon: '📔',
   },
   {
-    id: 'review',
-    label: '2025 회고',
-    icon: '📊',
-  },
-  {
-    id: 'review-2026',
-    label: '2026 회고',
-    icon: '📝',
-  },
-  {
     id: 'records',
     label: '프로젝트 기록',
     icon: '📁',
@@ -83,6 +73,16 @@ export const NAVIGATION_MENU_ITEMS = [
     id: 'nonogram',
     label: '네모 로직',
     icon: '🧩',
+  },
+  {
+    id: 'review',
+    label: '2025 회고',
+    icon: '📊',
+  },
+  {
+    id: 'review-2026',
+    label: '2026 회고',
+    icon: '📝',
   },
 ]
 
