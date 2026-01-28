@@ -18,6 +18,7 @@ function normalizeTask(task) {
     memo: task.memo ?? null,
     images: task.images ?? [],
     priority: task.priority ?? 0,
+    scheduledDate: task.scheduled_date ?? task.scheduledDate ?? null,
   }
 }
 
@@ -194,6 +195,9 @@ export async function updateTask(id, updates) {
   if ('priority' in updates) {
     dbUpdates.priority = updates.priority
   }
+  if ('scheduledDate' in updates) {
+    dbUpdates.scheduled_date = updates.scheduledDate || null
+  }
   
   // completed가 true로 변경될 때 completedAt 설정
   if ('completed' in updates && updates.completed === true) {
@@ -204,9 +208,41 @@ export async function updateTask(id, updates) {
     dbUpdates.completedat = null
   }
   
+  // scheduledDate가 설정되고 오늘이면 자동으로 오늘 할일로 이동
+  if ('scheduledDate' in updates && updates.scheduledDate) {
+    const today = new Date()
+    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    
+    if (updates.scheduledDate === todayString) {
+      // 오늘이면 자동으로 오늘 할일로 이동
+      const { data: todayTasks } = await supabase
+        .from('tasks')
+        .select('priority')
+        .eq('user_id', userId)
+        .eq('istoday', true)
+        .eq('completed', false)
+        .neq('id', id)
+      
+      let priority = 0
+      if (todayTasks && todayTasks.length > 0) {
+        const priorities = todayTasks.map(t => {
+          const p = t.priority
+          if (p === null || p === undefined) return 0
+          return typeof p === 'number' ? p : Number(p) || 0
+        })
+        const maxPriority = Math.max(...priorities)
+        priority = maxPriority + 1
+      }
+      
+      dbUpdates.istoday = true
+      dbUpdates.movedtotodayat = Date.now()
+      dbUpdates.priority = priority
+    }
+  }
+  
   // 나머지 필드들 병합 (camelCase 필드는 제외)
   Object.keys(updates).forEach(key => {
-    if (!['isToday', 'createdAt', 'completedAt', 'movedToTodayAt', 'priority'].includes(key)) {
+    if (!['isToday', 'createdAt', 'completedAt', 'movedToTodayAt', 'priority', 'scheduledDate'].includes(key)) {
       dbUpdates[key] = updates[key]
     }
   })
@@ -554,6 +590,91 @@ export async function getCompletedTasksByMonth(year, month) {
     return tasksByDate
   } catch (error) {
     console.error('월별 완료된 할 일 조회 오류:', error)
+    throw error
+  }
+}
+
+/**
+ * 예약된 날짜가 오늘인 항목들을 오늘 할일로 자동 이동
+ * @returns {Promise<number>} 이동된 항목 개수
+ */
+export async function moveScheduledTasksToToday() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    console.warn('로그인이 필요합니다.')
+    return 0
+  }
+
+  try {
+    // 오늘 날짜 문자열 생성
+    const today = new Date()
+    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+
+    // 예약된 날짜가 오늘이고, 아직 오늘 할일이 아닌 미완료 항목 조회
+    const { data: scheduledTasks, error: fetchError } = await supabase
+      .from('tasks')
+      .select('id, priority')
+      .eq('user_id', userId)
+      .eq('scheduled_date', todayString)
+      .eq('completed', false)
+      .eq('istoday', false)
+
+    if (fetchError) {
+      console.error('예약된 할 일 조회 오류:', fetchError)
+      throw fetchError
+    }
+
+    if (!scheduledTasks || scheduledTasks.length === 0) {
+      return 0
+    }
+
+    // 현재 오늘 할일의 최대 priority 조회
+    const { data: todayTasks } = await supabase
+      .from('tasks')
+      .select('priority')
+      .eq('user_id', userId)
+      .eq('istoday', true)
+      .eq('completed', false)
+
+    let basePriority = 0
+    if (todayTasks && todayTasks.length > 0) {
+      const priorities = todayTasks.map(t => {
+        const p = t.priority
+        if (p === null || p === undefined) return 0
+        return typeof p === 'number' ? p : Number(p) || 0
+      })
+      basePriority = Math.max(...priorities) + 1
+    }
+
+    // 각 항목을 오늘 할일로 이동
+    const updatePromises = scheduledTasks.map((task, index) => {
+      const priority = basePriority + index
+      return supabase
+        .from('tasks')
+        .update({
+          istoday: true,
+          movedtotodayat: Date.now(),
+          priority: priority
+        })
+        .eq('id', task.id)
+        .eq('user_id', userId)
+    })
+
+    const results = await Promise.all(updatePromises)
+    
+    // 에러 확인
+    const errors = results.filter(result => result.error)
+    if (errors.length > 0) {
+      console.error('예약된 할 일 이동 오류:', errors)
+      throw new Error('일부 예약된 할 일 이동에 실패했습니다.')
+    }
+
+    // 업데이트 후 오늘 할일 목록 새로고침 이벤트 발생
+    window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
+
+    return scheduledTasks.length
+  } catch (error) {
+    console.error('예약된 할 일 자동 이동 오류:', error)
     throw error
   }
 }

@@ -19,13 +19,18 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
   const [isEditing, setIsEditing] = useState(false)
   const [isEditingCategory, setIsEditingCategory] = useState(false)
   const [isEditingMemo, setIsEditingMemo] = useState(false)
+  const [isEditingSchedule, setIsEditingSchedule] = useState(false)
   const [editTitle, setEditTitle] = useState(task.title)
   const [editMemo, setEditMemo] = useState(task.memo || '')
+  const [scheduledDate, setScheduledDate] = useState(task.scheduledDate || '')
   const [categoryEmoji, setCategoryEmoji] = useState('📝')
   const [images, setImages] = useState(task.images || [])
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const memoSaveTimerRef = useRef(null)
   const textareaRef = useRef(null)
+  
+  // 백로그인지 확인 (onMoveToToday가 있으면 백로그)
+  const isBacklog = !!onMoveToToday
 
   useEffect(() => {
     const loadEmoji = async () => {
@@ -41,7 +46,8 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
   useEffect(() => {
     setEditMemo(task.memo || '')
     setImages(task.images || [])
-  }, [task.memo, task.images])
+    setScheduledDate(task.scheduledDate || '')
+  }, [task.memo, task.images, task.scheduledDate])
 
   /**
    * 완료 상태 토글
@@ -154,6 +160,37 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
     const newMemo = e.target.value
     setEditMemo(newMemo)
     saveMemo(newMemo)
+  }
+
+  /**
+   * 날짜 예약 변경 핸들러
+   */
+  const handleScheduleDateChange = async (e) => {
+    const newDate = e.target.value || null
+    setScheduledDate(newDate)
+    
+    try {
+      const updated = await updateTask(task.id, { scheduledDate: newDate })
+      onUpdate(updated)
+      
+      // 날짜가 오늘이면 자동으로 오늘 할일로 이동
+      if (newDate) {
+        const today = new Date()
+        const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+        if (newDate === todayString) {
+          showToast('오늘 날짜로 예약되어 오늘 할일로 이동했습니다!', TOAST_TYPES.SUCCESS)
+        } else {
+          showToast('날짜가 예약되었습니다. 해당 날짜에 오늘 할일로 자동 이동됩니다.', TOAST_TYPES.SUCCESS)
+        }
+      } else {
+        showToast('날짜 예약이 취소되었습니다.', TOAST_TYPES.SUCCESS)
+      }
+    } catch (error) {
+      console.error('날짜 예약 오류:', error)
+      showToast('날짜 예약에 실패했습니다.', TOAST_TYPES.ERROR)
+      // 오류 시 원래 값으로 복구
+      setScheduledDate(task.scheduledDate || '')
+    }
   }
 
   /**
@@ -364,6 +401,23 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
           </button>
         )}
 
+        {/* 날짜 예약 아이콘 버튼 (백로그에서만 표시) */}
+        {isBacklog && (
+          <button
+            onClick={() => setIsEditingSchedule(!isEditingSchedule)}
+            onMouseDown={(e) => e.stopPropagation()}
+            className={`text-xl transition-all duration-200 ${
+              task.scheduledDate
+                ? 'text-pink-500 hover:text-pink-600'
+                : 'text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100'
+            }`}
+            aria-label="날짜 예약"
+            title={task.scheduledDate ? `예약된 날짜: ${task.scheduledDate}` : '날짜 예약'}
+          >
+            📅
+          </button>
+        )}
+
         {/* 메모 아이콘 버튼 */}
         <button
           onClick={() => setIsEditingMemo(!isEditingMemo)}
@@ -398,6 +452,40 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
             selectedCategory={task.category}
             onChange={handleCategoryChange}
           />
+        </div>
+      )}
+
+      {/* 날짜 예약 입력 영역 (백로그에서만 표시) */}
+      {isBacklog && isEditingSchedule && (
+        <div className="pt-2 border-t border-pink-100 space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            날짜 예약
+          </label>
+          <input
+            type="date"
+            value={scheduledDate}
+            onChange={handleScheduleDateChange}
+            className="w-full px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400 text-sm font-sans"
+            min={new Date().toISOString().split('T')[0]} // 오늘 이후만 선택 가능
+          />
+          {scheduledDate && (
+            <div className="text-xs text-gray-500 mt-1">
+              {scheduledDate === new Date().toISOString().split('T')[0] 
+                ? '오늘 날짜로 예약되어 오늘 할일로 이동됩니다.'
+                : `${scheduledDate}에 오늘 할일로 자동 이동됩니다.`}
+            </div>
+          )}
+          <button
+            onClick={() => {
+              if (scheduledDate) {
+                handleScheduleDateChange({ target: { value: '' } })
+              }
+              setIsEditingSchedule(false)
+            }}
+            className="text-sm text-gray-500 hover:text-gray-700"
+          >
+            {scheduledDate ? '예약 취소' : '닫기'}
+          </button>
         </div>
       )}
 

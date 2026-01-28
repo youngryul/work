@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getTodayTasks, resetTodayTasks, moveToBacklog, updateTaskPriorities } from '../services/taskService.js'
+import { getTodayTasks, resetTodayTasks, moveToBacklog, updateTaskPriorities, moveScheduledTasksToToday } from '../services/taskService.js'
 import TaskItem from './TaskItem.jsx'
 import { getWeekStart, getWeekEnd } from '../services/workReportService.js'
 import { getWeeksWithWorkReports, getWeeksWithDiaries } from '../services/workReportService.js'
@@ -90,6 +90,8 @@ export default function TodayView() {
     try {
       // 먼저 날짜 변경 확인 및 리셋
       await checkAndResetIfNeeded()
+      // 예약된 날짜가 오늘인 항목들을 오늘 할일로 자동 이동
+      await moveScheduledTasksToToday()
       // 그 다음 오늘 할 일 로드
       const todayTasks = await getTodayTasks()
       setTasks(todayTasks)

@@ -25,6 +25,7 @@ export const tasks = pgTable('tasks', {
   completedAt: bigint('completedat', { mode: 'number' }),
   movedToTodayAt: bigint('movedtotodayat', { mode: 'number' }),
   memo: text('memo'),
+  scheduledDate: text('scheduled_date'), // YYYY-MM-DD 형식, 해당 날짜에 오늘 할일로 자동 이동
 })
 
 /**
