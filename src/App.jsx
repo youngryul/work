@@ -35,7 +35,11 @@ import { markWeeklyReminderShown, markMonthlyReminderShown } from './utils/summa
  */
 function AppContent() {
   const { user, loading } = useAuth()
-  const [currentView, setCurrentView] = useState('today')
+  // localStorage에서 마지막으로 본 화면 불러오기
+  const [currentView, setCurrentView] = useState(() => {
+    const savedView = localStorage.getItem('lastView')
+    return savedView || 'today'
+  })
   const [recordView, setRecordView] = useState('main') // 'main' | 'form'
   const [editingRecord, setEditingRecord] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false) // 모바일 사이드바 상태
@@ -82,10 +86,20 @@ function AppContent() {
     setEditingRecord(null)
   }
 
-  // 로그인 시 기본 화면을 '오늘'로 설정
+  // currentView가 변경될 때마다 localStorage에 저장
+  useEffect(() => {
+    if (user && !loading && currentView) {
+      localStorage.setItem('lastView', currentView)
+    }
+  }, [currentView, user, loading])
+
+  // 로그인 시 localStorage에 저장된 마지막 화면 복원 (없으면 'today')
   useEffect(() => {
     if (user && !loading) {
-      setCurrentView('today')
+      const savedView = localStorage.getItem('lastView')
+      if (savedView) {
+        setCurrentView(savedView)
+      }
     }
   }, [user, loading])
 

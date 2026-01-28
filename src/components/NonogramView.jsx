@@ -243,17 +243,13 @@ export default function NonogramView() {
   const handleCellMouseEnter = (row, col) => {
     if (!isDrawing || isCompleted || !selectedPuzzle) return
     
-    const newGrid = grid.map(r => [...r])
+    const currentGrid = grid.map(r => [...r])
     
-    if (newGrid[row][col] !== !drawMode) {
-      newGrid[row][col] = drawMode
-      
-      // 힌트 완료 체크 후 자동으로 빈칸에 X 표시
-      autoMarkEmptyCells(newGrid)
-      
-      setGrid(newGrid)
-      checkCompletion(newGrid)
-    }
+    // 이미 해당 모드로 설정되어 있으면 변경하지 않음
+    if (currentGrid[row][col] === drawMode) return
+    
+    // updateCell 함수를 사용하여 틀린 개수 체크 등 모든 로직 실행
+    updateCell(row, col, currentGrid)
   }
 
   /**
@@ -353,20 +349,64 @@ export default function NonogramView() {
 
   /**
    * 개별 힌트가 완료되었는지 확인
+   * 실제 그리드 상태를 분석하여 해당 힌트가 올바른 위치에서 완료되었는지 확인
    * @param {number} hintIndex - 확인할 힌트 인덱스
    * @param {Array<number>} currentHints - 현재 힌트 배열
    * @param {Array<number>} targetHints - 목표 힌트 배열
+   * @param {Array} rowOrColumn - 행 또는 열의 실제 그리드 데이터 (null, true, false 배열)
    * @returns {boolean} 해당 힌트가 완료되었는지 여부
    */
-  const isIndividualHintComplete = (hintIndex, currentHints, targetHints) => {
+  const isIndividualHintComplete = (hintIndex, currentHints, targetHints, rowOrColumn) => {
     // 힌트 인덱스가 범위를 벗어나면 false
     if (hintIndex >= targetHints.length) return false
     
-    // 현재 힌트가 목표 힌트보다 적으면 해당 인덱스는 아직 미완료
-    if (hintIndex >= currentHints.length) return false
+    // 현재 힌트의 개수가 정확히 해당 인덱스+1개여야 함
+    // 예: 목표가 [2, 4, 2]이고 현재가 [2]라면, 첫 번째 힌트는 완료가 아님 (아직 더 채워야 함)
+    if (currentHints.length !== hintIndex + 1) return false
     
-    // 해당 인덱스의 힌트 값이 일치하는지 확인
-    return currentHints[hintIndex] === targetHints[hintIndex]
+    // 해당 힌트까지의 모든 힌트가 일치해야 함
+    for (let i = 0; i <= hintIndex; i++) {
+      if (currentHints[i] !== targetHints[i]) {
+        return false
+      }
+    }
+    
+    // 실제 그리드 상태를 분석하여 해당 힌트가 올바른 위치에서 완료되었는지 확인
+    if (rowOrColumn) {
+      let position = 0
+      
+      // 해당 힌트까지의 모든 힌트를 순회하며 위치 확인
+      for (let i = 0; i <= hintIndex; i++) {
+        const hintValue = targetHints[i]
+        
+        // 빈칸 건너뛰기
+        while (position < rowOrColumn.length && rowOrColumn[position] !== true) {
+          position++
+        }
+        
+        // 해당 힌트만큼 연속된 칠해진 칸이 있는지 확인
+        let count = 0
+        while (position < rowOrColumn.length && rowOrColumn[position] === true) {
+          count++
+          position++
+        }
+        
+        // 해당 힌트의 값과 일치하지 않으면 false
+        if (count !== hintValue) {
+          return false
+        }
+        
+        // 마지막 힌트가 아니면 다음에 빈칸이 있어야 함
+        if (i < hintIndex) {
+          // 다음 힌트를 위해 빈칸이 있는지 확인 (X 표시도 가능)
+          if (position < rowOrColumn.length && rowOrColumn[position] === true) {
+            return false
+          }
+        }
+      }
+    }
+    
+    return true
   }
 
   return (
@@ -544,7 +584,9 @@ export default function NonogramView() {
                             <span className="text-xs text-gray-300">·</span>
                           ) : (
                             hints.map((hint, i) => {
-                              const isIndividualComplete = isIndividualHintComplete(i, currentHints, hints)
+                              // 한 열이 완료되었을 때만 힌트 완료 체크
+                              const isColComplete = isHintComplete(currentHints, hints)
+                              const isIndividualComplete = isCompleted || isColComplete
                               return (
                                 <div
                                   key={i}
@@ -582,7 +624,9 @@ export default function NonogramView() {
                             <span className="text-xs text-gray-300">·</span>
                           ) : (
                             hints.map((hint, i) => {
-                              const isIndividualComplete = isIndividualHintComplete(i, currentHints, hints)
+                              // 한 행이 완료되었을 때만 힌트 완료 체크
+                              const isRowComplete = isHintComplete(currentHints, hints)
+                              const isIndividualComplete = isCompleted || isRowComplete
                               return (
                                 <span
                                   key={i}
