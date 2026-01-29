@@ -4,10 +4,22 @@ import ReadingTimer from './ReadingTimer.jsx'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
+ * 한국 시간대 기준으로 오늘 날짜를 YYYY-MM-DD 형식으로 반환
+ * @returns {string} 오늘 날짜 문자열
+ */
+const getTodayDateString = () => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+/**
  * 독서 기록 폼 컴포넌트
  */
 export default function ReadingRecordForm({ book, initialRecord, onSave, onCancel }) {
-  const [readingDate, setReadingDate] = useState(new Date().toISOString().split('T')[0])
+  const [readingDate, setReadingDate] = useState(getTodayDateString())
   const [pagesRead, setPagesRead] = useState('')
   const [notes, setNotes] = useState('')
   const [readingMinutes, setReadingMinutes] = useState(null)
@@ -18,7 +30,7 @@ export default function ReadingRecordForm({ book, initialRecord, onSave, onCance
   // 수정 모드일 때 초기값 설정
   useEffect(() => {
     if (initialRecord) {
-      setReadingDate(initialRecord.readingDate || new Date().toISOString().split('T')[0])
+      setReadingDate(initialRecord.readingDate || getTodayDateString())
       setPagesRead(initialRecord.pagesRead ? String(initialRecord.pagesRead) : '')
       setNotes(initialRecord.notes || '')
       setReadingMinutes(initialRecord.readingMinutes || null)
