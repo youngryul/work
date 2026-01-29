@@ -70,9 +70,21 @@ export const NAVIGATION_MENU_ITEMS = [
     icon: '📢',
   },
   {
-    id: 'nonogram',
-    label: '네모 로직',
-    icon: '🧩',
+    id: 'games',
+    label: '게임',
+    icon: '🎮',
+    children: [
+      {
+        id: 'nonogram',
+        label: '네모 로직',
+        icon: '🧩',
+      },
+      {
+        id: 'sudoku',
+        label: '스도쿠',
+        icon: '🔢',
+      },
+    ],
   },
   {
     id: 'review',

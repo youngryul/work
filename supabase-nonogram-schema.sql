@@ -29,6 +29,12 @@ CREATE POLICY "Users can insert their own completions" ON nonogram_completions
   FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+-- 사용자는 자신의 완료 기록만 수정 가능
+CREATE POLICY "Users can update their own completions" ON nonogram_completions
+  FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
 -- 사용자는 자신의 완료 기록만 삭제 가능
 CREATE POLICY "Users can delete their own completions" ON nonogram_completions
   FOR DELETE

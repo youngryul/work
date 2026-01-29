@@ -23,6 +23,7 @@ export default function NavigationSidebar({
 }) {
   const { signOut, user } = useAuth()
   const [isAdminUser, setIsAdminUser] = useState(false)
+  const [expandedMenus, setExpandedMenus] = useState(new Set())
 
   // 관리자 권한 확인
   useEffect(() => {
@@ -44,9 +45,34 @@ export default function NavigationSidebar({
   }, [user])
 
   /**
+   * 하위 메뉴가 있는 메뉴의 펼침/접힘 상태 관리
+   */
+  useEffect(() => {
+    // 현재 뷰가 하위 메뉴에 속하는지 확인하고 상위 메뉴를 펼침
+    const menuWithChildren = NAVIGATION_MENU_ITEMS.find(
+      item => item.children && item.children.some(child => child.id === currentView)
+    )
+    if (menuWithChildren) {
+      setExpandedMenus(new Set([menuWithChildren.id]))
+    }
+  }, [currentView])
+
+  /**
    * 메뉴 클릭 핸들러
    */
-  const handleMenuClick = (viewId) => {
+  const handleMenuClick = (viewId, hasChildren = false) => {
+    // 하위 메뉴가 있는 경우 펼침/접힘 토글
+    if (hasChildren) {
+      const newExpanded = new Set(expandedMenus)
+      if (newExpanded.has(viewId)) {
+        newExpanded.delete(viewId)
+      } else {
+        newExpanded.add(viewId)
+      }
+      setExpandedMenus(newExpanded)
+      return
+    }
+
     // 카테고리 설정은 모달로 열기
     if (viewId === 'category-settings') {
       if (window.openCategorySettings) {
@@ -128,28 +154,65 @@ export default function NavigationSidebar({
           {/* 메뉴 목록 */}
           <nav className="flex-1 overflow-y-auto p-4">
             <div className="space-y-2">
-              {NAVIGATION_MENU_ITEMS.filter(item => item.id !== 'announcements').map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleMenuClick(item.id)}
-                  className={`
-                    w-full rounded-lg transition-all duration-200 text-left
-                    flex items-center gap-3
-                    ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
-                    ${
-                      currentView === item.id
-                        ? 'bg-indigo-500 text-white shadow-md'
-                        : 'text-gray-600 hover:bg-indigo-50'
-                    }
-                  `}
-                  title={collapsed ? item.label : ''}
-                >
-                  <span className="text-xl flex-shrink-0">{item.icon || '📌'}</span>
-                  {!collapsed && (
-                    <span className="text-lg font-medium">{item.label}</span>
-                  )}
-                </button>
-              ))}
+              {NAVIGATION_MENU_ITEMS.filter(item => item.id !== 'announcements').map((item) => {
+                const hasChildren = item.children && item.children.length > 0
+                const isExpanded = expandedMenus.has(item.id)
+                const isActive = currentView === item.id || (hasChildren && item.children.some(child => child.id === currentView))
+                
+                return (
+                  <div key={item.id} className="space-y-1">
+                    <button
+                      onClick={() => handleMenuClick(item.id, hasChildren)}
+                      className={`
+                        w-full rounded-lg transition-all duration-200 text-left
+                        flex items-center gap-3
+                        ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
+                        ${
+                          isActive
+                            ? 'bg-indigo-500 text-white shadow-md'
+                            : 'text-gray-600 hover:bg-indigo-50'
+                        }
+                      `}
+                      title={collapsed ? item.label : ''}
+                    >
+                      <span className="text-xl flex-shrink-0">{item.icon || '📌'}</span>
+                      {!collapsed && (
+                        <>
+                          <span className="text-lg font-medium flex-1">{item.label}</span>
+                          {hasChildren && (
+                            <span className={`text-sm transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
+                              ▶
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </button>
+                    {/* 하위 메뉴 */}
+                    {hasChildren && !collapsed && isExpanded && (
+                      <div className="ml-4 space-y-1">
+                        {item.children.map((child) => (
+                          <button
+                            key={child.id}
+                            onClick={() => handleMenuClick(child.id)}
+                            className={`
+                              w-full rounded-lg transition-all duration-200 text-left
+                              flex items-center gap-3 px-4 py-2
+                              ${
+                                currentView === child.id
+                                  ? 'bg-indigo-400 text-white shadow-md'
+                                  : 'text-gray-600 hover:bg-indigo-50'
+                              }
+                            `}
+                          >
+                            <span className="text-lg flex-shrink-0">{child.icon || '•'}</span>
+                            <span className="text-base font-medium">{child.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
 
             {/* 구분선 */}

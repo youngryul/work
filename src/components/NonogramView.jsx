@@ -70,9 +70,89 @@ export default function NonogramView() {
   }
 
   /**
+   * 로컬 스토리지에서 게임 상태 저장
+   */
+  const saveGameState = (puzzleId, currentGrid, currentDrawMode) => {
+    try {
+      const gameState = {
+        puzzleId,
+        grid: currentGrid,
+        drawMode: currentDrawMode,
+        timestamp: Date.now()
+      }
+      localStorage.setItem('nonogram_game_state', JSON.stringify(gameState))
+    } catch (error) {
+      console.error('게임 상태 저장 오류:', error)
+    }
+  }
+
+  /**
+   * 로컬 스토리지에서 게임 상태 복원
+   */
+  const loadGameState = (puzzleId) => {
+    try {
+      const savedState = localStorage.getItem('nonogram_game_state')
+      if (!savedState) return null
+
+      const gameState = JSON.parse(savedState)
+      // 같은 퍼즐이고 24시간 이내의 저장된 상태만 복원
+      if (gameState.puzzleId === puzzleId && Date.now() - gameState.timestamp < 24 * 60 * 60 * 1000) {
+        return gameState
+      }
+      return null
+    } catch (error) {
+      console.error('게임 상태 복원 오류:', error)
+      return null
+    }
+  }
+
+  /**
+   * 로컬 스토리지에서 게임 상태 삭제
+   */
+  const clearGameState = () => {
+    try {
+      localStorage.removeItem('nonogram_game_state')
+    } catch (error) {
+      console.error('게임 상태 삭제 오류:', error)
+    }
+  }
+
+  /**
    * 퍼즐 초기화
    */
-  const initializePuzzle = (puzzle) => {
+  const initializePuzzle = (puzzle, restoreFromStorage = true) => {
+    // 먼저 저장된 상태 확인
+    if (restoreFromStorage) {
+      const savedState = loadGameState(puzzle.id)
+      if (savedState) {
+        setGrid(savedState.grid)
+        setDrawMode(savedState.drawMode)
+        setIsCompleted(false)
+        setIsDrawing(false)
+        setWrongCells(new Set())
+        
+        // 행 힌트 계산
+        const rows = puzzle.solution.length
+        const cols = puzzle.solution[0].length
+        const newRowHints = puzzle.solution.map((row, rowIdx) => {
+          const hints = calculateHints(row)
+          return hints
+        })
+        setRowHints(newRowHints)
+        
+        // 열 힌트 계산
+        const newColHints = []
+        for (let col = 0; col < cols; col++) {
+          const column = puzzle.solution.map(row => row[col])
+          const hints = calculateHints(column)
+          newColHints.push(hints)
+        }
+        setColHints(newColHints)
+        return
+      }
+    }
+
+    // 저장된 상태가 없으면 새로 시작
     const rows = puzzle.solution.length
     const cols = puzzle.solution[0].length
     
@@ -106,7 +186,7 @@ export default function NonogramView() {
    */
   const handleSelectPuzzle = (puzzle) => {
     setSelectedPuzzle(puzzle)
-    initializePuzzle(puzzle)
+    initializePuzzle(puzzle, true)
   }
 
   // 컴포넌트 마운트 시 완료한 퍼즐 목록 로드
@@ -114,6 +194,13 @@ export default function NonogramView() {
     loadCompletedPuzzles()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // 게임 상태가 변경될 때마다 저장
+  useEffect(() => {
+    if (selectedPuzzle && grid.length > 0) {
+      saveGameState(selectedPuzzle.id, grid, drawMode)
+    }
+  }, [grid, drawMode, selectedPuzzle])
 
   /**
    * 셀 상태 변경
@@ -294,6 +381,9 @@ export default function NonogramView() {
     if (isCorrect && !isCompleted) {
       setIsCompleted(true)
       showToast('축하합니다! 퍼즐을 완료했습니다! 🎉', TOAST_TYPES.SUCCESS)
+      
+      // 로컬 스토리지에서 게임 상태 삭제
+      clearGameState()
       
       // Supabase에 완료 기록 저장
       if (selectedPuzzle) {

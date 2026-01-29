@@ -1,0 +1,131 @@
+import { supabase } from '../config/supabase.js'
+import { getCurrentUserId } from '../utils/authHelper.js'
+
+/**
+ * 스도쿠 완료 기록 저장
+ * @param {string} puzzleId - 퍼즐 ID
+ * @param {string} puzzleName - 퍼즐 이름
+ * @param {string} difficulty - 난이도 (easy, medium, hard, expert)
+ * @returns {Promise<Object|null>} 저장된 완료 기록
+ */
+export async function saveSudokuCompletion(puzzleId, puzzleName, difficulty) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    console.warn('로그인이 필요합니다.')
+    return null
+  }
+
+  try {
+    // 먼저 기존 기록이 있는지 확인
+    const { data: existing } = await supabase
+      .from('sudoku_completions')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('puzzle_id', puzzleId)
+      .maybeSingle()
+
+    let data, error
+
+    if (existing) {
+      // 기존 기록이 있으면 업데이트
+      const { data: updateData, error: updateError } = await supabase
+        .from('sudoku_completions')
+        .update({
+          completed_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id)
+        .select()
+        .single()
+      
+      data = updateData
+      error = updateError
+    } else {
+      // 기존 기록이 없으면 삽입
+      const { data: insertData, error: insertError } = await supabase
+        .from('sudoku_completions')
+        .insert({
+          user_id: userId,
+          puzzle_id: puzzleId,
+          puzzle_name: puzzleName,
+          difficulty: difficulty,
+          completed_at: new Date().toISOString(),
+        })
+        .select()
+        .single()
+      
+      data = insertData
+      error = insertError
+    }
+
+    if (error) {
+      console.error('스도쿠 완료 기록 저장 오류:', error)
+      return null
+    }
+
+    return data
+  } catch (error) {
+    console.error('스도쿠 완료 기록 저장 오류:', error)
+    return null
+  }
+}
+
+/**
+ * 사용자의 스도쿠 완료 기록 조회
+ * @returns {Promise<Array>} 완료 기록 목록
+ */
+export async function getSudokuCompletions() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    console.warn('로그인이 필요합니다.')
+    return []
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('sudoku_completions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('completed_at', { ascending: false })
+
+    if (error) {
+      console.error('스도쿠 완료 기록 조회 오류:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('스도쿠 완료 기록 조회 오류:', error)
+    return []
+  }
+}
+
+/**
+ * 특정 퍼즐의 완료 여부 확인
+ * @param {string} puzzleId - 퍼즐 ID
+ * @returns {Promise<boolean>} 완료 여부
+ */
+export async function isPuzzleCompleted(puzzleId) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return false
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('sudoku_completions')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('puzzle_id', puzzleId)
+      .maybeSingle()
+
+    if (error) {
+      console.error('퍼즐 완료 여부 확인 오류:', error)
+      return false
+    }
+
+    return !!data
+  } catch (error) {
+    console.error('퍼즐 완료 여부 확인 오류:', error)
+    return false
+  }
+}
