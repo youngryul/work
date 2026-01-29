@@ -112,8 +112,40 @@ export default function TodayView() {
     
     window.addEventListener('refreshTodayTasks', handleRefreshTasks)
     
+    // 자정에 자동으로 백로그로 이동하는 타이머 설정
+    const setupMidnightTimer = () => {
+      const now = new Date()
+      const tomorrow = new Date(now)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      tomorrow.setHours(0, 0, 0, 0) // 다음날 자정
+      
+      const msUntilMidnight = tomorrow.getTime() - now.getTime()
+      
+      const midnightTimer = setTimeout(async () => {
+        // 자정이 되면 오늘 할일을 백로그로 이동
+        try {
+          await checkAndResetIfNeeded()
+          await moveScheduledTasksToToday()
+          await loadTasks()
+          showToast('새로운 하루가 시작되었습니다! 오늘 할일이 업데이트되었습니다.', TOAST_TYPES.INFO)
+          
+          // 다음 자정을 위한 타이머 재설정
+          setupMidnightTimer()
+        } catch (error) {
+          console.error('자정 자동 리셋 오류:', error)
+        }
+      }, msUntilMidnight)
+      
+      return midnightTimer
+    }
+    
+    const midnightTimer = setupMidnightTimer()
+    
     return () => {
       window.removeEventListener('refreshTodayTasks', handleRefreshTasks)
+      if (midnightTimer) {
+        clearTimeout(midnightTimer)
+      }
     }
   }, [])
 
