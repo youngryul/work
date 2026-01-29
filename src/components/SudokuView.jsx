@@ -463,6 +463,24 @@ export default function SudokuView() {
           const newCompletedPuzzles = new Set(completedPuzzles)
           newCompletedPuzzles.add(selectedPuzzle.id)
           setCompletedPuzzles(newCompletedPuzzles)
+          
+          // 다음 퍼즐로 자동 이동
+          const currentIndex = SUDOKU_PUZZLES.findIndex(p => p.id === selectedPuzzle.id)
+          if (currentIndex !== -1 && currentIndex < SUDOKU_PUZZLES.length - 1) {
+            const nextPuzzle = SUDOKU_PUZZLES[currentIndex + 1]
+            // 2초 후 다음 퍼즐로 이동
+            setTimeout(() => {
+              handleSelectPuzzle(nextPuzzle)
+              showToast(`다음 퍼즐: ${nextPuzzle.name}`, TOAST_TYPES.INFO)
+            }, 2000)
+          } else {
+            // 모든 퍼즐을 완료한 경우
+            setTimeout(() => {
+              showToast('모든 스도쿠를 완료했습니다! 🎊', TOAST_TYPES.SUCCESS)
+              setSelectedPuzzle(null)
+              setSelectedCell(null)
+            }, 2000)
+          }
         } catch (error) {
           console.error('완료 기록 저장 오류:', error)
         }
