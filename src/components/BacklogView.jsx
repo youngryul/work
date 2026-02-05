@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getBacklogTasks, createTask, moveToToday } from '../services/taskService.js'
 import { getDefaultCategory } from '../services/categoryService.js'
 import TaskItem from './TaskItem.jsx'
@@ -15,6 +15,8 @@ export default function BacklogView() {
   const [selectedCategory, setSelectedCategory] = useState('회사') // 기본값 먼저 설정
   const [isLoading, setIsLoading] = useState(true)
   const [defaultCategory, setDefaultCategory] = useState('회사') // 기본값 먼저 설정
+  const [completedTaskIds, setCompletedTaskIds] = useState(new Set())
+  const completionTimersRef = useRef({})
 
   /**
    * 기본 카테고리 로드 (비동기로 처리하여 UI 블로킹 방지)
@@ -101,9 +103,54 @@ export default function BacklogView() {
   /**
    * 할 일 업데이트
    */
-  const handleTaskUpdate = (updatedTask) => {
-    setTasks(tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)))
+  const handleTaskUpdate = async (updatedTask) => {
+    const updatedTasks = tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+    setTasks(updatedTasks)
+    
+    // 완료된 경우 새로고침 후 3초 동안 표시
+    if (updatedTask.completed && !completedTaskIds.has(updatedTask.id)) {
+      // 완료 처리 후 즉시 새로고침하여 최신 데이터 로드
+      await loadTasks()
+      
+      // 새로고침 후 업데이트된 tasks에서 해당 항목을 completedTaskIds에 추가
+      setCompletedTaskIds(prev => new Set([...prev, updatedTask.id]))
+      
+      // 기존 타이머가 있으면 취소
+      if (completionTimersRef.current[updatedTask.id]) {
+        clearTimeout(completionTimersRef.current[updatedTask.id])
+      }
+      
+      // 3초 후 화면에서 제거 (tasks 배열에는 유지하여 개수는 정확히 표시)
+      completionTimersRef.current[updatedTask.id] = setTimeout(() => {
+        setCompletedTaskIds(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(updatedTask.id)
+          return newSet
+        })
+        delete completionTimersRef.current[updatedTask.id]
+      }, 3000)
+    } else if (!updatedTask.completed && completedTaskIds.has(updatedTask.id)) {
+      // 완료 취소된 경우 타이머 취소 및 추적에서 제거
+      if (completionTimersRef.current[updatedTask.id]) {
+        clearTimeout(completionTimersRef.current[updatedTask.id])
+        delete completionTimersRef.current[updatedTask.id]
+      }
+      setCompletedTaskIds(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(updatedTask.id)
+        return newSet
+      })
+    }
   }
+  
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      Object.values(completionTimersRef.current).forEach(timer => {
+        if (timer) clearTimeout(timer)
+      })
+    }
+  }, [])
 
   /**
    * 할 일 삭제
@@ -115,12 +162,13 @@ export default function BacklogView() {
 
   /**
    * 카테고리별로 할 일 분리 및 정렬 (가장 오래된 것부터)
+   * 완료된 항목은 3초 동안 표시 후 제외
    */
   const defaultCategoryTasks = tasks
-    .filter((task) => task.category === defaultCategory)
+    .filter((task) => task.category === defaultCategory && (!task.completed || completedTaskIds.has(task.id)))
     .sort((a, b) => (a.createdAt || a.createdat || 0) - (b.createdAt || b.createdat || 0))
   const otherTasks = tasks
-    .filter((task) => task.category !== defaultCategory)
+    .filter((task) => task.category !== defaultCategory && (!task.completed || completedTaskIds.has(task.id)))
     .sort((a, b) => (a.createdAt || a.createdat || 0) - (b.createdAt || b.createdat || 0))
 
   return (
