@@ -82,6 +82,11 @@ export const NAVIGATION_MENU_ITEMS = [
     icon: '📢',
   },
   {
+    id: 'settings',
+    label: '설정',
+    icon: '⚙️',
+  },
+  {
     id: 'games',
     label: '게임',
     icon: '🎮',

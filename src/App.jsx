@@ -19,6 +19,7 @@ import CategorySettingsModal from './components/CategorySettingsModal.jsx'
 import FoodCalorieCalculator from './components/FoodCalorieCalculator.jsx'
 import CongratulatoryMoneyView from './components/CongratulatoryMoneyView.jsx'
 import AnnouncementView from './components/AnnouncementView.jsx'
+import SettingsView from './components/SettingsView.jsx'
 import AdminDashboard from './components/admin/AdminDashboard.jsx'
 import NonogramView from './components/NonogramView.jsx'
 import SudokuView from './components/SudokuView.jsx'
@@ -261,6 +262,7 @@ function AppContent() {
         {currentView === 'five-year-questions' && <FiveYearQuestionView />}
         {currentView === 'food-calorie' && <FoodCalorieCalculator />}
         {currentView === 'congratulatory-money' && <CongratulatoryMoneyView />}
+        {currentView === 'settings' && <SettingsView />}
         {currentView === 'announcements' && <AnnouncementView />}
         {currentView === 'nonogram' && <NonogramView />}
         {currentView === 'sudoku' && <SudokuView />}

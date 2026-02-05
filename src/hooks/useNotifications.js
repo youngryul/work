@@ -5,6 +5,7 @@ import { hasDiaryReminderToday } from '../services/diaryReminderService.js'
 import { hasSummaryReminderToday } from '../services/summaryReminderService.js'
 import { hasFiveYearQuestionReminderToday } from '../services/fiveYearQuestionReminderService.js'
 import { getQuestionAndAnswersByDate } from '../services/fiveYearQuestionService.js'
+import { getNotificationSettings } from '../services/notificationSettingsService.js'
 import { 
   shouldShowWeeklyReminder, 
   shouldShowMonthlyReminder, 
@@ -67,58 +68,77 @@ export function useNotifications() {
         return
       }
 
-      // 일기 리마인더 확인 (이미 있는 user.id 사용)
-      const alreadyShownDiary = await hasDiaryReminderToday(user.id)
-      if (!alreadyShownDiary) {
-        const yesterday = getYesterdayDateString()
-        const diary = await getDiaryByDate(yesterday)
-        if (!diary) {
-          setDiaryReminder({ isOpen: true, yesterdayDate: yesterday })
-        }
-      }
+      // 알림 설정 조회
+      const notificationSettings = await getNotificationSettings()
 
-      // 주간 요약 리마인더 확인 (이미 있는 user.id 사용)
-      const alreadyShownWeekly = await hasSummaryReminderToday('weekly', user.id)
-      if (!alreadyShownWeekly && await shouldShowWeeklyReminder()) {
-        const lastWeek = getLastWeekInfo()
-        setWeeklySummaryReminder({ 
-          isOpen: true, 
-          period: lastWeek.period,
-          weekStart: lastWeek.weekStart,
-          weekEnd: lastWeek.weekEnd,
-        })
-      }
-
-      // 월간 요약 리마인더 확인 (이미 있는 user.id 사용)
-      const alreadyShownMonthly = await hasSummaryReminderToday('monthly', user.id)
-      if (!alreadyShownMonthly && await shouldShowMonthlyReminder()) {
-        const lastMonth = getLastMonthInfo()
-        setMonthlySummaryReminder({ 
-          isOpen: true, 
-          period: lastMonth.period,
-          year: lastMonth.year,
-          month: lastMonth.month,
-        })
-      }
-
-      // 5년 질문 일기 리마인더 확인 (이미 있는 user.id 사용)
-      const alreadyShownFiveYear = await hasFiveYearQuestionReminderToday(user.id)
-      if (!alreadyShownFiveYear) {
-        const today = new Date()
-        const todayDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-        const { question, answers } = await getQuestionAndAnswersByDate(today)
-        // 오늘 질문에 대한 올해 답변이 없으면 리마인더 표시
-        if (question) {
-          const currentYear = today.getFullYear()
-          const hasAnswerForToday = answers.some(answer => answer.year === currentYear)
-          if (!hasAnswerForToday) {
-            setFiveYearQuestionReminder({ 
-              isOpen: true, 
-              todayDate: todayDateString,
-              question: question,
-            })
+      // 일기 리마인더 확인 (설정이 켜져 있을 때만)
+      if (notificationSettings.diaryEnabled) {
+        const alreadyShownDiary = await hasDiaryReminderToday(user.id)
+        if (!alreadyShownDiary) {
+          const yesterday = getYesterdayDateString()
+          const diary = await getDiaryByDate(yesterday)
+          if (!diary) {
+            setDiaryReminder({ isOpen: true, yesterdayDate: yesterday })
           }
         }
+      } else {
+        setDiaryReminder({ isOpen: false, yesterdayDate: null })
+      }
+
+      // 주간 요약 리마인더 확인 (설정이 켜져 있을 때만)
+      if (notificationSettings.weeklySummaryEnabled) {
+        const alreadyShownWeekly = await hasSummaryReminderToday('weekly', user.id)
+        if (!alreadyShownWeekly && await shouldShowWeeklyReminder()) {
+          const lastWeek = getLastWeekInfo()
+          setWeeklySummaryReminder({ 
+            isOpen: true, 
+            period: lastWeek.period,
+            weekStart: lastWeek.weekStart,
+            weekEnd: lastWeek.weekEnd,
+          })
+        }
+      } else {
+        setWeeklySummaryReminder({ isOpen: false, period: '', weekStart: null, weekEnd: null })
+      }
+
+      // 월간 요약 리마인더 확인 (설정이 켜져 있을 때만)
+      if (notificationSettings.monthlySummaryEnabled) {
+        const alreadyShownMonthly = await hasSummaryReminderToday('monthly', user.id)
+        if (!alreadyShownMonthly && await shouldShowMonthlyReminder()) {
+          const lastMonth = getLastMonthInfo()
+          setMonthlySummaryReminder({ 
+            isOpen: true, 
+            period: lastMonth.period,
+            year: lastMonth.year,
+            month: lastMonth.month,
+          })
+        }
+      } else {
+        setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
+      }
+
+      // 5년 질문 일기 리마인더 확인 (설정이 켜져 있을 때만)
+      if (notificationSettings.fiveYearQuestionEnabled) {
+        const alreadyShownFiveYear = await hasFiveYearQuestionReminderToday(user.id)
+        if (!alreadyShownFiveYear) {
+          const today = new Date()
+          const todayDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+          const { question, answers } = await getQuestionAndAnswersByDate(today)
+          // 오늘 질문에 대한 올해 답변이 없으면 리마인더 표시
+          if (question) {
+            const currentYear = today.getFullYear()
+            const hasAnswerForToday = answers.some(answer => answer.year === currentYear)
+            if (!hasAnswerForToday) {
+              setFiveYearQuestionReminder({ 
+                isOpen: true, 
+                todayDate: todayDateString,
+                question: question,
+              })
+            }
+          }
+        }
+      } else {
+        setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
       }
     } catch (error) {
       console.error('알림 확인 오류:', error)
