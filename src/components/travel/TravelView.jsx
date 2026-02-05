@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import WorldMap from './WorldMap.jsx'
 import CountrySearch from './CountrySearch.jsx'
-import { getAllVisitedCountries } from '../../services/visitedCountriesService.js'
+import { getAllVisitedCountries, removeVisitedCountry } from '../../services/visitedCountriesService.js'
 import { getCountryName } from '../../constants/countries.js'
+import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
  * 여행 메인 화면 컴포넌트
@@ -41,6 +42,22 @@ export default function TravelView() {
     await loadVisitedCountries()
   }
 
+  // 방문 국가 삭제 핸들러
+  const handleDeleteCountry = async (countryId, countryCode) => {
+    if (!confirm(`정말 ${getCountryName(countryCode)}을(를) 방문 목록에서 삭제하시겠습니까?`)) {
+      return
+    }
+
+    try {
+      await removeVisitedCountry(countryCode)
+      await loadVisitedCountries()
+      showToast('방문 국가가 삭제되었습니다.', TOAST_TYPES.SUCCESS)
+    } catch (error) {
+      console.error('방문 국가 삭제 오류:', error)
+      showToast(error.message || '삭제에 실패했습니다.', TOAST_TYPES.ERROR)
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="mb-6">
@@ -55,7 +72,10 @@ export default function TravelView() {
 
       {/* 세계 지도 */}
       <div className="bg-white rounded-lg shadow-lg p-4 mb-6" style={{ minHeight: '600px' }}>
-        <WorldMap onCountryClick={handleCountryClick} />
+        <WorldMap 
+          onCountryClick={handleCountryClick}
+          visitedCountries={visitedCountries}
+        />
       </div>
 
       {/* 방문 국가 목록 */}
@@ -80,8 +100,15 @@ export default function TravelView() {
             {visitedCountries.map((country) => (
               <div
                 key={country.id}
-                className="bg-green-50 border border-green-200 rounded-lg p-3 text-center"
+                className="bg-green-50 border border-green-200 rounded-lg p-3 text-center relative group hover:shadow-md transition-shadow"
               >
+                <button
+                  onClick={() => handleDeleteCountry(country.id, country.countryCode)}
+                  className="absolute top-1 right-1 text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity text-sm font-bold"
+                  title="삭제"
+                >
+                  ×
+                </button>
                 <div className="text-sm font-semibold text-green-800">
                   {getCountryName(country.countryCode)}
                 </div>

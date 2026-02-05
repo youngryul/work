@@ -22,7 +22,7 @@ const geoUrl = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
  * - 클릭 시 방문 여부 토글
  * - 확대/축소 기능
  */
-export default function WorldMap({ onCountryClick }) {
+export default function WorldMap({ onCountryClick, visitedCountries: visitedCountriesProp }) {
   const [visitedCountries, setVisitedCountries] = useState(new Set())
   const [hoveredCountry, setHoveredCountry] = useState(null)
   const [position, setPosition] = useState({ coordinates: [0, 0], zoom: 1 })
@@ -43,6 +43,14 @@ export default function WorldMap({ onCountryClick }) {
   useEffect(() => {
     loadVisitedCountries()
   }, [])
+
+  // prop으로 전달된 방문 국가 목록이 변경되면 업데이트
+  useEffect(() => {
+    if (visitedCountriesProp && Array.isArray(visitedCountriesProp)) {
+      const codes = new Set(visitedCountriesProp.map(country => country.countryCode?.toUpperCase()))
+      setVisitedCountries(codes)
+    }
+  }, [visitedCountriesProp])
 
   // 국가 코드 추출 헬퍼 함수
   const getCountryCodeFromGeo = (geo) => {

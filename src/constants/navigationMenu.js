@@ -45,14 +45,21 @@ export const NAVIGATION_MENU_ITEMS = [
     icon: '📚',
   },
   {
-    id: 'travel',
+    id: 'travel-menu',
     label: '여행',
     icon: '✈️',
-  },
-  {
-    id: 'domestic-travel',
-    label: '국내 여행 기록',
-    icon: '🗺️',
+    children: [
+      {
+        id: 'travel',
+        label: '세계 여행 기록',
+        icon: '🌍',
+      },
+      {
+        id: 'domestic-travel',
+        label: '국내 여행 기록',
+        icon: '🗺️',
+      },
+    ],
   },
   {
     id: 'five-year-questions',
