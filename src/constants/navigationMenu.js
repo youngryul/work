@@ -50,6 +50,11 @@ export const NAVIGATION_MENU_ITEMS = [
     icon: '✈️',
   },
   {
+    id: 'domestic-travel',
+    label: '국내 여행 기록',
+    icon: '🗺️',
+  },
+  {
     id: 'five-year-questions',
     label: '5년 질문',
     icon: '📖',
