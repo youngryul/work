@@ -17,3 +17,4 @@ CREATE TRIGGER update_diaries_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_diaries_updated_at();
 
+

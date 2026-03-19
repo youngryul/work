@@ -10,6 +10,7 @@ import Review2026View from './components/Review2026View.jsx'
 import RecordMainView from './components/RecordMainView.jsx'
 import RecordForm from './components/RecordForm.jsx'
 import GoalsDashboard from './components/goals/GoalsDashboard.jsx'
+import HabitTrackerView from './components/goals/HabitTrackerView.jsx'
 import BucketlistView from './components/bucketlist/BucketlistView.jsx'
 import ReadingView from './components/reading/ReadingView.jsx'
 import TravelView from './components/travel/TravelView.jsx'
@@ -255,6 +256,7 @@ function AppContent() {
           </>
         )}
         {currentView === 'goals' && <GoalsDashboard />}
+        {currentView === 'habit-tracker' && <HabitTrackerView />}
         {currentView === 'bucketlist' && <BucketlistView />}
         {currentView === 'reading' && <ReadingView />}
         {currentView === 'travel' && <TravelView />}

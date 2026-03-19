@@ -35,6 +35,11 @@ export const NAVIGATION_MENU_ITEMS = [
     icon: '🎯',
   },
   {
+    id: 'habit-tracker',
+    label: '습관 트래커',
+    icon: '📌',
+  },
+  {
     id: 'bucketlist',
     label: '버킷리스트',
     icon: '🪣',

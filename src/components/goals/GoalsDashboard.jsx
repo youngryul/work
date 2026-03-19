@@ -8,8 +8,6 @@ import YearlyGoalForm from './YearlyGoalForm.jsx'
 import MonthlyGoalList from './MonthlyGoalList.jsx'
 import MonthlyGoalForm from './MonthlyGoalForm.jsx'
 import MonthlyReflectionForm from './MonthlyReflectionForm.jsx'
-import HabitTrackerSummary from './HabitTrackerSummary.jsx'
-import HabitTrackerList from './HabitTrackerList.jsx'
 import {
   getYearlyGoals,
   getMonthlyGoals,
@@ -32,7 +30,6 @@ export default function GoalsDashboard() {
   const [goalFormView, setGoalFormView] = useState(null) // 'yearly' | 'monthly' | null
   const [editingGoal, setEditingGoal] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [showHabitTrackerSummary, setShowHabitTrackerSummary] = useState(false)
   const [selectedYearlyGoalId, setSelectedYearlyGoalId] = useState(null) // 선택된 연간 목표 ID
   const [showYearlyGoalModal, setShowYearlyGoalModal] = useState(false) // 연간 목표 상세 모달
   const [selectedYearlyGoal, setSelectedYearlyGoal] = useState(null) // 선택된 연간 목표
@@ -41,22 +38,6 @@ export default function GoalsDashboard() {
   // 데이터 로드
   useEffect(() => {
     loadData()
-  }, [currentYear, currentMonth])
-
-  // 다음 달 1일인지 확인하여 종합판 표시
-  useEffect(() => {
-    const today = new Date()
-    const isFirstDayOfMonth = today.getDate() === 1
-    const isCurrentMonth = today.getMonth() + 1 === currentMonth && today.getFullYear() === currentYear
-    
-    if (isFirstDayOfMonth && isCurrentMonth) {
-      // 로컬 스토리지에서 오늘 표시 여부 확인
-      const summaryShownToday = localStorage.getItem(`habitTrackerSummary_${currentYear}_${currentMonth}`)
-      if (!summaryShownToday) {
-        setShowHabitTrackerSummary(true)
-        localStorage.setItem(`habitTrackerSummary_${currentYear}_${currentMonth}`, 'true')
-      }
-    }
   }, [currentYear, currentMonth])
 
   const loadData = async () => {
@@ -338,15 +319,6 @@ export default function GoalsDashboard() {
               onUpdate={loadData}
             />
           </div>
-
-          {/* Habit Tracker 섹션 */}
-          <div className="mt-8">
-            <HabitTrackerList
-              year={currentYear}
-              month={currentMonth}
-              monthlyGoals={monthlyGoals}
-            />
-          </div>
         </div>
       )}
 
@@ -361,15 +333,6 @@ export default function GoalsDashboard() {
         </div>
       )}
         </>
-      )}
-
-      {/* Habit Tracker 종합판 */}
-      {showHabitTrackerSummary && (
-        <HabitTrackerSummary
-          currentYear={currentYear}
-          currentMonth={currentMonth}
-          onClose={() => setShowHabitTrackerSummary(false)}
-        />
       )}
 
       {/* 연간 목표 상세 모달 (월별 목표 리스트) */}

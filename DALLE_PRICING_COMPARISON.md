@@ -80,3 +80,4 @@ model: 'dall-e-2', // dall-e-3 대신 dall-e-2 사용
 - OpenAI는 가격을 변경할 수 있으므로 최신 정보는 [OpenAI Pricing](https://openai.com/pricing)에서 확인하세요
 - 실제 사용량에 따라 비용이 달라질 수 있습니다
 
+
