@@ -73,6 +73,8 @@ export default function Review2026View({ initialTab, initialParams }) {
   // 월간 업무일지 관련
   const [monthlyWorkReport, setMonthlyWorkReport] = useState(null)
   const [isGeneratingMonthlyWork, setIsGeneratingMonthlyWork] = useState(false)
+  /** 월간 업무일지 생성 중인 연·월 (로딩 표시용) */
+  const [generatingMonthlyWorkTarget, setGeneratingMonthlyWorkTarget] = useState(null)
   const [showMonthlyWorkModal, setShowMonthlyWorkModal] = useState(false)
   const [monthlyWorkMonths, setMonthlyWorkMonths] = useState([]) // 지난 월 목록
   
@@ -289,6 +291,7 @@ export default function Review2026View({ initialTab, initialParams }) {
    * 월간 업무일지 생성
    */
   const handleGenerateMonthlyWorkReport = async (year, month) => {
+    setGeneratingMonthlyWorkTarget({ year, month })
     setIsGeneratingMonthlyWork(true)
     try {
       const { generateMonthlyWorkReport, saveMonthlyWorkReport } = await import('../services/workReportService.js')
@@ -305,6 +308,7 @@ export default function Review2026View({ initialTab, initialParams }) {
       showToast(error.message || '월간 업무일지 생성에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setIsGeneratingMonthlyWork(false)
+      setGeneratingMonthlyWorkTarget(null)
     }
   }
 
@@ -687,6 +691,22 @@ export default function Review2026View({ initialTab, initialParams }) {
             <p className="text-gray-600 mb-4 font-sans">
               지난 월의 업무일지를 확인하거나 생성할 수 있습니다.
             </p>
+
+            {isGeneratingMonthlyWork && generatingMonthlyWorkTarget && (
+              <div
+                className="mb-4 flex items-center gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-indigo-800 font-sans"
+                role="status"
+                aria-live="polite"
+              >
+                <span
+                  className="inline-block h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent"
+                  aria-hidden
+                />
+                <span className="text-base font-medium">
+                  {generatingMonthlyWorkTarget.year}년 {generatingMonthlyWorkTarget.month}월 월간 업무일지 생성 중...
+                </span>
+              </div>
+            )}
             
             {monthlyWorkMonths.length === 0 ? (
               <div className="text-center py-8 text-gray-400 text-xl font-sans">
@@ -694,7 +714,12 @@ export default function Review2026View({ initialTab, initialParams }) {
               </div>
             ) : (
               <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-                {monthlyWorkMonths.map((monthData) => (
+                {monthlyWorkMonths.map((monthData) => {
+                  const isGeneratingThisMonth =
+                    isGeneratingMonthlyWork &&
+                    generatingMonthlyWorkTarget?.year === monthData.year &&
+                    generatingMonthlyWorkTarget?.month === monthData.month
+                  return (
                   <button
                     key={`${monthData.year}-${monthData.month}`}
                     onClick={() => handleMonthlyWorkClick(monthData.year, monthData.month)}
@@ -705,10 +730,22 @@ export default function Review2026View({ initialTab, initialParams }) {
                         : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                     }`}
                   >
-                    {monthData.year}.{String(monthData.month).padStart(2, '0')}
-                    {monthData.hasReport && <span className="ml-1">✓</span>}
+                    {isGeneratingThisMonth ? (
+                      <span className="flex flex-col items-center gap-0.5 leading-tight">
+                        <span className="text-sm">생성 중...</span>
+                        <span className="text-xs font-normal text-gray-600">
+                          {monthData.year}.{String(monthData.month).padStart(2, '0')}
+                        </span>
+                      </span>
+                    ) : (
+                      <>
+                        {monthData.year}.{String(monthData.month).padStart(2, '0')}
+                        {monthData.hasReport && <span className="ml-1">✓</span>}
+                      </>
+                    )}
                   </button>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

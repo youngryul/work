@@ -3,6 +3,15 @@
  * 메뉴 항목을 중앙에서 관리하여 확장성 향상
  */
 
+/**
+ * 사이드바에 표시하지 않는 최상위 메뉴 id (뷰 전환·localStorage 등은 그대로 동작)
+ */
+export const SIDEBAR_HIDDEN_MENU_ITEM_IDS = new Set([
+  'goals',
+  'travel-menu',
+  'food-calorie',
+])
+
 export const NAVIGATION_MENU_ITEMS = [
   {
     id: 'today',
@@ -109,14 +118,21 @@ export const NAVIGATION_MENU_ITEMS = [
     ],
   },
   {
-    id: 'review',
-    label: '2025 회고',
+    id: 'review-menu',
+    label: '회고',
     icon: '📊',
-  },
-  {
-    id: 'review-2026',
-    label: '2026 회고',
-    icon: '📝',
+    children: [
+      {
+        id: 'review',
+        label: '2025 회고',
+        icon: '📊',
+      },
+      {
+        id: 'review-2026',
+        label: '2026 회고',
+        icon: '📝',
+      },
+    ],
   },
 ]
 

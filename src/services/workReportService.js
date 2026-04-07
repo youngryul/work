@@ -588,6 +588,44 @@ ${reportsSummary}
 }
 
 /**
+ * 해당 연·월 달력과 기간이 겹치는 주간 업무일지 목록 (week_start 오름차순)
+ * 일일 work_reports가 없을 때 월간 생성의 입력으로 사용한다.
+ * @param {number} year - 연도
+ * @param {number} month - 월 (1-12)
+ * @returns {Promise<Array<{ week_start: string, week_end: string, report_content: string }>>}
+ */
+async function getWeeklyWorkReportsOverlappingMonth(year, month) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
+  const monthStart = `${year}-${String(month).padStart(2, '0')}-01`
+  const lastDay = new Date(year, month, 0).getDate()
+  const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+  try {
+    const { data, error } = await supabase
+      .from('weekly_work_reports')
+      .select('week_start, week_end, report_content')
+      .eq('user_id', userId)
+      .lte('week_start', monthEnd)
+      .gte('week_end', monthStart)
+      .order('week_start', { ascending: true })
+
+    if (error) {
+      console.error('주간 업무일지(월 겹침) 조회 오류:', error)
+      throw error
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('주간 업무일지(월 겹침) 조회 실패:', error)
+    throw error
+  }
+}
+
+/**
  * 월간 업무일지 생성 (편지 형식)
  * @param {number} year - 연도
  * @param {number} month - 월 (1-12)
@@ -604,31 +642,39 @@ export async function generateMonthlyWorkReport(year, month) {
     throw new Error('OpenAI API 키가 설정되지 않았습니다.')
   }
 
-  // 해당 월의 모든 업무일지 조회 (현재 사용자만)
   const reportDates = await getWorkReportDatesByMonth(year, month)
-  
-  if (reportDates.length === 0) {
-    throw new Error(`${year}년 ${month}월에는 업무일지가 없습니다.`)
-  }
-
-  // 해당 월의 모든 업무일지 내용 조회 (현재 사용자만 - getWorkReport가 user_id 필터링함)
-  const reports = []
+  const dailyReports = []
   for (const date of reportDates) {
     const report = await getWorkReport(date)
     if (report) {
-      reports.push({ date, content: report })
+      dailyReports.push({ date, content: report })
     }
   }
 
-  if (reports.length === 0) {
-    throw new Error('업무일지 내용을 불러올 수 없습니다.')
-  }
+  let reportsSummary = ''
+  let sourceFootnote = ''
 
-  // 업무일지 요약
-  const reportsSummary = reports.map((r) => {
-    const [y, m, d] = r.date.split('-').map(Number)
-    return `## ${y}년 ${m}월 ${d}일\n${r.content}`
-  }).join('\n\n---\n\n')
+  if (dailyReports.length > 0) {
+    reportsSummary = dailyReports.map((r) => {
+      const [y, m, d] = r.date.split('-').map(Number)
+      return `## ${y}년 ${m}월 ${d}일\n${r.content}`
+    }).join('\n\n---\n\n')
+    sourceFootnote = `총 ${dailyReports.length}개의 일일 업무일지가 있습니다.`
+  } else {
+    const weeklyReports = await getWeeklyWorkReportsOverlappingMonth(year, month)
+    if (weeklyReports.length === 0) {
+      throw new Error(
+        `${year}년 ${month}월에는 일일 업무일지가 없고, 해당 달과 겹치는 주간 업무일지도 없습니다. ` +
+          `'주간 업무일지' 탭에서 해당 월의 주간 요약을 먼저 만들거나 일일 업무일지를 작성해 주세요.`
+      )
+    }
+    reportsSummary = weeklyReports.map((w) => {
+      const [sy, sm, sd] = w.week_start.split('-').map(Number)
+      const [ey, em, ed] = w.week_end.split('-').map(Number)
+      return `## ${sy}년 ${sm}월 ${sd}일 ~ ${ey}년 ${em}월 ${ed}일 주간 업무일지\n${w.report_content}`
+    }).join('\n\n---\n\n')
+    sourceFootnote = `일일 업무일지는 없으며, 주간 업무일지 ${weeklyReports.length}개를 묶어 월간 정리의 근거로 사용합니다.`
+  }
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -663,11 +709,11 @@ export async function generateMonthlyWorkReport(year, month) {
           },
           {
             role: 'user',
-            content: `다음은 ${year}년 ${month}월의 일일 업무일지들입니다. 이를 바탕으로 월간 업무일지를 편지 형식으로 작성해주세요.
+            content: `다음은 ${year}년 ${month}월의 업무 기록입니다. 이를 바탕으로 월간 업무일지를 편지 형식으로 작성해주세요.
 
 ${reportsSummary}
 
-총 ${reports.length}개의 일일 업무일지가 있습니다.`
+${sourceFootnote}`
           }
         ],
         max_tokens: 2500,

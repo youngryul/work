@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react'
-import { NAVIGATION_MENU_ITEMS, EXTERNAL_LINKS } from '../constants/navigationMenu.js'
+import {
+  NAVIGATION_MENU_ITEMS,
+  EXTERNAL_LINKS,
+  SIDEBAR_HIDDEN_MENU_ITEM_IDS,
+} from '../constants/navigationMenu.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { isAdmin } from '../services/adminService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
@@ -154,7 +158,12 @@ export default function NavigationSidebar({
           {/* 메뉴 목록 */}
           <nav className="flex-1 overflow-y-auto p-4">
             <div className="space-y-2">
-              {NAVIGATION_MENU_ITEMS.filter(item => item.id !== 'announcements' && item.id !== 'settings').map((item) => {
+              {NAVIGATION_MENU_ITEMS.filter(
+                item =>
+                  !SIDEBAR_HIDDEN_MENU_ITEM_IDS.has(item.id) &&
+                  item.id !== 'announcements' &&
+                  item.id !== 'settings'
+              ).map((item) => {
                 const hasChildren = item.children && item.children.length > 0
                 const isExpanded = expandedMenus.has(item.id)
                 const isActive = currentView === item.id || (hasChildren && item.children.some(child => child.id === currentView))
