@@ -17,10 +17,14 @@ export default function BookSearch({ onBookSelect }) {
   const handleSearch = async () => {
     if (!searchQuery.trim()) return
 
+    const q = searchQuery.trim()
     setIsSearching(true)
     try {
       const results = await searchBooks(searchQuery)
       setSearchResults(results)
+      if (results.length === 0 && q.length > 0 && q.length < 3) {
+        showToast('검색어는 3글자 이상 입력해 주세요.', TOAST_TYPES.INFO)
+      }
     } catch (error) {
       console.error('책 검색 오류:', error)
       showToast('책 검색에 실패했습니다.', TOAST_TYPES.ERROR)
@@ -57,7 +61,7 @@ export default function BookSearch({ onBookSelect }) {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
           placeholder="책 제목을 입력하세요"
           className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
         />
@@ -75,7 +79,7 @@ export default function BookSearch({ onBookSelect }) {
         <div className="space-y-4 max-h-96 overflow-y-auto">
           {searchResults.map((book, index) => (
             <div
-              key={index}
+              key={book.apiId || book.isbn || `book-${index}`}
               className="flex gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
             >
               {book.thumbnailUrl && (
