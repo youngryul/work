@@ -906,6 +906,48 @@ export async function deleteHabitTracker(id) {
 }
 
 /**
+ * 이미 등록된 Habit Tracker의 제목을 수정합니다.
+ * @param {string} habitTrackerId - Habit Tracker ID
+ * @param {string} title - 새 제목
+ * @returns {Promise<Object>} 업데이트된 Tracker (days 포함)
+ */
+export async function updateHabitTrackerTitle(habitTrackerId, title) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  const trimmed = (title || '').trim()
+  if (!trimmed) {
+    throw new Error('습관 제목을 입력해주세요.')
+  }
+
+  try {
+    const { data, error } = await supabase
+        .from('habit_trackers')
+        .update({ title: trimmed })
+        .eq('id', habitTrackerId)
+        .eq('user_id', userId)
+        .select('*, monthly_goals(*)')
+        .single()
+
+    if (error) {
+      throw error
+    }
+    if (!data) {
+      throw new Error('수정할 습관을 찾을 수 없습니다.')
+    }
+
+    const tracker = parseHabitTracker(data)
+    tracker.days = await getHabitTrackerDays(habitTrackerId)
+    return tracker
+  } catch (error) {
+    console.error('Habit Tracker 제목 수정 오류:', error)
+    throw error
+  }
+}
+
+/**
  * Habit Tracker 일별 체크 조회
  * @param {string} habitTrackerId - Habit Tracker ID
  * @returns {Promise<Array>} 일별 체크 목록
