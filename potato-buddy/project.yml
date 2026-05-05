@@ -18,6 +18,7 @@ targets:
       - path: Shared
     resources:
       - path: PotatoBuddy/Assets.xcassets
+      - path: PotatoBuddy/물 주는 포실이.gif
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.youngryul.potatobuddy

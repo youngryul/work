@@ -80,7 +80,7 @@ struct ChatBubbleView: View {
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                 }
-                .frame(maxHeight: 260)
+                .frame(maxHeight: 300)
                 .onChange(of: viewModel.tasks.count) { _ in
                     withAnimation { proxy.scrollTo("bottom") }
                 }

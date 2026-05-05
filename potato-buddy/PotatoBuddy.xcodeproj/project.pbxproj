@@ -14,16 +14,15 @@
 		69E6B81F2C9230C1DCA47B37 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */; };
 		6B1E60F44EA898EC371A4B4E /* OverlayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC4808FE02D6272C60A42FA /* OverlayRootView.swift */; };
 		8F3CE139D3BD95A22AF354BB /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FFB9D50D2473DC4EA80FC2 /* Config.swift */; };
+		9614CADE3D87EF9BA758FAF4 /* 물 주는 포실이.gif in Resources */ = {isa = PBXBuildFile; fileRef = A116B7DBFAC47A89BE9EA8BE /* 물 주는 포실이.gif */; };
 		ACC434D4F3C6CB14E9B5D645 /* TaskItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE031E1DC9B579555F16B096 /* TaskItem.swift */; };
 		BF72152F5A83BBC8013D7216 /* 포실이 앱 아이콘.png in Resources */ = {isa = PBXBuildFile; fileRef = 87A559DEF644037CCB12B963 /* 포실이 앱 아이콘.png */; };
 		D2ED8A232E2920AC0D900135 /* PotatoBuddyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABB608B81557591785536A64 /* PotatoBuddyApp.swift */; };
-		D5DA919A1AACE8C25D657C9B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 231AE85F598AFE735DFB8170 /* Assets.xcassets */; };
 		E55319BA3F5F13380251C8DB /* CharacterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34391A214A69FA4C5B297D86 /* CharacterView.swift */; };
 		FCE237435B2D654EEE2A4100 /* FloatingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		231AE85F598AFE735DFB8170 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		34391A214A69FA4C5B297D86 /* CharacterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterView.swift; sourceTree = "<group>"; };
 		394B0F1AC9D67928D58637F1 /* PotatoBuddy.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PotatoBuddy.entitlements; sourceTree = "<group>"; };
 		4D55F9D7FCCE9503B15B63A5 /* DownwardBubbleShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownwardBubbleShape.swift; sourceTree = "<group>"; };
@@ -34,6 +33,7 @@
 		7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseService.swift; sourceTree = "<group>"; };
 		87A559DEF644037CCB12B963 /* 포실이 앱 아이콘.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이 앱 아이콘.png"; sourceTree = "<group>"; };
 		8DD29BCF03B4DCC1F72234C3 /* TodoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoViewModel.swift; sourceTree = "<group>"; };
+		A116B7DBFAC47A89BE9EA8BE /* 물 주는 포실이.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = "물 주는 포실이.gif"; sourceTree = "<group>"; };
 		A3AC895187BF5EB8BF855D3C /* PotatoBuddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PotatoBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		ABB608B81557591785536A64 /* PotatoBuddyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotatoBuddyApp.swift; sourceTree = "<group>"; };
 		AE031E1DC9B579555F16B096 /* TaskItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskItem.swift; sourceTree = "<group>"; };
@@ -64,9 +64,9 @@
 		E1DEB7488353FCD1EA2C956E /* PotatoBuddy */ = {
 			isa = PBXGroup;
 			children = (
+				A116B7DBFAC47A89BE9EA8BE /* 물 주는 포실이.gif */,
 				87A559DEF644037CCB12B963 /* 포실이 앱 아이콘.png */,
 				DDDA9374BFB496DC310B133F /* AppDelegate.swift */,
-				231AE85F598AFE735DFB8170 /* Assets.xcassets */,
 				34391A214A69FA4C5B297D86 /* CharacterView.swift */,
 				FE7618036880053779773CE5 /* ChatBubbleView.swift */,
 				4D55F9D7FCCE9503B15B63A5 /* DownwardBubbleShape.swift */,
@@ -142,7 +142,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D5DA919A1AACE8C25D657C9B /* Assets.xcassets in Resources */,
+				9614CADE3D87EF9BA758FAF4 /* 물 주는 포실이.gif in Resources */,
 				BF72152F5A83BBC8013D7216 /* 포실이 앱 아이콘.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -176,17 +176,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PotatoBuddy/PotatoBuddy.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = 98UVS55F5Y;
 				INFOPLIST_FILE = PotatoBuddy/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.youngryul.potatobuddy;
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -252,17 +248,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PotatoBuddy/PotatoBuddy.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = 98UVS55F5Y;
 				INFOPLIST_FILE = PotatoBuddy/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.youngryul.potatobuddy;
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 			};
 			name = Debug;

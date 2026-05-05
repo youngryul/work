@@ -77,7 +77,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 초기 상태: 캐릭터만 표시 (100×100)
         let screen   = NSScreen.main ?? NSScreen.screens[0]
         let visArea  = screen.visibleFrame
-        let initSize = CGSize(width: 100, height: 100)
+        let initSize = CGSize(width: 120, height: 120)
 
         let origin = CGPoint(
             x: visArea.maxX - initSize.width  - 16,
@@ -111,8 +111,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let visArea  = screen.visibleFrame
 
         let newSize: CGSize = bubbleVisible
-            ? CGSize(width: 280, height: 490)
-            : CGSize(width: 100, height: 100)
+            ? CGSize(width: 320, height: 540)
+            : CGSize(width: 120, height: 120)
 
         // 우하단 고정: x, bottom-y 기준으로 origin 재계산
         let currentFrame = window.frame
