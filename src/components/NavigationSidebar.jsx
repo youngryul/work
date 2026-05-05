@@ -5,8 +5,10 @@ import {
   SIDEBAR_HIDDEN_MENU_ITEM_IDS,
 } from '../constants/navigationMenu.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
-import { isAdmin } from '../services/adminService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
+
+// 역할별 메인 메뉴 제한 (null = 제한 없음)
+const REGULAR_MENU_IDS = new Set(['today', 'backlog', 'todo-calendar'])
 
 /**
  * 사이드바 네비게이션 컴포넌트
@@ -25,28 +27,13 @@ export default function NavigationSidebar({
   collapsed = false,
   onToggleCollapse
 }) {
-  const { signOut, user } = useAuth()
-  const [isAdminUser, setIsAdminUser] = useState(false)
+  const { signOut, user, isAdmin: isAdminUser, isSuperuser, userRole } = useAuth()
   const [expandedMenus, setExpandedMenus] = useState(new Set())
 
-  // 관리자 권한 확인
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!user) {
-        setIsAdminUser(false)
-        return
-      }
-
-      try {
-        const admin = await isAdmin(user.id)
-        setIsAdminUser(admin)
-      } catch (error) {
-        setIsAdminUser(false)
-      }
-    }
-
-    checkAdminStatus()
-  }, [user])
+  // 역할별 메인 메뉴 필터 (admin·superuser = 제한 없음, regular = 3개만)
+  const visibleMenuIds = (isAdminUser || isSuperuser) ? null : REGULAR_MENU_IDS
+  // 외부 링크는 admin·superuser만 표시
+  const showExternalLinks = isAdminUser || isSuperuser
 
   /**
    * 하위 메뉴가 있는 메뉴의 펼침/접힘 상태 관리
@@ -162,7 +149,8 @@ export default function NavigationSidebar({
                 item =>
                   !SIDEBAR_HIDDEN_MENU_ITEM_IDS.has(item.id) &&
                   item.id !== 'announcements' &&
-                  item.id !== 'settings'
+                  item.id !== 'settings' &&
+                  (visibleMenuIds === null || visibleMenuIds.has(item.id))
               ).map((item) => {
                 const hasChildren = item.children && item.children.length > 0
                 const isExpanded = expandedMenus.has(item.id)
@@ -224,32 +212,34 @@ export default function NavigationSidebar({
               })}
             </div>
 
-            {/* 구분선 */}
-            <div className={`border-t border-gray-200 ${collapsed ? 'my-4' : 'my-6'}`} />
-
-            {/* 외부 링크 */}
-            <div className="space-y-2">
-              {EXTERNAL_LINKS.map((link) => (
-                <a
-                  key={link.id}
-                  href={link.href}
-                  target={link.target}
-                  rel="noopener noreferrer"
-                  className={`
-                    w-full rounded-lg transition-all duration-200 text-left
-                    flex items-center gap-3
-                    ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
-                    text-gray-600 hover:bg-purple-100 hover:text-purple-600
-                  `}
-                  title={collapsed ? link.label : ''}
-                >
-                  {link.icon && <span className="text-xl">{link.icon}</span>}
-                  {!collapsed && (
-                    <span className="text-lg font-medium">{link.label}</span>
-                  )}
-                </a>
-              ))}
-            </div>
+            {/* 외부 링크 (admin·superuser만 표시) */}
+            {showExternalLinks && (
+              <>
+                <div className={`border-t border-gray-200 ${collapsed ? 'my-4' : 'my-6'}`} />
+                <div className="space-y-2">
+                  {EXTERNAL_LINKS.map((link) => (
+                    <a
+                      key={link.id}
+                      href={link.href}
+                      target={link.target}
+                      rel="noopener noreferrer"
+                      className={`
+                        w-full rounded-lg transition-all duration-200 text-left
+                        flex items-center gap-3
+                        ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
+                        text-gray-600 hover:bg-purple-100 hover:text-purple-600
+                      `}
+                      title={collapsed ? link.label : ''}
+                    >
+                      {link.icon && <span className="text-xl">{link.icon}</span>}
+                      {!collapsed && (
+                        <span className="text-lg font-medium">{link.label}</span>
+                      )}
+                    </a>
+                  ))}
+                </div>
+              </>
+            )}
 
             {/* 구분선 */}
             <div className={`border-t border-gray-200 ${collapsed ? 'my-4' : 'my-6'}`} />
@@ -262,9 +252,11 @@ export default function NavigationSidebar({
                 </div>
               )}
 
-              {/* 공지사항 및 설정 (로그아웃 바로 위) */}
+              {/* 공지사항·설정 (전체 역할 표시) */}
               <div className="space-y-2">
-                {NAVIGATION_MENU_ITEMS.filter(item => item.id === 'announcements' || item.id === 'settings').map((item) => (
+                {NAVIGATION_MENU_ITEMS.filter(item =>
+                  item.id === 'announcements' || item.id === 'settings'
+                ).map((item) => (
                     <button
                         key={item.id}
                         onClick={() => handleMenuClick(item.id)}

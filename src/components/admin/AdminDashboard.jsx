@@ -1,49 +1,18 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext.jsx'
-import { isAdmin } from '../../services/adminService.js'
 import AnnouncementManagement from './AnnouncementManagement.jsx'
 import UserStatistics from './UserStatistics.jsx'
 import DataStatistics from './DataStatistics.jsx'
-import { showToast, TOAST_TYPES } from '../Toast.jsx'
+import UserRoleManagement from './UserRoleManagement.jsx'
 
 /**
- * 관리자 대시보드 컴포넌트
+ * 관리자 대시보드 컴포넌트 (admin 역할만 접근 가능)
  */
 export default function AdminDashboard() {
-  const { user, loading: authLoading } = useAuth()
-  const [isAdminUser, setIsAdminUser] = useState(false)
-  const [checkingAdmin, setCheckingAdmin] = useState(true)
-  const [activeTab, setActiveTab] = useState('announcements') // 'announcements' | 'users' | 'data'
+  const { user, loading: authLoading, isAdmin: isAdminUser } = useAuth()
+  const [activeTab, setActiveTab] = useState('announcements') // 'announcements' | 'users' | 'data' | 'roles'
 
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!user) {
-        setIsAdminUser(false)
-        setCheckingAdmin(false)
-        return
-      }
-
-      try {
-        const admin = await isAdmin(user.id)
-        setIsAdminUser(admin)
-        if (!admin) {
-          showToast('관리자 권한이 필요합니다.', TOAST_TYPES.ERROR)
-        }
-      } catch (error) {
-        console.error('관리자 권한 확인 실패:', error)
-        setIsAdminUser(false)
-        showToast('관리자 권한 확인에 실패했습니다.', TOAST_TYPES.ERROR)
-      } finally {
-        setCheckingAdmin(false)
-      }
-    }
-
-    if (!authLoading) {
-      checkAdminStatus()
-    }
-  }, [user, authLoading])
-
-  if (authLoading || checkingAdmin) {
+  if (authLoading) {
     return (
       <div className="max-w-7xl mx-auto p-6">
         <div className="text-center py-12">
@@ -53,17 +22,7 @@ export default function AdminDashboard() {
     )
   }
 
-  if (!user) {
-    return (
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6 text-center">
-          <p className="text-base text-red-800 font-sans">로그인이 필요합니다.</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!isAdminUser) {
+  if (!user || !isAdminUser) {
     return (
       <div className="max-w-7xl mx-auto p-6">
         <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6 text-center">
@@ -114,6 +73,16 @@ export default function AdminDashboard() {
           >
             데이터 통계
           </button>
+          <button
+            onClick={() => setActiveTab('roles')}
+            className={`px-6 py-2 rounded-lg font-semibold transition-colors font-sans ${
+              activeTab === 'roles'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            권한 관리
+          </button>
         </div>
       </div>
 
@@ -121,6 +90,7 @@ export default function AdminDashboard() {
       {activeTab === 'announcements' && <AnnouncementManagement />}
       {activeTab === 'users' && <UserStatistics />}
       {activeTab === 'data' && <DataStatistics />}
+      {activeTab === 'roles' && <UserRoleManagement />}
     </div>
   )
 }
