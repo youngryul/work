@@ -1,0 +1,63 @@
+name: WorkWidget
+options:
+  bundleIdPrefix: com.youngryul
+  deploymentTarget:
+    macOS: "14.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+targets:
+  WorkWidget:
+    type: application
+    platform: macOS
+    sources:
+      - path: WorkWidget
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.youngryul.workwidget
+    info:
+      path: WorkWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Work 할일
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        NSPrincipalClass: NSApplication
+        LSMinimumSystemVersion: "14.0"
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - workwidget
+            CFBundleURLName: com.youngryul.workwidget
+    entitlements:
+      path: WorkWidget/WorkWidget.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+    dependencies:
+      - target: WorkWidgetExtension
+
+  WorkWidgetExtension:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: WorkWidgetExtension
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.youngryul.workwidget.extension
+    info:
+      path: WorkWidgetExtension/Info.plist
+      properties:
+        CFBundleDisplayName: WorkWidgetExtension
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: WorkWidgetExtension/WorkWidgetExtension.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true

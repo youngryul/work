@@ -1,0 +1,357 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0D648CC2344F8F6DE1B44C6D /* ChatBubbleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE7618036880053779773CE5 /* ChatBubbleView.swift */; };
+		199DCDDF68F8713C189D05FD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDA9374BFB496DC310B133F /* AppDelegate.swift */; };
+		52949332A075AC22A6D74643 /* DownwardBubbleShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D55F9D7FCCE9503B15B63A5 /* DownwardBubbleShape.swift */; };
+		53051C295875E02B85336103 /* TodoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DD29BCF03B4DCC1F72234C3 /* TodoViewModel.swift */; };
+		69E6B81F2C9230C1DCA47B37 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */; };
+		6B1E60F44EA898EC371A4B4E /* OverlayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC4808FE02D6272C60A42FA /* OverlayRootView.swift */; };
+		8F3CE139D3BD95A22AF354BB /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FFB9D50D2473DC4EA80FC2 /* Config.swift */; };
+		ACC434D4F3C6CB14E9B5D645 /* TaskItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE031E1DC9B579555F16B096 /* TaskItem.swift */; };
+		BF72152F5A83BBC8013D7216 /* 포실이 앱 아이콘.png in Resources */ = {isa = PBXBuildFile; fileRef = 87A559DEF644037CCB12B963 /* 포실이 앱 아이콘.png */; };
+		D2ED8A232E2920AC0D900135 /* PotatoBuddyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABB608B81557591785536A64 /* PotatoBuddyApp.swift */; };
+		D5DA919A1AACE8C25D657C9B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 231AE85F598AFE735DFB8170 /* Assets.xcassets */; };
+		E55319BA3F5F13380251C8DB /* CharacterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34391A214A69FA4C5B297D86 /* CharacterView.swift */; };
+		FCE237435B2D654EEE2A4100 /* FloatingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		231AE85F598AFE735DFB8170 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		34391A214A69FA4C5B297D86 /* CharacterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterView.swift; sourceTree = "<group>"; };
+		394B0F1AC9D67928D58637F1 /* PotatoBuddy.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PotatoBuddy.entitlements; sourceTree = "<group>"; };
+		4D55F9D7FCCE9503B15B63A5 /* DownwardBubbleShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownwardBubbleShape.swift; sourceTree = "<group>"; };
+		6320DB8612B044B1392DDE75 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		68FFB9D50D2473DC4EA80FC2 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingWindow.swift; sourceTree = "<group>"; };
+		6EC4808FE02D6272C60A42FA /* OverlayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayRootView.swift; sourceTree = "<group>"; };
+		7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseService.swift; sourceTree = "<group>"; };
+		87A559DEF644037CCB12B963 /* 포실이 앱 아이콘.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이 앱 아이콘.png"; sourceTree = "<group>"; };
+		8DD29BCF03B4DCC1F72234C3 /* TodoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoViewModel.swift; sourceTree = "<group>"; };
+		A3AC895187BF5EB8BF855D3C /* PotatoBuddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PotatoBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		ABB608B81557591785536A64 /* PotatoBuddyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotatoBuddyApp.swift; sourceTree = "<group>"; };
+		AE031E1DC9B579555F16B096 /* TaskItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskItem.swift; sourceTree = "<group>"; };
+		DDDA9374BFB496DC310B133F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		FE7618036880053779773CE5 /* ChatBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBubbleView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		146C1958BB83CF47CD3CFAAE /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				68FFB9D50D2473DC4EA80FC2 /* Config.swift */,
+				7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */,
+				AE031E1DC9B579555F16B096 /* TaskItem.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		882C2CB70475B3D250BA0157 = {
+			isa = PBXGroup;
+			children = (
+				E1DEB7488353FCD1EA2C956E /* PotatoBuddy */,
+				146C1958BB83CF47CD3CFAAE /* Shared */,
+				F8742928AEF3C31BE092B60D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E1DEB7488353FCD1EA2C956E /* PotatoBuddy */ = {
+			isa = PBXGroup;
+			children = (
+				87A559DEF644037CCB12B963 /* 포실이 앱 아이콘.png */,
+				DDDA9374BFB496DC310B133F /* AppDelegate.swift */,
+				231AE85F598AFE735DFB8170 /* Assets.xcassets */,
+				34391A214A69FA4C5B297D86 /* CharacterView.swift */,
+				FE7618036880053779773CE5 /* ChatBubbleView.swift */,
+				4D55F9D7FCCE9503B15B63A5 /* DownwardBubbleShape.swift */,
+				6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */,
+				6320DB8612B044B1392DDE75 /* Info.plist */,
+				6EC4808FE02D6272C60A42FA /* OverlayRootView.swift */,
+				394B0F1AC9D67928D58637F1 /* PotatoBuddy.entitlements */,
+				ABB608B81557591785536A64 /* PotatoBuddyApp.swift */,
+				8DD29BCF03B4DCC1F72234C3 /* TodoViewModel.swift */,
+			);
+			path = PotatoBuddy;
+			sourceTree = "<group>";
+		};
+		F8742928AEF3C31BE092B60D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A3AC895187BF5EB8BF855D3C /* PotatoBuddy.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		92DAB7EEB3DD410E9174C54F /* PotatoBuddy */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4AF0AEC96B91BBB0521A9AAB /* Build configuration list for PBXNativeTarget "PotatoBuddy" */;
+			buildPhases = (
+				43E637C661A8C764AF9DFF18 /* Sources */,
+				B169C214686BBBF50A5EA5A9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PotatoBuddy;
+			packageProductDependencies = (
+			);
+			productName = PotatoBuddy;
+			productReference = A3AC895187BF5EB8BF855D3C /* PotatoBuddy.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		EF4541F350B298A2E4439678 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+			};
+			buildConfigurationList = DD166C9502968093C7E1C696 /* Build configuration list for PBXProject "PotatoBuddy" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 882C2CB70475B3D250BA0157;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F8742928AEF3C31BE092B60D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				92DAB7EEB3DD410E9174C54F /* PotatoBuddy */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B169C214686BBBF50A5EA5A9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D5DA919A1AACE8C25D657C9B /* Assets.xcassets in Resources */,
+				BF72152F5A83BBC8013D7216 /* 포실이 앱 아이콘.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		43E637C661A8C764AF9DFF18 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				199DCDDF68F8713C189D05FD /* AppDelegate.swift in Sources */,
+				E55319BA3F5F13380251C8DB /* CharacterView.swift in Sources */,
+				0D648CC2344F8F6DE1B44C6D /* ChatBubbleView.swift in Sources */,
+				8F3CE139D3BD95A22AF354BB /* Config.swift in Sources */,
+				52949332A075AC22A6D74643 /* DownwardBubbleShape.swift in Sources */,
+				FCE237435B2D654EEE2A4100 /* FloatingWindow.swift in Sources */,
+				6B1E60F44EA898EC371A4B4E /* OverlayRootView.swift in Sources */,
+				D2ED8A232E2920AC0D900135 /* PotatoBuddyApp.swift in Sources */,
+				69E6B81F2C9230C1DCA47B37 /* SupabaseService.swift in Sources */,
+				ACC434D4F3C6CB14E9B5D645 /* TaskItem.swift in Sources */,
+				53051C295875E02B85336103 /* TodoViewModel.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		45DD3783C25A37F8BACF1766 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = PotatoBuddy/PotatoBuddy.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 98UVS55F5Y;
+				INFOPLIST_FILE = PotatoBuddy/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.youngryul.potatobuddy;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		66E0B2B2C925FDC89ADAB241 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		C418C4E3E7DA07B68D929144 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = PotatoBuddy/PotatoBuddy.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 98UVS55F5Y;
+				INFOPLIST_FILE = PotatoBuddy/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.youngryul.potatobuddy;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		F188C2AF09BBF03B139E3658 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4AF0AEC96B91BBB0521A9AAB /* Build configuration list for PBXNativeTarget "PotatoBuddy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C418C4E3E7DA07B68D929144 /* Debug */,
+				45DD3783C25A37F8BACF1766 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DD166C9502968093C7E1C696 /* Build configuration list for PBXProject "PotatoBuddy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F188C2AF09BBF03B139E3658 /* Debug */,
+				66E0B2B2C925FDC89ADAB241 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = EF4541F350B298A2E4439678 /* Project object */;
+}

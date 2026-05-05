@@ -1,0 +1,445 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		119ECB78519744F4D6B9C9BB /* TaskProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDB877DE195248DAC323E679 /* TaskProvider.swift */; };
+		2152EE129D6F89190C5D94D8 /* WorkWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D04F5DCE3CE64EDC9E858FE7 /* WorkWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		2B2F8ECBCACE8B0CCB31093E /* TaskItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87441CE87F6F742B454C8B /* TaskItem.swift */; };
+		3EABEA8B29844C6091FB8CB1 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 672F8E8E310419B612890C10 /* Config.swift */; };
+		4F1C2CA525282349FED06A8E /* TaskWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30B53206443C7D78292F8AE9 /* TaskWidget.swift */; };
+		5A1092D3111033ADDF228B27 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D4A8CB66550617B706628A5 /* SupabaseService.swift */; };
+		91E2CFFAAFCB14984F508656 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D4A8CB66550617B706628A5 /* SupabaseService.swift */; };
+		9C09E68D53499A13F5759926 /* TaskWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E11C12E53857FCD7CE5748 /* TaskWidgetView.swift */; };
+		9CD6DA3A9C48139D68533E59 /* TaskItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87441CE87F6F742B454C8B /* TaskItem.swift */; };
+		B015F56AA243D26D7E145C7F /* WorkWidgetApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DDDE77FE962BA09AB57427F /* WorkWidgetApp.swift */; };
+		CD3E1570DEA49C0FAEDADC78 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 672F8E8E310419B612890C10 /* Config.swift */; };
+		E005397F818DF8F113EAF93A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10C67623A5000A4EFC33ABC6 /* ContentView.swift */; };
+		F6A34660AFB7530F8E59641A /* CompleteTaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0462D01A8F018E5B152BA9BC /* CompleteTaskIntent.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		562AD6E8C00144AD8BB443F4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3E0F9386C9967055C2D65312 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9912A2DDB6EDE5D9D2532F9F;
+			remoteInfo = WorkWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B67EE920FE6D3A5DB91AAD3E /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				2152EE129D6F89190C5D94D8 /* WorkWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0462D01A8F018E5B152BA9BC /* CompleteTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompleteTaskIntent.swift; sourceTree = "<group>"; };
+		10475C9141BCF360149D7F1E /* WorkWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WorkWidget.entitlements; sourceTree = "<group>"; };
+		10C67623A5000A4EFC33ABC6 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		1AC9629AABB8B106F31A3DB4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		1D4A8CB66550617B706628A5 /* SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseService.swift; sourceTree = "<group>"; };
+		30B53206443C7D78292F8AE9 /* TaskWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskWidget.swift; sourceTree = "<group>"; };
+		44F22878ADB6FC9A9E5855B5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		5B2204F50769AE922ADF2CE7 /* WorkWidget.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WorkWidget.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		672F8E8E310419B612890C10 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		6DDDE77FE962BA09AB57427F /* WorkWidgetApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkWidgetApp.swift; sourceTree = "<group>"; };
+		80FDD0AB37F64F61FBE59C0D /* WorkWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WorkWidgetExtension.entitlements; sourceTree = "<group>"; };
+		CC87441CE87F6F742B454C8B /* TaskItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskItem.swift; sourceTree = "<group>"; };
+		D04F5DCE3CE64EDC9E858FE7 /* WorkWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WorkWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0E11C12E53857FCD7CE5748 /* TaskWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskWidgetView.swift; sourceTree = "<group>"; };
+		FDB877DE195248DAC323E679 /* TaskProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProvider.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		2940E9F1EAB320C4A60DC8C3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5B2204F50769AE922ADF2CE7 /* WorkWidget.app */,
+				D04F5DCE3CE64EDC9E858FE7 /* WorkWidgetExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		ACC492C580A15F4CFA747506 = {
+			isa = PBXGroup;
+			children = (
+				D80A48777D3869141E2191D1 /* Shared */,
+				CEDD12F71DEC5C015B7BFDEE /* WorkWidget */,
+				D65C1E12E5C010FA81152F96 /* WorkWidgetExtension */,
+				2940E9F1EAB320C4A60DC8C3 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CEDD12F71DEC5C015B7BFDEE /* WorkWidget */ = {
+			isa = PBXGroup;
+			children = (
+				10C67623A5000A4EFC33ABC6 /* ContentView.swift */,
+				44F22878ADB6FC9A9E5855B5 /* Info.plist */,
+				10475C9141BCF360149D7F1E /* WorkWidget.entitlements */,
+				6DDDE77FE962BA09AB57427F /* WorkWidgetApp.swift */,
+			);
+			path = WorkWidget;
+			sourceTree = "<group>";
+		};
+		D65C1E12E5C010FA81152F96 /* WorkWidgetExtension */ = {
+			isa = PBXGroup;
+			children = (
+				0462D01A8F018E5B152BA9BC /* CompleteTaskIntent.swift */,
+				1AC9629AABB8B106F31A3DB4 /* Info.plist */,
+				FDB877DE195248DAC323E679 /* TaskProvider.swift */,
+				30B53206443C7D78292F8AE9 /* TaskWidget.swift */,
+				F0E11C12E53857FCD7CE5748 /* TaskWidgetView.swift */,
+				80FDD0AB37F64F61FBE59C0D /* WorkWidgetExtension.entitlements */,
+			);
+			path = WorkWidgetExtension;
+			sourceTree = "<group>";
+		};
+		D80A48777D3869141E2191D1 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				672F8E8E310419B612890C10 /* Config.swift */,
+				1D4A8CB66550617B706628A5 /* SupabaseService.swift */,
+				CC87441CE87F6F742B454C8B /* TaskItem.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		9912A2DDB6EDE5D9D2532F9F /* WorkWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7D35E6F798CE9C34E8D48792 /* Build configuration list for PBXNativeTarget "WorkWidgetExtension" */;
+			buildPhases = (
+				A2E6C260C1B0A21DB7E7DE42 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WorkWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = WorkWidgetExtension;
+			productReference = D04F5DCE3CE64EDC9E858FE7 /* WorkWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		A791A95B1781A13C6D58E4A2 /* WorkWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3A74E7E98813E834927BCC8C /* Build configuration list for PBXNativeTarget "WorkWidget" */;
+			buildPhases = (
+				A759C6CC89DDEF40A65A1FDC /* Sources */,
+				B67EE920FE6D3A5DB91AAD3E /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BF9888086D1CD46FBC65FF8B /* PBXTargetDependency */,
+			);
+			name = WorkWidget;
+			packageProductDependencies = (
+			);
+			productName = WorkWidget;
+			productReference = 5B2204F50769AE922ADF2CE7 /* WorkWidget.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		3E0F9386C9967055C2D65312 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 4115AF0C2630FDA0A4F0AB6B /* Build configuration list for PBXProject "WorkWidget" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = ACC492C580A15F4CFA747506;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 2940E9F1EAB320C4A60DC8C3 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A791A95B1781A13C6D58E4A2 /* WorkWidget */,
+				9912A2DDB6EDE5D9D2532F9F /* WorkWidgetExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A2E6C260C1B0A21DB7E7DE42 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F6A34660AFB7530F8E59641A /* CompleteTaskIntent.swift in Sources */,
+				3EABEA8B29844C6091FB8CB1 /* Config.swift in Sources */,
+				5A1092D3111033ADDF228B27 /* SupabaseService.swift in Sources */,
+				9CD6DA3A9C48139D68533E59 /* TaskItem.swift in Sources */,
+				119ECB78519744F4D6B9C9BB /* TaskProvider.swift in Sources */,
+				4F1C2CA525282349FED06A8E /* TaskWidget.swift in Sources */,
+				9C09E68D53499A13F5759926 /* TaskWidgetView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A759C6CC89DDEF40A65A1FDC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CD3E1570DEA49C0FAEDADC78 /* Config.swift in Sources */,
+				E005397F818DF8F113EAF93A /* ContentView.swift in Sources */,
+				91E2CFFAAFCB14984F508656 /* SupabaseService.swift in Sources */,
+				2B2F8ECBCACE8B0CCB31093E /* TaskItem.swift in Sources */,
+				B015F56AA243D26D7E145C7F /* WorkWidgetApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BF9888086D1CD46FBC65FF8B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9912A2DDB6EDE5D9D2532F9F /* WorkWidgetExtension */;
+			targetProxy = 562AD6E8C00144AD8BB443F4 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		2F1789E1CD574BB9032B25BA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = WorkWidget/WorkWidget.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = WorkWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.youngryul.workwidget;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		4EAE46FEF08D3D2946F57C31 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = WorkWidgetExtension/WorkWidgetExtension.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = WorkWidgetExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.youngryul.workwidget.extension;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		A114300C48CD022B757D6A69 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		A2B9364523A31101D7EFFC9F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		AF670A40DE35CB46F078937C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = WorkWidget/WorkWidget.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = WorkWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.youngryul.workwidget;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		D8B88426980E98396C52BF2F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = WorkWidgetExtension/WorkWidgetExtension.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = WorkWidgetExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.youngryul.workwidget.extension;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3A74E7E98813E834927BCC8C /* Build configuration list for PBXNativeTarget "WorkWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AF670A40DE35CB46F078937C /* Debug */,
+				2F1789E1CD574BB9032B25BA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		4115AF0C2630FDA0A4F0AB6B /* Build configuration list for PBXProject "WorkWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A2B9364523A31101D7EFFC9F /* Debug */,
+				A114300C48CD022B757D6A69 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7D35E6F798CE9C34E8D48792 /* Build configuration list for PBXNativeTarget "WorkWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D8B88426980E98396C52BF2F /* Debug */,
+				4EAE46FEF08D3D2946F57C31 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 3E0F9386C9967055C2D65312 /* Project object */;
+}
