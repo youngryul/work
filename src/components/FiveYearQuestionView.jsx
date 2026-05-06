@@ -200,7 +200,7 @@ export default function FiveYearQuestionView() {
             onClick={() => setActiveTab('dashboard')}
             className={`px-6 py-2 rounded-lg font-semibold transition-colors font-sans ${
               activeTab === 'dashboard'
-                ? 'bg-pink-500 text-white'
+                ? 'bg-green-500 text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
@@ -210,7 +210,7 @@ export default function FiveYearQuestionView() {
             onClick={() => setActiveTab('question')}
             className={`px-6 py-2 rounded-lg font-semibold transition-colors font-sans ${
               activeTab === 'question'
-                ? 'bg-pink-500 text-white'
+                ? 'bg-green-500 text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
@@ -232,7 +232,7 @@ export default function FiveYearQuestionView() {
                 type="date"
                 value={`${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`}
                 onChange={handleDateChange}
-                className="px-4 py-2 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                className="px-4 py-2 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
               />
               <button
                 onClick={handleNextDate}
@@ -260,7 +260,7 @@ export default function FiveYearQuestionView() {
       {/* 질문 답변 탭 */}
       {activeTab === 'question' && question ? (
         <div className="space-y-6">
-          <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-6 border-2 border-pink-200 shadow-md">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 border-2 border-green-200 shadow-md">
             <h2 className="text-2xl font-bold text-gray-800 mb-2 font-sans">오늘의 질문</h2>
             <p className="text-xl text-gray-700 font-sans leading-relaxed">{question.question_text}</p>
           </div>
@@ -273,7 +273,7 @@ export default function FiveYearQuestionView() {
             <textarea
               value={currentAnswer}
               onChange={(e) => setCurrentAnswer(e.target.value)}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans resize-none"
+              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans resize-none"
               rows="6"
               placeholder="오늘의 질문에 대한 답변을 작성해주세요..."
             />
@@ -281,7 +281,7 @@ export default function FiveYearQuestionView() {
               <button
                 onClick={handleSaveAnswer}
                 disabled={isSaving || !currentAnswer.trim()}
-                className="px-6 py-3 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors duration-200 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? '저장 중...' : '저장하기'}
               </button>
@@ -302,20 +302,20 @@ export default function FiveYearQuestionView() {
                       key={answer.id}
                       className={`p-4 rounded-lg border-2 ${
                         isCurrentYear
-                          ? 'bg-pink-50 border-pink-300 shadow-md'
+                          ? 'bg-green-50 border-green-300 shadow-md'
                           : 'bg-gray-50 border-gray-200'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className={`text-lg font-bold ${
-                            isCurrentYear ? 'text-pink-600' : 'text-gray-600'
+                            isCurrentYear ? 'text-green-600' : 'text-gray-600'
                           }`}>
                             {answer.year}년
                           </span>
                           <span className="text-sm text-gray-500">({yearDiff})</span>
                           {isCurrentYear && (
-                            <span className="px-2 py-1 bg-pink-200 text-pink-700 rounded text-xs font-semibold">
+                            <span className="px-2 py-1 bg-green-200 text-green-700 rounded text-xs font-semibold">
                               올해
                             </span>
                           )}

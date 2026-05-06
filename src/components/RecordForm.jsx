@@ -169,7 +169,7 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border-2 border-pink-200 p-6">
+      <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border-2 border-green-200 p-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2 font-sans">
             {isEditMode ? '기록 수정' : '새 기록 작성'}
@@ -182,7 +182,7 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* 기본 정보 */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-800 border-b-2 border-pink-200 pb-2 font-sans">
+            <h2 className="text-xl font-semibold text-gray-800 border-b-2 border-green-200 pb-2 font-sans">
               기본 정보
             </h2>
 
@@ -204,22 +204,22 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
                 onKeyDown={handleProjectKeyDown}
                 required
                 placeholder="프로젝트명을 입력하거나 선택하세요"
-                className="w-full px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+                className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
               />
               
               {/* 프로젝트 자동완성 드롭다운 */}
               {showProjectDropdown && filteredProjects.length > 0 && (
                 <div
                   ref={projectDropdownRef}
-                  className="absolute z-50 w-full mt-1 bg-white border-2 border-pink-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                  className="absolute z-50 w-full mt-1 bg-white border-2 border-green-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
                 >
                   {filteredProjects.map((projectName, index) => (
                     <button
                       key={projectName}
                       type="button"
                       onClick={() => handleProjectSelect(projectName)}
-                      className={`w-full text-left px-4 py-2 hover:bg-pink-50 focus:bg-pink-50 focus:outline-none transition-colors ${
-                        index === selectedProjectIndex ? 'bg-pink-100' : ''
+                      className={`w-full text-left px-4 py-2 hover:bg-green-50 focus:bg-green-50 focus:outline-none transition-colors ${
+                        index === selectedProjectIndex ? 'bg-green-100' : ''
                       }`}
                     >
                       <span className="text-gray-900 font-sans">{projectName}</span>
@@ -239,7 +239,7 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
                 value={formData.date}
                 onChange={(e) => updateField('date', e.target.value)}
                 required
-                className="w-full px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+                className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
               />
             </div>
 
@@ -253,7 +253,7 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
                 value={formData.title}
                 onChange={(e) => updateField('title', e.target.value)}
                 required
-                className="w-full px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+                className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
               />
             </div>
           </div>
@@ -269,23 +269,23 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
                 onChange={(e) => updateField('content', e.target.value)}
                 placeholder="기록 내용을 입력하세요..."
                 rows={12}
-                className="w-full px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans resize-y"
+                className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans resize-y"
               />
             </div>
           </div>
 
           {/* 버튼 */}
-          <div className="flex gap-4 justify-end pt-4 border-t-2 border-pink-200">
+          <div className="flex gap-4 justify-end pt-4 border-t-2 border-green-200">
             <button
               type="button"
               onClick={onCancel}
-              className="px-6 py-2 border-2 border-pink-200 rounded-lg text-gray-700 hover:bg-pink-50 transition-colors text-base font-medium shadow-md font-sans"
+              className="px-6 py-2 border-2 border-green-200 rounded-lg text-gray-700 hover:bg-green-50 transition-colors text-base font-medium shadow-md font-sans"
             >
               취소
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-base font-medium shadow-md font-sans"
+              className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans"
             >
               {isEditMode ? '수정' : '저장'}
             </button>

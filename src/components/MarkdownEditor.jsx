@@ -107,9 +107,9 @@ export default function MarkdownEditor({ value = '', onChange, placeholder = '' 
   }, [handlePaste])
 
   return (
-    <div className="border-2 border-pink-200 rounded-lg overflow-hidden bg-white">
+    <div className="border-2 border-green-200 rounded-lg overflow-hidden bg-white">
       {/* 툴바 */}
-      <div className="bg-pink-50 px-4 py-2 flex justify-between items-center border-b-2 border-pink-200">
+      <div className="bg-green-50 px-4 py-2 flex justify-between items-center border-b-2 border-green-200">
         <span className="text-base text-gray-700 font-medium font-sans">Markdown</span>
         <div className="flex gap-2 items-center">
           <input
@@ -124,7 +124,7 @@ export default function MarkdownEditor({ value = '', onChange, placeholder = '' 
           <label
             htmlFor="image-upload"
             className={`text-base text-gray-700 hover:text-gray-900 px-3 py-1 rounded font-medium font-sans cursor-pointer ${
-              isUploading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-pink-100'
+              isUploading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-100'
             }`}
           >
             {isUploading ? '업로드 중...' : '📷 이미지'}

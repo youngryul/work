@@ -119,7 +119,7 @@ export default function DiaryReminderModal({ yesterdayDate, isOpen, onClose, onW
             </button>
             <button
               onClick={handleWriteDiary}
-              className="flex-1 px-4 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-base font-medium font-sans"
+              className="flex-1 px-4 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium font-sans"
             >
               지금 작성하기
             </button>

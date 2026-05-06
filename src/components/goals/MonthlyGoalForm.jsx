@@ -114,7 +114,7 @@ export default function MonthlyGoalForm({ initialGoal = null, year, month, onSav
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border-2 border-pink-200 p-6">
+      <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border-2 border-green-200 p-6">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-2 font-sans">
             {isEditMode ? '월별 목표 수정' : '월별 목표 등록'}
@@ -135,7 +135,7 @@ export default function MonthlyGoalForm({ initialGoal = null, year, month, onSav
               onChange={(e) => updateField('yearlyGoalId', e.target.value)}
               required
               disabled={isEditMode}
-              className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans disabled:bg-gray-100"
+              className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans disabled:bg-gray-100"
             >
               <option value="">연간 목표를 선택하세요</option>
               {yearlyGoals.map((goal) => (
@@ -162,7 +162,7 @@ export default function MonthlyGoalForm({ initialGoal = null, year, month, onSav
               onChange={(e) => updateField('title', e.target.value)}
               placeholder="예: 주 3회 운동하기"
               required
-              className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+              className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
             />
           </div>
 
@@ -176,7 +176,7 @@ export default function MonthlyGoalForm({ initialGoal = null, year, month, onSav
               onChange={(e) => updateField('description', e.target.value)}
               placeholder="이번 달 목표에 대한 구체적인 설명을 작성해주세요..."
               rows={4}
-              className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans resize-none"
+              className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans resize-none"
             />
           </div>
 
@@ -189,7 +189,7 @@ export default function MonthlyGoalForm({ initialGoal = null, year, month, onSav
               <select
                 value={formData.status}
                 onChange={(e) => updateField('status', e.target.value)}
-                className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+                className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
               >
                 <option value={MONTHLY_GOAL_STATUS.IN_PROGRESS}>진행 중</option>
                 <option value={MONTHLY_GOAL_STATUS.COMPLETED}>완료</option>
@@ -199,18 +199,18 @@ export default function MonthlyGoalForm({ initialGoal = null, year, month, onSav
           )}
 
           {/* 버튼 */}
-          <div className="flex gap-4 justify-end pt-4 border-t-2 border-pink-200">
+          <div className="flex gap-4 justify-end pt-4 border-t-2 border-green-200">
             <button
               type="button"
               onClick={onCancel}
-              className="px-6 py-2 border-2 border-pink-200 rounded-lg text-gray-700 hover:bg-pink-50 transition-colors text-base font-medium shadow-md font-sans"
+              className="px-6 py-2 border-2 border-green-200 rounded-lg text-gray-700 hover:bg-green-50 transition-colors text-base font-medium shadow-md font-sans"
             >
               취소
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
+              className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
             >
               {loading ? '저장 중...' : isEditMode ? '수정' : '등록'}
             </button>

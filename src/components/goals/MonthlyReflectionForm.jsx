@@ -82,14 +82,14 @@ export default function MonthlyReflectionForm({ year, month, onSave }) {
   if (loading) {
     return (
       <div className="text-center py-8 text-gray-500 font-sans">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-400 mx-auto mb-2"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400 mx-auto mb-2"></div>
         <p>로딩 중...</p>
       </div>
     )
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md border-2 border-pink-200 p-6">
+    <div className="bg-white rounded-lg shadow-md border-2 border-green-200 p-6">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-2 font-sans">
           {year}년 {month}월 회고
@@ -114,7 +114,7 @@ export default function MonthlyReflectionForm({ year, month, onSave }) {
               onChange={(e) => updateField('achievementRate', parseInt(e.target.value))}
               className="flex-1"
             />
-            <span className="text-xl font-bold text-pink-600 font-sans w-16 text-right">
+            <span className="text-xl font-bold text-green-600 font-sans w-16 text-right">
               {formData.achievementRate}%
             </span>
           </div>
@@ -129,7 +129,7 @@ export default function MonthlyReflectionForm({ year, month, onSave }) {
             value={formData.bestChoice}
             onChange={(e) => updateField('bestChoice', e.target.value)}
             placeholder="이번 달 가장 잘한 선택이나 행동을 작성해주세요..."
-            className="w-full h-24 p-4 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans resize-none"
+            className="w-full h-24 p-4 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans resize-none"
             required
           />
         </div>
@@ -143,7 +143,7 @@ export default function MonthlyReflectionForm({ year, month, onSave }) {
             value={formData.failureReason}
             onChange={(e) => updateField('failureReason', e.target.value)}
             placeholder="목표를 달성하지 못한 이유를 분석해주세요. 의지 부족인지, 환경 문제인지 구분해보세요..."
-            className="w-full h-24 p-4 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans resize-none"
+            className="w-full h-24 p-4 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans resize-none"
             required
           />
         </div>
@@ -157,7 +157,7 @@ export default function MonthlyReflectionForm({ year, month, onSave }) {
             value={formData.keepNextMonth}
             onChange={(e) => updateField('keepNextMonth', e.target.value)}
             placeholder="이번 달 효과적이었던 방법이나 습관을 작성해주세요..."
-            className="w-full h-20 p-4 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans resize-none"
+            className="w-full h-20 p-4 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans resize-none"
           />
         </div>
 
@@ -170,7 +170,7 @@ export default function MonthlyReflectionForm({ year, month, onSave }) {
             value={formData.dropNextMonth}
             onChange={(e) => updateField('dropNextMonth', e.target.value)}
             placeholder="효과가 없었거나 개선이 필요한 부분을 작성해주세요..."
-            className="w-full h-20 p-4 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans resize-none"
+            className="w-full h-20 p-4 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans resize-none"
           />
         </div>
 
@@ -183,16 +183,16 @@ export default function MonthlyReflectionForm({ year, month, onSave }) {
             value={formData.reflectionText}
             onChange={(e) => updateField('reflectionText', e.target.value)}
             placeholder="이번 달에 대한 자유로운 생각을 작성해주세요..."
-            className="w-full h-32 p-4 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans resize-none"
+            className="w-full h-32 p-4 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans resize-none"
           />
         </div>
 
         {/* 저장 버튼 */}
-        <div className="flex justify-end pt-4 border-t-2 border-pink-200">
+        <div className="flex justify-end pt-4 border-t-2 border-green-200">
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
+            className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
           >
             {saving ? '저장 중...' : '회고 저장'}
           </button>

@@ -55,7 +55,7 @@ export default function HabitTrackerList({ year, month, monthlyGoals = [] }) {
   if (loading) {
     return (
       <div className="text-center py-12 text-gray-500 font-sans">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-400 mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto mb-4"></div>
         <p>로딩 중...</p>
       </div>
     )
@@ -70,7 +70,7 @@ export default function HabitTrackerList({ year, month, monthlyGoals = [] }) {
         </h2>
         <button
           onClick={handleAddTracker}
-          className="px-4 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-sm font-medium shadow-md font-sans"
+          className="px-4 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-sm font-medium shadow-md font-sans"
         >
           + Habit Tracker 추가
         </button>

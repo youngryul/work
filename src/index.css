@@ -57,21 +57,51 @@ body {
   animation: checkmark 0.3s ease-out;
 }
 
-/* 취소선 애니메이션 */
-@keyframes strikeThrough {
+/* 할 일 완료 후 사라지는 애니메이션 */
+@keyframes taskLeave {
   0% {
-    width: 0;
+    opacity: 1;
+    transform: scaleY(1);
+    max-height: 200px;
+    margin-bottom: 0;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+  40% {
     opacity: 0;
+    transform: scaleY(0.8);
   }
   100% {
-    width: 100%;
-    opacity: 1;
+    opacity: 0;
+    transform: scaleY(0);
+    max-height: 0;
+    margin-bottom: -0.75rem;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+.task-leaving {
+  animation: taskLeave 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  overflow: hidden;
+  transform-origin: top center;
+  pointer-events: none;
+}
+
+/* 취소선 애니메이션 - 펜으로 써지는 느낌 */
+@keyframes strikeThrough {
+  0% {
+    transform: translateY(-50%) scaleX(0);
+    transform-origin: left center;
+  }
+  100% {
+    transform: translateY(-50%) scaleX(1);
+    transform-origin: left center;
   }
 }
 
 .strike-through-animate {
   position: relative;
-  overflow: hidden;
 }
 
 .strike-through-animate::after {
@@ -79,9 +109,10 @@ body {
   position: absolute;
   top: 50%;
   left: 0;
-  width: 0;
+  width: 100%;
   height: 2px;
-  background-color: currentColor;
-  animation: strikeThrough 0.5s ease-out forwards;
-  transform: translateY(-50%);
+  background-color: #6b7280;
+  transform: translateY(-50%) scaleX(0);
+  transform-origin: left center;
+  animation: strikeThrough 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }

@@ -49,12 +49,12 @@ export default function RecordFilters({ filters, onFilterChange }) {
   }
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border-2 border-pink-200">
+    <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border-2 border-green-200">
       {/* 아코디언 헤더 */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-4 text-left hover:bg-pink-50 transition-colors"
+        className="w-full flex items-center justify-between p-4 text-left hover:bg-green-50 transition-colors"
       >
         <h3 className="text-xl font-semibold text-gray-800 font-sans">필터</h3>
         <div className="flex items-center gap-2">
@@ -88,7 +88,7 @@ export default function RecordFilters({ filters, onFilterChange }) {
 
       {/* 아코디언 컨텐츠 */}
       {isOpen && (
-        <div className="p-4 pt-0 space-y-4 border-t-2 border-pink-200">
+        <div className="p-4 pt-0 space-y-4 border-t-2 border-green-200">
 
           {/* 프로젝트명 */}
           <div>
@@ -98,7 +98,7 @@ export default function RecordFilters({ filters, onFilterChange }) {
             <select
               value={filters.projectName || ''}
               onChange={handleProjectChange}
-              className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+              className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
             >
               <option value="">전체 프로젝트</option>
               {projectNames.map((name) => (
@@ -119,7 +119,7 @@ export default function RecordFilters({ filters, onFilterChange }) {
               value={filters.keyword || ''}
               onChange={handleKeywordChange}
               placeholder="제목, 프로젝트명, 내용 검색..."
-              className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+              className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
             />
           </div>
 
@@ -133,7 +133,7 @@ export default function RecordFilters({ filters, onFilterChange }) {
                 type="date"
                 value={filters.startDate || ''}
                 onChange={handleStartDateChange}
-                className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+                className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
               />
             </div>
             <div>
@@ -144,7 +144,7 @@ export default function RecordFilters({ filters, onFilterChange }) {
                 type="date"
                 value={filters.endDate || ''}
                 onChange={handleEndDateChange}
-                className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+                className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
               />
             </div>
           </div>

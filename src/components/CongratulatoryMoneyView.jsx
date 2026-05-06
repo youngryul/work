@@ -24,7 +24,7 @@ export default function CongratulatoryMoneyView() {
               onClick={() => setActiveTab('records')}
               className={`px-6 py-3 font-semibold transition-colors ${
                   activeTab === 'records'
-                      ? 'border-b-2 border-pink-500 text-pink-600'
+                      ? 'border-b-2 border-green-500 text-green-600'
                       : 'text-gray-500 hover:text-gray-700'
               }`}
           >
@@ -34,7 +34,7 @@ export default function CongratulatoryMoneyView() {
               onClick={() => setActiveTab('invitations')}
               className={`px-6 py-3 font-semibold transition-colors ${
                   activeTab === 'invitations'
-                      ? 'border-b-2 border-pink-500 text-pink-600'
+                      ? 'border-b-2 border-green-500 text-green-600'
                       : 'text-gray-500 hover:text-gray-700'
               }`}
           >
@@ -44,7 +44,7 @@ export default function CongratulatoryMoneyView() {
               onClick={() => setActiveTab('recipients')}
               className={`px-6 py-3 font-semibold transition-colors ${
                   activeTab === 'recipients'
-                      ? 'border-b-2 border-pink-500 text-pink-600'
+                      ? 'border-b-2 border-green-500 text-green-600'
                       : 'text-gray-500 hover:text-gray-700'
               }`}
           >

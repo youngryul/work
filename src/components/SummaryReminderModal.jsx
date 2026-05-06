@@ -68,7 +68,7 @@ export default function SummaryReminderModal({ type, period, isOpen, onClose, on
           </button>
           <button
             onClick={handleGenerate}
-            className="flex-1 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors text-base font-medium font-sans"
+            className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-700 transition-colors text-base font-medium font-sans"
           >
             지금 생성하기
           </button>

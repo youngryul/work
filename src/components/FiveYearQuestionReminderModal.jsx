@@ -62,7 +62,7 @@ export default function FiveYearQuestionReminderModal({ todayDate, question, isO
           <p className="text-base text-gray-600 font-sans mb-3">
             {formatDate(todayDate)}의 질문입니다.
           </p>
-          <div className="bg-pink-50 border-l-4 border-pink-400 p-4 rounded">
+          <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded">
             <p className="text-base text-gray-800 font-medium font-sans">
               {question.question_text}
             </p>
@@ -78,7 +78,7 @@ export default function FiveYearQuestionReminderModal({ todayDate, question, isO
           </button>
           <button
             onClick={handleAnswerQuestion}
-            className="flex-1 px-4 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-base font-medium font-sans"
+            className="flex-1 px-4 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium font-sans"
           >
             지금 답하기
           </button>

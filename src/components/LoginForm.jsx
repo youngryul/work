@@ -34,7 +34,7 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-xl border border-gray-200">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-900 font-sans">
@@ -56,7 +56,7 @@ export default function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="your@email.com"
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-base font-sans"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base font-sans"
             />
           </div>
           
@@ -71,7 +71,7 @@ export default function LoginForm() {
               required
               minLength={6}
               placeholder="최소 6자 이상"
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-base font-sans"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base font-sans"
             />
           </div>
           
@@ -90,7 +90,7 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-sans"
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-700 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-sans"
           >
             {loading ? '처리 중...' : isSignUp ? '회원가입' : '로그인'}
           </button>
@@ -103,7 +103,7 @@ export default function LoginForm() {
               setError(null)
               setMessage(null)
             }}
-            className="text-sm text-indigo-600 hover:text-indigo-500 font-medium font-sans transition-colors duration-200"
+            className="text-sm text-green-700 hover:text-green-500 font-medium font-sans transition-colors duration-200"
           >
             {isSignUp ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입'}
           </button>

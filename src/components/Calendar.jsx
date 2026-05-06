@@ -169,14 +169,14 @@ export default function Calendar({ onDateClick }) {
           onClick={() => handleDateClick(dateString)}
           className={`aspect-square flex flex-col items-start justify-start p-1 rounded-lg transition-all duration-200 relative overflow-hidden ${
             isToday
-              ? 'bg-pink-200 border-2 border-pink-400'
+              ? 'bg-green-200 border-2 border-green-400'
               : 'bg-gray-50 hover:bg-gray-100'
           } ${hasDiary || count > 0 ? 'cursor-pointer hover:shadow-md' : ''}`}
         >
           {/* 날짜 번호 */}
           <span
             className={`text-xs font-medium z-10 ${
-              isToday ? 'text-pink-700' : 'text-gray-700'
+              isToday ? 'text-green-700' : 'text-gray-700'
             }`}
           >
             {day}
@@ -195,7 +195,7 @@ export default function Calendar({ onDateClick }) {
           {!hasImage && count > 0 && (
             <span
               className={`text-sm font-bold mt-auto mx-auto z-10 ${
-                isToday ? 'text-pink-600' : 'text-pink-500'
+                isToday ? 'text-green-600' : 'text-green-500'
               }`}
             >
               {count}개
@@ -253,7 +253,7 @@ export default function Calendar({ onDateClick }) {
           </h2>
           <button
             onClick={handleToday}
-            className="px-3 py-1 text-sm bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 transition-colors duration-200"
+            className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-200"
           >
             오늘
           </button>
@@ -310,9 +310,9 @@ export default function Calendar({ onDateClick }) {
                   {completedTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="flex items-center gap-3 p-4 bg-pink-50 rounded-lg border border-pink-200"
+                      className="flex items-center gap-3 p-4 bg-green-50 rounded-lg border border-green-200"
                     >
-                      <div className="flex-shrink-0 w-6 h-6 bg-pink-400 rounded-full flex items-center justify-center">
+                      <div className="flex-shrink-0 w-6 h-6 bg-green-400 rounded-full flex items-center justify-center">
                         <svg
                           className="w-4 h-4 text-white"
                           fill="none"

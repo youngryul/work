@@ -202,12 +202,12 @@ export default function BacklogView() {
             value={newTaskTitle}
             onChange={(e) => setNewTaskTitle(e.target.value)}
             placeholder="새 할 일을 입력하세요..."
-            className="flex-1 px-4 py-3 text-base border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400 shadow-sm font-sans"
+            className="flex-1 px-4 py-3 text-base border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400 shadow-sm font-sans"
             autoFocus
           />
           <button
             type="submit"
-            className="px-6 py-3 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors duration-200 text-2xl font-semibold shadow-sm whitespace-nowrap"
+            className="px-6 py-3 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors duration-200 text-2xl font-semibold shadow-sm whitespace-nowrap"
           >
             추가
           </button>

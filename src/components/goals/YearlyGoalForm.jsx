@@ -115,7 +115,7 @@ export default function YearlyGoalForm({ initialGoal = null, year = 2026, onSave
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border-2 border-pink-200 p-6">
+      <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border-2 border-green-200 p-6">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-2 font-sans">
             {isEditMode ? '연간 목표 수정' : '연간 목표 등록'}
@@ -146,10 +146,10 @@ export default function YearlyGoalForm({ initialGoal = null, year = 2026, onSave
                     disabled={isDisabled}
                     className={`p-4 rounded-lg border-2 transition-all font-sans ${
                       isSelected
-                        ? 'border-pink-400 bg-pink-50'
+                        ? 'border-green-400 bg-green-50'
                         : isDisabled
                         ? 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
-                        : 'border-gray-200 hover:border-pink-300 hover:bg-pink-50'
+                        : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
                     }`}
                   >
                     <div className="text-2xl mb-1">{icon}</div>
@@ -174,7 +174,7 @@ export default function YearlyGoalForm({ initialGoal = null, year = 2026, onSave
               onChange={(e) => updateField('title', e.target.value)}
               placeholder="예: 건강한 생활 습관 만들기"
               required
-              className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+              className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
             />
           </div>
 
@@ -188,7 +188,7 @@ export default function YearlyGoalForm({ initialGoal = null, year = 2026, onSave
               onChange={(e) => updateField('description', e.target.value)}
               placeholder="이 목표가 왜 중요한지, 달성하면 어떤 변화가 있을지 작성해주세요..."
               rows={4}
-              className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans resize-none"
+              className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans resize-none"
             />
           </div>
 
@@ -202,7 +202,7 @@ export default function YearlyGoalForm({ initialGoal = null, year = 2026, onSave
               onChange={(e) => updateField('measurementCriteria', e.target.value)}
               placeholder="예: 주 3회 운동, 체중 5kg 감량, 또는 '스트레스 감소 느낌' 등..."
               rows={3}
-              className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans resize-none"
+              className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans resize-none"
             />
           </div>
 
@@ -216,7 +216,7 @@ export default function YearlyGoalForm({ initialGoal = null, year = 2026, onSave
               onChange={(e) => updateField('obstacles', e.target.value)}
               placeholder="목표 달성을 방해할 수 있는 요소들을 미리 생각해보세요..."
               rows={3}
-              className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans resize-none"
+              className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans resize-none"
             />
           </div>
 
@@ -230,23 +230,23 @@ export default function YearlyGoalForm({ initialGoal = null, year = 2026, onSave
               onChange={(e) => updateField('strategy', e.target.value)}
               placeholder="방해 요소에 대한 대응 전략을 구체적으로 작성해주세요..."
               rows={3}
-              className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans resize-none"
+              className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans resize-none"
             />
           </div>
 
           {/* 버튼 */}
-          <div className="flex gap-4 justify-end pt-4 border-t-2 border-pink-200">
+          <div className="flex gap-4 justify-end pt-4 border-t-2 border-green-200">
             <button
               type="button"
               onClick={onCancel}
-              className="px-6 py-2 border-2 border-pink-200 rounded-lg text-gray-700 hover:bg-pink-50 transition-colors text-base font-medium shadow-md font-sans"
+              className="px-6 py-2 border-2 border-green-200 rounded-lg text-gray-700 hover:bg-green-50 transition-colors text-base font-medium shadow-md font-sans"
             >
               취소
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
+              className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
             >
               {loading ? '저장 중...' : isEditMode ? '수정' : '등록'}
             </button>

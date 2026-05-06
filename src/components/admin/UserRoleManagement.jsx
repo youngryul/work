@@ -104,8 +104,8 @@ export default function UserRoleManagement() {
                   className="flex items-center justify-between px-6 py-4 hover:bg-gray-50"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                      <span className="text-indigo-600 font-semibold text-sm font-sans">
+                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-green-700 font-semibold text-sm font-sans">
                         {(u.email?.[0] || '?').toUpperCase()}
                       </span>
                     </div>

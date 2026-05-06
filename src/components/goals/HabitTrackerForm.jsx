@@ -76,7 +76,7 @@ export default function HabitTrackerForm({ monthlyGoalId, year, month, monthlyGo
               <select
                 value={selectedMonthlyGoalId}
                 onChange={(e) => setSelectedMonthlyGoalId(e.target.value)}
-                className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+                className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
               >
                 <option value="">월별 목표를 선택하지 않음</option>
                 {monthlyGoals.map((goal) => (
@@ -99,7 +99,7 @@ export default function HabitTrackerForm({ monthlyGoalId, year, month, monthlyGo
               onChange={(e) => setTitle(e.target.value)}
               placeholder="예: 운동 매일 가기"
               required
-              className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+              className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
               autoFocus
             />
           </div>
@@ -130,18 +130,18 @@ export default function HabitTrackerForm({ monthlyGoalId, year, month, monthlyGo
           </div>
 
           {/* 버튼 */}
-          <div className="flex gap-4 justify-end pt-4 border-t-2 border-pink-200">
+          <div className="flex gap-4 justify-end pt-4 border-t-2 border-green-200">
             <button
               type="button"
               onClick={onCancel}
-              className="px-6 py-2 border-2 border-pink-200 rounded-lg text-gray-700 hover:bg-pink-50 transition-colors text-base font-medium shadow-md font-sans"
+              className="px-6 py-2 border-2 border-green-200 rounded-lg text-gray-700 hover:bg-green-50 transition-colors text-base font-medium shadow-md font-sans"
             >
               취소
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
+              className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
             >
               {loading ? '생성 중...' : '생성'}
             </button>

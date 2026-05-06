@@ -529,7 +529,7 @@ export default function Review2026View({ initialTab, initialParams }) {
           onClick={() => setActiveTab('weekly-work')}
           className={`px-6 py-3 transition-colors duration-200 text-lg font-medium border-b-2 font-sans ${
             activeTab === 'weekly-work'
-              ? 'border-indigo-500 text-indigo-600 font-semibold'
+              ? 'border-green-500 text-green-700 font-semibold'
               : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'
           }`}
         >
@@ -539,7 +539,7 @@ export default function Review2026View({ initialTab, initialParams }) {
           onClick={() => setActiveTab('weekly-diary')}
           className={`px-6 py-3 transition-colors duration-200 text-lg font-medium border-b-2 font-sans ${
             activeTab === 'weekly-diary'
-              ? 'border-indigo-500 text-indigo-600 font-semibold'
+              ? 'border-green-500 text-green-700 font-semibold'
               : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'
           }`}
         >
@@ -549,7 +549,7 @@ export default function Review2026View({ initialTab, initialParams }) {
           onClick={() => setActiveTab('monthly-work')}
           className={`px-6 py-3 transition-colors duration-200 text-lg font-medium border-b-2 font-sans ${
             activeTab === 'monthly-work'
-              ? 'border-indigo-500 text-indigo-600 font-semibold'
+              ? 'border-green-500 text-green-700 font-semibold'
               : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'
           }`}
         >
@@ -559,7 +559,7 @@ export default function Review2026View({ initialTab, initialParams }) {
           onClick={() => setActiveTab('monthly-diary')}
           className={`px-6 py-3 transition-colors duration-200 text-lg font-medium border-b-2 font-sans ${
             activeTab === 'monthly-diary'
-              ? 'border-indigo-500 text-indigo-600 font-semibold'
+              ? 'border-green-500 text-green-700 font-semibold'
               : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'
           }`}
         >
@@ -612,7 +612,7 @@ export default function Review2026View({ initialTab, initialParams }) {
                     <select
                       value={selectedWorkMonth}
                       onChange={(e) => setSelectedWorkMonth(e.target.value)}
-                      className="px-4 py-2 border-2 border-gray-300 rounded-lg text-base focus:border-indigo-400 focus:outline-none font-sans"
+                      className="px-4 py-2 border-2 border-gray-300 rounded-lg text-base focus:border-green-500 focus:outline-none font-sans"
                     >
                       {sortedMonths.map((monthKey) => {
                         const [year, month] = monthKey.split('-')
@@ -664,7 +664,7 @@ export default function Review2026View({ initialTab, initialParams }) {
                                     handleGenerateWeeklyWorkReport(week)
                                   }}
                                   disabled={isGeneratingWeeklyWork && week.isGenerating}
-                                  className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors duration-200 text-base font-medium font-sans disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-base font-medium font-sans disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   {(isGeneratingWeeklyWork && week.isGenerating) ? '생성 중...' : '주간 업무일지 생성'}
                                 </button>
@@ -694,12 +694,12 @@ export default function Review2026View({ initialTab, initialParams }) {
 
             {isGeneratingMonthlyWork && generatingMonthlyWorkTarget && (
               <div
-                className="mb-4 flex items-center gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-indigo-800 font-sans"
+                className="mb-4 flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-900 font-sans"
                 role="status"
                 aria-live="polite"
               >
                 <span
-                  className="inline-block h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent"
+                  className="inline-block h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
                   aria-hidden
                 />
                 <span className="text-base font-medium">
@@ -726,7 +726,7 @@ export default function Review2026View({ initialTab, initialParams }) {
                     disabled={isGeneratingMonthlyWork}
                     className={`px-4 py-3 rounded-lg transition-colors duration-200 text-base font-medium font-sans disabled:opacity-50 disabled:cursor-not-allowed ${
                       monthData.hasReport
-                        ? 'bg-indigo-100 hover:bg-indigo-200 text-indigo-700 border-2 border-indigo-300'
+                        ? 'bg-green-100 hover:bg-green-200 text-green-800 border-2 border-green-300'
                         : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                     }`}
                   >
@@ -797,7 +797,7 @@ export default function Review2026View({ initialTab, initialParams }) {
                     <select
                       value={selectedDiaryMonth}
                       onChange={(e) => setSelectedDiaryMonth(e.target.value)}
-                      className="px-4 py-2 border-2 border-gray-300 rounded-lg text-base focus:border-indigo-400 focus:outline-none font-sans"
+                      className="px-4 py-2 border-2 border-gray-300 rounded-lg text-base focus:border-green-500 focus:outline-none font-sans"
                     >
                       {sortedMonths.map((monthKey) => {
                         const [year, month] = monthKey.split('-')
@@ -849,7 +849,7 @@ export default function Review2026View({ initialTab, initialParams }) {
                                     handleGenerateWeeklyDiarySummary(week)
                                   }}
                                   disabled={isGeneratingWeeklyDiary && week.isGenerating}
-                                  className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors duration-200 text-base font-medium font-sans disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-base font-medium font-sans disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   {(isGeneratingWeeklyDiary && week.isGenerating) ? '생성 중...' : '주간 일기 정리 생성'}
                                 </button>
@@ -889,7 +889,7 @@ export default function Review2026View({ initialTab, initialParams }) {
                     disabled={isGeneratingMonthlyDiary}
                     className={`px-4 py-3 rounded-lg transition-colors duration-200 text-base font-medium font-sans disabled:opacity-50 disabled:cursor-not-allowed ${
                       monthData.hasSummary
-                        ? 'bg-indigo-100 hover:bg-indigo-200 text-indigo-700 border-2 border-indigo-300'
+                        ? 'bg-green-100 hover:bg-green-200 text-green-800 border-2 border-green-300'
                         : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                     }`}
                   >

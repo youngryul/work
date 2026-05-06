@@ -54,7 +54,7 @@ export default function HabitTrackerSummary({ currentYear, currentMonth, onClose
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full mx-4">
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-400 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto mb-4"></div>
             <p className="text-gray-600 font-sans">로딩 중...</p>
           </div>
         </div>
@@ -143,7 +143,7 @@ export default function HabitTrackerSummary({ currentYear, currentMonth, onClose
         <div className="mt-6 flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-base font-medium shadow-md font-sans"
+            className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans"
           >
             확인
           </button>

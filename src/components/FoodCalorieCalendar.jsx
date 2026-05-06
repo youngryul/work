@@ -159,12 +159,12 @@ export default function FoodCalorieCalendar() {
       days.push(
         <div
           key={day}
-          className={`aspect-square border-2 rounded-lg p-2 cursor-pointer hover:bg-pink-50 transition-colors ${
-            isToday ? 'border-pink-400 bg-pink-50' : 'border-gray-200'
+          className={`aspect-square border-2 rounded-lg p-2 cursor-pointer hover:bg-green-50 transition-colors ${
+            isToday ? 'border-green-400 bg-green-50' : 'border-gray-200'
           }`}
         >
           <div className="flex flex-col items-center justify-center h-full">
-            <div className={`text-sm font-medium mb-1 ${isToday ? 'text-pink-600' : 'text-gray-700'}`}>
+            <div className={`text-sm font-medium mb-1 ${isToday ? 'text-green-600' : 'text-gray-700'}`}>
               {day}
             </div>
             {totalCalories > 0 && (
@@ -211,7 +211,7 @@ export default function FoodCalorieCalendar() {
       <div className="flex justify-between items-center mb-6 bg-white rounded-lg shadow-md p-4">
         <button
           onClick={handlePrevMonth}
-          className="px-4 py-2 bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 transition-colors font-semibold"
+          className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors font-semibold"
         >
           ← 이전 달
         </button>
@@ -227,7 +227,7 @@ export default function FoodCalorieCalendar() {
           </button>
           <button
             onClick={handleNextMonth}
-            className="px-4 py-2 bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 transition-colors font-semibold"
+            className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors font-semibold"
           >
             다음 달 →
           </button>

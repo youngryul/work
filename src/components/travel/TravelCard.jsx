@@ -43,12 +43,12 @@ export default function TravelCard({ travel, onView, onEdit, onDelete }) {
               e.target.nextSibling.style.display = 'flex'
             }}
           />
-          <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-4xl" style={{ display: 'none' }}>
+          <div className="w-full h-full bg-gradient-to-br from-blue-400 to-emerald-500 flex items-center justify-center text-white text-4xl" style={{ display: 'none' }}>
             ✈️
           </div>
         </div>
       ) : (
-        <div className="h-48 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-4xl">
+        <div className="h-48 bg-gradient-to-br from-blue-400 to-emerald-500 flex items-center justify-center text-white text-4xl">
           ✈️
         </div>
       )}

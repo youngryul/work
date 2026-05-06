@@ -111,7 +111,7 @@ export default function CategoryManager({ onCategoryChange, onCategorySelect }) 
           </button>
           <button
             onClick={() => setIsAdding(!isAdding)}
-            className="px-4 py-2 text-xl bg-pink-200 text-pink-700 rounded-lg hover:bg-pink-300 transition-colors duration-200"
+            className="px-4 py-2 text-xl bg-green-200 text-green-700 rounded-lg hover:bg-green-300 transition-colors duration-200"
           >
             {isAdding ? '취소' : '+ 추가'}
           </button>
@@ -119,14 +119,14 @@ export default function CategoryManager({ onCategoryChange, onCategorySelect }) 
       </div>
 
       {isAdding && (
-        <form onSubmit={handleAddCategory} className="mb-4 p-3 bg-pink-50 rounded-lg">
+        <form onSubmit={handleAddCategory} className="mb-4 p-3 bg-green-50 rounded-lg">
           <div className="flex gap-2 mb-2">
             <input
               type="text"
               value={newCategoryEmoji}
               onChange={(e) => setNewCategoryEmoji(e.target.value)}
               placeholder="이모지 (예: 🎨)"
-              className="w-20 px-3 py-2 text-2xl border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400 text-center"
+              className="w-20 px-3 py-2 text-2xl border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400 text-center"
               maxLength={2}
             />
             <input
@@ -134,11 +134,11 @@ export default function CategoryManager({ onCategoryChange, onCategorySelect }) 
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
               placeholder="카테고리 이름"
-              className="flex-1 px-3 py-2 text-2xl border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400"
+              className="flex-1 px-3 py-2 text-2xl border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400"
             />
             <button
               type="submit"
-              className="px-4 py-2 text-xl bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors duration-200"
+              className="px-4 py-2 text-xl bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors duration-200"
             >
               추가
             </button>
@@ -150,7 +150,7 @@ export default function CategoryManager({ onCategoryChange, onCategorySelect }) 
         {categories.map((category) => (
           <div
             key={category.name}
-            className="flex items-center gap-2 px-3 py-2 bg-pink-100 rounded-lg cursor-pointer hover:bg-pink-200 transition-colors duration-200"
+            className="flex items-center gap-2 px-3 py-2 bg-green-100 rounded-lg cursor-pointer hover:bg-green-200 transition-colors duration-200"
             onClick={() => {
               if (onCategorySelect) {
                 onCategorySelect(category.name)

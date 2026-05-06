@@ -22,15 +22,15 @@ export default function ProjectList({ projects = [], selectedProject, onSelect }
           onClick={() => onSelect(project.projectName)}
           className={`w-full p-4 rounded-lg border-2 text-left transition-all font-sans ${
             selectedProject === project.projectName
-              ? 'bg-pink-100 border-pink-400 shadow-md'
-              : 'bg-white/60 border-pink-200 hover:border-pink-300 hover:shadow-sm hover:bg-white/80'
+              ? 'bg-green-100 border-green-400 shadow-md'
+              : 'bg-white/60 border-green-200 hover:border-green-300 hover:shadow-sm hover:bg-white/80'
           }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-base font-semibold text-gray-800 font-sans">
               {project.projectName}
             </span>
-            <span className="text-sm text-gray-600 bg-pink-50 px-2 py-1 rounded-full font-sans">
+            <span className="text-sm text-gray-600 bg-green-50 px-2 py-1 rounded-full font-sans">
               {project.count}개
             </span>
           </div>

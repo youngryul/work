@@ -127,7 +127,7 @@ export default function WeddingInvitationTab() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* 헤더 */}
-            <div className="bg-pink-50 px-6 py-4 border-b-2 border-pink-200 flex items-center justify-between">
+            <div className="bg-green-50 px-6 py-4 border-b-2 border-green-200 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-handwriting text-gray-800 mb-1">
                   {editingRecipient ? '인원 수정' : '새 인원 추가'}
@@ -155,7 +155,7 @@ export default function WeddingInvitationTab() {
                       type="text"
                       value={formData.recipient_name}
                       onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })}
-                      className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+                      className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
                       placeholder="예: 홍길동"
                       required
                     />
@@ -166,7 +166,7 @@ export default function WeddingInvitationTab() {
                       type="text"
                       value={formData.relationship}
                       onChange={(e) => setFormData({ ...formData, relationship: e.target.value })}
-                      className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+                      className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
                       placeholder="예: 친구, 동료"
                     />
                   </div>
@@ -174,7 +174,7 @@ export default function WeddingInvitationTab() {
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="px-6 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors font-sans font-medium shadow-md"
+                className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors font-sans font-medium shadow-md"
               >
                 {editingRecipient ? '수정' : '저장'}
               </button>
@@ -201,7 +201,7 @@ export default function WeddingInvitationTab() {
             resetForm()
             setShowForm(true)
           }}
-          className="px-4 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-sm font-medium shadow-md font-sans"
+          className="px-4 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-sm font-medium shadow-md font-sans"
         >
           + 인원 추가
         </button>
@@ -210,7 +210,7 @@ export default function WeddingInvitationTab() {
       {/* 인원 목록 */}
       {loading ? (
         <div className="text-center py-12 text-gray-500 font-sans">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-400 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto mb-4"></div>
           <p>로딩 중...</p>
         </div>
       ) : recipients.length === 0 ? (
@@ -223,7 +223,7 @@ export default function WeddingInvitationTab() {
           {recipients.map((recipient) => (
             <div
               key={recipient.id}
-              className="p-4 bg-white/80 backdrop-blur-sm rounded-lg border-2 border-gray-200 hover:border-pink-300 transition-colors shadow-sm"
+              className="p-4 bg-white/80 backdrop-blur-sm rounded-lg border-2 border-gray-200 hover:border-green-300 transition-colors shadow-sm"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">

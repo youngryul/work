@@ -130,7 +130,7 @@ export default function GoalsDashboard() {
   if (loading) {
     return (
       <div className="text-center py-12 text-gray-500 font-sans">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-400 mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto mb-4"></div>
         <p>로딩 중...</p>
       </div>
     )
@@ -149,12 +149,12 @@ export default function GoalsDashboard() {
       </div>
 
       {/* 탭 네비게이션 */}
-      <div className="flex gap-2 border-b-2 border-pink-200 mb-6">
+      <div className="flex gap-2 border-b-2 border-green-200 mb-6">
         <button
           onClick={() => setSelectedView('dashboard')}
           className={`px-6 py-3 text-base font-medium font-sans transition-colors ${
             selectedView === 'dashboard'
-              ? 'border-b-2 border-pink-400 text-pink-600'
+              ? 'border-b-2 border-green-400 text-green-600'
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
@@ -164,7 +164,7 @@ export default function GoalsDashboard() {
           onClick={() => setSelectedView('monthly')}
           className={`px-6 py-3 text-base font-medium font-sans transition-colors ${
             selectedView === 'monthly'
-              ? 'border-b-2 border-pink-400 text-pink-600'
+              ? 'border-b-2 border-green-400 text-green-600'
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
@@ -174,7 +174,7 @@ export default function GoalsDashboard() {
           onClick={() => setSelectedView('reflection')}
           className={`px-6 py-3 text-base font-medium font-sans transition-colors ${
             selectedView === 'reflection'
-              ? 'border-b-2 border-pink-400 text-pink-600'
+              ? 'border-b-2 border-green-400 text-green-600'
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
@@ -223,7 +223,7 @@ export default function GoalsDashboard() {
                       setEditingGoal(null)
                       setGoalFormView('yearly')
                     }}
-                    className="px-4 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-sm font-medium shadow-md font-sans"
+                    className="px-4 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-sm font-medium shadow-md font-sans"
                   >
                     + 연간 목표 추가
                   </button>
@@ -264,7 +264,7 @@ export default function GoalsDashboard() {
             <select
               value={currentMonth}
               onChange={(e) => handleMonthChange(parseInt(e.target.value))}
-              className="px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+              className="px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
             >
               {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
                 <option key={month} value={month}>
@@ -300,7 +300,7 @@ export default function GoalsDashboard() {
                         setGoalFormView('monthly')
                       })
                     }}
-                    className="px-4 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-sm font-medium shadow-md font-sans"
+                    className="px-4 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-sm font-medium shadow-md font-sans"
                   >
                     + 월별 목표 추가
                   </button>

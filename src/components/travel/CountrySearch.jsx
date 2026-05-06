@@ -94,12 +94,12 @@ export default function CountrySearch({ onCountryAdded }) {
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="국가명으로 검색..."
-          className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
           disabled={isSearching}
         />
         {isSearching && (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-700"></div>
           </div>
         )}
       </div>
@@ -114,8 +114,8 @@ export default function CountrySearch({ onCountryAdded }) {
             <button
               key={country.code}
               onClick={() => handleCountrySelect(country.code)}
-              className={`w-full text-left px-4 py-2 hover:bg-indigo-50 focus:bg-indigo-50 focus:outline-none ${
-                index === selectedIndex ? 'bg-indigo-100' : ''
+              className={`w-full text-left px-4 py-2 hover:bg-green-50 focus:bg-green-50 focus:outline-none ${
+                index === selectedIndex ? 'bg-green-100' : ''
               }`}
             >
               <div className="flex items-center justify-between">

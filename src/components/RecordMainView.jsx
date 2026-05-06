@@ -188,7 +188,7 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
         <div className="flex gap-4 items-center">
           <button
             onClick={onNewRecord}
-            className="px-6 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-base font-medium shadow-md font-sans"
+            className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans"
           >
             + 새 기록 작성
           </button>
@@ -199,7 +199,7 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* 좌측: 프로젝트 목록 */}
         <div className="lg:col-span-1">
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-pink-200 p-4 h-[calc(100vh-200px)] overflow-y-auto">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-green-200 p-4 h-[calc(100vh-200px)] overflow-y-auto">
             <h2 className="text-xl font-semibold text-gray-700 mb-4 font-sans">프로젝트</h2>
             {loading ? (
               <div className="text-center py-8 text-gray-500 text-base font-sans">로딩 중...</div>
@@ -218,7 +218,7 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
           {selectedProject ? (
             <div className="space-y-6">
               {/* 상단: 메인 기록 */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border-2 border-pink-300 p-6">
+              <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border-2 border-green-300 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold text-gray-700 font-sans">
                     📌 메인 기록
@@ -251,7 +251,7 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
               </div>
 
               {/* 하단: 기록 목록 */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-pink-200 p-4 h-[calc(100vh-500px)] overflow-y-auto">
+              <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-green-200 p-4 h-[calc(100vh-500px)] overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold text-gray-700 font-sans">기록 목록</h2>
                 </div>

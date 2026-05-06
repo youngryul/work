@@ -85,7 +85,7 @@ export default function SummaryQuickAction() {
       ) : null}
       <button
         onClick={() => setShowMenu(!showMenu)}
-        className="w-14 h-14 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 transition-colors flex items-center justify-center text-2xl font-bold"
+        className="w-14 h-14 bg-green-500 text-white rounded-full shadow-lg hover:bg-green-700 transition-colors flex items-center justify-center text-2xl font-bold"
         title="요약 생성"
       >
         {showMenu ? '×' : '📋'}

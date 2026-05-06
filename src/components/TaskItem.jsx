@@ -26,6 +26,8 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
   const [categoryEmoji, setCategoryEmoji] = useState('📝')
   const [images, setImages] = useState(task.images || [])
   const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [localCompleted, setLocalCompleted] = useState(task.completed)
+  const [isLeaving, setIsLeaving] = useState(false)
   const memoSaveTimerRef = useRef(null)
   const textareaRef = useRef(null)
   
@@ -49,15 +51,33 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
     setScheduledDate(task.scheduledDate || '')
   }, [task.memo, task.images, task.scheduledDate])
 
+  useEffect(() => {
+    setLocalCompleted((prev) => {
+      if (prev !== task.completed) return task.completed
+      return prev
+    })
+  }, [task.completed])
+
   /**
    * 완료 상태 토글
    */
   const handleToggleComplete = async () => {
+    const newCompleted = !localCompleted
+    setLocalCompleted(newCompleted)
     try {
-      const updated = await updateTask(task.id, { completed: !task.completed })
-      onUpdate(updated)
+      const updated = await updateTask(task.id, { completed: newCompleted })
+      if (newCompleted) {
+        // 취소선 애니메이션 후 카드 사라지는 애니메이션 시작
+        setTimeout(() => setIsLeaving(true), 600)
+        // 사라진 뒤 부모 업데이트 (리스트 새로고침)
+        setTimeout(() => onUpdate(updated), 1200)
+      } else {
+        onUpdate(updated)
+      }
     } catch (error) {
       console.error('완료 상태 변경 오류:', error)
+      setLocalCompleted(!newCompleted)
+      setIsLeaving(false)
     }
   }
 
@@ -273,12 +293,14 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
 
   return (
     <div
-      className={`group flex flex-col gap-3 p-4 rounded-lg transition-all duration-300 animate-fade-in cursor-move ${
-        task.completed
-          ? 'bg-pink-100 opacity-60'
+      className={`group flex flex-col gap-3 p-4 rounded-lg transition-all duration-300 cursor-move ${
+        isLeaving
+          ? 'task-leaving'
+          : localCompleted
+          ? 'bg-green-100'
           : isOld
           ? 'bg-red-200 shadow-sm hover:shadow-md'
-          : 'bg-white shadow-sm hover:shadow-md'
+          : 'bg-white shadow-sm hover:shadow-md hover:bg-green-50'
       }`}
     >
       <div className="flex items-center gap-3">
@@ -302,31 +324,32 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
         onClick={handleToggleComplete}
         onMouseDown={(e) => e.stopPropagation()}
         className={`flex-shrink-0 w-8 h-8 rounded-full border-2 transition-all duration-200 ${
-          task.completed
-            ? isOld
-              ? 'bg-red-500 border-red-500 checkmark-animate'
-              : 'bg-pink-400 border-pink-400 checkmark-animate'
+          localCompleted && !isOld
+            ? 'border-transparent bg-transparent overflow-visible relative'
+            : localCompleted && isOld
+            ? 'bg-red-500 border-red-500 overflow-hidden'
             : isOld
-            ? 'border-red-400 hover:border-red-500'
-            : 'border-gray-400 hover:border-pink-400'
+            ? 'border-red-400 hover:border-red-500 overflow-hidden'
+            : 'border-gray-300 hover:border-green-500 overflow-hidden'
         }`}
-        aria-label={task.completed ? '완료 취소' : '완료'}
+        aria-label={localCompleted ? '완료 취소' : '완료'}
       >
-        {task.completed && (
+        {localCompleted && !isOld && (
+          <img
+            src="/images/포실이.png"
+            alt="포실이"
+            className="absolute w-48 h-48 object-contain"
+            style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+          />
+        )}
+        {localCompleted && isOld && (
           <svg
-            className={`w-full h-full checkmark-animate ${
-              isOld ? 'text-yellow-300' : 'text-white'
-            }`}
+            className="w-full h-full text-yellow-300"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={3}
-              d="M5 13l4 4L19 7"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
           </svg>
         )}
       </button>
@@ -359,19 +382,19 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
           onChange={(e) => setEditTitle(e.target.value)}
           onBlur={handleSaveEdit}
           onKeyDown={handleKeyPress}
-          className="flex-1 px-2 py-1 border-2 border-pink-300 rounded focus:outline-none focus:border-pink-500 text-base font-sans"
+          className="flex-1 px-2 py-1 border-2 border-green-300 rounded focus:outline-none focus:border-green-500 text-base font-sans"
           autoFocus
         />
       ) : (
         <span
           onClick={handleStartEdit}
           className={`flex-1 text-base cursor-pointer font-sans relative ${
-            task.completed 
-              ? 'text-gray-500' 
+            localCompleted
+              ? 'text-gray-500'
               : 'text-gray-800'
           }`}
         >
-          <span className={task.completed ? 'line-through strike-through-animate' : ''}>
+          <span className={localCompleted ? 'strike-through-animate' : ''}>
             {task.title}
           </span>
         </span>
@@ -384,7 +407,7 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
           <button
             onClick={onMoveToToday}
             onMouseDown={(e) => e.stopPropagation()}
-            className="px-3 py-1 bg-pink-200 text-pink-700 rounded-lg text-sm hover:bg-pink-300 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm whitespace-nowrap"
+            className="px-3 py-1 bg-green-200 text-green-700 rounded-lg text-sm hover:bg-green-300 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm whitespace-nowrap"
           >
             오늘로
           </button>
@@ -408,7 +431,7 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
             onMouseDown={(e) => e.stopPropagation()}
             className={`text-xl transition-all duration-200 ${
               task.scheduledDate
-                ? 'text-pink-500 hover:text-pink-600'
+                ? 'text-green-500 hover:text-green-600'
                 : 'text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100'
             }`}
             aria-label="날짜 예약"
@@ -424,7 +447,7 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
           onMouseDown={(e) => e.stopPropagation()}
           className={`text-xl transition-all duration-200 ${
             task.memo || (task.images && task.images.length > 0)
-              ? 'text-pink-500 hover:text-pink-600'
+              ? 'text-green-500 hover:text-green-600'
               : 'text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100'
           }`}
           aria-label="메모"
@@ -433,21 +456,23 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
           📝
         </button>
 
-        {/* 삭제 버튼 */}
-        <button
-          onClick={handleDelete}
-          onMouseDown={(e) => e.stopPropagation()}
-          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-red-400 hover:text-red-600 text-3xl"
-          aria-label="삭제"
-        >
-          ×
-        </button>
+        {/* 삭제 버튼 (백로그에서만 표시) */}
+        {isBacklog && (
+          <button
+            onClick={handleDelete}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-red-400 hover:text-red-600 text-3xl"
+            aria-label="삭제"
+          >
+            ×
+          </button>
+        )}
       </div>
       </div>
 
       {/* 카테고리 선택기 (편집 모드일 때만 표시) */}
       {isEditingCategory && (
-        <div className="pt-2 border-t border-pink-100">
+        <div className="pt-2 border-t border-green-100">
           <CategorySelector
             selectedCategory={task.category}
             onChange={handleCategoryChange}
@@ -457,7 +482,7 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
 
       {/* 날짜 예약 입력 영역 (백로그에서만 표시) */}
       {isBacklog && isEditingSchedule && (
-        <div className="pt-2 border-t border-pink-100 space-y-2">
+        <div className="pt-2 border-t border-green-100 space-y-2">
           <label className="block text-sm font-medium text-gray-700">
             날짜 예약
           </label>
@@ -465,7 +490,7 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
             type="date"
             value={scheduledDate}
             onChange={handleScheduleDateChange}
-            className="w-full px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400 text-sm font-sans"
+            className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400 text-sm font-sans"
             min={new Date().toISOString().split('T')[0]} // 오늘 이후만 선택 가능
           />
           {scheduledDate && (
@@ -491,21 +516,21 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
 
       {/* 메모 입력 영역 (편집 모드일 때만 표시) */}
       {isEditingMemo && (
-        <div className="pt-2 border-t border-pink-100 space-y-2">
+        <div className="pt-2 border-t border-green-100 space-y-2">
           <textarea
             ref={textareaRef}
             value={editMemo}
             onChange={handleMemoChange}
             onPaste={handlePaste}
             placeholder="메모를 입력하세요... (이미지를 복사하여 붙여넣을 수 있습니다)"
-            className="w-full px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400 text-sm font-sans resize-none"
+            className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400 text-sm font-sans resize-none"
             rows="3"
             disabled={isUploadingImage}
           />
           
           {/* 이미지 업로드 중 표시 */}
           {isUploadingImage && (
-            <div className="text-sm text-pink-500 flex items-center gap-2">
+            <div className="text-sm text-green-500 flex items-center gap-2">
               <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -522,7 +547,7 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
                   <img
                     src={imageUrl}
                     alt={`첨부 이미지 ${index + 1}`}
-                    className="w-full h-32 object-cover rounded-lg border-2 border-pink-200"
+                    className="w-full h-32 object-cover rounded-lg border-2 border-green-200"
                   />
                   <button
                     onClick={() => handleDeleteImage(index)}

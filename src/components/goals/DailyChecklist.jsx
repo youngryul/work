@@ -76,7 +76,7 @@ export default function DailyChecklist({ date, onComplete }) {
   if (loading) {
     return (
       <div className="text-center py-8 text-gray-500 font-sans">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-400 mx-auto mb-2"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400 mx-auto mb-2"></div>
         <p>로딩 중...</p>
       </div>
     )
@@ -86,7 +86,7 @@ export default function DailyChecklist({ date, onComplete }) {
   const totalCount = checks.length
 
   return (
-    <div className="bg-white rounded-lg shadow-md border-2 border-pink-200 p-6">
+    <div className="bg-white rounded-lg shadow-md border-2 border-green-200 p-6">
       {/* 헤더 */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-2 font-sans">오늘의 체크리스트</h2>
@@ -112,14 +112,14 @@ export default function DailyChecklist({ date, onComplete }) {
               className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all duration-200 ${
                 check.isCompleted
                   ? 'bg-green-50 border-green-200 line-through text-gray-500'
-                  : 'bg-white border-gray-200 hover:border-pink-300'
+                  : 'bg-white border-gray-200 hover:border-green-300'
               }`}
             >
               <input
                 type="checkbox"
                 checked={check.isCompleted}
                 onChange={() => handleToggle(check.id, check.isCompleted)}
-                className="w-5 h-5 text-pink-600 rounded focus:ring-pink-500 cursor-pointer"
+                className="w-5 h-5 text-green-600 rounded focus:ring-green-500 cursor-pointer"
               />
               <span className={`flex-1 text-base font-sans ${
                 check.isCompleted ? 'text-gray-400' : 'text-gray-800'
@@ -143,11 +143,11 @@ export default function DailyChecklist({ date, onComplete }) {
           value={newCheckContent}
           onChange={(e) => setNewCheckContent(e.target.value)}
           placeholder="오늘 할 일을 입력하세요..."
-          className="flex-1 px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+          className="flex-1 px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
         />
         <button
           type="submit"
-          className="px-6 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-base font-medium shadow-md font-sans"
+          className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans"
         >
           추가
         </button>

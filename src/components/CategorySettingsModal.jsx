@@ -81,7 +81,7 @@ export default function CategorySettingsModal({ isOpen, onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
-        <div className="bg-pink-50 px-6 py-4 border-b-2 border-pink-200 flex items-center justify-between">
+        <div className="bg-green-50 px-6 py-4 border-b-2 border-green-200 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-handwriting text-gray-800 mb-1">
               카테고리 설정
@@ -119,10 +119,10 @@ export default function CategorySettingsModal({ isOpen, onClose }) {
                     key={category.name}
                     className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
                       isDefault
-                        ? 'border-pink-400 bg-pink-50'
+                        ? 'border-green-400 bg-green-50'
                         : isSystemCategory
                         ? 'border-gray-300 bg-gray-50'
-                        : 'border-gray-200 bg-white hover:border-pink-200'
+                        : 'border-gray-200 bg-white hover:border-green-200'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -134,7 +134,7 @@ export default function CategorySettingsModal({ isOpen, onClose }) {
                         </span>
                       )}
                       {isDefault && !isSystemCategory && (
-                        <span className="px-3 py-1 bg-pink-400 text-white text-sm rounded-full font-sans">
+                        <span className="px-3 py-1 bg-green-400 text-white text-sm rounded-full font-sans">
                           기본 카테고리
                         </span>
                       )}
@@ -146,7 +146,7 @@ export default function CategorySettingsModal({ isOpen, onClose }) {
                       className={`px-6 py-2 rounded-lg font-sans transition-colors ${
                         isDisabled
                           ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-pink-400 text-white hover:bg-pink-500'
+                          : 'bg-green-400 text-white hover:bg-green-500'
                       }`}
                     >
                       {isSystemCategory

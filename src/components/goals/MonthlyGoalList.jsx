@@ -54,7 +54,7 @@ export default function MonthlyGoalList({ goals, year, month, onGoalClick, onEdi
       {goals.map((goal) => (
         <div
           key={goal.id}
-          className="bg-white rounded-lg border-2 border-gray-200 p-5 hover:border-pink-300 transition-all duration-200 cursor-pointer"
+          className="bg-white rounded-lg border-2 border-gray-200 p-5 hover:border-green-300 transition-all duration-200 cursor-pointer"
           onClick={() => onGoalClick?.(goal)}
         >
           {/* 헤더 */}
@@ -105,7 +105,7 @@ export default function MonthlyGoalList({ goals, year, month, onGoalClick, onEdi
                   checked={goal.status === MONTHLY_GOAL_STATUS.COMPLETED}
                   onChange={(e) => handleStatusToggle(goal, e)}
                   disabled={updatingStatus[goal.id]}
-                  className="w-5 h-5 text-pink-600 border-gray-300 rounded focus:ring-pink-500 cursor-pointer disabled:opacity-50"
+                  className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer disabled:opacity-50"
                 />
                 <span className={`text-sm font-medium font-sans ${
                   goal.status === MONTHLY_GOAL_STATUS.COMPLETED ? 'text-green-700' : 'text-gray-700'

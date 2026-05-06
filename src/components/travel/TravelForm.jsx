@@ -334,13 +334,13 @@ export default function TravelForm({ initialData, onSave, onCancel }) {
             {formData.emotions.map(emotion => (
               <span
                 key={emotion}
-                className="px-3 py-1 bg-pink-100 text-pink-800 rounded-full text-sm flex items-center gap-2"
+                className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm flex items-center gap-2"
               >
                 {emotion}
                 <button
                   type="button"
                   onClick={() => handleRemoveEmotion(emotion)}
-                  className="text-pink-600 hover:text-pink-800"
+                  className="text-green-600 hover:text-green-800"
                 >
                   ×
                 </button>

@@ -476,12 +476,12 @@ export default function FoodCalorieCalculator() {
       days.push(
         <div
           key={day}
-          className={`aspect-square border-2 rounded-lg p-2 cursor-pointer hover:bg-pink-50 transition-colors ${
-            isToday ? 'border-pink-400 bg-pink-50' : 'border-gray-200'
+          className={`aspect-square border-2 rounded-lg p-2 cursor-pointer hover:bg-green-50 transition-colors ${
+            isToday ? 'border-green-400 bg-green-50' : 'border-gray-200'
           }`}
         >
           <div className="flex flex-col items-center justify-center h-full">
-            <div className={`text-sm font-medium mb-1 ${isToday ? 'text-pink-600' : 'text-gray-700'}`}>
+            <div className={`text-sm font-medium mb-1 ${isToday ? 'text-green-600' : 'text-gray-700'}`}>
               {day}
             </div>
             {totalCalories > 0 && (
@@ -525,7 +525,7 @@ export default function FoodCalorieCalculator() {
           onClick={() => setActiveTab('calculator')}
           className={`px-6 py-3 font-semibold transition-colors ${
             activeTab === 'calculator'
-              ? 'border-b-2 border-pink-500 text-pink-600'
+              ? 'border-b-2 border-green-500 text-green-600'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -535,7 +535,7 @@ export default function FoodCalorieCalculator() {
           onClick={() => setActiveTab('calendar')}
           className={`px-6 py-3 font-semibold transition-colors ${
             activeTab === 'calendar'
-              ? 'border-b-2 border-pink-500 text-pink-600'
+              ? 'border-b-2 border-green-500 text-green-600'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -558,7 +558,7 @@ export default function FoodCalorieCalculator() {
               value={age}
               onChange={(e) => setAge(e.target.value)}
               placeholder="25"
-              className="w-full px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400"
+              className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400"
             />
           </div>
           <div>
@@ -566,7 +566,7 @@ export default function FoodCalorieCalculator() {
             <select
               value={gender}
               onChange={(e) => setGender(e.target.value)}
-              className="w-full px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400"
+              className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400"
             >
               <option value="">선택</option>
               <option value="male">남성</option>
@@ -580,7 +580,7 @@ export default function FoodCalorieCalculator() {
               value={height}
               onChange={(e) => setHeight(e.target.value)}
               placeholder="170"
-              className="w-full px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400"
+              className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400"
             />
           </div>
           <div>
@@ -590,7 +590,7 @@ export default function FoodCalorieCalculator() {
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               placeholder="70"
-              className="w-full px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400"
+              className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400"
             />
           </div>
           <div>
@@ -598,7 +598,7 @@ export default function FoodCalorieCalculator() {
             <select
               value={activityLevel}
               onChange={(e) => setActivityLevel(e.target.value)}
-              className="w-full px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400"
+              className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400"
             >
               <option value="sedentary">거의 없음</option>
               <option value="light">가벼움</option>
@@ -609,9 +609,9 @@ export default function FoodCalorieCalculator() {
           </div>
         </div>
         {dailyCalories && (
-          <div className="mt-4 p-3 bg-pink-50 rounded-lg">
+          <div className="mt-4 p-3 bg-green-50 rounded-lg">
             <p className="text-sm text-gray-600">
-              하루 권장 칼로리: <span className="font-bold text-pink-600">{dailyCalories.toLocaleString()} kcal</span>
+              하루 권장 칼로리: <span className="font-bold text-green-600">{dailyCalories.toLocaleString()} kcal</span>
             </p>
           </div>
         )}
@@ -625,7 +625,7 @@ export default function FoodCalorieCalculator() {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">음식 사진 업로드</label>
           {!imagePreview ? (
-            <div className="border-2 border-dashed border-pink-300 rounded-lg p-8 text-center hover:border-pink-400 transition-colors">
+            <div className="border-2 border-dashed border-green-300 rounded-lg p-8 text-center hover:border-green-400 transition-colors">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -673,7 +673,7 @@ export default function FoodCalorieCalculator() {
               value={foodName}
               onChange={(e) => setFoodName(e.target.value)}
               placeholder="예: 김치찌개, 비빔밥, 치킨"
-              className="flex-1 px-4 py-3 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400"
+              className="flex-1 px-4 py-3 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400"
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
                   handleCalculateCalories()
@@ -683,7 +683,7 @@ export default function FoodCalorieCalculator() {
             <button
               onClick={() => handleCalculateCalories()}
               disabled={isCalculating || !foodName.trim()}
-              className="px-6 py-3 bg-pink-400 text-white rounded-lg hover:bg-pink-500 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-3 bg-green-400 text-white rounded-lg hover:bg-green-500 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
               {isCalculating ? '계산 중...' : '계산'}
             </button>
@@ -710,7 +710,7 @@ export default function FoodCalorieCalculator() {
                     const updatedInfo = calculateNutritionFromCalories(value, nutritionInfo)
                     setNutritionInfo(updatedInfo)
                   }}
-                  className="w-32 px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400 text-right text-2xl font-bold text-pink-600"
+                  className="w-32 px-3 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400 text-right text-2xl font-bold text-green-600"
                   min="0"
                 />
                 <span className="text-gray-600">kcal</span>
@@ -720,7 +720,7 @@ export default function FoodCalorieCalculator() {
               <div className="mt-2">
                 <div className="w-full bg-gray-200 rounded-full h-4 mb-1">
                   <div
-                    className="bg-pink-500 h-4 rounded-full transition-all duration-500"
+                    className="bg-green-500 h-4 rounded-full transition-all duration-500"
                     style={{ width: `${Math.min((nutritionInfo.calories / dailyCalories) * 100, 100)}%` }}
                   ></div>
                 </div>
@@ -804,7 +804,7 @@ export default function FoodCalorieCalculator() {
               <select
                 value={mealType}
                 onChange={(e) => setMealType(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400"
+                className="w-full px-4 py-3 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400"
               >
                 <option value="">선택하세요</option>
                 <option value="breakfast">아침</option>
@@ -816,7 +816,7 @@ export default function FoodCalorieCalculator() {
             <button
               onClick={handleSaveRecord}
               disabled={isSaving || !mealType}
-              className="w-full px-6 py-3 bg-pink-500 text-white rounded-lg hover:bg-pink-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-semibold"
+              className="w-full px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-semibold"
             >
               {isSaving ? '저장 중...' : '📝 기록 저장하기'}
             </button>
@@ -832,18 +832,18 @@ export default function FoodCalorieCalculator() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-3 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400"
+            className="px-3 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400"
           />
         </div>
 
         {/* 일일 합계 */}
         {dailySummary && dailySummary.recordCount > 0 && (
-          <div className="mb-6 p-4 bg-pink-50 rounded-lg">
+          <div className="mb-6 p-4 bg-green-50 rounded-lg">
             <h3 className="text-lg font-semibold text-gray-700 mb-2">오늘의 합계</h3>
             <div className="grid grid-cols-4 gap-4">
               <div>
                 <div className="text-sm text-gray-600">총 칼로리</div>
-                <div className="text-xl font-bold text-pink-600">{dailySummary.totalCalories.toLocaleString()} kcal</div>
+                <div className="text-xl font-bold text-green-600">{dailySummary.totalCalories.toLocaleString()} kcal</div>
               </div>
               <div>
                 <div className="text-sm text-gray-600">탄수화물</div>
@@ -862,7 +862,7 @@ export default function FoodCalorieCalculator() {
               <div className="mt-3">
                 <div className="w-full bg-gray-200 rounded-full h-4">
                   <div
-                    className="bg-pink-500 h-4 rounded-full transition-all duration-500"
+                    className="bg-green-500 h-4 rounded-full transition-all duration-500"
                     style={{ width: `${Math.min((dailySummary.totalCalories / dailyCalories) * 100, 100)}%` }}
                   ></div>
                 </div>
@@ -884,13 +884,13 @@ export default function FoodCalorieCalculator() {
         ) : (
           <div className="space-y-4">
             {records.map((record) => (
-              <div key={record.id} className="border-2 border-pink-100 rounded-lg p-4 hover:border-pink-300 transition-colors">
+              <div key={record.id} className="border-2 border-green-100 rounded-lg p-4 hover:border-green-300 transition-colors">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-lg font-semibold text-gray-800">{record.food_name}</h3>
                       {record.meal_type && (
-                        <span className="px-3 py-1 bg-pink-100 text-pink-700 rounded-full text-sm font-medium">
+                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
                           {getMealTypeLabel(record.meal_type)}
                         </span>
                       )}
@@ -905,7 +905,7 @@ export default function FoodCalorieCalculator() {
                     <div className="grid grid-cols-4 gap-3 text-sm">
                       <div>
                         <span className="text-gray-600">칼로리</span>
-                        <div className="font-bold text-pink-600">{record.calories} kcal</div>
+                        <div className="font-bold text-green-600">{record.calories} kcal</div>
                       </div>
                       <div>
                         <span className="text-gray-600">탄수화물</span>
@@ -944,7 +944,7 @@ export default function FoodCalorieCalculator() {
       {activeTab === 'calendar' && (
         <div>
           {calendarDailyCalories && (
-            <div className="mb-4 p-3 bg-pink-50 rounded-lg">
+            <div className="mb-4 p-3 bg-green-50 rounded-lg">
               <p className="text-sm text-gray-600">
                 하루 권장 칼로리: <span className="font-semibold">{calendarDailyCalories.toLocaleString()} kcal</span>
               </p>
@@ -955,7 +955,7 @@ export default function FoodCalorieCalculator() {
           <div className="flex justify-between items-center mb-6 bg-white rounded-lg shadow-md p-4">
             <button
               onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}
-              className="px-4 py-2 bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 transition-colors font-semibold"
+              className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors font-semibold"
             >
               ← 이전 달
             </button>
@@ -971,7 +971,7 @@ export default function FoodCalorieCalculator() {
               </button>
               <button
                 onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}
-                className="px-4 py-2 bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 transition-colors font-semibold"
+                className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors font-semibold"
               >
                 다음 달 →
               </button>

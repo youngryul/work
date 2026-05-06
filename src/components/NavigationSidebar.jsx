@@ -166,8 +166,8 @@ export default function NavigationSidebar({
                         ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
                         ${
                           isActive
-                            ? 'bg-indigo-500 text-white shadow-md'
-                            : 'text-gray-600 hover:bg-indigo-50'
+                            ? 'bg-green-500 text-white shadow-md'
+                            : 'text-gray-600 hover:bg-green-50'
                         }
                       `}
                       title={collapsed ? item.label : ''}
@@ -196,8 +196,8 @@ export default function NavigationSidebar({
                               flex items-center gap-3 px-4 py-2
                               ${
                                 currentView === child.id
-                                  ? 'bg-indigo-400 text-white shadow-md'
-                                  : 'text-gray-600 hover:bg-indigo-50'
+                                  ? 'bg-green-500 text-white shadow-md'
+                                  : 'text-gray-600 hover:bg-green-50'
                               }
                             `}
                           >
@@ -266,8 +266,8 @@ export default function NavigationSidebar({
                     ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
                     ${
                             currentView === item.id
-                                ? 'bg-indigo-500 text-white shadow-md'
-                                : 'text-gray-600 hover:bg-indigo-50'
+                                ? 'bg-green-500 text-white shadow-md'
+                                : 'text-gray-600 hover:bg-green-50'
                         }
                   `}
                         title={collapsed ? item.label : ''}

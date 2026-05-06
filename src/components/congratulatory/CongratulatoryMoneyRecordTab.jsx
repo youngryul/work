@@ -159,7 +159,7 @@ export default function CongratulatoryMoneyRecordTab() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* 헤더 */}
-            <div className="bg-pink-50 px-6 py-4 border-b-2 border-pink-200 flex items-center justify-between">
+            <div className="bg-green-50 px-6 py-4 border-b-2 border-green-200 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-handwriting text-gray-800 mb-1">
                   {editingRecord ? '기록 수정' : '새 기록 추가'}
@@ -186,7 +186,7 @@ export default function CongratulatoryMoneyRecordTab() {
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+                  className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
                   required
                 >
                   <option value="축의금">축의금</option>
@@ -199,7 +199,7 @@ export default function CongratulatoryMoneyRecordTab() {
                   type="number"
                   value={formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+                  className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
                   placeholder="예: 50000"
                   required
                   min="1"
@@ -211,7 +211,7 @@ export default function CongratulatoryMoneyRecordTab() {
                   type="text"
                   value={formData.recipient_name}
                   onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })}
-                  className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+                  className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
                   placeholder="예: 홍길동"
                   required
                 />
@@ -222,7 +222,7 @@ export default function CongratulatoryMoneyRecordTab() {
                   type="text"
                   value={formData.relationship}
                   onChange={(e) => setFormData({ ...formData, relationship: e.target.value })}
-                  className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+                  className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
                   placeholder="예: 친구, 동료"
                 />
               </div>
@@ -232,7 +232,7 @@ export default function CongratulatoryMoneyRecordTab() {
                   type="tel"
                   value={formData.phone_number}
                   onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                  className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+                  className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
                   placeholder="예: 010-1234-5678"
                 />
               </div>
@@ -242,7 +242,7 @@ export default function CongratulatoryMoneyRecordTab() {
                   type="date"
                   value={formData.event_date}
                   onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
-                  className="w-full px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+                  className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
                   required
                 />
               </div>
@@ -250,7 +250,7 @@ export default function CongratulatoryMoneyRecordTab() {
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="px-6 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors font-sans font-medium shadow-md"
+                className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors font-sans font-medium shadow-md"
               >
                 {editingRecord ? '수정' : '저장'}
               </button>
@@ -275,7 +275,7 @@ export default function CongratulatoryMoneyRecordTab() {
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+            className="px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
           >
             <option value="">전체</option>
             <option value="축의금">축의금</option>
@@ -296,7 +296,7 @@ export default function CongratulatoryMoneyRecordTab() {
             resetForm()
             setShowForm(true)
           }}
-          className="px-4 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-sm font-medium shadow-md font-sans"
+          className="px-4 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-sm font-medium shadow-md font-sans"
         >
           + 기록 추가
         </button>
@@ -305,7 +305,7 @@ export default function CongratulatoryMoneyRecordTab() {
       {/* 기록 목록 */}
       {loading ? (
         <div className="text-center py-12 text-gray-500 font-sans">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-400 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto mb-4"></div>
           <p>로딩 중...</p>
         </div>
       ) : records.length === 0 ? (
@@ -318,7 +318,7 @@ export default function CongratulatoryMoneyRecordTab() {
           {records.map((record) => (
             <div
               key={record.id}
-              className="p-4 bg-white/80 backdrop-blur-sm rounded-lg border-2 border-gray-200 hover:border-pink-300 transition-colors shadow-sm"
+              className="p-4 bg-white/80 backdrop-blur-sm rounded-lg border-2 border-gray-200 hover:border-green-300 transition-colors shadow-sm"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -326,7 +326,7 @@ export default function CongratulatoryMoneyRecordTab() {
                     <span
                       className={`px-3 py-1 rounded-full text-sm font-sans font-medium ${
                         record.type === '축의금'
-                          ? 'bg-pink-100 text-pink-700'
+                          ? 'bg-green-100 text-green-700'
                           : 'bg-gray-100 text-gray-700'
                       }`}
                     >

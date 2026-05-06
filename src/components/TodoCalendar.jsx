@@ -227,13 +227,13 @@ export default function TodoCalendar() {
           onClick={() => count > 0 && handleDateClick(dateString)}
           className={`aspect-square flex flex-col items-start justify-start p-2 rounded-lg transition-all duration-200 relative ${
             isToday
-              ? 'bg-pink-200 border-2 border-pink-400'
+              ? 'bg-green-200 border-2 border-green-400'
               : 'bg-gray-50 hover:bg-gray-100'
           } ${count > 0 ? 'cursor-pointer hover:shadow-md' : ''}`}
         >
           <span
             className={`text-sm font-medium ${
-              isToday ? 'text-pink-700' : 'text-gray-700'
+              isToday ? 'text-green-700' : 'text-gray-700'
             }`}
           >
             {day}
@@ -241,7 +241,7 @@ export default function TodoCalendar() {
           {count > 0 && (
             <span
               className={`text-lg font-bold mt-auto mx-auto ${
-                isToday ? 'text-pink-600' : 'text-pink-500'
+                isToday ? 'text-green-600' : 'text-green-500'
               }`}
             >
               {count}개
@@ -302,7 +302,7 @@ export default function TodoCalendar() {
           </h2>
           <button
             onClick={handleToday}
-            className="px-3 py-1 text-sm bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 transition-colors duration-200"
+            className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-200"
           >
             오늘
           </button>
@@ -361,10 +361,10 @@ export default function TodoCalendar() {
                   {completedTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="flex items-center justify-between gap-3 p-4 bg-pink-50 rounded-lg border border-pink-200"
+                      className="flex items-center justify-between gap-3 p-4 bg-green-50 rounded-lg border border-green-200"
                     >
                       <div className="flex items-center gap-3 flex-1">
-                        <div className="flex-shrink-0 w-6 h-6 bg-pink-400 rounded-full flex items-center justify-center">
+                        <div className="flex-shrink-0 w-6 h-6 bg-green-400 rounded-full flex items-center justify-center">
                           <svg
                             className="w-4 h-4 text-white"
                             fill="none"
@@ -386,7 +386,7 @@ export default function TodoCalendar() {
                       {isTodayDate(selectedDate) && (
                         <button
                           onClick={() => handleRestoreToToday(task.id)}
-                          className="px-4 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors duration-200 text-sm font-semibold whitespace-nowrap"
+                          className="px-4 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors duration-200 text-sm font-semibold whitespace-nowrap"
                         >
                           오늘 할일로 복구
                         </button>

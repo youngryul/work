@@ -173,7 +173,7 @@ export default function HabitTracker({ tracker, year, month, onUpdate }) {
   }
 
   return (
-    <div className="bg-white rounded-lg border-2 border-gray-200 p-5 hover:border-pink-300 transition-all duration-200">
+    <div className="bg-white rounded-lg border-2 border-gray-200 p-5 hover:border-green-300 transition-all duration-200">
       {/* 제목 바 */}
       <div 
         className="rounded-t-lg px-4 py-2 mb-4 pr-10"
@@ -188,7 +188,7 @@ export default function HabitTracker({ tracker, year, month, onUpdate }) {
               onChange={(e) => setTitleDraft(e.target.value)}
               onKeyDown={handleTitleKeyDown}
               disabled={titleSaving}
-              className="min-w-0 flex-1 px-2 py-1 rounded border border-gray-400 text-base font-semibold text-gray-800 font-sans bg-white/95 focus:outline-none focus:ring-2 focus:ring-pink-500"
+              className="min-w-0 flex-1 px-2 py-1 rounded border border-gray-400 text-base font-semibold text-gray-800 font-sans bg-white/95 focus:outline-none focus:ring-2 focus:ring-green-500"
               aria-label="습관 제목"
             />
             <div className="flex shrink-0 gap-1 justify-end">
@@ -247,8 +247,8 @@ export default function HabitTracker({ tracker, year, month, onUpdate }) {
                     ${isFuture 
                       ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
                       : isCompleted
-                        ? 'bg-pink-400 text-white shadow-md scale-110'
-                        : 'bg-gray-200 text-gray-600 hover:bg-pink-200 hover:scale-105'
+                        ? 'bg-green-400 text-white shadow-md scale-110'
+                        : 'bg-gray-200 text-gray-600 hover:bg-green-200 hover:scale-105'
                     }
                     ${isAnimating ? 'animate-pulse scale-125' : ''}
                     ${!isPast && !isCompleted ? 'opacity-60' : ''}

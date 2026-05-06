@@ -37,7 +37,7 @@ export default function RecordModal({ record, isOpen, onClose, onEdit, onDelete,
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
-        <div className="bg-pink-50 px-6 py-4 border-b-2 border-pink-200 flex items-start justify-between">
+        <div className="bg-green-50 px-6 py-4 border-b-2 border-green-200 flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-base text-gray-600 font-sans">{record.projectName}</span>
@@ -74,7 +74,7 @@ export default function RecordModal({ record, isOpen, onClose, onEdit, onDelete,
                 onEdit?.(record)
                 onClose()
               }}
-              className="px-4 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-base font-medium shadow-md font-sans"
+              className="px-4 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans"
             >
               수정
             </button>

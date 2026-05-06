@@ -165,14 +165,14 @@ export default function DiaryCalendar({ onDateClick }) {
           onClick={() => handleDateClick(dateString)}
           className={`aspect-square flex flex-col items-start justify-start p-1 rounded-lg transition-all duration-200 relative overflow-hidden cursor-pointer hover:shadow-md ${
             isToday
-              ? 'bg-pink-200 border-2 border-pink-400'
+              ? 'bg-green-200 border-2 border-green-400'
               : 'bg-gray-50 hover:bg-gray-100'
           }`}
         >
           {/* 날짜 번호 */}
           <span
             className={`text-xs font-medium z-10 ${
-              isToday ? 'text-pink-700' : 'text-gray-700'
+              isToday ? 'text-green-700' : 'text-gray-700'
             }`}
           >
             {day}
@@ -247,7 +247,7 @@ export default function DiaryCalendar({ onDateClick }) {
           </h2>
           <button
             onClick={handleToday}
-            className="px-3 py-1 text-sm bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 transition-colors duration-200"
+            className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-200"
           >
             오늘
           </button>
@@ -297,7 +297,7 @@ export default function DiaryCalendar({ onDateClick }) {
                   <img
                     src={selectedDiary.imageUrl}
                     alt="일기 이미지"
-                    className="w-full rounded-lg border-2 border-pink-200"
+                    className="w-full rounded-lg border-2 border-green-200"
                   />
                 </div>
               )}

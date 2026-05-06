@@ -197,7 +197,7 @@ export default function WorldMap({ onCountryClick, visitedCountries: visitedCoun
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-700 mb-4"></div>
           <p className="text-gray-600">지도를 불러오는 중...</p>
         </div>
       </div>

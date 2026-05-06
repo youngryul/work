@@ -146,15 +146,15 @@ export default function DataStatistics() {
       <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
         <h3 className="text-xl font-bold text-gray-800 mb-4 font-sans">📚 독서 통계</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 bg-indigo-50 rounded-lg">
+          <div className="p-4 bg-green-50 rounded-lg">
             <p className="text-sm text-gray-600 mb-1 font-sans">총 독서 기록 수</p>
-            <p className="text-3xl font-bold text-indigo-600 font-sans">
+            <p className="text-3xl font-bold text-green-700 font-sans">
               {statistics.reading.totalRecords.toLocaleString()}
             </p>
           </div>
-          <div className="p-4 bg-pink-50 rounded-lg">
+          <div className="p-4 bg-green-50 rounded-lg">
             <p className="text-sm text-gray-600 mb-1 font-sans">총 읽은 페이지 수</p>
-            <p className="text-3xl font-bold text-pink-600 font-sans">
+            <p className="text-3xl font-bold text-green-600 font-sans">
               {statistics.reading.totalPages.toLocaleString()}
             </p>
           </div>

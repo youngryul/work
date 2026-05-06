@@ -33,7 +33,7 @@ export default function RecordDetail({ record, onEdit, onDelete }) {
     <div className="h-full overflow-y-auto">
       <div className="space-y-6">
         {/* 헤더 */}
-        <div className="border-b-2 border-pink-200 pb-4">
+        <div className="border-b-2 border-green-200 pb-4">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
@@ -45,7 +45,7 @@ export default function RecordDetail({ record, onEdit, onDelete }) {
             <div className="flex gap-2">
               <button
                 onClick={() => onEdit?.(record)}
-                className="px-4 py-2 bg-pink-400 text-white rounded-lg hover:bg-pink-500 transition-colors text-base font-medium shadow-md font-sans"
+                className="px-4 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans"
               >
                 수정
               </button>

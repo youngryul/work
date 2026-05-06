@@ -67,7 +67,7 @@ export default function AnnouncementView() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-700 mb-4"></div>
           <p className="text-gray-600 font-sans">로딩 중...</p>
         </div>
       </div>
@@ -223,7 +223,7 @@ export default function AnnouncementView() {
               <div className="p-6 border-t border-gray-200 bg-gray-50">
                 <button
                   onClick={handleCloseDetail}
-                  className="w-full px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors font-sans"
+                  className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-700 transition-colors font-sans"
                 >
                   닫기
                 </button>

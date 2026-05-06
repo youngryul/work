@@ -74,7 +74,7 @@ export default function AnnouncementBanner() {
   }
 
   return (
-    <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg">
+    <div className="bg-gradient-to-r from-blue-500 to-green-700 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           {/* 이전 버튼 (공지사항이 여러 개일 때만 표시) */}

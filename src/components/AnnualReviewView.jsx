@@ -197,7 +197,7 @@ export default function AnnualReviewView() {
             <textarea
               value={data.oneLine || ''}
               onChange={(e) => saveReviewData({ ...reviewData, '0': { ...data, oneLine: e.target.value } })}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
               rows="2"
               placeholder="예: 도전과 성장이 공존한"
             />
@@ -207,7 +207,7 @@ export default function AnnualReviewView() {
             <textarea
               value={data.why || ''}
               onChange={(e) => saveReviewData({ ...reviewData, '0': { ...data, why: e.target.value } })}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
               rows="3"
             />
           </div>
@@ -216,7 +216,7 @@ export default function AnnualReviewView() {
             <textarea
               value={data.feeling || ''}
               onChange={(e) => saveReviewData({ ...reviewData, '0': { ...data, feeling: e.target.value } })}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
               rows="3"
             />
           </div>
@@ -248,7 +248,7 @@ export default function AnnualReviewView() {
                       newKeywords[index] = e.target.value
                       saveReviewData({ ...reviewData, '1': { ...data, keywords: newKeywords } })
                     }}
-                    className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                    className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                     placeholder={`키워드 ${index + 1} 입력`}
                   />
                 </div>
@@ -268,7 +268,7 @@ export default function AnnualReviewView() {
                       newScenes[index] = e.target.value
                       saveReviewData({ ...reviewData, '1': { ...data, scenes: newScenes } })
                     }}
-                    className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                    className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                     rows="3"
                     placeholder={`장면 ${index + 1}을 자세히 설명해주세요`}
                   />
@@ -334,7 +334,7 @@ export default function AnnualReviewView() {
           {months.map((month, index) => (
             <div
               key={index}
-              className="bg-white border-2 border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow focus-within:border-pink-400"
+              className="bg-white border-2 border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow focus-within:border-green-400"
               onPaste={(e) => handlePaste(e, index)}
               onClick={() => {
                 // 클릭 시 포커스를 주어 붙여넣기 가능하게 함
@@ -381,7 +381,7 @@ export default function AnnualReviewView() {
                   <div className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center bg-gray-50">
                     {uploadingIndex === index ? (
                       <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-400 mx-auto mb-2"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400 mx-auto mb-2"></div>
                         <span className="text-sm text-gray-500 font-sans">업로드 중...</span>
                       </div>
                     ) : (
@@ -408,7 +408,7 @@ export default function AnnualReviewView() {
                   }}
                   onFocus={(e) => e.stopPropagation()}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-full p-2 border-2 border-gray-200 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                  className="w-full p-2 border-2 border-gray-200 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                   placeholder="한 줄 입력"
                 />
               </div>
@@ -439,7 +439,7 @@ export default function AnnualReviewView() {
                   newKeeps[index] = { ...newKeeps[index], action: e.target.value }
                   saveReviewData({ ...reviewData, '3': { ...data, keeps: newKeeps } })
                 }}
-                className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none mb-3 font-sans"
+                className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none mb-3 font-sans"
                 rows="2"
                 placeholder="잘한 선택/행동을 입력하세요"
               />
@@ -450,7 +450,7 @@ export default function AnnualReviewView() {
                   newKeeps[index] = { ...newKeeps[index], reason: e.target.value }
                   saveReviewData({ ...reviewData, '3': { ...data, keeps: newKeeps } })
                 }}
-                className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                 rows="2"
                 placeholder="왜 잘한 선택이었는지 입력하세요"
               />
@@ -461,7 +461,7 @@ export default function AnnualReviewView() {
             <textarea
               value={data.why}
               onChange={(e) => saveReviewData({ ...reviewData, '3': { ...data, why: e.target.value } })}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
               rows="4"
               placeholder="결과 때문인가? 나의 기준을 지켰기 때문인가? 회피하지 않았기 때문인가?"
             />
@@ -491,7 +491,7 @@ export default function AnnualReviewView() {
                   newProblems[index] = { ...newProblems[index], action: e.target.value }
                   saveReviewData({ ...reviewData, '4': { ...data, problems: newProblems } })
                 }}
-                className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none mb-3 font-sans"
+                className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none mb-3 font-sans"
                 rows="2"
                 placeholder="아쉬웠던 선택/놓친 기회를 입력하세요"
               />
@@ -502,7 +502,7 @@ export default function AnnualReviewView() {
                   newProblems[index] = { ...newProblems[index], reason: e.target.value }
                   saveReviewData({ ...reviewData, '4': { ...data, problems: newProblems } })
                 }}
-                className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                 rows="2"
                 placeholder="그 당시의 나는 왜 그렇게 선택했는가? (정보 부족, 감정적 상태, 두려움/조급함/완벽주의 등)"
               />
@@ -533,7 +533,7 @@ export default function AnnualReviewView() {
                 <textarea
                   value={data.pattern.signal}
                   onChange={(e) => saveReviewData({ ...reviewData, '5': { ...data, pattern: { ...data.pattern, signal: e.target.value } } })}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                   rows="2"
                 />
               </div>
@@ -542,7 +542,7 @@ export default function AnnualReviewView() {
                 <textarea
                   value={data.pattern.collapse}
                   onChange={(e) => saveReviewData({ ...reviewData, '5': { ...data, pattern: { ...data.pattern, collapse: e.target.value } } })}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                   rows="2"
                 />
               </div>
@@ -551,7 +551,7 @@ export default function AnnualReviewView() {
                 <textarea
                   value={data.pattern.recovery}
                   onChange={(e) => saveReviewData({ ...reviewData, '5': { ...data, pattern: { ...data.pattern, recovery: e.target.value } } })}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                   rows="2"
                 />
               </div>
@@ -570,7 +570,7 @@ export default function AnnualReviewView() {
                     newStrengths[index] = e.target.value
                     saveReviewData({ ...reviewData, '5': { ...data, strengths: newStrengths } })
                   }}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                   placeholder={`강점 ${index + 1} 입력`}
                 />
               </div>
@@ -604,7 +604,7 @@ export default function AnnualReviewView() {
                       newDecisions[index] = { ...newDecisions[index], decision: e.target.value }
                       saveReviewData({ ...reviewData, '6': { ...data, decisions: newDecisions } })
                     }}
-                    className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                    className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                     rows="2"
                   />
                 </div>
@@ -617,7 +617,7 @@ export default function AnnualReviewView() {
                       newDecisions[index] = { ...newDecisions[index], why: e.target.value }
                       saveReviewData({ ...reviewData, '6': { ...data, decisions: newDecisions } })
                     }}
-                    className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                    className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                     rows="2"
                   />
                 </div>
@@ -630,7 +630,7 @@ export default function AnnualReviewView() {
                       newDecisions[index] = { ...newDecisions[index], result: e.target.value }
                       saveReviewData({ ...reviewData, '6': { ...data, decisions: newDecisions } })
                     }}
-                    className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                    className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                     rows="2"
                   />
                 </div>
@@ -643,7 +643,7 @@ export default function AnnualReviewView() {
                       newDecisions[index] = { ...newDecisions[index], impact: e.target.value }
                       saveReviewData({ ...reviewData, '6': { ...data, decisions: newDecisions } })
                     }}
-                    className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                    className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                     rows="2"
                   />
                 </div>
@@ -669,7 +669,7 @@ export default function AnnualReviewView() {
             <textarea
               value={data.helpful}
               onChange={(e) => saveReviewData({ ...reviewData, '7': { ...data, helpful: e.target.value } })}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
               rows="4"
             />
           </div>
@@ -678,7 +678,7 @@ export default function AnnualReviewView() {
             <textarea
               value={data.draining}
               onChange={(e) => saveReviewData({ ...reviewData, '7': { ...data, draining: e.target.value } })}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
               rows="4"
             />
           </div>
@@ -690,7 +690,7 @@ export default function AnnualReviewView() {
                 <textarea
                   value={data.maintain}
                   onChange={(e) => saveReviewData({ ...reviewData, '7': { ...data, maintain: e.target.value } })}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                   rows="3"
                 />
               </div>
@@ -699,7 +699,7 @@ export default function AnnualReviewView() {
                 <textarea
                   value={data.clean}
                   onChange={(e) => saveReviewData({ ...reviewData, '7': { ...data, clean: e.target.value } })}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                   rows="3"
                 />
               </div>
@@ -727,7 +727,7 @@ export default function AnnualReviewView() {
                 <textarea
                   value={data.discarded.mindset}
                   onChange={(e) => saveReviewData({ ...reviewData, '8': { ...data, discarded: { ...data.discarded, mindset: e.target.value } } })}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                   rows="2"
                 />
               </div>
@@ -736,7 +736,7 @@ export default function AnnualReviewView() {
                 <textarea
                   value={data.discarded.relationship}
                   onChange={(e) => saveReviewData({ ...reviewData, '8': { ...data, discarded: { ...data.discarded, relationship: e.target.value } } })}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                   rows="2"
                 />
               </div>
@@ -745,7 +745,7 @@ export default function AnnualReviewView() {
                 <textarea
                   value={data.discarded.standard}
                   onChange={(e) => saveReviewData({ ...reviewData, '8': { ...data, discarded: { ...data.discarded, standard: e.target.value } } })}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                   rows="2"
                 />
               </div>
@@ -759,7 +759,7 @@ export default function AnnualReviewView() {
                 <textarea
                   value={data.gained.capability}
                   onChange={(e) => saveReviewData({ ...reviewData, '8': { ...data, gained: { ...data.gained, capability: e.target.value } } })}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                   rows="2"
                 />
               </div>
@@ -768,7 +768,7 @@ export default function AnnualReviewView() {
                 <textarea
                   value={data.gained.attitude}
                   onChange={(e) => saveReviewData({ ...reviewData, '8': { ...data, gained: { ...data.gained, attitude: e.target.value } } })}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                   rows="2"
                 />
               </div>
@@ -777,7 +777,7 @@ export default function AnnualReviewView() {
                 <textarea
                   value={data.gained.perspective}
                   onChange={(e) => saveReviewData({ ...reviewData, '8': { ...data, gained: { ...data.gained, perspective: e.target.value } } })}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                   rows="2"
                 />
               </div>
@@ -800,7 +800,7 @@ export default function AnnualReviewView() {
         <textarea
           value={data.evaluation}
           onChange={(e) => saveReviewData({ ...reviewData, '9': { ...data, evaluation: e.target.value } })}
-          className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+          className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
           rows="6"
           placeholder='"올해의 나는 ______________________________"'
         />
@@ -829,7 +829,7 @@ export default function AnnualReviewView() {
                     newInsights[index] = e.target.value
                     saveReviewData({ ...reviewData, '10': { ...data, insights: newInsights } })
                   }}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                   rows="2"
                 />
               </div>
@@ -847,7 +847,7 @@ export default function AnnualReviewView() {
                     newDifferent[index] = e.target.value
                     saveReviewData({ ...reviewData, '10': { ...data, different: newDifferent } })
                   }}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+                  className="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
                   rows="2"
                 />
               </div>
@@ -873,7 +873,7 @@ export default function AnnualReviewView() {
             <textarea
               value={data.criteria}
               onChange={(e) => saveReviewData({ ...reviewData, '11': { ...data, criteria: e.target.value } })}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
               rows="2"
             />
           </div>
@@ -882,7 +882,7 @@ export default function AnnualReviewView() {
             <textarea
               value={data.notStop}
               onChange={(e) => saveReviewData({ ...reviewData, '11': { ...data, notStop: e.target.value } })}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
               rows="2"
             />
           </div>
@@ -891,7 +891,7 @@ export default function AnnualReviewView() {
             <textarea
               value={data.growth}
               onChange={(e) => saveReviewData({ ...reviewData, '11': { ...data, growth: e.target.value } })}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+              className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
               rows="2"
             />
           </div>
@@ -912,7 +912,7 @@ export default function AnnualReviewView() {
         <textarea
           value={data.closing}
           onChange={(e) => saveReviewData({ ...reviewData, '12': { ...data, closing: e.target.value } })}
-          className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-pink-400 focus:outline-none font-sans"
+          className="w-full p-4 border-2 border-gray-300 rounded-lg text-base focus:border-green-400 focus:outline-none font-sans"
           rows="4"
           placeholder='"________________________________________"'
         />
@@ -945,8 +945,8 @@ export default function AnnualReviewView() {
 
     return (
       <div className="mb-8">
-        <div className="mb-6 p-4 bg-pink-50 rounded-lg border-2 border-pink-200">
-          <h1 className="text-2xl font-bold mb-2 text-pink-700 font-sans">{dayInfo.title}</h1>
+        <div className="mb-6 p-4 bg-green-50 rounded-lg border-2 border-green-200">
+          <h1 className="text-2xl font-bold mb-2 text-green-700 font-sans">{dayInfo.title}</h1>
           <p className="text-base text-gray-600 font-sans">{dayInfo.description}</p>
         </div>
         
@@ -961,7 +961,7 @@ export default function AnnualReviewView() {
           <div className="mt-8 text-center">
             <button
               onClick={() => handleDayComplete(day)}
-              className="px-8 py-4 bg-pink-400 text-white text-base font-semibold rounded-lg hover:bg-pink-500 transition-all duration-200 shadow-md hover:shadow-lg font-sans"
+              className="px-8 py-4 bg-green-400 text-white text-base font-semibold rounded-lg hover:bg-green-500 transition-all duration-200 shadow-md hover:shadow-lg font-sans"
             >
               Day {day} 완료하기
             </button>
@@ -1033,7 +1033,7 @@ export default function AnnualReviewView() {
                 onClick={() => setCurrentDay(day)}
                 className={`px-4 py-2 rounded-lg transition-all duration-200 text-base font-semibold font-sans ${
                   isCurrent
-                    ? 'bg-pink-400 text-white shadow-md'
+                    ? 'bg-green-400 text-white shadow-md'
                     : isCompleted
                     ? 'bg-green-100 text-green-700 hover:bg-green-200 border-2 border-green-300'
                     : 'bg-gray-200 text-gray-600 hover:bg-gray-300 border-2 border-gray-300'

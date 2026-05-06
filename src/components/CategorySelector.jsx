@@ -46,7 +46,7 @@ export default function CategorySelector({ selectedCategory, onChange }) {
         }
         onChange(e.target.value)
       }}
-      className="px-4 py-3 text-2xl border-2 border-pink-200 rounded-lg focus:outline-none focus:border-pink-400 shadow-sm bg-white flex-shrink-0"
+      className="px-4 py-3 text-2xl border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400 shadow-sm bg-white flex-shrink-0"
       style={{ minWidth: '180px' }}
     >
       {categories.length === 0 ? (

@@ -60,7 +60,7 @@ export default function HabitTrackerView() {
         <select
           value={currentMonth}
           onChange={(e) => setCurrentMonth(parseInt(e.target.value))}
-          className="px-4 py-2 border-2 border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 text-base bg-white font-sans"
+          className="px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
         >
           {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
             <option key={month} value={month}>

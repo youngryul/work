@@ -75,7 +75,7 @@ export default function NotificationCenter({
       {hasNotifications && (
         <button
           onClick={toggleNotifications}
-          className="fixed bottom-24 right-6 w-14 h-14 bg-pink-500 text-white rounded-full shadow-lg hover:bg-pink-600 transition-all duration-200 flex items-center justify-center z-50"
+          className="fixed bottom-24 right-6 w-14 h-14 bg-green-500 text-white rounded-full shadow-lg hover:bg-green-600 transition-all duration-200 flex items-center justify-center z-50"
           aria-label="알림"
         >
           <svg
@@ -136,7 +136,7 @@ export default function NotificationCenter({
                   {diaryReminder?.isOpen && (
                     <div className="p-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-pink-500 rounded-full mt-2 flex-shrink-0" />
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-800 font-sans mb-1">
                             어제 일기를 작성하세요
@@ -170,7 +170,7 @@ export default function NotificationCenter({
                                 }
                                 handleClose()
                               }}
-                              className="px-3 py-1.5 bg-pink-400 text-white text-xs rounded-lg hover:bg-pink-500 transition-colors font-sans"
+                              className="px-3 py-1.5 bg-green-400 text-white text-xs rounded-lg hover:bg-green-500 transition-colors font-sans"
                             >
                               지금 작성하기
                             </button>
@@ -225,7 +225,7 @@ export default function NotificationCenter({
                   {weeklySummaryReminder?.isOpen && (
                     <div className="p-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-indigo-500 rounded-full mt-2 flex-shrink-0" />
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-800 font-sans mb-1">
                             주간 업무/일기 요약을 생성하세요
@@ -250,7 +250,7 @@ export default function NotificationCenter({
                                 onWeeklySummaryGenerate()
                                 handleClose()
                               }}
-                              className="px-3 py-1.5 bg-indigo-500 text-white text-xs rounded-lg hover:bg-indigo-600 transition-colors font-sans"
+                              className="px-3 py-1.5 bg-green-500 text-white text-xs rounded-lg hover:bg-green-700 transition-colors font-sans"
                             >
                               지금 생성하기
                             </button>
@@ -293,7 +293,7 @@ export default function NotificationCenter({
                   {monthlySummaryReminder?.isOpen && (
                     <div className="p-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-indigo-500 rounded-full mt-2 flex-shrink-0" />
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-800 font-sans mb-1">
                             월간 업무/일기 요약을 생성하세요
@@ -318,7 +318,7 @@ export default function NotificationCenter({
                                 onMonthlySummaryGenerate()
                                 handleClose()
                               }}
-                              className="px-3 py-1.5 bg-indigo-500 text-white text-xs rounded-lg hover:bg-indigo-600 transition-colors font-sans"
+                              className="px-3 py-1.5 bg-green-500 text-white text-xs rounded-lg hover:bg-green-700 transition-colors font-sans"
                             >
                               지금 생성하기
                             </button>
@@ -361,7 +361,7 @@ export default function NotificationCenter({
                   {fiveYearQuestionReminder?.isOpen && fiveYearQuestionReminder?.question && (
                     <div className="p-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-pink-500 rounded-full mt-2 flex-shrink-0" />
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-800 font-sans mb-1">
                             오늘의 질문에 답하세요
@@ -376,7 +376,7 @@ export default function NotificationCenter({
                               })
                             }의 질문입니다.
                           </p>
-                          <div className="bg-pink-50 border-l-4 border-pink-400 p-3 rounded mb-3">
+                          <div className="bg-green-50 border-l-4 border-green-400 p-3 rounded mb-3">
                             <p className="text-xs text-gray-800 font-medium font-sans">
                               {fiveYearQuestionReminder.question.question_text}
                             </p>
@@ -400,7 +400,7 @@ export default function NotificationCenter({
                                 }
                                 handleClose()
                               }}
-                              className="px-3 py-1.5 bg-pink-400 text-white text-xs rounded-lg hover:bg-pink-500 transition-colors font-sans"
+                              className="px-3 py-1.5 bg-green-400 text-white text-xs rounded-lg hover:bg-green-500 transition-colors font-sans"
                             >
                               지금 답하기
                             </button>

@@ -33,8 +33,8 @@ export default function RecordList({ records = [], selectedId, onSelect }) {
           onClick={() => onSelect(record.id)}
           className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
             selectedId === record.id
-              ? 'bg-pink-100 border-pink-400 shadow-md'
-              : 'bg-white/60 border-pink-200 hover:border-pink-300 hover:shadow-sm hover:bg-white/80'
+              ? 'bg-green-100 border-green-400 shadow-md'
+              : 'bg-white/60 border-green-200 hover:border-green-300 hover:shadow-sm hover:bg-white/80'
           }`}
         >
           {/* 날짜 */}
@@ -48,7 +48,7 @@ export default function RecordList({ records = [], selectedId, onSelect }) {
               {record.title}
             </h3>
             {record.isMain && (
-              <span className="text-xs px-2 py-1 bg-pink-200 text-pink-800 rounded-full font-medium font-sans">
+              <span className="text-xs px-2 py-1 bg-green-200 text-green-800 rounded-full font-medium font-sans">
                 📌 메인
               </span>
             )}

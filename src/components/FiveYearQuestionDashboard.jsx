@@ -215,7 +215,7 @@ export default function FiveYearQuestionDashboard({ onDateClick }) {
     <div className="space-y-6">
       {/* 2026년 답변 수 */}
       <div className="text-sm text-gray-500 font-sans">
-        2026년 총 <span className="font-semibold text-pink-600">{answerCount2026}</span>개 답변
+        2026년 총 <span className="font-semibold text-green-600">{answerCount2026}</span>개 답변
       </div>
 
       {/* 전체 연도 달력 */}
@@ -255,9 +255,9 @@ export default function FiveYearQuestionDashboard({ onDateClick }) {
                         onClick={() => handleDateClick(date)}
                         className={`aspect-square flex flex-col items-center justify-center rounded-lg transition-all duration-200 relative cursor-pointer ${
                           isToday
-                            ? 'bg-pink-200 border-2 border-pink-400 shadow-md'
+                            ? 'bg-green-200 border-2 border-green-400 shadow-md'
                             : answerCount > 0
-                            ? 'bg-pink-100 border border-pink-300 hover:bg-pink-200 hover:shadow-md'
+                            ? 'bg-green-100 border border-green-300 hover:bg-green-200 hover:shadow-md'
                             : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
                         }`}
                         title={`${answerCount}년 답변: ${answerYears.join(', ')}년`}
@@ -265,9 +265,9 @@ export default function FiveYearQuestionDashboard({ onDateClick }) {
                         <span
                           className={`text-xs font-medium ${
                             isToday
-                              ? 'text-pink-700'
+                              ? 'text-green-700'
                               : answerCount > 0
-                              ? 'text-pink-600'
+                              ? 'text-green-600'
                               : 'text-gray-500'
                           }`}
                         >
@@ -277,7 +277,7 @@ export default function FiveYearQuestionDashboard({ onDateClick }) {
                           <div className="absolute bottom-1 left-1 right-1">
                             <div className="w-full bg-gray-200 rounded-full h-1">
                               <div
-                                className="bg-pink-500 h-1 rounded-full transition-all"
+                                className="bg-green-500 h-1 rounded-full transition-all"
                                 style={{ width: `${percentage}%` }}
                               />
                             </div>
@@ -300,7 +300,7 @@ export default function FiveYearQuestionDashboard({ onDateClick }) {
       <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
         <div className="flex items-center justify-center gap-6 text-sm font-sans">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-pink-100 border border-pink-300 rounded"></div>
+            <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
             <span className="text-gray-600">답변 있음 (하단에 년도 표시)</span>
           </div>
           <div className="flex items-center gap-2">
@@ -308,7 +308,7 @@ export default function FiveYearQuestionDashboard({ onDateClick }) {
             <span className="text-gray-600">답변 없음</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-pink-200 border-2 border-pink-400 rounded"></div>
+            <div className="w-4 h-4 bg-green-200 border-2 border-green-400 rounded"></div>
             <span className="text-gray-600">오늘</span>
           </div>
         </div>
@@ -344,7 +344,7 @@ export default function FiveYearQuestionDashboard({ onDateClick }) {
             </div>
 
             {/* 질문 */}
-            <div className="p-6 bg-gradient-to-r from-pink-50 to-purple-50 border-b border-gray-200">
+            <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-200">
               <h4 className="text-lg font-semibold text-gray-700 mb-2 font-sans">질문</h4>
               <p className="text-base text-gray-800 font-sans">{selectedDateQuestion.question_text}</p>
             </div>
@@ -364,20 +364,20 @@ export default function FiveYearQuestionDashboard({ onDateClick }) {
                         key={answer.id}
                         className={`p-4 rounded-lg border-2 ${
                           isCurrentYear
-                            ? 'bg-pink-50 border-pink-300 shadow-md'
+                            ? 'bg-green-50 border-green-300 shadow-md'
                             : 'bg-gray-50 border-gray-200'
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <span className={`text-lg font-bold ${
-                              isCurrentYear ? 'text-pink-600' : 'text-gray-600'
+                              isCurrentYear ? 'text-green-600' : 'text-gray-600'
                             }`}>
                               {answer.year}년
                             </span>
                             <span className="text-sm text-gray-500">({yearLabel})</span>
                             {isCurrentYear && (
-                              <span className="px-2 py-1 bg-pink-200 text-pink-700 rounded text-xs font-semibold">
+                              <span className="px-2 py-1 bg-green-200 text-green-700 rounded text-xs font-semibold">
                                 올해
                               </span>
                             )}
@@ -406,7 +406,7 @@ export default function FiveYearQuestionDashboard({ onDateClick }) {
                     onDateClick(selectedDate)
                   }
                 }}
-                className="px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors font-sans"
+                className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-sans"
               >
                 질문 답변 페이지로 이동
               </button>
