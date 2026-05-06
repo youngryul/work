@@ -1,11 +1,33 @@
 import { supabase } from '../config/supabase.js'
 
+const AUTH_CALL_TIMEOUT_MS = 3000
+
+/**
+ * Supabase auth 호출이 영원히 pending 되는 상황을 방지합니다.
+ * (환경 변수 미설정/네트워크 문제 등에서 로딩이 안 풀리는 케이스 방어)
+ * @template T
+ * @param {Promise<T>} promise
+ * @param {string} label
+ * @returns {Promise<T>}
+ */
+async function withTimeout(promise, label) {
+  let timeoutId
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`Auth timeout: ${label}`)), AUTH_CALL_TIMEOUT_MS)
+  })
+  try {
+    return await Promise.race([promise, timeoutPromise])
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 /**
  * 기존 데이터를 현재 사용자에게 할당
  */
 export async function migrateExistingData() {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user } } = await withTimeout(supabase.auth.getUser(), 'getUser(migrateExistingData)')
     
     if (!user) {
       throw new Error('로그인이 필요합니다.')
@@ -119,14 +141,14 @@ export async function signOut() {
 export async function getCurrentUser() {
   try {
     // 먼저 getUser() 시도
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser(), 'getUser(getCurrentUser)')
     
     if (!userError && user) {
       return user
     }
     
     // getUser() 실패 시 세션 확인 (재시도)
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    const { data: { session }, error: sessionError } = await withTimeout(supabase.auth.getSession(), 'getSession(getCurrentUser)')
     
     if (!sessionError && session?.user) {
       return session.user
@@ -137,6 +159,10 @@ export async function getCurrentUser() {
   } catch (error) {
     // AuthSessionMissingError는 조용히 처리
     if (error.name === 'AuthSessionMissingError' || error.message?.includes('Auth session missing')) {
+      return null
+    }
+    if (error.message?.includes('Auth timeout:')) {
+      console.warn('인증 정보 로딩 타임아웃:', error.message)
       return null
     }
     // 다른 에러도 조용히 처리 (배포 환경에서 발생할 수 있음)
