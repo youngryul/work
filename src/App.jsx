@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
+import LandingPage from './components/LandingPage.jsx'
 import LoginForm from './components/LoginForm.jsx'
 import TodayView from './components/TodayView.jsx'
 import BacklogView from './components/BacklogView.jsx'
@@ -40,6 +41,13 @@ import { markWeeklyReminderShown, markMonthlyReminderShown } from './utils/summa
  */
 function AppContent() {
   const { user, loading } = useAuth()
+  const [showLogin, setShowLogin] = useState(false) // 랜딩 → 로그인 전환
+
+  // 로그인 성공 시 showLogin 초기화
+  useEffect(() => {
+    if (user) setShowLogin(false)
+  }, [user])
+
   // localStorage에서 마지막으로 본 화면 불러오기
   const [currentView, setCurrentView] = useState(() => {
     const savedView = localStorage.getItem('lastView')
@@ -191,9 +199,10 @@ function AppContent() {
     )
   }
 
-  // 로그인하지 않은 경우
+  // 비로그인: 랜딩 → 로그인 폼
   if (!user) {
-    return <LoginForm />
+    if (showLogin) return <LoginForm />
+    return <LandingPage onLogin={() => setShowLogin(true)} />
   }
 
   // 로그인한 경우 메인 앱 표시
