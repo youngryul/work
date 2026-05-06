@@ -29,6 +29,7 @@ import NotificationCenter from './components/NotificationCenter.jsx'
 import AnnouncementBanner from './components/AnnouncementBanner.jsx'
 import DiaryReminderModal from './components/DiaryReminderModal.jsx'
 import ToastContainer from './components/Toast.jsx'
+import AdSenseBanner from './components/AdSenseBanner.jsx'
 import { useNotifications } from './hooks/useNotifications.js'
 import { markDiaryReminderShown } from './services/diaryReminderService.js'
 import { markFiveYearQuestionReminderShown } from './services/fiveYearQuestionReminderService.js'
@@ -269,6 +270,7 @@ function AppContent() {
         {currentView === 'nonogram' && <NonogramView />}
         {currentView === 'sudoku' && <SudokuView />}
         {currentView === 'admin' && <AdminDashboard />}
+        <AdSenseBanner />
         </main>
       </div>
 

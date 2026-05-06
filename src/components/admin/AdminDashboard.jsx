@@ -4,13 +4,14 @@ import AnnouncementManagement from './AnnouncementManagement.jsx'
 import UserStatistics from './UserStatistics.jsx'
 import DataStatistics from './DataStatistics.jsx'
 import UserRoleManagement from './UserRoleManagement.jsx'
+import AdSettingsManagement from './AdSettingsManagement.jsx'
 
 /**
  * 관리자 대시보드 컴포넌트 (admin 역할만 접근 가능)
  */
 export default function AdminDashboard() {
   const { user, loading: authLoading, isAdmin: isAdminUser } = useAuth()
-  const [activeTab, setActiveTab] = useState('announcements') // 'announcements' | 'users' | 'data' | 'roles'
+  const [activeTab, setActiveTab] = useState('announcements') // 'announcements' | 'users' | 'data' | 'roles' | 'ads'
 
   if (authLoading) {
     return (
@@ -38,7 +39,7 @@ export default function AdminDashboard() {
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-4 text-gray-800 font-sans">🔐 관리자 대시보드</h1>
         <p className="text-base text-gray-600 font-sans mb-4">
-          공지사항, 사용자, 데이터 통계를 관리할 수 있습니다.
+          공지사항, 사용자, 데이터 통계, 권한·광고 설정을 관리할 수 있습니다.
         </p>
 
         {/* 탭 */}
@@ -83,6 +84,16 @@ export default function AdminDashboard() {
           >
             권한 관리
           </button>
+          <button
+            onClick={() => setActiveTab('ads')}
+            className={`px-6 py-2 rounded-lg font-semibold transition-colors font-sans ${
+              activeTab === 'ads'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            광고 설정
+          </button>
         </div>
       </div>
 
@@ -91,6 +102,7 @@ export default function AdminDashboard() {
       {activeTab === 'users' && <UserStatistics />}
       {activeTab === 'data' && <DataStatistics />}
       {activeTab === 'roles' && <UserRoleManagement />}
+      {activeTab === 'ads' && <AdSettingsManagement />}
     </div>
   )
 }
