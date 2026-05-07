@@ -5,6 +5,7 @@ import LoginForm from './components/LoginForm.jsx'
 import TodayView from './components/TodayView.jsx'
 import BacklogView from './components/BacklogView.jsx'
 import TodoCalendarView from './components/TodoCalendarView.jsx'
+import ScheduleCalendarView from './components/ScheduleCalendarView.jsx'
 import CalendarView from './components/CalendarView.jsx'
 import AnnualReviewView from './components/AnnualReviewView.jsx'
 import Review2026View from './components/Review2026View.jsx'
@@ -262,6 +263,7 @@ function AppContent() {
         {currentView === 'today' && <TodayView />}
         {currentView === 'backlog' && <BacklogView />}
         {currentView === 'todo-calendar' && <TodoCalendarView />}
+        {currentView === 'schedule-calendar' && <ScheduleCalendarView />}
         {currentView === 'diary-calendar' && <CalendarView />}
         {currentView === 'review' && <AnnualReviewView />}
         {currentView === 'review-2026' && (

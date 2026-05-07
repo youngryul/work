@@ -34,6 +34,11 @@ export const NAVIGATION_MENU_ITEMS = [
     icon: '📔',
   },
   {
+    id: 'schedule-calendar',
+    label: '일정 달력',
+    icon: '🗓️',
+  },
+  {
     id: 'records',
     label: '프로젝트 기록',
     icon: '📁',
