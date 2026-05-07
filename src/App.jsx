@@ -42,11 +42,17 @@ import { markWeeklyReminderShown, markMonthlyReminderShown } from './utils/summa
 function AppContent() {
   const { user, loading } = useAuth()
   const [showLogin, setShowLogin] = useState(false) // 랜딩 → 로그인 전환
+  const [appTheme, setAppTheme] = useState(() => localStorage.getItem('appTheme') || 'posily')
 
   // 로그인 성공 시 showLogin 초기화
   useEffect(() => {
     if (user) setShowLogin(false)
   }, [user])
+
+  useEffect(() => {
+    localStorage.setItem('appTheme', appTheme)
+    document.body.setAttribute('data-theme', appTheme)
+  }, [appTheme])
 
   // localStorage에서 마지막으로 본 화면 불러오기
   const [currentView, setCurrentView] = useState(() => {
@@ -207,7 +213,7 @@ function AppContent() {
 
   // 로그인한 경우 메인 앱 표시
   return (
-    <div className="min-h-screen flex">
+    <div className={`min-h-screen flex ${appTheme === 'blue' ? 'theme-blue' : 'theme-posily'}`}>
       {/* 사이드바 네비게이션 */}
       <NavigationSidebar
         currentView={currentView}
@@ -221,13 +227,20 @@ function AppContent() {
       {/* 메인 컨텐츠 영역 */}
       <div
         className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}
-        style={currentView !== 'today' ? {
-          backgroundImage: 'url(/images/심플배경화면.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundAttachment: 'fixed',
-          minHeight: '100vh',
-        } : undefined}
+        style={appTheme === 'posily' && currentView !== 'today'
+          ? {
+              backgroundImage: 'url(/images/심플배경화면.png)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundAttachment: 'fixed',
+              minHeight: '100vh',
+            }
+          : appTheme === 'blue'
+            ? {
+                background: 'linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%)',
+                minHeight: '100vh',
+              }
+            : undefined}
       >
         {/* 공지사항 배너 */}
         <AnnouncementBanner />
@@ -283,7 +296,12 @@ function AppContent() {
         {currentView === 'five-year-questions' && <FiveYearQuestionView />}
         {currentView === 'food-calorie' && <FoodCalorieCalculator />}
         {currentView === 'congratulatory-money' && <CongratulatoryMoneyView />}
-        {currentView === 'settings' && <SettingsView />}
+        {currentView === 'settings' && (
+          <SettingsView
+            currentTheme={appTheme}
+            onThemeChange={setAppTheme}
+          />
+        )}
         {currentView === 'announcements' && <AnnouncementView />}
         {currentView === 'nonogram' && <NonogramView />}
         {currentView === 'sudoku' && <SudokuView />}
