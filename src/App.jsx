@@ -42,13 +42,40 @@ import { markWeeklyReminderShown, markMonthlyReminderShown } from './utils/summa
  */
 function AppContent() {
   const { user, loading } = useAuth()
-  const [showLogin, setShowLogin] = useState(false) // 랜딩 → 로그인 전환
+  const [showLogin, setShowLogin] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('forceLogin') === '1'
+  }) // 랜딩 → 로그인 전환
   const [appTheme, setAppTheme] = useState(() => localStorage.getItem('appTheme') || 'posily')
 
   // 로그인 성공 시 showLogin 초기화
   useEffect(() => {
     if (user) setShowLogin(false)
   }, [user])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('forceLogin') !== '1' || !window.__TAURI_INTERNALS__) {
+      return
+    }
+
+    ;(async () => {
+      try {
+        const [{ getCurrentWindow }, { LogicalSize }] = await Promise.all([
+          import('@tauri-apps/api/window'),
+          import('@tauri-apps/api/dpi'),
+        ])
+        const appWindow = getCurrentWindow()
+        await appWindow.setDecorations(true)
+        await appWindow.setResizable(true)
+        await appWindow.setAlwaysOnTop(false)
+        await appWindow.setSize(new LogicalSize(1200, 820))
+        await appWindow.center()
+      } catch (error) {
+        console.error('로그인 창 크기 전환 실패:', error)
+      }
+    })()
+  }, [])
 
   useEffect(() => {
     localStorage.setItem('appTheme', appTheme)
