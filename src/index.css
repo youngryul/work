@@ -22,7 +22,6 @@ body {
 
 body[data-theme='posily'] {
   font-family: 'SchoolSafeBoardMarker', sans-serif;
-  background: linear-gradient(135deg, #fef5e7 0%, #f8d7da 50%, #d1ecf1 100%);
 }
 
 body[data-theme='blue'] {

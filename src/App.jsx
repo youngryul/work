@@ -87,6 +87,15 @@ function AppContent() {
     const savedView = localStorage.getItem('lastView')
     return savedView || 'today'
   })
+
+  // 배경 이미지: posily 테마 + 오늘 할일 아닌 경우에만 적용
+  useEffect(() => {
+    const showBg = appTheme === 'posily' && currentView !== 'today'
+    document.body.style.backgroundImage = showBg ? 'url(/images/심플배경화면.png)' : ''
+    document.body.style.backgroundSize = showBg ? 'cover' : ''
+    document.body.style.backgroundPosition = showBg ? 'center' : ''
+    document.body.style.backgroundAttachment = showBg ? 'fixed' : ''
+  }, [appTheme, currentView])
   const [recordView, setRecordView] = useState('main') // 'main' | 'form'
   const [editingRecord, setEditingRecord] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false) // 모바일 사이드바 상태
@@ -241,7 +250,7 @@ function AppContent() {
 
   // 로그인한 경우 메인 앱 표시
   return (
-    <div className={`min-h-screen flex ${appTheme === 'blue' ? 'theme-blue' : 'theme-posily'}`}>
+    <div className={appTheme === 'blue' ? 'theme-blue' : 'theme-posily'}>
       {/* 사이드바 네비게이션 */}
       <NavigationSidebar
         currentView={currentView}
@@ -253,23 +262,7 @@ function AppContent() {
       />
 
       {/* 메인 컨텐츠 영역 */}
-      <div
-        className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}
-        style={appTheme === 'posily' && currentView !== 'today'
-          ? {
-              backgroundImage: 'url(/images/심플배경화면.png)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundAttachment: 'fixed',
-              minHeight: '100vh',
-            }
-          : appTheme === 'blue'
-            ? {
-                background: 'linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%)',
-                minHeight: '100vh',
-              }
-            : undefined}
-      >
+      <div className={`min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
         {/* 공지사항 배너 */}
         <AnnouncementBanner />
 
