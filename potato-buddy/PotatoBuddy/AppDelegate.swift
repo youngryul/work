@@ -18,6 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupStatusItem()
         setupWindow()
         observeBubbleToggle()
+        observeAuthChange()
     }
 
     // MARK: - 메뉴바 아이콘
@@ -26,12 +27,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "circle.fill",
-                                   accessibilityDescription: "포실이")
-            button.image?.isTemplate = true
-            // 감자 이모지를 이미지 대신 텍스트로 표시
-            button.title = "🥔"
-            button.image = nil
+            if let img = NSImage(named: "포실이(투명)") {
+                img.size = NSSize(width: 18, height: 18)
+                button.image = img
+            } else {
+                button.title = "포실이"
+            }
         }
 
         let menu = NSMenu()
@@ -71,13 +72,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    // MARK: - 인증 상태 변화 감지
+
+    private func observeAuthChange() {
+        NotificationCenter.default.addObserver(
+            forName: .authStateChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.resizeWindow(bubbleVisible: false)
+        }
+    }
+
     // MARK: - 창 생성
 
     private func setupWindow() {
-        // 초기 상태: 캐릭터만 표시 (100×100)
         let screen   = NSScreen.main ?? NSScreen.screens[0]
         let visArea  = screen.visibleFrame
-        let initSize = CGSize(width: 120, height: 120)
+        // 로그인 여부에 따라 초기 크기 결정
+        let initSize: CGSize = AuthService.shared.isLoggedIn
+            ? CGSize(width: 120, height: 120)
+            : CGSize(width: 260, height: 360)
 
         let origin = CGPoint(
             x: visArea.maxX - initSize.width  - 16,
@@ -107,12 +122,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func resizeWindow(bubbleVisible: Bool) {
         guard let window else { return }
 
-        let screen   = NSScreen.main ?? NSScreen.screens[0]
-        let visArea  = screen.visibleFrame
+        let screen  = NSScreen.main ?? NSScreen.screens[0]
+        let visArea = screen.visibleFrame
 
-        let newSize: CGSize = bubbleVisible
-            ? CGSize(width: 320, height: 540)
-            : CGSize(width: 120, height: 120)
+        let newSize: CGSize
+        if !AuthService.shared.isLoggedIn {
+            newSize = CGSize(width: 260, height: 360)
+        } else if bubbleVisible {
+            newSize = CGSize(width: 320, height: 540)
+        } else {
+            newSize = CGSize(width: 120, height: 120)
+        }
 
         // 우하단 고정: x, bottom-y 기준으로 origin 재계산
         let currentFrame = window.frame

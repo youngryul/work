@@ -11,18 +11,22 @@
 		199DCDDF68F8713C189D05FD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDA9374BFB496DC310B133F /* AppDelegate.swift */; };
 		52949332A075AC22A6D74643 /* DownwardBubbleShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D55F9D7FCCE9503B15B63A5 /* DownwardBubbleShape.swift */; };
 		53051C295875E02B85336103 /* TodoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DD29BCF03B4DCC1F72234C3 /* TodoViewModel.swift */; };
+		6903FAAFADF91E26AED656F6 /* 포실이(투명).png in Resources */ = {isa = PBXBuildFile; fileRef = 7C66F6E22CD38ED9563C49F4 /* 포실이(투명).png */; };
 		69E6B81F2C9230C1DCA47B37 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */; };
 		6B1E60F44EA898EC371A4B4E /* OverlayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC4808FE02D6272C60A42FA /* OverlayRootView.swift */; };
+		7E18E6B2DE7080B7F6B76D0C /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B02DFAC49D9D4482ECF09A64 /* LoginView.swift */; };
 		8F3CE139D3BD95A22AF354BB /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FFB9D50D2473DC4EA80FC2 /* Config.swift */; };
 		9614CADE3D87EF9BA758FAF4 /* 물 주는 포실이.gif in Resources */ = {isa = PBXBuildFile; fileRef = A116B7DBFAC47A89BE9EA8BE /* 물 주는 포실이.gif */; };
 		ACC434D4F3C6CB14E9B5D645 /* TaskItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE031E1DC9B579555F16B096 /* TaskItem.swift */; };
 		BF72152F5A83BBC8013D7216 /* 포실이 앱 아이콘.png in Resources */ = {isa = PBXBuildFile; fileRef = 87A559DEF644037CCB12B963 /* 포실이 앱 아이콘.png */; };
 		D2ED8A232E2920AC0D900135 /* PotatoBuddyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABB608B81557591785536A64 /* PotatoBuddyApp.swift */; };
 		E55319BA3F5F13380251C8DB /* CharacterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34391A214A69FA4C5B297D86 /* CharacterView.swift */; };
+		FC7F1B03C1972CCA1401550E /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 301769FE9AC7E8DA1E0CB788 /* AuthService.swift */; };
 		FCE237435B2D654EEE2A4100 /* FloatingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		301769FE9AC7E8DA1E0CB788 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		34391A214A69FA4C5B297D86 /* CharacterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterView.swift; sourceTree = "<group>"; };
 		394B0F1AC9D67928D58637F1 /* PotatoBuddy.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PotatoBuddy.entitlements; sourceTree = "<group>"; };
 		4D55F9D7FCCE9503B15B63A5 /* DownwardBubbleShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownwardBubbleShape.swift; sourceTree = "<group>"; };
@@ -31,12 +35,14 @@
 		6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingWindow.swift; sourceTree = "<group>"; };
 		6EC4808FE02D6272C60A42FA /* OverlayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayRootView.swift; sourceTree = "<group>"; };
 		7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseService.swift; sourceTree = "<group>"; };
+		7C66F6E22CD38ED9563C49F4 /* 포실이(투명).png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이(투명).png"; sourceTree = "<group>"; };
 		87A559DEF644037CCB12B963 /* 포실이 앱 아이콘.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이 앱 아이콘.png"; sourceTree = "<group>"; };
 		8DD29BCF03B4DCC1F72234C3 /* TodoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoViewModel.swift; sourceTree = "<group>"; };
 		A116B7DBFAC47A89BE9EA8BE /* 물 주는 포실이.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = "물 주는 포실이.gif"; sourceTree = "<group>"; };
 		A3AC895187BF5EB8BF855D3C /* PotatoBuddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PotatoBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		ABB608B81557591785536A64 /* PotatoBuddyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotatoBuddyApp.swift; sourceTree = "<group>"; };
 		AE031E1DC9B579555F16B096 /* TaskItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskItem.swift; sourceTree = "<group>"; };
+		B02DFAC49D9D4482ECF09A64 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		DDDA9374BFB496DC310B133F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		FE7618036880053779773CE5 /* ChatBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBubbleView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -45,6 +51,7 @@
 		146C1958BB83CF47CD3CFAAE /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				301769FE9AC7E8DA1E0CB788 /* AuthService.swift */,
 				68FFB9D50D2473DC4EA80FC2 /* Config.swift */,
 				7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */,
 				AE031E1DC9B579555F16B096 /* TaskItem.swift */,
@@ -65,6 +72,7 @@
 			isa = PBXGroup;
 			children = (
 				A116B7DBFAC47A89BE9EA8BE /* 물 주는 포실이.gif */,
+				7C66F6E22CD38ED9563C49F4 /* 포실이(투명).png */,
 				87A559DEF644037CCB12B963 /* 포실이 앱 아이콘.png */,
 				DDDA9374BFB496DC310B133F /* AppDelegate.swift */,
 				34391A214A69FA4C5B297D86 /* CharacterView.swift */,
@@ -72,6 +80,7 @@
 				4D55F9D7FCCE9503B15B63A5 /* DownwardBubbleShape.swift */,
 				6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */,
 				6320DB8612B044B1392DDE75 /* Info.plist */,
+				B02DFAC49D9D4482ECF09A64 /* LoginView.swift */,
 				6EC4808FE02D6272C60A42FA /* OverlayRootView.swift */,
 				394B0F1AC9D67928D58637F1 /* PotatoBuddy.entitlements */,
 				ABB608B81557591785536A64 /* PotatoBuddyApp.swift */,
@@ -117,6 +126,8 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
 			};
 			buildConfigurationList = DD166C9502968093C7E1C696 /* Build configuration list for PBXProject "PotatoBuddy" */;
 			developmentRegion = en;
@@ -144,6 +155,7 @@
 			files = (
 				9614CADE3D87EF9BA758FAF4 /* 물 주는 포실이.gif in Resources */,
 				BF72152F5A83BBC8013D7216 /* 포실이 앱 아이콘.png in Resources */,
+				6903FAAFADF91E26AED656F6 /* 포실이(투명).png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -155,11 +167,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				199DCDDF68F8713C189D05FD /* AppDelegate.swift in Sources */,
+				FC7F1B03C1972CCA1401550E /* AuthService.swift in Sources */,
 				E55319BA3F5F13380251C8DB /* CharacterView.swift in Sources */,
 				0D648CC2344F8F6DE1B44C6D /* ChatBubbleView.swift in Sources */,
 				8F3CE139D3BD95A22AF354BB /* Config.swift in Sources */,
 				52949332A075AC22A6D74643 /* DownwardBubbleShape.swift in Sources */,
 				FCE237435B2D654EEE2A4100 /* FloatingWindow.swift in Sources */,
+				7E18E6B2DE7080B7F6B76D0C /* LoginView.swift in Sources */,
 				6B1E60F44EA898EC371A4B4E /* OverlayRootView.swift in Sources */,
 				D2ED8A232E2920AC0D900135 /* PotatoBuddyApp.swift in Sources */,
 				69E6B81F2C9230C1DCA47B37 /* SupabaseService.swift in Sources */,
