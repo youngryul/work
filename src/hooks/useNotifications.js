@@ -29,7 +29,8 @@ const getYesterdayDateString = () => {
  * 알림 상태를 관리하는 커스텀 훅
  */
 export function useNotifications() {
-  const { user } = useAuth()
+  const { user, userRole } = useAuth()
+  const isRegular = userRole === 'regular'
   const [diaryReminder, setDiaryReminder] = useState({ isOpen: false, yesterdayDate: null })
   const [weeklySummaryReminder, setWeeklySummaryReminder] = useState({ 
     isOpen: false, 
@@ -71,8 +72,8 @@ export function useNotifications() {
       // 알림 설정 조회
       const notificationSettings = await getNotificationSettings()
 
-      // 일기 리마인더 확인 (설정이 켜져 있을 때만)
-      if (notificationSettings.diaryEnabled) {
+      // 일기 리마인더 확인 (설정이 켜져 있을 때만, 일반 계정 제외)
+      if (notificationSettings.diaryEnabled && !isRegular) {
         const alreadyShownDiary = await hasDiaryReminderToday(user.id)
         if (!alreadyShownDiary) {
           const yesterday = getYesterdayDateString()
@@ -117,8 +118,8 @@ export function useNotifications() {
         setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
       }
 
-      // 5년 질문 일기 리마인더 확인 (설정이 켜져 있을 때만)
-      if (notificationSettings.fiveYearQuestionEnabled) {
+      // 5년 질문 일기 리마인더 확인 (설정이 켜져 있을 때만, 일반 계정 제외)
+      if (notificationSettings.fiveYearQuestionEnabled && !isRegular) {
         const alreadyShownFiveYear = await hasFiveYearQuestionReminderToday(user.id)
         if (!alreadyShownFiveYear) {
           const today = new Date()
