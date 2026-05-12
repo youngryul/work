@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getAnswersByYear, getQuestionByDate, getAnswersByQuestion } from '../services/fiveYearQuestionService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
@@ -26,6 +26,8 @@ export default function FiveYearQuestionDashboard({ onDateClick }) {
   const [selectedDateAnswers, setSelectedDateAnswers] = useState([])
   const [selectedDateQuestion, setSelectedDateQuestion] = useState(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
+  const todayButtonRef = useRef(null)
+  const hasAutoFocusedTodayRef = useRef(false)
 
   // 최근 5년간의 답변 데이터 로드
   useEffect(() => {
@@ -200,6 +202,27 @@ export default function FiveYearQuestionDashboard({ onDateClick }) {
   const months = renderYearCalendar()
   const weekDays = ['일', '월', '화', '수', '목', '금', '토']
 
+  // 첫 진입 시 오늘 날짜 셀로 자동 포커스/스크롤
+  useEffect(() => {
+    if (isLoading || hasAutoFocusedTodayRef.current) {
+      return
+    }
+
+    const today = new Date()
+    if (selectedYear !== today.getFullYear()) {
+      return
+    }
+
+    if (todayButtonRef.current) {
+      todayButtonRef.current.focus()
+      todayButtonRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      })
+      hasAutoFocusedTodayRef.current = true
+    }
+  }, [isLoading, selectedYear])
+
   if (isLoading) {
     return (
       <div className="text-center py-12">
@@ -252,6 +275,7 @@ export default function FiveYearQuestionDashboard({ onDateClick }) {
                     return (
                       <button
                         key={cellIndex}
+                        ref={isToday ? todayButtonRef : null}
                         onClick={() => handleDateClick(date)}
                         className={`aspect-square flex flex-col items-center justify-center rounded-lg transition-all duration-200 relative cursor-pointer ${
                           isToday
