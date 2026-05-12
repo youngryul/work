@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { supabase } from '../config/supabase.js'
 
 /**
  * 로그인/회원가입 폼 컴포넌트
@@ -13,6 +14,8 @@ export default function LoginForm() {
   const [error, setError] = useState(null)
   const [message, setMessage] = useState(null)
 
+  const isMacAppRedirect = new URLSearchParams(window.location.search).get('redirectTo') === 'potatobuddy'
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
@@ -25,6 +28,16 @@ export default function LoginForm() {
         setMessage('회원가입이 완료되었습니다. 이메일을 확인하여 계정을 활성화하세요.')
       } else {
         await signIn(email, password)
+
+        // 맥앱에서 열린 경우 토큰을 URL 스킴으로 전달
+        if (isMacAppRedirect) {
+          const { data } = await supabase.auth.getSession()
+          const token = data?.session?.access_token
+          const userId = data?.session?.user?.id
+          if (token && userId) {
+            window.location.href = `potatobuddy://auth?access_token=${encodeURIComponent(token)}&user_id=${encodeURIComponent(userId)}`
+          }
+        }
       }
     } catch (err) {
       setError(err.message || '오류가 발생했습니다.')

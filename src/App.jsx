@@ -54,6 +54,24 @@ function AppContent() {
     if (user) setShowLogin(false)
   }, [user])
 
+  // 이미 로그인된 상태에서 맥앱 redirectTo 처리
+  useEffect(() => {
+    if (!user || loading) return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('redirectTo') !== 'potatobuddy') return
+
+    const redirectToMac = async () => {
+      const { supabase } = await import('./config/supabase.js')
+      const { data } = await supabase.auth.getSession()
+      const token = data?.session?.access_token
+      const userId = data?.session?.user?.id
+      if (token && userId) {
+        window.location.href = `potatobuddy://auth?access_token=${encodeURIComponent(token)}&user_id=${encodeURIComponent(userId)}`
+      }
+    }
+    redirectToMac()
+  }, [user, loading])
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('forceLogin') !== '1' || !window.__TAURI_INTERNALS__) {

@@ -22,6 +22,42 @@ final class AuthService: ObservableObject {
         }
     }
 
+    // MARK: - 회원가입
+
+    func signUp(email: String, password: String) async throws {
+        let url = URL(string: "\(Config.supabaseURL)/auth/v1/signup")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue(Config.anonKey, forHTTPHeaderField: "apikey")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "email": email,
+            "password": password,
+            "options": ["emailRedirectTo": Config.websiteURL.absoluteString]
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw AuthError.signUpFailed
+        }
+
+        // 에러 응답 처리
+        if http.statusCode != 200 {
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let msg = (json["msg"] as? String) ?? (json["message"] as? String) ?? (json["error_description"] as? String) {
+                throw AuthError.custom(msg)
+            }
+            throw AuthError.signUpFailed
+        }
+
+        // 이메일 인증이 필요하므로 로그인 시도하지 않음
+        // needsEmailConfirmation 에러를 throw해서 UI에서 안내 메시지 표시
+        throw AuthError.needsEmailConfirmation
+    }
+
     // MARK: - 로그인
 
     func signIn(email: String, password: String) async throws {
@@ -50,6 +86,16 @@ final class AuthService: ObservableObject {
         defaults.set(decoded.user.id, forKey: userIdKey)
     }
 
+    // MARK: - 외부 세션 저장 (웹 로그인 콜백)
+
+    func saveSession(accessToken: String, userId: String) {
+        self.accessToken = accessToken
+        self.userId      = userId
+        self.isLoggedIn  = true
+        defaults.set(accessToken, forKey: tokenKey)
+        defaults.set(userId, forKey: userIdKey)
+    }
+
     // MARK: - 로그아웃
 
     func signOut() {
@@ -65,8 +111,16 @@ final class AuthService: ObservableObject {
 
 enum AuthError: LocalizedError {
     case invalidCredentials
+    case signUpFailed
+    case needsEmailConfirmation
+    case custom(String)
     var errorDescription: String? {
-        "이메일 또는 비밀번호가 올바르지 않습니다."
+        switch self {
+        case .invalidCredentials:     return "이메일 또는 비밀번호가 올바르지 않습니다."
+        case .signUpFailed:           return "회원가입에 실패했습니다."
+        case .needsEmailConfirmation: return "needsEmailConfirmation"
+        case .custom(let msg):        return msg
+        }
     }
 }
 

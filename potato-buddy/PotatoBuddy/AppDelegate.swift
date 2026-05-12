@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import Combine
 import ServiceManagement
+import CoreServices
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -19,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupWindow()
         observeBubbleToggle()
         observeAuthChange()
+        registerURLSchemeHandler()
     }
 
     // MARK: - 메뉴바 아이콘
@@ -44,6 +46,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                      action: #selector(toggleLaunchAtLogin),
                      keyEquivalent: "")
         menu.addItem(.separator())
+        menu.addItem(withTitle: "로그아웃",
+                     action: #selector(logout),
+                     keyEquivalent: "")
+        menu.addItem(.separator())
         menu.addItem(withTitle: "종료",
                      action: #selector(NSApplication.terminate(_:)),
                      keyEquivalent: "q")
@@ -58,6 +64,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             window.orderFrontRegardless()
         }
+    }
+
+    @objc private func logout() {
+        AuthService.shared.signOut()
+        viewModel.isBubbleVisible = false
+        viewModel.tasks = []
+        resizeWindow(bubbleVisible: false)
     }
 
     @objc private func toggleLaunchAtLogin() {
@@ -157,6 +170,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ctx.duration = 0.28
             ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             window.animator().setFrame(newFrame, display: true)
+        }
+    }
+
+    // MARK: - URL 스킴 처리 (웹 로그인 콜백)
+
+    private func registerURLSchemeHandler() {
+        NSAppleEventManager.shared().setEventHandler(
+            self,
+            andSelector: #selector(handleURLEvent(_:withReplyEvent:)),
+            forEventClass: AEEventClass(kInternetEventClass),
+            andEventID: AEEventID(kAEGetURL)
+        )
+    }
+
+    @objc private func handleURLEvent(_ event: NSAppleEventDescriptor, withReplyEvent: NSAppleEventDescriptor) {
+        guard
+            let urlString = event.paramDescriptor(forKeyword: AEKeyword(keyDirectObject))?.stringValue,
+            let url = URL(string: urlString),
+            url.scheme == "potatobuddy",
+            url.host == "auth"
+        else { return }
+
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        guard
+            let token  = components?.queryItems?.first(where: { $0.name == "access_token" })?.value,
+            let userId = components?.queryItems?.first(where: { $0.name == "user_id" })?.value
+        else { return }
+
+        Task { @MainActor in
+            AuthService.shared.saveSession(accessToken: token, userId: userId)
+            resizeWindow(bubbleVisible: false)
+            window?.orderFrontRegardless()
         }
     }
 

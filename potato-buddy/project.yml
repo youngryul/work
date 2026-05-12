@@ -33,6 +33,10 @@ targets:
         NSPrincipalClass: NSApplication
         LSMinimumSystemVersion: "14.0"
         LSUIElement: false
+        CFBundleURLTypes:
+          - CFBundleURLName: com.youngryul.potatobuddy
+            CFBundleURLSchemes:
+              - potatobuddy
     entitlements:
       path: PotatoBuddy/PotatoBuddy.entitlements
       properties:

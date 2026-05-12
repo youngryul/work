@@ -3,6 +3,7 @@ import SwiftUI
 /// 감자 위에 뜨는 채팅 말풍선 뷰
 struct ChatBubbleView: View {
     @EnvironmentObject var viewModel: TodoViewModel
+    @ObservedObject private var auth = AuthService.shared
 
     private let tailH: CGFloat = 14
 
@@ -148,13 +149,28 @@ struct ChatBubbleView: View {
             .padding(.top, 10)
             .padding(.bottom, 6)
 
-            Link(destination: Config.websiteURL) {
-                Label("웹사이트 열기", systemImage: "globe")
-                    .font(.caption)
-                    .frame(maxWidth: .infinity)
-                    .padding(.bottom, 10)
+            HStack {
+                Link(destination: Config.websiteURL) {
+                    Label("웹사이트 열기", systemImage: "globe")
+                        .font(.caption)
+                }
+                .foregroundStyle(Color.accentColor)
+
+                Spacer()
+
+                Button {
+                    auth.signOut()
+                    viewModel.isBubbleVisible = false
+                    viewModel.tasks = []
+                } label: {
+                    Label("로그아웃", systemImage: "rectangle.portrait.and.arrow.right")
+                        .font(.caption)
+                        .foregroundStyle(Color.secondary)
+                }
+                .buttonStyle(.plain)
             }
-            .foregroundStyle(Color.accentColor)
+            .padding(.horizontal, 14)
+            .padding(.bottom, 10)
         }
     }
 }
