@@ -174,6 +174,42 @@ export async function deleteSchedule(scheduleId) {
 }
 
 /**
+ * 일정 날짜를 수정합니다.
+ * @param {{scheduleId: string, scheduleDate: string}} params
+ * @returns {Promise<Object>}
+ */
+export async function updateScheduleDate(params) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  const scheduleId = (params.scheduleId || '').trim()
+  const scheduleDate = (params.scheduleDate || '').trim()
+  if (!scheduleId || !scheduleDate) {
+    throw new Error('수정할 일정 정보를 확인해주세요.')
+  }
+
+  const { data, error } = await supabase
+    .from('schedule_calendar_events')
+    .update({
+      schedule_date: scheduleDate,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', scheduleId)
+    .eq('user_id', userId)
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('일정 날짜 수정 오류:', error)
+    throw error
+  }
+
+  return normalizeSchedule(data)
+}
+
+/**
  * 태그를 추가합니다.
  * @param {{name:string,color:string}} params
  * @returns {Promise<Object>}

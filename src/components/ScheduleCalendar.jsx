@@ -7,6 +7,7 @@ import {
   getSchedulesByMonth,
   renameScheduleTagForUser,
   replaceScheduleTagForUser,
+  updateScheduleDate,
 } from '../services/scheduleCalendarService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
@@ -44,6 +45,9 @@ export default function ScheduleCalendar() {
   const [newTagDraft, setNewTagDraft] = useState('')
   const [isUpdatingTag, setIsUpdatingTag] = useState(false)
   const [deletingTagName, setDeletingTagName] = useState('')
+  const [editingScheduleId, setEditingScheduleId] = useState('')
+  const [editDateDraft, setEditDateDraft] = useState('')
+  const [updatingScheduleId, setUpdatingScheduleId] = useState('')
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth() + 1
@@ -161,6 +165,44 @@ export default function ScheduleCalendar() {
       showToast('일정 삭제에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  const handleStartEditScheduleDate = (schedule) => {
+    setEditingScheduleId(schedule.id)
+    setEditDateDraft(schedule.scheduleDate)
+  }
+
+  const handleCancelEditScheduleDate = () => {
+    setEditingScheduleId('')
+    setEditDateDraft('')
+  }
+
+  const handleUpdateScheduleDate = async (schedule) => {
+    if (!editDateDraft) {
+      showToast('변경할 날짜를 선택해주세요.', TOAST_TYPES.ERROR)
+      return
+    }
+
+    setUpdatingScheduleId(schedule.id)
+    try {
+      await updateScheduleDate({
+        scheduleId: schedule.id,
+        scheduleDate: editDateDraft,
+      })
+
+      const movedMonth = new Date(`${editDateDraft}T00:00:00`)
+      setCurrentDate(new Date(movedMonth.getFullYear(), movedMonth.getMonth(), 1))
+      setSelectedDate(editDateDraft)
+      await loadSchedules()
+      setEditingScheduleId('')
+      setEditDateDraft('')
+      showToast('일정 날짜를 변경했습니다.', TOAST_TYPES.SUCCESS)
+    } catch (error) {
+      console.error('일정 날짜 변경 실패:', error)
+      showToast('일정 날짜 변경에 실패했습니다.', TOAST_TYPES.ERROR)
+    } finally {
+      setUpdatingScheduleId('')
     }
   }
 
@@ -329,9 +371,9 @@ export default function ScheduleCalendar() {
             {year}년 {month}월
           </h2>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={handlePrevMonth} className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">이전</button>
+            <button type="button" onClick={handlePrevMonth} className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">←</button>
             <button type="button" onClick={handleToday} className="px-3 py-1.5 rounded-lg border border-blue-300 text-sm text-blue-700 hover:bg-blue-50">오늘</button>
-            <button type="button" onClick={handleNextMonth} className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">다음</button>
+            <button type="button" onClick={handleNextMonth} className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">→</button>
           </div>
         </div>
 
@@ -419,6 +461,40 @@ export default function ScheduleCalendar() {
                   {deletingId === item.id ? '삭제 중' : '삭제'}
                 </button>
               </div>
+              {editingScheduleId === item.id ? (
+                <div className="mt-3 flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={editDateDraft}
+                    onChange={(e) => setEditDateDraft(e.target.value)}
+                    className="flex-1 px-2 py-1.5 rounded border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateScheduleDate(item)}
+                    disabled={updatingScheduleId === item.id}
+                    className="text-xs px-2 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {updatingScheduleId === item.id ? '저장 중' : '저장'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelEditScheduleDate}
+                    disabled={updatingScheduleId === item.id}
+                    className="text-xs px-2 py-1.5 rounded border border-gray-300 text-gray-600 disabled:opacity-50"
+                  >
+                    취소
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleStartEditScheduleDate(item)}
+                  className="mt-3 text-xs px-2 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50"
+                >
+                  날짜 변경
+                </button>
+              )}
             </div>
           ))}
         </div>
