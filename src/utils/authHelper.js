@@ -1,6 +1,10 @@
 import { supabase } from '../config/supabase.js'
 
-const AUTH_CALL_TIMEOUT_MS = 3000
+const AUTH_CALL_TIMEOUT_MS = 8000
+const USER_ID_CACHE_TTL_MS = 1500
+let cachedUserId = null
+let cachedAtMs = 0
+let inFlightUserIdPromise = null
 
 /**
  * Supabase auth 호출 타임아웃 방어
@@ -27,22 +31,39 @@ async function withTimeout(promise, label) {
  * @returns {Promise<string|null>} 사용자 ID 또는 null
  */
 export async function getCurrentUserId() {
+  const now = Date.now()
+  if (cachedUserId && now - cachedAtMs < USER_ID_CACHE_TTL_MS) {
+    return cachedUserId
+  }
+  if (inFlightUserIdPromise) {
+    return inFlightUserIdPromise
+  }
+
+  inFlightUserIdPromise = (async () => {
   try {
-    // 먼저 getUser() 시도 (더 안정적)
-    const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser(), 'getUser(getCurrentUserId)')
-    
-    if (!userError && user) {
-      return user.id
-    }
-    
-    // getUser() 실패 시 세션 확인 (재시도)
-    const { data: { session }, error: sessionError } = await withTimeout(supabase.auth.getSession(), 'getSession(getCurrentUserId)')
-    
-    if (!sessionError && session?.user) {
+    // 세션 우선 조회(로컬) 후 필요 시 getUser 호출로 보강
+    const { data: { session }, error: sessionError } = await withTimeout(
+      supabase.auth.getSession(),
+      'getSession(getCurrentUserId)'
+    )
+
+    if (!sessionError && session?.user?.id) {
+      cachedUserId = session.user.id
+      cachedAtMs = Date.now()
       return session.user.id
     }
-    
-    // 둘 다 실패하면 null 반환
+
+    const { data: { user }, error: userError } = await withTimeout(
+      supabase.auth.getUser(),
+      'getUser(getCurrentUserId)'
+    )
+
+    if (!userError && user?.id) {
+      cachedUserId = user.id
+      cachedAtMs = Date.now()
+      return user.id
+    }
+
     return null
   } catch (error) {
     // AuthSessionMissingError는 조용히 처리 (세션이 아직 준비되지 않은 경우)
@@ -55,7 +76,12 @@ export async function getCurrentUserId() {
     }
     // 다른 에러도 조용히 처리 (배포 환경에서 발생할 수 있음)
     return null
+  } finally {
+    inFlightUserIdPromise = null
   }
+  })()
+
+  return inFlightUserIdPromise
 }
 
 /**

@@ -1,6 +1,6 @@
 import { supabase } from '../config/supabase.js'
 
-const AUTH_CALL_TIMEOUT_MS = 3000
+const AUTH_CALL_TIMEOUT_MS = 8000
 
 /**
  * Supabase auth 호출이 영원히 pending 되는 상황을 방지합니다.
@@ -140,18 +140,17 @@ export async function signOut() {
  */
 export async function getCurrentUser() {
   try {
-    // 먼저 getUser() 시도
-    const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser(), 'getUser(getCurrentUser)')
-    
-    if (!userError && user) {
-      return user
-    }
-    
-    // getUser() 실패 시 세션 확인 (재시도)
+    // 세션 우선 조회(로컬) 후 필요 시 getUser 호출
     const { data: { session }, error: sessionError } = await withTimeout(supabase.auth.getSession(), 'getSession(getCurrentUser)')
     
     if (!sessionError && session?.user) {
       return session.user
+    }
+
+    const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser(), 'getUser(getCurrentUser)')
+    
+    if (!userError && user) {
+      return user
     }
     
     // 둘 다 실패하면 null 반환 (에러를 던지지 않음)

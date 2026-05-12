@@ -41,7 +41,8 @@ import { markWeeklyReminderShown, markMonthlyReminderShown } from './utils/summa
  * 메인 앱 컨텐츠 컴포넌트 (인증 필요)
  */
 function AppContent() {
-  const { user, loading } = useAuth()
+  const { user, loading, isAdmin, isSuperuser } = useAuth()
+  const canUseNotifications = isAdmin || isSuperuser
   const [showLogin, setShowLogin] = useState(() => {
     const params = new URLSearchParams(window.location.search)
     return params.get('forceLogin') === '1'
@@ -333,6 +334,7 @@ function AppContent() {
       </div>
 
       {/* 알림 센터 (모든 페이지에서 표시) */}
+      {canUseNotifications && (
       <NotificationCenter
         diaryReminder={diaryReminder}
         weeklySummaryReminder={weeklySummaryReminder}
@@ -452,9 +454,10 @@ function AppContent() {
           }, 500)
         }}
       />
+      )}
 
       {/* 일기 작성 모달 (알림 센터에서 열 때만 표시) */}
-      {showDiaryForm && diaryReminder.yesterdayDate && (
+      {canUseNotifications && showDiaryForm && diaryReminder.yesterdayDate && (
         <DiaryReminderModal
           yesterdayDate={diaryReminder.yesterdayDate}
           isOpen={true}

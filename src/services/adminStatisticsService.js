@@ -23,35 +23,50 @@ export async function getUserStatistics() {
   }
 
   try {
-    // auth.users는 직접 조회할 수 없으므로 여러 테이블에서 고유한 user_id를 수집
-    // 총 사용자 수 (여러 테이블에서 고유한 user_id 개수)
-    const userIds = new Set()
-
-    // tasks 테이블에서 user_id 수집
+    // 총 사용자 수는 auth.users 기준으로 집계
+    // get_total_user_count 함수가 없는 환경에서는 기존 방식으로 폴백
+    let totalUsers = 0
     try {
-      const { data: tasksData, error: tasksError } = await supabase
-        .from('tasks')
-        .select('user_id')
-      if (!tasksError && tasksData) {
-        tasksData.forEach(t => { if (t.user_id) userIds.add(t.user_id) })
+      const { data: totalUserCount, error: totalUserCountError } = await supabase.rpc('get_total_user_count')
+      if (!totalUserCountError && typeof totalUserCount === 'number') {
+        totalUsers = totalUserCount
       }
     } catch (error) {
-      console.warn('tasks 테이블 조회 실패:', error)
+      console.warn('총 사용자 수 RPC 조회 실패:', error)
     }
 
-    // diaries 테이블에서 user_id 수집
-    try {
-      const { data: diariesData, error: diariesError } = await supabase
-        .from('diaries')
-        .select('user_id')
-      if (!diariesError && diariesData) {
-        diariesData.forEach(d => { if (d.user_id) userIds.add(d.user_id) })
-      }
-    } catch (error) {
-      console.warn('diaries 테이블 조회 실패:', error)
-    }
+    if (totalUsers === 0) {
+      // 폴백: 여러 테이블에서 고유 user_id를 수집
+      const userIds = new Set()
+      const userIdSourceTables = [
+        'tasks',
+        'diaries',
+        'reading_records',
+        'five_year_answers',
+        'user_preferences',
+        'user_roles',
+        'admin_users',
+      ]
 
-    const totalUsers = userIds.size
+      await Promise.allSettled(
+        userIdSourceTables.map(async (table) => {
+          try {
+            const { data, error } = await supabase
+              .from(table)
+              .select('user_id')
+            if (!error && data) {
+              data.forEach((row) => {
+                if (row.user_id) userIds.add(row.user_id)
+              })
+            }
+          } catch (tableError) {
+            console.warn(`${table} 테이블 조회 실패:`, tableError)
+          }
+        })
+      )
+
+      totalUsers = userIds.size
+    }
 
     // 활성 사용자 수 (최근 30일 내 활동)
     const thirtyDaysAgo = new Date()

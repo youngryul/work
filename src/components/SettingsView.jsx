@@ -1,24 +1,31 @@
 import { useState, useEffect } from 'react'
 import { getNotificationSettings, saveNotificationSettings } from '../services/notificationSettingsService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
+import { useAuth } from '../contexts/AuthContext.jsx'
 
 /**
  * 설정 화면 컴포넌트
  */
 export default function SettingsView({ currentTheme = 'posily', onThemeChange }) {
+  const { isAdmin, isSuperuser } = useAuth()
+  const canUseNotifications = isAdmin || isSuperuser
   const [settings, setSettings] = useState({
     diaryEnabled: true,
     weeklySummaryEnabled: true,
     monthlySummaryEnabled: true,
     fiveYearQuestionEnabled: true,
   })
-  const [activeTab, setActiveTab] = useState('notification')
+  const [activeTab, setActiveTab] = useState(canUseNotifications ? 'notification' : 'theme')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
+    if (!canUseNotifications) {
+      setIsLoading(false)
+      return
+    }
     loadSettings()
-  }, [])
+  }, [canUseNotifications])
 
   const loadSettings = async () => {
     setIsLoading(true)
@@ -72,13 +79,15 @@ export default function SettingsView({ currentTheme = 'posily', onThemeChange })
       </div>
 
       <div className="mb-6 flex gap-3">
-        <button
-          type="button"
-          onClick={() => setActiveTab('notification')}
-          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${activeTab === 'notification' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-        >
-          🔔 알림 설정
-        </button>
+        {canUseNotifications && (
+          <button
+            type="button"
+            onClick={() => setActiveTab('notification')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${activeTab === 'notification' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          >
+            🔔 알림 설정
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setActiveTab('theme')}
@@ -88,7 +97,7 @@ export default function SettingsView({ currentTheme = 'posily', onThemeChange })
         </button>
       </div>
 
-      {activeTab === 'notification' && (
+      {canUseNotifications && activeTab === 'notification' && (
         <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">알림 설정</h2>
 

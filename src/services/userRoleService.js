@@ -47,7 +47,7 @@ export async function setUserRole(targetUserId, role) {
 
 /**
  * 전체 유저 목록 + role 조회 (관리자 전용)
- * user_id 를 여러 테이블에서 수집 후 user_roles 와 join
+ * auth.users 기준 전체 유저 조회 후 user_roles 와 join
  * @returns {Promise<Array<{userId, email, role}>>}
  */
 export async function getAllUsersWithRoles() {
@@ -57,29 +57,59 @@ export async function getAllUsersWithRoles() {
   const admin = await isAdmin(currentUserId)
   if (!admin) throw new Error('관리자 권한이 필요합니다.')
 
-  // 여러 테이블에서 고유 user_id 수집
-  const userIds = new Set()
-  const tables = ['tasks', 'diaries', 'reading_records', 'five_year_answers']
-
-  await Promise.allSettled(
-    tables.map(async (table) => {
-      const { data } = await supabase.from(table).select('user_id')
-      data?.forEach((row) => { if (row.user_id) userIds.add(row.user_id) })
-    })
-  )
-
-  if (userIds.size === 0) return []
-
-  const userIdList = Array.from(userIds)
-
-  // 이메일 조회 (기존 RPC 사용)
+  // auth.users 기반 전체 유저 조회
+  let userIdList = []
   const emailMap = new Map()
   try {
-    const { data: emailData } = await supabase.rpc('get_user_emails', { user_ids: userIdList })
-    emailData?.forEach((u) => { if (u.user_id) emailMap.set(u.user_id, u.email) })
+    const { data: allUsers, error: allUsersError } = await supabase.rpc('get_all_users_for_admin')
+    if (!allUsersError && Array.isArray(allUsers)) {
+      allUsers.forEach((userData) => {
+        if (!userData.user_id) return
+        userIdList.push(userData.user_id)
+        emailMap.set(userData.user_id, userData.email || userData.user_id)
+      })
+    }
   } catch {
-    // 실패 시 user_id 그대로 표시
+    // 함수 미배포 환경 폴백 처리
   }
+
+  // RPC 함수가 없는 환경 폴백: 기존 방식으로 user_id 수집
+  if (userIdList.length === 0) {
+    const userIds = new Set()
+    const userIdSourceTables = [
+      'tasks',
+      'diaries',
+      'reading_records',
+      'five_year_answers',
+      'user_preferences',
+      'user_roles',
+      'admin_users',
+    ]
+
+    await Promise.allSettled(
+      userIdSourceTables.map(async (table) => {
+        const { data } = await supabase.from(table).select('user_id')
+        data?.forEach((row) => {
+          if (row.user_id) userIds.add(row.user_id)
+        })
+      })
+    )
+
+    userIdList = Array.from(userIds)
+
+    if (userIdList.length > 0) {
+      try {
+        const { data: emailData } = await supabase.rpc('get_user_emails', { user_ids: userIdList })
+        emailData?.forEach((u) => {
+          if (u.user_id) emailMap.set(u.user_id, u.email)
+        })
+      } catch {
+        // 실패 시 user_id 그대로 표시
+      }
+    }
+  }
+
+  if (userIdList.length === 0) return []
 
   // role 조회
   const { data: rolesData } = await supabase

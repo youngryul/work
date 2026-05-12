@@ -30,7 +30,7 @@ const getYesterdayDateString = () => {
  */
 export function useNotifications() {
   const { user, userRole } = useAuth()
-  const isRegular = userRole === 'regular'
+  const canUseNotifications = userRole === 'admin' || userRole === 'superuser'
   const [diaryReminder, setDiaryReminder] = useState({ isOpen: false, yesterdayDate: null })
   const [weeklySummaryReminder, setWeeklySummaryReminder] = useState({ 
     isOpen: false, 
@@ -55,8 +55,12 @@ export function useNotifications() {
    * 알림 상태 확인 및 업데이트
    */
   const checkNotifications = useCallback(async () => {
-    // 사용자가 없으면 알림 확인하지 않음
-    if (!user) {
+    // 관리자/슈퍼유저가 아니면 알림 기능 비활성화
+    if (!user || !canUseNotifications) {
+      setDiaryReminder({ isOpen: false, yesterdayDate: null })
+      setWeeklySummaryReminder({ isOpen: false, period: '', weekStart: null, weekEnd: null })
+      setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
+      setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
       setIsLoading(false)
       return
     }
@@ -72,8 +76,8 @@ export function useNotifications() {
       // 알림 설정 조회
       const notificationSettings = await getNotificationSettings()
 
-      // 일기 리마인더 확인 (설정이 켜져 있을 때만, 일반 계정 제외)
-      if (notificationSettings.diaryEnabled && !isRegular) {
+      // 일기 리마인더 확인 (설정이 켜져 있을 때만)
+      if (notificationSettings.diaryEnabled) {
         const alreadyShownDiary = await hasDiaryReminderToday(user.id)
         if (!alreadyShownDiary) {
           const yesterday = getYesterdayDateString()
@@ -118,8 +122,8 @@ export function useNotifications() {
         setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
       }
 
-      // 5년 질문 일기 리마인더 확인 (설정이 켜져 있을 때만, 일반 계정 제외)
-      if (notificationSettings.fiveYearQuestionEnabled && !isRegular) {
+      // 5년 질문 일기 리마인더 확인 (설정이 켜져 있을 때만)
+      if (notificationSettings.fiveYearQuestionEnabled) {
         const alreadyShownFiveYear = await hasFiveYearQuestionReminderToday(user.id)
         if (!alreadyShownFiveYear) {
           const today = new Date()
@@ -146,12 +150,12 @@ export function useNotifications() {
     } finally {
       setIsLoading(false)
     }
-  }, [user])
+  }, [user, canUseNotifications])
 
   // 사용자가 변경될 때만 알림 확인 (재로그인 시 중복 확인 방지)
   useEffect(() => {
     // 사용자가 없으면 알림 상태 초기화
-    if (!user) {
+    if (!user || !canUseNotifications) {
       setDiaryReminder({ isOpen: false, yesterdayDate: null })
       setWeeklySummaryReminder({ isOpen: false, period: '', weekStart: null, weekEnd: null })
       setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
@@ -167,7 +171,7 @@ export function useNotifications() {
     const interval = setInterval(checkNotifications, 5 * 60 * 1000)
     
     return () => clearInterval(interval)
-  }, [user?.id, checkNotifications]) // 사용자 ID가 변경될 때만 실행
+  }, [user?.id, canUseNotifications, checkNotifications]) // 사용자 상태/권한 변경 시 실행
 
   return {
     diaryReminder,
