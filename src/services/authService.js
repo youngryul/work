@@ -1,6 +1,6 @@
 import { supabase } from '../config/supabase.js'
 
-const AUTH_CALL_TIMEOUT_MS = 8000
+const AUTH_CALL_TIMEOUT_MS = 4000
 
 /**
  * Supabase auth 호출이 영원히 pending 되는 상황을 방지합니다.
@@ -20,6 +20,30 @@ async function withTimeout(promise, label) {
   } finally {
     clearTimeout(timeoutId)
   }
+}
+
+/**
+ * getSession/getUser를 병렬 조회하여 더 빠르게 인증 사용자를 찾습니다.
+ * @param {string} label
+ * @returns {Promise<import('@supabase/supabase-js').User|null>}
+ */
+async function resolveAuthUserFast(label) {
+  const sessionUserPromise = supabase.auth
+    .getSession()
+    .then(({ data, error }) => (error ? null : data?.session?.user ?? null))
+    .catch(() => null)
+
+  const directUserPromise = supabase.auth
+    .getUser()
+    .then(({ data, error }) => (error ? null : data?.user ?? null))
+    .catch(() => null)
+
+  const winner = await withTimeout(
+    Promise.any([sessionUserPromise, directUserPromise]),
+    `${label}:parallelAuthLookup`
+  )
+
+  return winner ?? null
 }
 
 /**
@@ -140,28 +164,13 @@ export async function signOut() {
  */
 export async function getCurrentUser() {
   try {
-    // 세션 우선 조회(로컬) 후 필요 시 getUser 호출
-    const { data: { session }, error: sessionError } = await withTimeout(supabase.auth.getSession(), 'getSession(getCurrentUser)')
-    
-    if (!sessionError && session?.user) {
-      return session.user
-    }
-
-    const { data: { user }, error: userError } = await withTimeout(supabase.auth.getUser(), 'getUser(getCurrentUser)')
-    
-    if (!userError && user) {
-      return user
-    }
-    
-    // 둘 다 실패하면 null 반환 (에러를 던지지 않음)
-    return null
+    return await resolveAuthUserFast('getCurrentUser')
   } catch (error) {
     // AuthSessionMissingError는 조용히 처리
     if (error.name === 'AuthSessionMissingError' || error.message?.includes('Auth session missing')) {
       return null
     }
-    if (error.message?.includes('Auth timeout:')) {
-      console.warn('인증 정보 로딩 타임아웃:', error.message)
+    if (error.message?.includes('Auth timeout:') || error.name === 'AggregateError') {
       return null
     }
     // 다른 에러도 조용히 처리 (배포 환경에서 발생할 수 있음)

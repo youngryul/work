@@ -1,6 +1,6 @@
 import { supabase } from '../config/supabase.js'
 
-const AUTH_CALL_TIMEOUT_MS = 8000
+const AUTH_CALL_TIMEOUT_MS = 4000
 const USER_ID_CACHE_TTL_MS = 1500
 let cachedUserId = null
 let cachedAtMs = 0
@@ -26,6 +26,29 @@ async function withTimeout(promise, label) {
 }
 
 /**
+ * getSession/getUser를 병렬 조회하여 빠르게 user id를 얻습니다.
+ * @returns {Promise<string|null>}
+ */
+async function resolveCurrentUserIdFast() {
+  const sessionUserIdPromise = supabase.auth
+    .getSession()
+    .then(({ data, error }) => (error ? null : data?.session?.user?.id ?? null))
+    .catch(() => null)
+
+  const directUserIdPromise = supabase.auth
+    .getUser()
+    .then(({ data, error }) => (error ? null : data?.user?.id ?? null))
+    .catch(() => null)
+
+  const winner = await withTimeout(
+    Promise.any([sessionUserIdPromise, directUserIdPromise]),
+    'resolveCurrentUserIdFast:parallelAuthLookup'
+  )
+
+  return winner ?? null
+}
+
+/**
  * 현재 로그인한 사용자의 ID를 가져옵니다.
  * 배포 환경에서 세션이 로드되기 전에 호출될 수 있으므로 재시도 로직 포함
  * @returns {Promise<string|null>} 사용자 ID 또는 null
@@ -41,27 +64,11 @@ export async function getCurrentUserId() {
 
   inFlightUserIdPromise = (async () => {
   try {
-    // 세션 우선 조회(로컬) 후 필요 시 getUser 호출로 보강
-    const { data: { session }, error: sessionError } = await withTimeout(
-      supabase.auth.getSession(),
-      'getSession(getCurrentUserId)'
-    )
-
-    if (!sessionError && session?.user?.id) {
-      cachedUserId = session.user.id
+    const userId = await resolveCurrentUserIdFast()
+    if (userId) {
+      cachedUserId = userId
       cachedAtMs = Date.now()
-      return session.user.id
-    }
-
-    const { data: { user }, error: userError } = await withTimeout(
-      supabase.auth.getUser(),
-      'getUser(getCurrentUserId)'
-    )
-
-    if (!userError && user?.id) {
-      cachedUserId = user.id
-      cachedAtMs = Date.now()
-      return user.id
+      return userId
     }
 
     return null
@@ -70,8 +77,7 @@ export async function getCurrentUserId() {
     if (error.name === 'AuthSessionMissingError' || error.message?.includes('Auth session missing')) {
       return null
     }
-    if (error.message?.includes('Auth timeout:')) {
-      console.warn('인증 사용자 ID 로딩 타임아웃:', error.message)
+    if (error.message?.includes('Auth timeout:') || error.name === 'AggregateError') {
       return null
     }
     // 다른 에러도 조용히 처리 (배포 환경에서 발생할 수 있음)
