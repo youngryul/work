@@ -6,16 +6,29 @@ import CategorySelector from './CategorySelector.jsx'
 import { uploadImage } from '../services/imageService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
+/** 완료 애니메이션 타이밍 (ms) */
+const COMPLETE_STRIKE_DURATION_MS = 650
+const COMPLETE_HOLD_BEFORE_LEAVE_MS = 900
+const COMPLETE_LEAVE_DURATION_MS = 900
+
 /**
  * 할 일 항목 컴포넌트
  * @param {Object} props
  * @param {Object} props.task - 할 일 객체
  * @param {Function} props.onUpdate - 업데이트 콜백
+ * @param {Function} [props.onCompleteAnimationStart] - 완료 애니메이션 시작 콜백
  * @param {Function} props.onDelete - 삭제 콜백
  * @param {Function} props.onMoveToToday - 오늘로 이동 콜백 (선택)
  * @param {Function} props.onMoveToBacklog - 백로그로 이동 콜백 (선택)
  */
-export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMoveToBacklog }) {
+export default function TaskItem({
+  task,
+  onUpdate,
+  onCompleteAnimationStart,
+  onDelete,
+  onMoveToToday,
+  onMoveToBacklog,
+}) {
   const [isEditing, setIsEditing] = useState(false)
   const [isEditingCategory, setIsEditingCategory] = useState(false)
   const [isEditingMemo, setIsEditingMemo] = useState(false)
@@ -64,20 +77,33 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
   const handleToggleComplete = async () => {
     const newCompleted = !localCompleted
     setLocalCompleted(newCompleted)
+
+    if (newCompleted) {
+      onCompleteAnimationStart?.(task.id)
+      setTimeout(
+        () => setIsLeaving(true),
+        COMPLETE_STRIKE_DURATION_MS + COMPLETE_HOLD_BEFORE_LEAVE_MS,
+      )
+    }
+
     try {
       const updated = await updateTask(task.id, { completed: newCompleted })
       if (newCompleted) {
-        // 취소선 애니메이션 후 카드 사라지는 애니메이션 시작
-        setTimeout(() => setIsLeaving(true), 600)
-        // 사라진 뒤 부모 업데이트 (리스트 새로고침)
-        setTimeout(() => onUpdate(updated), 1200)
+        const totalLeaveMs =
+          COMPLETE_STRIKE_DURATION_MS +
+          COMPLETE_HOLD_BEFORE_LEAVE_MS +
+          COMPLETE_LEAVE_DURATION_MS +
+          150
+        setTimeout(() => onUpdate(updated), totalLeaveMs)
       } else {
+        setIsLeaving(false)
         onUpdate(updated)
       }
     } catch (error) {
       console.error('완료 상태 변경 오류:', error)
       setLocalCompleted(!newCompleted)
       setIsLeaving(false)
+      onUpdate({ ...task, completed: !newCompleted })
     }
   }
 
@@ -388,15 +414,17 @@ export default function TaskItem({ task, onUpdate, onDelete, onMoveToToday, onMo
       ) : (
         <span
           onClick={handleStartEdit}
-          className={`flex-1 text-base cursor-pointer font-sans relative ${
-            localCompleted
-              ? 'text-gray-500'
-              : 'text-gray-800'
+          className={`flex-1 text-base cursor-pointer font-sans relative inline-block min-w-0 ${
+            localCompleted ? 'text-gray-600' : 'text-gray-800'
           }`}
         >
-          <span className={localCompleted ? 'strike-through-animate' : ''}>
-            {task.title}
-          </span>
+          {task.title}
+          {localCompleted && (
+            <span
+              className={`task-strike-line ${isLeaving ? 'task-strike-line--held' : ''}`}
+              aria-hidden="true"
+            />
+          )}
         </span>
       )}
 

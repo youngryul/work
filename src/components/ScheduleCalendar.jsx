@@ -11,6 +11,24 @@ import {
 } from '../services/scheduleCalendarService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
+/**
+ * Date → YYYY-MM-DD
+ * @param {Date} date
+ * @returns {string}
+ */
+function toDateString(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function getTodayDateString() {
+  return toDateString(new Date())
+}
+
+const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
+
 const TAG_COLOR_POOL = [
   'bg-blue-100 text-blue-700 border-blue-200',
   'bg-indigo-100 text-indigo-700 border-indigo-200',
@@ -33,7 +51,8 @@ export default function ScheduleCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [schedules, setSchedules] = useState([])
   const [isLoading, setIsLoading] = useState(true)
-  const [selectedDate, setSelectedDate] = useState(null)
+  const [selectedDate, setSelectedDate] = useState(getTodayDateString)
+  const [addScheduleDate, setAddScheduleDate] = useState(getTodayDateString)
   const [newTitle, setNewTitle] = useState('')
   const [tagSettings, setTagSettings] = useState([])
   const [newTag, setNewTag] = useState('기타')
@@ -103,7 +122,7 @@ export default function ScheduleCalendar() {
     return map
   }, [schedules])
 
-  const selectedSchedules = selectedDate ? (schedulesByDate.get(selectedDate) || []) : []
+  const selectedSchedules = addScheduleDate ? (schedulesByDate.get(addScheduleDate) || []) : []
   const tagColorMap = useMemo(() => {
     const map = new Map()
     tagSettings.forEach((item) => map.set(item.name, item.color))
@@ -112,24 +131,31 @@ export default function ScheduleCalendar() {
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(year, month - 2, 1))
-    setSelectedDate(null)
   }
 
   const handleNextMonth = () => {
     setCurrentDate(new Date(year, month, 1))
-    setSelectedDate(null)
   }
 
   const handleToday = () => {
     const today = new Date()
     setCurrentDate(today)
-    const dateText = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-    setSelectedDate(dateText)
+    selectScheduleDate(getTodayDateString())
+  }
+
+  /**
+   * 일정 추가/조회용 날짜 선택 (메인 달력·date input 공통)
+   * @param {string} dateString - YYYY-MM-DD
+   */
+  const selectScheduleDate = (dateString) => {
+    if (!dateString) return
+    setAddScheduleDate(dateString)
+    setSelectedDate(dateString)
   }
 
   const handleAddSchedule = async () => {
-    if (!selectedDate) {
-      showToast('날짜를 먼저 선택해주세요.', TOAST_TYPES.INFO)
+    if (!addScheduleDate) {
+      showToast('날짜를 선택해주세요.', TOAST_TYPES.INFO)
       return
     }
     if (!newTitle.trim()) {
@@ -139,11 +165,18 @@ export default function ScheduleCalendar() {
     setIsSaving(true)
     try {
       await createSchedule({
-        scheduleDate: selectedDate,
+        scheduleDate: addScheduleDate,
         title: newTitle,
         tag: newTag,
       })
       setNewTitle('')
+      selectScheduleDate(addScheduleDate)
+
+      const targetMonth = new Date(`${addScheduleDate}T00:00:00`)
+      if (targetMonth.getFullYear() !== year || targetMonth.getMonth() + 1 !== month) {
+        setCurrentDate(new Date(targetMonth.getFullYear(), targetMonth.getMonth(), 1))
+      }
+
       await loadSchedules()
       showToast('일정이 추가되었습니다.', TOAST_TYPES.SUCCESS)
     } catch (error) {
@@ -193,7 +226,7 @@ export default function ScheduleCalendar() {
 
       const movedMonth = new Date(`${editDateDraft}T00:00:00`)
       setCurrentDate(new Date(movedMonth.getFullYear(), movedMonth.getMonth(), 1))
-      setSelectedDate(editDateDraft)
+      selectScheduleDate(editDateDraft)
       await loadSchedules()
       setEditingScheduleId('')
       setEditDateDraft('')
@@ -301,9 +334,8 @@ export default function ScheduleCalendar() {
 
   const formatSelectedDate = (dateString) => {
     if (!dateString) return ''
-    const date = new Date(dateString)
-    const weekdays = ['일', '월', '화', '수', '목', '금', '토']
-    return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 (${weekdays[date.getDay()]})`
+    const date = new Date(`${dateString}T00:00:00`)
+    return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 (${WEEKDAY_LABELS[date.getDay()]})`
   }
 
   const generateCalendarCells = () => {
@@ -320,7 +352,7 @@ export default function ScheduleCalendar() {
     for (let day = 1; day <= daysInMonth; day++) {
       const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
       const daySchedules = schedulesByDate.get(dateString) || []
-      const isSelected = selectedDate === dateString
+      const isSelected = addScheduleDate === dateString
       const isToday = (() => {
         const now = new Date()
         return now.getFullYear() === year && now.getMonth() + 1 === month && now.getDate() === day
@@ -330,7 +362,7 @@ export default function ScheduleCalendar() {
         <button
           key={dateString}
           type="button"
-          onClick={() => setSelectedDate(dateString)}
+          onClick={() => selectScheduleDate(dateString)}
           className={`aspect-square rounded-xl border p-2 text-left transition-all ${
             isSelected
               ? 'border-blue-500 bg-blue-50 shadow-sm'
@@ -398,7 +430,7 @@ export default function ScheduleCalendar() {
 
       <aside className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-bold text-gray-800">선택한 날짜</h3>
+          <h3 className="text-lg font-bold text-gray-800">일정 추가</h3>
           <button
             type="button"
             onClick={() => setShowTagSettings(true)}
@@ -408,9 +440,25 @@ export default function ScheduleCalendar() {
             ⚙️
           </button>
         </div>
-        <p className="text-sm text-gray-600 mb-4">
-          {selectedDate ? formatSelectedDate(selectedDate) : '날짜를 선택하세요'}
-        </p>
+        <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-3">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">날짜</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={addScheduleDate}
+              onChange={(e) => selectScheduleDate(e.target.value)}
+              className="flex-1 px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            <button
+              type="button"
+              onClick={() => selectScheduleDate(getTodayDateString())}
+              className="shrink-0 px-3 py-2 rounded-lg border border-blue-300 text-sm text-blue-700 hover:bg-blue-50"
+            >
+              오늘
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">{formatSelectedDate(addScheduleDate)}</p>
+        </div>
 
         <div className="space-y-2 mb-4">
           <input
@@ -432,15 +480,18 @@ export default function ScheduleCalendar() {
           <button
             type="button"
             onClick={handleAddSchedule}
-            disabled={isSaving || !selectedDate}
+            disabled={isSaving || !addScheduleDate}
             className="w-full px-3 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50"
           >
             {isSaving ? '추가 중...' : '일정 추가'}
           </button>
         </div>
 
+        <h4 className="text-sm font-semibold text-gray-700 mb-2">
+          {formatSelectedDate(addScheduleDate)} 일정
+        </h4>
         <div className="space-y-2 max-h-80 overflow-y-auto">
-          {selectedDate && selectedSchedules.length === 0 && (
+          {addScheduleDate && selectedSchedules.length === 0 && (
             <p className="text-sm text-gray-400 py-2">등록된 일정이 없습니다.</p>
           )}
           {selectedSchedules.map((item) => (

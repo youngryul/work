@@ -36,6 +36,8 @@ const getYesterdayDateString = () => {
  */
 export default function TodayView() {
   const [tasks, setTasks] = useState([])
+  /** 완료 애니메이션 중인 할 일 ID (목록에서 유지) */
+  const [completingTaskIds, setCompletingTaskIds] = useState(() => new Set())
   const [isLoading, setIsLoading] = useState(true)
   const [draggedTaskId, setDraggedTaskId] = useState(null)
   const [dragOverIndex, setDragOverIndex] = useState(null)
@@ -148,15 +150,28 @@ export default function TodayView() {
   }, [])
 
   /**
-   * 할 일 업데이트
+   * 완료 애니메이션 시작 (카드는 목록에 유지, 완료 숫자만 즉시 반영)
+   */
+  const handleCompleteAnimationStart = (taskId) => {
+    setCompletingTaskIds((prev) => new Set(prev).add(taskId))
+  }
+
+  /**
+   * 할 일 업데이트 (애니메이션 종료 후 완료 상태 반영)
    */
   const handleTaskUpdate = (updatedTask) => {
-    if (updatedTask.completed) {
-      // 완료된 항목은 목록에서 제거
-      setTasks((prev) => prev.filter((t) => t.id !== updatedTask.id))
-    } else {
-      setTasks((prev) => prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)))
-    }
+    setCompletingTaskIds((prev) => {
+      const next = new Set(prev)
+      next.delete(updatedTask.id)
+      return next
+    })
+    setTasks((prev) => {
+      const exists = prev.some((t) => t.id === updatedTask.id)
+      if (exists) {
+        return prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+      }
+      return [...prev, updatedTask]
+    })
   }
   
   /**
@@ -179,16 +194,15 @@ export default function TodayView() {
     }
   }
 
-  /**
-   * 완료된 할 일 개수 계산
-   */
-  const completedCount = tasks.filter((t) => t.completed).length
+  const completedCount =
+    tasks.filter((t) => t.completed).length + completingTaskIds.size
+  const totalTodayCount = tasks.length
 
   /**
-   * 미완료 할 일만 필터링 및 정렬
+   * 미완료 + 완료 애니메이션 중인 할 일 표시
    */
   const incompleteTasks = tasks
-    .filter((task) => !task.completed)
+    .filter((task) => !task.completed || completingTaskIds.has(task.id))
     .sort((a, b) => {
       // priority 기준 오름차순
       const aPriority = a.priority || 0
@@ -327,8 +341,8 @@ export default function TodayView() {
             {getCurrentDateString()}
           </p>
           <p className="text-xl text-gray-600">
-            {tasks.length > 0
-              ? `${completedCount}개 완료 / ${tasks.length}개`
+            {totalTodayCount > 0
+              ? `${completedCount}개 완료 / ${totalTodayCount}개`
               : '오늘은 무엇을 할까요?'}
           </p>
         </div>
@@ -338,7 +352,7 @@ export default function TodayView() {
           <div className="text-center py-8 text-gray-500 text-xl">로딩 중...</div>
         ) : incompleteTasks.length === 0 ? (
           <div className="text-center py-12 text-gray-400 text-xl">
-            {tasks.length === 0
+            {totalTodayCount === 0
               ? '아직 할 일이 없어요. 백로그에서 추가 후 오늘 할 일로 이동해주세요! ✨'
               : '모든 할 일을 완료했어요! 🎉'}
           </div>
@@ -364,6 +378,7 @@ export default function TodayView() {
                 <TaskItem
                   task={task}
                   onUpdate={handleTaskUpdate}
+                  onCompleteAnimationStart={handleCompleteAnimationStart}
                   onDelete={handleTaskDelete}
                   onMoveToBacklog={() => handleMoveToBacklog(task.id)}
                 />
