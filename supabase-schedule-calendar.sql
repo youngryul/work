@@ -1,10 +1,12 @@
 -- 일정 달력 (Calendar) 테이블
--- 목적: 단순 일정 추가/삭제 + 태그 관리
+-- 목적: 단순 일정 추가/삭제 + 태그 관리 + 연속 일정(기간)
+-- 연속 일정 마이그레이션: supabase-schedule-calendar-end-date.sql
 
 CREATE TABLE IF NOT EXISTS schedule_calendar_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
   schedule_date DATE NOT NULL,
+  end_date DATE,
   title TEXT NOT NULL,
   tag TEXT NOT NULL DEFAULT '기타',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

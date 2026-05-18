@@ -1,6 +1,9 @@
 import { supabase } from '../config/supabase.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
 
+/** 연속 일정 최대 일수 */
+export const MAX_SCHEDULE_RANGE_DAYS = 366
+
 export const DEFAULT_SCHEDULE_TAGS = [
   { name: '업무', color: 'bg-blue-100 text-blue-700 border-blue-200' },
   { name: '개인', color: 'bg-purple-100 text-purple-700 border-purple-200' },
@@ -14,11 +17,43 @@ export const DEFAULT_SCHEDULE_TAGS = [
  * @param {Object} row
  * @returns {Object}
  */
+/**
+ * @param {string} startDate - YYYY-MM-DD
+ * @param {string} endDate - YYYY-MM-DD
+ * @returns {number}
+ */
+function countDaysInclusive(startDate, endDate) {
+  const start = new Date(`${startDate}T00:00:00`)
+  const end = new Date(`${endDate}T00:00:00`)
+  const diffMs = end.getTime() - start.getTime()
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1
+}
+
+/**
+ * @param {string} startDate
+ * @param {string} endDate
+ */
+function assertValidScheduleRange(startDate, endDate) {
+  if (!startDate || !endDate) {
+    throw new Error('시작일과 종료일을 확인해주세요.')
+  }
+  if (endDate < startDate) {
+    throw new Error('종료일은 시작일보다 빠를 수 없습니다.')
+  }
+  const days = countDaysInclusive(startDate, endDate)
+  if (days > MAX_SCHEDULE_RANGE_DAYS) {
+    throw new Error(`연속 일정은 최대 ${MAX_SCHEDULE_RANGE_DAYS}일까지 등록할 수 있습니다.`)
+  }
+}
+
 function normalizeSchedule(row) {
+  const scheduleDate = row.schedule_date
+  const endDate = row.end_date || scheduleDate
   return {
     id: row.id,
     userId: row.user_id,
-    scheduleDate: row.schedule_date,
+    scheduleDate,
+    endDate,
     title: row.title,
     tag: row.tag,
     createdAt: row.created_at,
@@ -60,8 +95,8 @@ export async function getSchedulesByMonth(year, month) {
     .from('schedule_calendar_events')
     .select('*')
     .eq('user_id', userId)
-    .gte('schedule_date', startDate)
     .lte('schedule_date', endDate)
+    .or(`end_date.gte.${startDate},and(end_date.is.null,schedule_date.gte.${startDate})`)
     .order('schedule_date', { ascending: true })
     .order('created_at', { ascending: true })
 
@@ -116,8 +151,8 @@ export async function getOrCreateScheduleTagsForCurrentUser() {
 }
 
 /**
- * 일정을 등록합니다.
- * @param {{scheduleDate: string, title: string, tag: string}} params
+ * 일정을 등록합니다. endDate가 없거나 시작일과 같으면 단일 일정입니다.
+ * @param {{scheduleDate: string, endDate?: string, title: string, tag: string}} params
  * @returns {Promise<Object>}
  */
 export async function createSchedule(params) {
@@ -131,11 +166,16 @@ export async function createSchedule(params) {
     throw new Error('일정 제목을 입력해주세요.')
   }
 
+  const scheduleDate = (params.scheduleDate || '').trim()
+  const endDate = (params.endDate || scheduleDate).trim()
+  assertValidScheduleRange(scheduleDate, endDate)
+
   const { data, error } = await supabase
     .from('schedule_calendar_events')
     .insert([{
       user_id: userId,
-      schedule_date: params.scheduleDate,
+      schedule_date: scheduleDate,
+      end_date: endDate,
       title,
       tag: (params.tag || '기타').trim() || '기타',
     }])
@@ -174,8 +214,8 @@ export async function deleteSchedule(scheduleId) {
 }
 
 /**
- * 일정 날짜를 수정합니다.
- * @param {{scheduleId: string, scheduleDate: string}} params
+ * 일정 기간(시작·종료일)을 수정합니다.
+ * @param {{scheduleId: string, scheduleDate: string, endDate?: string}} params
  * @returns {Promise<Object>}
  */
 export async function updateScheduleDate(params) {
@@ -186,14 +226,17 @@ export async function updateScheduleDate(params) {
 
   const scheduleId = (params.scheduleId || '').trim()
   const scheduleDate = (params.scheduleDate || '').trim()
+  const endDate = (params.endDate || scheduleDate).trim()
   if (!scheduleId || !scheduleDate) {
     throw new Error('수정할 일정 정보를 확인해주세요.')
   }
+  assertValidScheduleRange(scheduleDate, endDate)
 
   const { data, error } = await supabase
     .from('schedule_calendar_events')
     .update({
       schedule_date: scheduleDate,
+      end_date: endDate,
       updated_at: new Date().toISOString(),
     })
     .eq('id', scheduleId)

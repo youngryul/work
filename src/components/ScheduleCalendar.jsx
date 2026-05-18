@@ -5,6 +5,7 @@ import {
   deleteSchedule,
   getOrCreateScheduleTagsForCurrentUser,
   getSchedulesByMonth,
+  MAX_SCHEDULE_RANGE_DAYS,
   renameScheduleTagForUser,
   replaceScheduleTagForUser,
   updateScheduleDate,
@@ -25,6 +26,38 @@ function toDateString(date) {
 
 function getTodayDateString() {
   return toDateString(new Date())
+}
+
+/**
+ * @param {{ scheduleDate: string, endDate?: string }} schedule
+ * @returns {string}
+ */
+function getScheduleEndDate(schedule) {
+  return schedule.endDate || schedule.scheduleDate
+}
+
+/**
+ * @param {{ scheduleDate: string, endDate?: string }} schedule
+ * @returns {boolean}
+ */
+function isMultiDaySchedule(schedule) {
+  return getScheduleEndDate(schedule) !== schedule.scheduleDate
+}
+
+/**
+ * @param {string} startDate
+ * @param {string} endDate
+ * @returns {string[]}
+ */
+function enumerateDateRange(startDate, endDate) {
+  const dates = []
+  const current = new Date(`${startDate}T00:00:00`)
+  const last = new Date(`${endDate}T00:00:00`)
+  while (current <= last) {
+    dates.push(toDateString(current))
+    current.setDate(current.getDate() + 1)
+  }
+  return dates
 }
 
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -53,6 +86,8 @@ export default function ScheduleCalendar() {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState(getTodayDateString)
   const [addScheduleDate, setAddScheduleDate] = useState(getTodayDateString)
+  const [addScheduleEndDate, setAddScheduleEndDate] = useState(getTodayDateString)
+  const [isRangeSchedule, setIsRangeSchedule] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [tagSettings, setTagSettings] = useState([])
   const [newTag, setNewTag] = useState('기타')
@@ -65,7 +100,8 @@ export default function ScheduleCalendar() {
   const [isUpdatingTag, setIsUpdatingTag] = useState(false)
   const [deletingTagName, setDeletingTagName] = useState('')
   const [editingScheduleId, setEditingScheduleId] = useState('')
-  const [editDateDraft, setEditDateDraft] = useState('')
+  const [editStartDateDraft, setEditStartDateDraft] = useState('')
+  const [editEndDateDraft, setEditEndDateDraft] = useState('')
   const [updatingScheduleId, setUpdatingScheduleId] = useState('')
 
   const year = currentDate.getFullYear()
@@ -115,9 +151,12 @@ export default function ScheduleCalendar() {
   const schedulesByDate = useMemo(() => {
     const map = new Map()
     schedules.forEach((item) => {
-      const arr = map.get(item.scheduleDate) || []
-      arr.push(item)
-      map.set(item.scheduleDate, arr)
+      const dates = enumerateDateRange(item.scheduleDate, getScheduleEndDate(item))
+      dates.forEach((dateKey) => {
+        const arr = map.get(dateKey) || []
+        arr.push(item)
+        map.set(dateKey, arr)
+      })
     })
     return map
   }, [schedules])
@@ -151,6 +190,15 @@ export default function ScheduleCalendar() {
     if (!dateString) return
     setAddScheduleDate(dateString)
     setSelectedDate(dateString)
+    setAddScheduleEndDate((prev) => (prev < dateString ? dateString : prev))
+  }
+
+  const formatSchedulePeriod = (schedule) => {
+    const end = getScheduleEndDate(schedule)
+    if (end === schedule.scheduleDate) {
+      return formatSelectedDate(schedule.scheduleDate)
+    }
+    return `${formatSelectedDate(schedule.scheduleDate)} ~ ${formatSelectedDate(end)}`
   }
 
   const handleAddSchedule = async () => {
@@ -162,10 +210,22 @@ export default function ScheduleCalendar() {
       showToast('일정 제목을 입력해주세요.', TOAST_TYPES.ERROR)
       return
     }
+    const endDate = isRangeSchedule ? addScheduleEndDate : addScheduleDate
+    if (endDate < addScheduleDate) {
+      showToast('종료일은 시작일보다 빠를 수 없습니다.', TOAST_TYPES.ERROR)
+      return
+    }
+    const rangeDays = enumerateDateRange(addScheduleDate, endDate).length
+    if (rangeDays > MAX_SCHEDULE_RANGE_DAYS) {
+      showToast(`연속 일정은 최대 ${MAX_SCHEDULE_RANGE_DAYS}일까지 등록할 수 있습니다.`, TOAST_TYPES.ERROR)
+      return
+    }
+
     setIsSaving(true)
     try {
       await createSchedule({
         scheduleDate: addScheduleDate,
+        endDate,
         title: newTitle,
         tag: newTag,
       })
@@ -178,10 +238,14 @@ export default function ScheduleCalendar() {
       }
 
       await loadSchedules()
-      showToast('일정이 추가되었습니다.', TOAST_TYPES.SUCCESS)
+      const isRange = endDate !== addScheduleDate
+      showToast(
+        isRange ? '연속 일정이 추가되었습니다.' : '일정이 추가되었습니다.',
+        TOAST_TYPES.SUCCESS,
+      )
     } catch (error) {
       console.error('일정 등록 실패:', error)
-      showToast('일정 등록에 실패했습니다.', TOAST_TYPES.ERROR)
+      showToast(error?.message || '일정 등록에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setIsSaving(false)
     }
@@ -203,17 +267,23 @@ export default function ScheduleCalendar() {
 
   const handleStartEditScheduleDate = (schedule) => {
     setEditingScheduleId(schedule.id)
-    setEditDateDraft(schedule.scheduleDate)
+    setEditStartDateDraft(schedule.scheduleDate)
+    setEditEndDateDraft(getScheduleEndDate(schedule))
   }
 
   const handleCancelEditScheduleDate = () => {
     setEditingScheduleId('')
-    setEditDateDraft('')
+    setEditStartDateDraft('')
+    setEditEndDateDraft('')
   }
 
   const handleUpdateScheduleDate = async (schedule) => {
-    if (!editDateDraft) {
+    if (!editStartDateDraft || !editEndDateDraft) {
       showToast('변경할 날짜를 선택해주세요.', TOAST_TYPES.ERROR)
+      return
+    }
+    if (editEndDateDraft < editStartDateDraft) {
+      showToast('종료일은 시작일보다 빠를 수 없습니다.', TOAST_TYPES.ERROR)
       return
     }
 
@@ -221,19 +291,21 @@ export default function ScheduleCalendar() {
     try {
       await updateScheduleDate({
         scheduleId: schedule.id,
-        scheduleDate: editDateDraft,
+        scheduleDate: editStartDateDraft,
+        endDate: editEndDateDraft,
       })
 
-      const movedMonth = new Date(`${editDateDraft}T00:00:00`)
+      const movedMonth = new Date(`${editStartDateDraft}T00:00:00`)
       setCurrentDate(new Date(movedMonth.getFullYear(), movedMonth.getMonth(), 1))
-      selectScheduleDate(editDateDraft)
+      selectScheduleDate(addScheduleDate)
       await loadSchedules()
       setEditingScheduleId('')
-      setEditDateDraft('')
-      showToast('일정 날짜를 변경했습니다.', TOAST_TYPES.SUCCESS)
+      setEditStartDateDraft('')
+      setEditEndDateDraft('')
+      showToast('일정 기간을 변경했습니다.', TOAST_TYPES.SUCCESS)
     } catch (error) {
       console.error('일정 날짜 변경 실패:', error)
-      showToast('일정 날짜 변경에 실패했습니다.', TOAST_TYPES.ERROR)
+      showToast(error?.message || '일정 기간 변경에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setUpdatingScheduleId('')
     }
@@ -382,9 +454,12 @@ export default function ScheduleCalendar() {
               <div
                 key={item.id}
                 className={`truncate rounded border px-1.5 py-0.5 text-[11px] ${tagColorMap.get(item.tag) || 'bg-gray-100 text-gray-700 border-gray-200'}`}
-                title={item.title}
+                title={isMultiDaySchedule(item) ? `${item.title} (${formatSchedulePeriod(item)})` : item.title}
               >
                 {item.title}
+                {isMultiDaySchedule(item) && (
+                  <span className="ml-1 text-[10px] opacity-75">연속</span>
+                )}
               </div>
             ))}
           </div>
@@ -458,6 +533,42 @@ export default function ScheduleCalendar() {
             </button>
           </div>
           <p className="text-xs text-gray-500 mt-2">{formatSelectedDate(addScheduleDate)}</p>
+          <label className="mt-3 flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isRangeSchedule}
+              onChange={(e) => {
+                const checked = e.target.checked
+                setIsRangeSchedule(checked)
+                if (checked && addScheduleEndDate < addScheduleDate) {
+                  setAddScheduleEndDate(addScheduleDate)
+                }
+              }}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-400"
+            />
+            <span className="text-sm text-gray-700">연속 일정 (기간)</span>
+          </label>
+          {isRangeSchedule && (
+            <div className="mt-3">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">종료일</label>
+              <input
+                type="date"
+                value={addScheduleEndDate}
+                min={addScheduleDate}
+                onChange={(e) => setAddScheduleEndDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                {formatSelectedDate(addScheduleEndDate)}
+                {addScheduleEndDate >= addScheduleDate && (
+                  <span className="ml-1 text-blue-600">
+                    · {enumerateDateRange(addScheduleDate, addScheduleEndDate).length}일
+                  </span>
+                )}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">최대 {MAX_SCHEDULE_RANGE_DAYS}일</p>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2 mb-4">
@@ -502,6 +613,9 @@ export default function ScheduleCalendar() {
                     #{item.tag}
                   </p>
                   <p className="text-sm text-gray-800 break-words">{item.title}</p>
+                  {isMultiDaySchedule(item) && (
+                    <p className="text-xs text-gray-500 mt-1">{formatSchedulePeriod(item)}</p>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -513,29 +627,50 @@ export default function ScheduleCalendar() {
                 </button>
               </div>
               {editingScheduleId === item.id ? (
-                <div className="mt-3 flex items-center gap-2">
-                  <input
-                    type="date"
-                    value={editDateDraft}
-                    onChange={(e) => setEditDateDraft(e.target.value)}
-                    className="flex-1 px-2 py-1.5 rounded border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateScheduleDate(item)}
-                    disabled={updatingScheduleId === item.id}
-                    className="text-xs px-2 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {updatingScheduleId === item.id ? '저장 중' : '저장'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCancelEditScheduleDate}
-                    disabled={updatingScheduleId === item.id}
-                    className="text-xs px-2 py-1.5 rounded border border-gray-300 text-gray-600 disabled:opacity-50"
-                  >
-                    취소
-                  </button>
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 w-8 shrink-0">시작</span>
+                    <input
+                      type="date"
+                      value={editStartDateDraft}
+                      onChange={(e) => {
+                        const nextStart = e.target.value
+                        setEditStartDateDraft(nextStart)
+                        if (editEndDateDraft < nextStart) {
+                          setEditEndDateDraft(nextStart)
+                        }
+                      }}
+                      className="flex-1 px-2 py-1.5 rounded border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 w-8 shrink-0">종료</span>
+                    <input
+                      type="date"
+                      value={editEndDateDraft}
+                      min={editStartDateDraft}
+                      onChange={(e) => setEditEndDateDraft(e.target.value)}
+                      className="flex-1 px-2 py-1.5 rounded border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateScheduleDate(item)}
+                      disabled={updatingScheduleId === item.id}
+                      className="text-xs px-2 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {updatingScheduleId === item.id ? '저장 중' : '저장'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelEditScheduleDate}
+                      disabled={updatingScheduleId === item.id}
+                      className="text-xs px-2 py-1.5 rounded border border-gray-300 text-gray-600 disabled:opacity-50"
+                    >
+                      취소
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <button
@@ -543,7 +678,7 @@ export default function ScheduleCalendar() {
                   onClick={() => handleStartEditScheduleDate(item)}
                   className="mt-3 text-xs px-2 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50"
                 >
-                  날짜 변경
+                  기간 변경
                 </button>
               )}
             </div>
