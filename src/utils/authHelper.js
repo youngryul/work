@@ -1,22 +1,80 @@
 import { supabase } from '../config/supabase.js'
 
-const AUTH_CALL_TIMEOUT_MS = 4000
-const USER_ID_CACHE_TTL_MS = 1500
+const AUTH_STORAGE_KEY = 'sb-auth-token'
+const USER_ID_CACHE_TTL_MS = 5 * 60 * 1000
+const GET_USER_TIMEOUT_MS = 12000
+
+/** AuthContext / onAuthStateChange 와 동기화된 사용자 ID */
+let authSyncedUserId = null
 let cachedUserId = null
 let cachedAtMs = 0
 let inFlightUserIdPromise = null
+let authListenerInitialized = false
 
 /**
- * Supabase auth 호출 타임아웃 방어
+ * AuthContext 등에서 로그인 사용자 ID를 동기화합니다.
+ * @param {string|null} userId
+ */
+export function syncAuthUserId(userId) {
+  authSyncedUserId = userId || null
+  if (userId) {
+    cachedUserId = userId
+    cachedAtMs = Date.now()
+  } else {
+    cachedUserId = null
+    cachedAtMs = 0
+  }
+}
+
+/**
+ * localStorage에 저장된 Supabase 세션에서 user id를 읽습니다. (네트워크 없음)
+ * @returns {string|null}
+ */
+function getUserIdFromPersistedSession() {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY)
+    if (!raw) return null
+    const data = JSON.parse(raw)
+    return data?.user?.id ?? data?.currentSession?.user?.id ?? null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Supabase auth 상태 변경 시 캐시를 최신화합니다.
+ */
+function ensureAuthListener() {
+  if (authListenerInitialized || typeof window === 'undefined') return
+  authListenerInitialized = true
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    syncAuthUserId(session?.user?.id ?? null)
+  })
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return
+    supabase.auth
+      .getSession()
+      .then(({ data }) => syncAuthUserId(data?.session?.user?.id ?? null))
+      .catch(() => {})
+  })
+}
+
+/**
  * @template T
  * @param {Promise<T>} promise
  * @param {string} label
- * @returns {Promise<T>}
+ * @param {number} timeoutMs
  */
-async function withTimeout(promise, label) {
+async function withTimeout(promise, label, timeoutMs) {
   let timeoutId
   const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(`Auth timeout: ${label}`)), AUTH_CALL_TIMEOUT_MS)
+    timeoutId = setTimeout(
+      () => reject(new Error(`Auth timeout: ${label}`)),
+      timeoutMs,
+    )
   })
   try {
     return await Promise.race([promise, timeoutPromise])
@@ -26,65 +84,91 @@ async function withTimeout(promise, label) {
 }
 
 /**
- * getSession/getUser를 병렬 조회하여 빠르게 user id를 얻습니다.
+ * Supabase API로 user id 조회 (getSession 우선, 실패 시 getUser)
  * @returns {Promise<string|null>}
  */
-async function resolveCurrentUserIdFast() {
-  const sessionUserIdPromise = supabase.auth
-    .getSession()
-    .then(({ data, error }) => (error ? null : data?.session?.user?.id ?? null))
-    .catch(() => null)
+async function resolveUserIdFromSupabase() {
+  try {
+    const { data, error } = await supabase.auth.getSession()
+    if (!error && data?.session?.user?.id) {
+      return data.session.user.id
+    }
+  } catch {
+    // getSession 실패 시 getUser로 폴백
+  }
 
-  const directUserIdPromise = supabase.auth
-    .getUser()
-    .then(({ data, error }) => (error ? null : data?.user?.id ?? null))
-    .catch(() => null)
+  try {
+    const { data, error } = await withTimeout(
+      supabase.auth.getUser(),
+      'getUser(getCurrentUserId)',
+      GET_USER_TIMEOUT_MS,
+    )
+    if (!error && data?.user?.id) {
+      return data.user.id
+    }
+  } catch {
+    // 타임아웃·네트워크 오류 시 null
+  }
 
-  const winner = await withTimeout(
-    Promise.any([sessionUserIdPromise, directUserIdPromise]),
-    'resolveCurrentUserIdFast:parallelAuthLookup'
-  )
-
-  return winner ?? null
+  return null
 }
 
 /**
  * 현재 로그인한 사용자의 ID를 가져옵니다.
- * 배포 환경에서 세션이 로드되기 전에 호출될 수 있으므로 재시도 로직 포함
- * @returns {Promise<string|null>} 사용자 ID 또는 null
+ * @returns {Promise<string|null>}
  */
 export async function getCurrentUserId() {
+  ensureAuthListener()
+
+  if (authSyncedUserId) {
+    return authSyncedUserId
+  }
+
   const now = Date.now()
   if (cachedUserId && now - cachedAtMs < USER_ID_CACHE_TTL_MS) {
     return cachedUserId
   }
+
+  const persistedUserId = getUserIdFromPersistedSession()
+  if (persistedUserId) {
+    cachedUserId = persistedUserId
+    cachedAtMs = now
+    return persistedUserId
+  }
+
   if (inFlightUserIdPromise) {
     return inFlightUserIdPromise
   }
 
   inFlightUserIdPromise = (async () => {
-  try {
-    const userId = await resolveCurrentUserIdFast()
-    if (userId) {
-      cachedUserId = userId
-      cachedAtMs = Date.now()
-      return userId
-    }
-
-    return null
-  } catch (error) {
-    // AuthSessionMissingError는 조용히 처리 (세션이 아직 준비되지 않은 경우)
-    if (error.name === 'AuthSessionMissingError' || error.message?.includes('Auth session missing')) {
+    try {
+      const userId = await resolveUserIdFromSupabase()
+      if (userId) {
+        cachedUserId = userId
+        cachedAtMs = Date.now()
+        if (!authSyncedUserId) {
+          authSyncedUserId = userId
+        }
+        return userId
+      }
       return null
-    }
-    if (error.message?.includes('Auth timeout:') || error.name === 'AggregateError') {
+    } catch (error) {
+      if (
+        error.name === 'AuthSessionMissingError' ||
+        error.message?.includes('Auth session missing')
+      ) {
+        return null
+      }
+      const fallback = getUserIdFromPersistedSession()
+      if (fallback) {
+        cachedUserId = fallback
+        cachedAtMs = Date.now()
+        return fallback
+      }
       return null
+    } finally {
+      inFlightUserIdPromise = null
     }
-    // 다른 에러도 조용히 처리 (배포 환경에서 발생할 수 있음)
-    return null
-  } finally {
-    inFlightUserIdPromise = null
-  }
   })()
 
   return inFlightUserIdPromise
@@ -92,10 +176,9 @@ export async function getCurrentUserId() {
 
 /**
  * 현재 로그인한 사용자가 있는지 확인합니다.
- * @returns {Promise<boolean>} 로그인 여부
+ * @returns {Promise<boolean>}
  */
 export async function isAuthenticated() {
   const userId = await getCurrentUserId()
   return userId !== null
 }
-

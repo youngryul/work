@@ -1,19 +1,38 @@
 import { supabase } from '../config/supabase.js'
+import { syncAuthUserId } from '../utils/authHelper.js'
 
-const AUTH_CALL_TIMEOUT_MS = 4000
+const AUTH_STORAGE_KEY = 'sb-auth-token'
+const GET_USER_TIMEOUT_MS = 12000
 
 /**
- * Supabase auth 호출이 영원히 pending 되는 상황을 방지합니다.
- * (환경 변수 미설정/네트워크 문제 등에서 로딩이 안 풀리는 케이스 방어)
+ * localStorage 세션에서 사용자 정보를 읽습니다.
+ * @returns {import('@supabase/supabase-js').User|null}
+ */
+function getUserFromPersistedSession() {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY)
+    if (!raw) return null
+    const data = JSON.parse(raw)
+    return data?.user ?? data?.currentSession?.user ?? null
+  } catch {
+    return null
+  }
+}
+
+/**
  * @template T
  * @param {Promise<T>} promise
  * @param {string} label
- * @returns {Promise<T>}
+ * @param {number} timeoutMs
  */
-async function withTimeout(promise, label) {
+async function withTimeout(promise, label, timeoutMs) {
   let timeoutId
   const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(`Auth timeout: ${label}`)), AUTH_CALL_TIMEOUT_MS)
+    timeoutId = setTimeout(
+      () => reject(new Error(`Auth timeout: ${label}`)),
+      timeoutMs,
+    )
   })
   try {
     return await Promise.race([promise, timeoutPromise])
@@ -23,27 +42,39 @@ async function withTimeout(promise, label) {
 }
 
 /**
- * getSession/getUser를 병렬 조회하여 더 빠르게 인증 사용자를 찾습니다.
+ * getSession 우선, 필요 시 getUser로 인증 사용자를 조회합니다.
  * @param {string} label
  * @returns {Promise<import('@supabase/supabase-js').User|null>}
  */
 async function resolveAuthUserFast(label) {
-  const sessionUserPromise = supabase.auth
-    .getSession()
-    .then(({ data, error }) => (error ? null : data?.session?.user ?? null))
-    .catch(() => null)
+  const persistedUser = getUserFromPersistedSession()
+  if (persistedUser) {
+    return persistedUser
+  }
 
-  const directUserPromise = supabase.auth
-    .getUser()
-    .then(({ data, error }) => (error ? null : data?.user ?? null))
-    .catch(() => null)
+  try {
+    const { data, error } = await supabase.auth.getSession()
+    if (!error && data?.session?.user) {
+      return data.session.user
+    }
+  } catch {
+    // getUser 폴백
+  }
 
-  const winner = await withTimeout(
-    Promise.any([sessionUserPromise, directUserPromise]),
-    `${label}:parallelAuthLookup`
-  )
+  try {
+    const { data, error } = await withTimeout(
+      supabase.auth.getUser(),
+      `${label}:getUser`,
+      GET_USER_TIMEOUT_MS,
+    )
+    if (!error && data?.user) {
+      return data.user
+    }
+  } catch {
+    return getUserFromPersistedSession()
+  }
 
-  return winner ?? null
+  return getUserFromPersistedSession()
 }
 
 /**
@@ -51,13 +82,12 @@ async function resolveAuthUserFast(label) {
  */
 export async function migrateExistingData() {
   try {
-    const { data: { user } } = await withTimeout(supabase.auth.getUser(), 'getUser(migrateExistingData)')
-    
+    const user = await resolveAuthUserFast('migrateExistingData')
+
     if (!user) {
       throw new Error('로그인이 필요합니다.')
     }
 
-    // 기존 데이터가 있는지 확인
     const { data: existingTasks } = await supabase
       .from('tasks')
       .select('id')
@@ -65,9 +95,8 @@ export async function migrateExistingData() {
       .limit(1)
 
     if (existingTasks && existingTasks.length > 0) {
-      // 기존 데이터를 현재 사용자에게 할당
       const { error } = await supabase.rpc('assign_existing_data_to_user', {
-        target_user_id: user.id
+        target_user_id: user.id,
       })
 
       if (error) {
@@ -90,9 +119,8 @@ export async function migrateExistingData() {
  */
 export async function signUp(email, password) {
   try {
-    // 프로덕션 URL 또는 환경 변수에서 가져오기
     const redirectTo = import.meta.env.VITE_APP_URL || 'https://work-sable-one.vercel.app/'
-    
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -100,18 +128,18 @@ export async function signUp(email, password) {
         emailRedirectTo: redirectTo,
       },
     })
-    
+
     if (error) throw error
-    
-    // 첫 번째 사용자인 경우 기존 데이터 마이그레이션
+
     if (data.user) {
+      syncAuthUserId(data.user.id)
       try {
         await migrateExistingData()
       } catch (migrationError) {
         console.warn('데이터 마이그레이션 실패:', migrationError)
       }
     }
-    
+
     return data
   } catch (error) {
     console.error('회원가입 오류:', error)
@@ -128,16 +156,19 @@ export async function signIn(email, password) {
       email,
       password,
     })
-    
+
     if (error) throw error
-    
-    // 첫 로그인 시 기존 데이터 마이그레이션 시도
+
+    if (data.user) {
+      syncAuthUserId(data.user.id)
+    }
+
     try {
       await migrateExistingData()
     } catch (migrationError) {
       console.warn('데이터 마이그레이션 실패:', migrationError)
     }
-    
+
     return data
   } catch (error) {
     console.error('로그인 오류:', error)
@@ -152,6 +183,7 @@ export async function signOut() {
   try {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
+    syncAuthUserId(null)
   } catch (error) {
     console.error('로그아웃 오류:', error)
     throw error
@@ -160,21 +192,22 @@ export async function signOut() {
 
 /**
  * 현재 사용자 정보 가져오기
- * 배포 환경에서 세션이 로드되기 전에 호출될 수 있으므로 재시도 로직 포함
  */
 export async function getCurrentUser() {
   try {
-    return await resolveAuthUserFast('getCurrentUser')
+    const user = await resolveAuthUserFast('getCurrentUser')
+    if (user) {
+      syncAuthUserId(user.id)
+    }
+    return user
   } catch (error) {
-    // AuthSessionMissingError는 조용히 처리
     if (error.name === 'AuthSessionMissingError' || error.message?.includes('Auth session missing')) {
-      return null
+      return getUserFromPersistedSession()
     }
-    if (error.message?.includes('Auth timeout:') || error.name === 'AggregateError') {
-      return null
+    if (error.message?.includes('Auth timeout:')) {
+      return getUserFromPersistedSession()
     }
-    // 다른 에러도 조용히 처리 (배포 환경에서 발생할 수 있음)
-    return null
+    return getUserFromPersistedSession()
   }
 }
 
@@ -184,4 +217,3 @@ export async function getCurrentUser() {
 export function onAuthStateChange(callback) {
   return supabase.auth.onAuthStateChange(callback)
 }
-

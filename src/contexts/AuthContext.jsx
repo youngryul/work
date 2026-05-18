@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { getCurrentUser, onAuthStateChange, signIn, signUp, signOut } from '../services/authService.js'
 import { getUserRole } from '../services/userRoleService.js'
 import { getAdsEnabledForCurrentUser } from '../services/adSettingsService.js'
+import { syncAuthUserId } from '../utils/authHelper.js'
 
 const AuthContext = createContext(null)
 
@@ -13,6 +14,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [userRole, setUserRole] = useState('regular') // 'admin' | 'superuser' | 'regular'
   const [adsEnabled, setAdsEnabled] = useState(true)
+
+  const applyAuthUser = useCallback((u) => {
+    syncAuthUserId(u?.id ?? null)
+    setUser(u ?? null)
+  }, [])
 
   const fetchRole = useCallback(async (u) => {
     if (!u) { setUserRole('regular'); return }
@@ -41,12 +47,12 @@ export function AuthProvider({ children }) {
     // 초기 사용자 로드
     getCurrentUser()
       .then(async (u) => {
-        setUser(u)
+        applyAuthUser(u)
         await fetchRole(u)
         await fetchAdPreference(u)
       })
       .catch(() => {
-        setUser(null)
+        applyAuthUser(null)
         setUserRole('regular')
         setAdsEnabled(true)
       })
@@ -55,14 +61,14 @@ export function AuthProvider({ children }) {
     // 인증 상태 변경 감지
     const { data: { subscription } } = onAuthStateChange(async (event, session) => {
       const u = session?.user ?? null
-      setUser(u)
+      applyAuthUser(u)
       fetchRole(u)
       await fetchAdPreference(u)
       setLoading(false)
     })
 
     return () => subscription.unsubscribe()
-  }, [fetchAdPreference, fetchRole])
+  }, [applyAuthUser, fetchAdPreference, fetchRole])
 
   const value = {
     user,
