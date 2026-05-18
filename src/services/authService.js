@@ -1,90 +1,17 @@
 import { supabase } from '../config/supabase.js'
-import { syncAuthUserId } from '../utils/authHelper.js'
-
-const AUTH_STORAGE_KEY = 'sb-auth-token'
-const GET_USER_TIMEOUT_MS = 12000
-
-/**
- * localStorage 세션에서 사용자 정보를 읽습니다.
- * @returns {import('@supabase/supabase-js').User|null}
- */
-function getUserFromPersistedSession() {
-  if (typeof window === 'undefined') return null
-  try {
-    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY)
-    if (!raw) return null
-    const data = JSON.parse(raw)
-    return data?.user ?? data?.currentSession?.user ?? null
-  } catch {
-    return null
-  }
-}
-
-/**
- * @template T
- * @param {Promise<T>} promise
- * @param {string} label
- * @param {number} timeoutMs
- */
-async function withTimeout(promise, label, timeoutMs) {
-  let timeoutId
-  const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(
-      () => reject(new Error(`Auth timeout: ${label}`)),
-      timeoutMs,
-    )
-  })
-  try {
-    return await Promise.race([promise, timeoutPromise])
-  } finally {
-    clearTimeout(timeoutId)
-  }
-}
-
-/**
- * getSession 우선, 필요 시 getUser로 인증 사용자를 조회합니다.
- * @param {string} label
- * @returns {Promise<import('@supabase/supabase-js').User|null>}
- */
-async function resolveAuthUserFast(label) {
-  const persistedUser = getUserFromPersistedSession()
-  if (persistedUser) {
-    return persistedUser
-  }
-
-  try {
-    const { data, error } = await supabase.auth.getSession()
-    if (!error && data?.session?.user) {
-      return data.session.user
-    }
-  } catch {
-    // getUser 폴백
-  }
-
-  try {
-    const { data, error } = await withTimeout(
-      supabase.auth.getUser(),
-      `${label}:getUser`,
-      GET_USER_TIMEOUT_MS,
-    )
-    if (!error && data?.user) {
-      return data.user
-    }
-  } catch {
-    return getUserFromPersistedSession()
-  }
-
-  return getUserFromPersistedSession()
-}
+import {
+  syncAuthUserId,
+  getUserFromPersistedSession,
+  getCurrentUserIdSync,
+} from '../utils/authHelper.js'
 
 /**
  * 기존 데이터를 현재 사용자에게 할당
  */
 export async function migrateExistingData() {
   try {
-    const user = await resolveAuthUserFast('migrateExistingData')
-
-    if (!user) {
+    const userId = getCurrentUserIdSync()
+    if (!userId) {
       throw new Error('로그인이 필요합니다.')
     }
 
@@ -96,7 +23,7 @@ export async function migrateExistingData() {
 
     if (existingTasks && existingTasks.length > 0) {
       const { error } = await supabase.rpc('assign_existing_data_to_user', {
-        target_user_id: user.id,
+        target_user_id: userId,
       })
 
       if (error) {
@@ -191,24 +118,15 @@ export async function signOut() {
 }
 
 /**
- * 현재 사용자 정보 가져오기
+ * 현재 사용자 정보 (동기 복원 우선, 네트워크 호출 없음)
  */
-export async function getCurrentUser() {
-  try {
-    const user = await resolveAuthUserFast('getCurrentUser')
-    if (user) {
-      syncAuthUserId(user.id)
-    }
-    return user
-  } catch (error) {
-    if (error.name === 'AuthSessionMissingError' || error.message?.includes('Auth session missing')) {
-      return getUserFromPersistedSession()
-    }
-    if (error.message?.includes('Auth timeout:')) {
-      return getUserFromPersistedSession()
-    }
-    return getUserFromPersistedSession()
+export function getCurrentUser() {
+  const persisted = getUserFromPersistedSession()
+  if (persisted) {
+    syncAuthUserId(persisted.id)
+    return Promise.resolve(persisted)
   }
+  return Promise.resolve(null)
 }
 
 /**
