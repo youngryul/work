@@ -10,7 +10,7 @@ const corsHeaders = {
 const DEFAULT_MODEL = "gpt-image-1"
 
 // 고정 스타일 규칙 (연필 제외)
-const FIXED_STYLE = "simple black line art, colorful crayon-like fill, minimalist doodle style, clean lines, hand-drawn sketch, journal illustration, white background, Posili cute chubby round potato character with tiny arms and legs and a warm smile, simple objects and scenes, bright colorful crayon-like texture, playful and cheerful, no pencil, no writing tools, no pen, no stationery items"
+const FIXED_STYLE = "thick black outline, vibrant colorful crayon-like fill, rich saturated colors, multiple bright colors throughout, rainbow-like color variety, minimalist doodle style, hand-drawn sketch, journal illustration, white background, Posili cute chubby round potato character with tiny arms and legs and a warm smile, simple objects and scenes, bold colorful crayon texture, playful and cheerful, colorful details everywhere, no pencil, no writing tools, no pen, no stationery items"
 
 // 감정 타입 정의 (더 세분화)
 type Emotion = 
@@ -45,31 +45,31 @@ const EMOTION_KEYWORDS: Record<Emotion, string[]> = {
   satisfaction: ['만족', '보람', '성취감', '기쁨', 'satisfaction', 'satisfied', 'content', 'fulfilled', 'pleased', '충족']
 }
 
-// 감정 → 색감 매핑 (알록달록한 크레파스 느낌, 더 세분화된 표현)
+// 감정 → 색감 매핑 (메인 색상 + 알록달록한 크레파스 조합)
 const EMOTION_ATMOSPHERE: Record<Emotion, string> = {
-  calm: 'soft pastel colors, gentle beige and light blue, peaceful and calm atmosphere, serene and tranquil mood',
-  comfort: 'warm yellow and orange tones, cozy and inviting atmosphere, bright and cheerful, homey feeling',
-  happiness: 'vibrant rainbow colors, bright and colorful palette, joyful and playful atmosphere, energetic and lively',
-  sadness: 'cool blue and purple tones, gentle and soft colors, melancholic but beautiful, subdued and contemplative',
-  anxiety: 'muted pastels with hints of color, soft and gentle tones, slightly tense atmosphere, uncertain mood',
-  loneliness: 'cool blue and gray tones, spacious and quiet atmosphere, peaceful but empty, isolated feeling',
-  hope: 'bright yellow and pink colors, warm and optimistic atmosphere, cheerful sunrise colors, uplifting mood',
-  tiredness: 'soft warm colors, gentle purple and blue tones, restful and calm atmosphere, weary but peaceful',
-  excitement: 'vibrant red and orange colors, dynamic and energetic atmosphere, thrilling and exhilarating mood, intense colors',
-  gratitude: 'warm golden and amber colors, heartfelt and appreciative atmosphere, warm and glowing, thankful mood',
-  nostalgia: 'sepia and warm brown tones, vintage and sentimental atmosphere, soft and dreamy, reminiscent mood',
-  frustration: 'muted red and orange tones, tense and blocked atmosphere, slightly chaotic, stuck feeling',
-  relief: 'soft green and blue tones, relaxed and eased atmosphere, peaceful and light, unburdened mood',
-  pride: 'bold gold and purple colors, confident and accomplished atmosphere, strong and proud, victorious mood',
-  embarrassment: 'soft pink and peach tones, awkward and shy atmosphere, gentle and self-conscious, flustered mood',
-  envy: 'green and yellow tones, longing and desiring atmosphere, slightly bitter, covetous mood',
-  determination: 'strong red and orange colors, focused and resolute atmosphere, intense and driven, motivated mood',
-  confusion: 'mixed gray and muted colors, uncertain and puzzled atmosphere, chaotic and unclear, bewildered mood',
-  peace: 'soft white and light blue tones, harmonious and balanced atmosphere, serene and tranquil, unified mood',
-  love: 'warm pink and red tones, affectionate and caring atmosphere, tender and warm, loving mood',
-  anger: 'intense red and dark orange colors, heated and intense atmosphere, fiery and passionate, furious mood',
-  disappointment: 'dull gray and blue tones, let down and discouraged atmosphere, subdued and dejected, disheartened mood',
-  satisfaction: 'warm golden and green tones, content and fulfilled atmosphere, peaceful and accomplished, pleased mood'
+  calm: 'main color sky blue, accented with soft mint green and pale lavender and warm cream, gentle pastel rainbow palette, serene and tranquil mood',
+  comfort: 'main color warm golden yellow, accented with soft orange and peachy pink and light green, cozy crayon rainbow palette, homey and cheerful mood',
+  happiness: 'main color bright sunny yellow, bursting with vibrant red and electric blue and hot pink and lime green, full rainbow crayon palette, joyful and energetic mood',
+  sadness: 'main color deep cornflower blue, accented with soft violet and muted teal and pale silver, cool melancholic palette with subtle color pops, contemplative mood',
+  anxiety: 'main color cool gray-blue, accented with muted yellow and pale orange and soft red, tense crayon palette with scattered color accents, uncertain mood',
+  loneliness: 'main color dusty blue, accented with soft lavender and pale mint and muted silver, quiet and spacious color palette, isolated and reflective mood',
+  hope: 'main color bright coral pink, bursting with warm golden yellow and sky blue and light green and white, sunrise crayon rainbow palette, optimistic and uplifting mood',
+  tiredness: 'main color soft lilac purple, accented with dusty blue and warm beige and muted peach, sleepy pastel crayon palette, weary but peaceful mood',
+  excitement: 'main color vivid orange-red, bursting with electric yellow and hot pink and bright purple and neon green, dynamic rainbow crayon palette, thrilling and energetic mood',
+  gratitude: 'main color warm amber gold, accented with burnt orange and rosy pink and soft green and cream, glowing grateful crayon palette, heartfelt and warm mood',
+  nostalgia: 'main color warm sepia brown, accented with dusty rose and faded yellow and soft teal and vintage cream, retro crayon palette, sentimental and dreamy mood',
+  frustration: 'main color fiery red-orange, accented with sharp yellow and dark brown and electric blue, clashing energetic crayon palette, tense and stuck mood',
+  relief: 'main color fresh mint green, accented with sky blue and soft yellow and pale peach and white, light breezy crayon palette, relaxed and unburdened mood',
+  pride: 'main color royal purple, accented with bold gold and vivid crimson and bright blue and silver, triumphant rich crayon palette, confident and accomplished mood',
+  embarrassment: 'main color rosy pink, accented with soft coral and warm peach and light lavender and blush white, gentle flustered crayon palette, shy and self-conscious mood',
+  envy: 'main color emerald green, accented with golden yellow and deep teal and muted red and dark olive, longing crayon palette, bittersweet and covetous mood',
+  determination: 'main color bold crimson red, accented with strong orange and deep navy and bright white and sharp yellow, intense focused crayon palette, driven and motivated mood',
+  confusion: 'main color swirling gray-violet, accented with mismatched teal and orange and yellow and pink, chaotic mixed crayon palette, puzzled and bewildered mood',
+  peace: 'main color soft white-blue, accented with pale green and gentle lavender and warm ivory and sky blue, harmonious balanced crayon palette, serene and unified mood',
+  love: 'main color vivid rose pink, accented with warm red and soft coral and light gold and gentle lavender, affectionate glowing crayon palette, tender and loving mood',
+  anger: 'main color intense fiery red, accented with dark burnt orange and sharp black and bold yellow and deep maroon, fierce heated crayon palette, furious and passionate mood',
+  disappointment: 'main color muted slate blue, accented with gray and faded olive and dull rose and soft brown, subdued dejected crayon palette, discouraged and downhearted mood',
+  satisfaction: 'main color warm olive green, accented with golden yellow and soft orange and cream and light teal, content fulfilled crayon palette, peaceful and accomplished mood'
 }
 
 /**
@@ -198,7 +198,7 @@ async function createImagePrompt(content: string, apiKey: string): Promise<{ emo
   const colors = EMOTION_ATMOSPHERE[emotion]
 
   // 프롬프트를 더 간결하고 안전하게 구성 (포실이 포함, 크레파스 느낌, 연필 제외)
-  const prompt = `Simple black line art illustration with colorful crayon-like fill, ${scene}, ${colors}, minimalistic doodle style, clean lines, white background, Posili cute chubby round potato character with tiny arms and legs and a warm smile, ${FIXED_STYLE}, absolutely no pencil, no pen, no writing tools, no stationery, no office supplies`
+  const prompt = `Colorful crayon-style illustration, ${colors}, ${scene}, thick black outline, vibrant hand-drawn doodle, ${FIXED_STYLE}, rich colorful details, absolutely no pencil, no pen, no writing tools, no stationery, no office supplies`
 
   return {
     emotion,

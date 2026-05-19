@@ -14,9 +14,12 @@ async function buildPromptFromDiary(content) {
   const systemPrompt = `You are an assistant that converts Korean diary entries into short English image generation prompts.
 Rules:
 - The main character is always "Posili", a cute chubby round potato character with a warm smile and tiny arms/legs.
-- Style: colorful crayon drawing, warm pastel colors, childlike illustration, soft textures, cozy storybook feel.
+- Style: colorful crayon drawing, thick black outlines, vibrant rich colors, multiple bright colors throughout the scene.
+- Identify the dominant emotion in the diary and choose a matching main color (e.g. happy → bright yellow, sad → deep blue, excited → vivid orange-red, calm → sky blue, love → rose pink, etc.).
+- Use that emotion color as the main color and add 3-4 complementary vivid crayon colors for objects and background details.
 - Describe a single scene that captures the mood or key moment of the diary.
-- Keep the prompt under 120 words.
+- Keep the prompt under 130 words.
+- Always start the prompt with the main color description and overall color palette.
 - Do NOT include any text or letters in the image.
 - Output only the prompt, nothing else.`
 
