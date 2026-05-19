@@ -7,10 +7,10 @@ const corsHeaders = {
 }
 
 // 이미지 생성 프롬프트 생성 상수
-const DEFAULT_MODEL = "dall-e-3"
+const DEFAULT_MODEL = "gpt-image-1"
 
 // 고정 스타일 규칙 (연필 제외)
-const FIXED_STYLE = "simple black line art, colorful crayon-like fill, minimalist doodle style, clean lines, hand-drawn sketch, journal illustration, white background, cute bear character, adorable teddy bear, simple objects and scenes, bright colorful crayon-like texture, playful and cheerful, no pencil, no writing tools, no pen, no stationery items"
+const FIXED_STYLE = "simple black line art, colorful crayon-like fill, minimalist doodle style, clean lines, hand-drawn sketch, journal illustration, white background, Posili cute chubby round potato character with tiny arms and legs and a warm smile, simple objects and scenes, bright colorful crayon-like texture, playful and cheerful, no pencil, no writing tools, no pen, no stationery items"
 
 // 감정 타입 정의 (더 세분화)
 type Emotion = 
@@ -167,22 +167,22 @@ async function summarizeDiaryContent(content: string, apiKey: string): Promise<s
       const errorData = await response.json().catch(() => ({}))
       console.error('일기 요약 실패:', errorData)
       // 실패 시 기본값 반환
-      return 'a cute bear in a simple scene'
+      return 'Posili a cute chubby potato character in a simple scene'
     }
 
     const data = await response.json()
     const summary = data.choices?.[0]?.message?.content?.trim()
-    
+
     if (!summary) {
-      return 'a cute bear in a simple scene'
+      return 'Posili a cute chubby potato character in a simple scene'
     }
 
     // 요약된 내용을 장면 설명으로 변환
-    return `a cute bear with ${summary.toLowerCase()}`
+    return `Posili a cute chubby potato character with ${summary.toLowerCase()}`
   } catch (error) {
     console.error('일기 요약 오류:', error)
     // 오류 시 기본값 반환
-    return 'a cute bear in a simple scene'
+    return 'Posili a cute chubby potato character in a simple scene'
   }
 }
 
@@ -197,8 +197,8 @@ async function createImagePrompt(content: string, apiKey: string): Promise<{ emo
   const scene = await summarizeDiaryContent(content, apiKey)
   const colors = EMOTION_ATMOSPHERE[emotion]
 
-  // 프롬프트를 더 간결하고 안전하게 구성 (귀여운 곰돌이 포함, 크레파스 느낌, 연필 제외)
-  const prompt = `Simple black line art illustration with colorful crayon-like fill, ${scene}, ${colors}, minimalistic doodle style, clean lines, white background, cute adorable bear character, ${FIXED_STYLE}, absolutely no pencil, no pen, no writing tools, no stationery, no office supplies`
+  // 프롬프트를 더 간결하고 안전하게 구성 (포실이 포함, 크레파스 느낌, 연필 제외)
+  const prompt = `Simple black line art illustration with colorful crayon-like fill, ${scene}, ${colors}, minimalistic doodle style, clean lines, white background, Posili cute chubby round potato character with tiny arms and legs and a warm smile, ${FIXED_STYLE}, absolutely no pencil, no pen, no writing tools, no stationery, no office supplies`
 
   return {
     emotion,
@@ -252,7 +252,7 @@ serve(async (req) => {
           model: modelName,
           prompt: prompt,
           size: '1024x1024',
-          quality: 'hd',
+          quality: 'low',
           n: 1,
         }),
       }
@@ -297,22 +297,28 @@ serve(async (req) => {
     }
 
     const data = await response.json()
-    
-    // OpenAI는 URL을 반환하므로 이미지 다운로드
-    if (!data.data || !data.data[0] || !data.data[0].url) {
+
+    if (!data.data || !data.data[0]) {
       return new Response(
         JSON.stringify({ error: '이미지 생성 실패: 응답 데이터가 올바르지 않습니다.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const imageUrl = data.data[0].url
-    
-    // OpenAI가 반환한 URL을 그대로 사용 (임시 URL이므로 나중에 Supabase Storage에 업로드 필요)
-    // 또는 Base64로 변환하려면 추가 다운로드 필요
+    // gpt-image-1은 b64_json 반환, 기존 모델은 url 반환
+    const imageData = data.data[0]
+    const imageUrl = imageData.url
+      ?? (imageData.b64_json ? `data:image/png;base64,${imageData.b64_json}` : null)
+
+    if (!imageUrl) {
+      return new Response(
+        JSON.stringify({ error: '이미지 생성 실패: 이미지 데이터를 찾을 수 없습니다.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         imageUrl: imageUrl,
         prompt: prompt,
         emotion: emotion,
