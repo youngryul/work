@@ -21,7 +21,7 @@ import { getCurrentUserId } from '../utils/authHelper.js'
  */
 async function generateDiaryImageWithTokenCharge(content, date, { isRegenerate = false } = {}) {
   await assertSufficientTokensForImageGeneration()
-  const { imageUrl: generatedUrl, prompt } = await generateDiaryImageFree(content)
+  const { imageUrl: generatedUrl, prompt, emotion } = await generateDiaryImageFree(content)
 
   let imageUrl = generatedUrl
   try {
@@ -43,6 +43,7 @@ async function generateDiaryImageWithTokenCharge(content, date, { isRegenerate =
     imageUrl,
     imagePrompt: prompt,
     remainingBalance,
+    emotion,
   }
 }
 
@@ -67,6 +68,7 @@ export async function saveDiary(date, content, regenerateImage = false, attached
     let imageUrl = existing?.imageUrl || existing?.image_url || null
     let imagePrompt = existing?.imagePrompt || existing?.image_prompt || null
     let remainingBalance = null
+    let emotion = null
 
     // 이미지가 없거나 재생성 요청이 있으면 생성 (재생성도 동일하게 토큰 차감)
     if (!imageUrl || regenerateImage) {
@@ -77,11 +79,13 @@ export async function saveDiary(date, content, regenerateImage = false, attached
         imageUrl = generated.imageUrl
         imagePrompt = generated.imagePrompt
         remainingBalance = generated.remainingBalance
+        emotion = generated.emotion
       } catch (error) {
         console.error('이미지 생성 실패:', error)
         if (regenerateImage) {
           throw error
         }
+        // 토큰 부족 등으로 이미지 생성 실패 시 일기만 저장
       }
     }
     
@@ -94,12 +98,15 @@ export async function saveDiary(date, content, regenerateImage = false, attached
       user_id: userId,
     }
     
-    // image_url과 image_prompt는 null이 아닐 때만 포함
+    // image_url, image_prompt, emotion은 null이 아닐 때만 포함
     if (imageUrl !== null) {
       upsertData.image_url = imageUrl
     }
     if (imagePrompt !== null) {
       upsertData.image_prompt = imagePrompt
+    }
+    if (emotion !== null) {
+      upsertData.emotion = emotion
     }
     
     // 첨부 이미지 저장 (JSON 배열)
@@ -132,6 +139,7 @@ export async function saveDiary(date, content, regenerateImage = false, attached
       ...data,
       imageUrl: data.image_url,
       imagePrompt: data.image_prompt,
+      emotion: data.emotion,
       attachedImages: data.attached_images || [],
       remainingBalance,
       tokensConsumed: remainingBalance !== null,
@@ -173,6 +181,7 @@ export async function getDiaryByDate(date) {
       ...data,
       imageUrl: data.image_url,
       imagePrompt: data.image_prompt,
+      emotion: data.emotion,
       attachedImages: data.attached_images || [],
     } : null
   } catch (error) {
@@ -215,6 +224,7 @@ export async function getDiariesByMonth(year, month) {
       ...item,
       imageUrl: item.image_url,
       imagePrompt: item.image_prompt,
+      emotion: item.emotion,
       attachedImages: item.attached_images || [],
     }))
   } catch (error) {

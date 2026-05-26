@@ -10,6 +10,32 @@ import AiTokenBalanceBadge from './AiTokenBalanceBadge.jsx'
 import AiTokenGenerationCostNote from './AiTokenGenerationCostNote.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
+const EMOTION_LABELS = {
+  calm: '평온',
+  comfort: '편안',
+  happiness: '행복',
+  sadness: '슬픔',
+  anxiety: '불안',
+  loneliness: '외로움',
+  hope: '희망',
+  tiredness: '피곤',
+  excitement: '설렘',
+  gratitude: '감사',
+  nostalgia: '그리움',
+  frustration: '답답',
+  relief: '안도',
+  pride: '뿌듯함',
+  embarrassment: '부끄러움',
+  envy: '부러움',
+  determination: '의지',
+  confusion: '혼란',
+  peace: '평화',
+  love: '사랑',
+  anger: '화남',
+  disappointment: '실망',
+  satisfaction: '만족',
+}
+
 /**
  * 일기 작성/수정 폼 컴포넌트
  * @param {string} selectedDate - 선택된 날짜 (YYYY-MM-DD)
@@ -27,13 +53,14 @@ export default function DiaryForm({
   embedded = false,
   tokenRefreshDep,
 }) {
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const [content, setContent] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [error, setError] = useState(null)
   const [existingDiary, setExistingDiary] = useState(null)
   const [imageLoadError, setImageLoadError] = useState(false) // 이미지 로드 실패 상태
+  const [diaryEmotion, setDiaryEmotion] = useState(null) // 저장/재생성 후 감정
   const [showPrompt, setShowPrompt] = useState(false) // 프롬프트 표시 여부
   const [attachedImages, setAttachedImages] = useState([]) // 첨부된 이미지 URL 목록
   const [uploadingImages, setUploadingImages] = useState({}) // 업로드 중인 이미지 상태
@@ -56,13 +83,15 @@ export default function DiaryForm({
       if (diary) {
         setContent(diary.content)
         setExistingDiary(diary)
-        setImageLoadError(false) // 이미지 로드 상태 초기화
+        setImageLoadError(false)
         setAttachedImages(diary.attachedImages || [])
+        setDiaryEmotion(diary.emotion ? (EMOTION_LABELS[diary.emotion] ?? diary.emotion) : null)
       } else {
         setContent('')
         setExistingDiary(null)
         setImageLoadError(false)
         setAttachedImages([])
+        setDiaryEmotion(null)
       }
     } catch (error) {
       console.error('일기 로드 실패:', error)
@@ -82,20 +111,13 @@ export default function DiaryForm({
       return
     }
 
-    if (needsNewImageOnSave && hasInsufficientTokens) {
-      showToast(
-        `AI 이미지 생성 토큰이 부족합니다. (보유: ${tokenBalance}, 필요: ${generationCost})`,
-        TOAST_TYPES.ERROR,
-      )
-      return
-    }
-
     setIsLoading(true)
     setIsGeneratingImage(true)
     setError(null)
 
     try {
       const saved = await saveDiary(selectedDate, content, false, attachedImages)
+      if (saved?.emotion) setDiaryEmotion(EMOTION_LABELS[saved.emotion] ?? saved.emotion)
       const saveMsg = saved?.tokensConsumed
         ? `일기가 저장되었습니다. (${generationCost}토큰 사용)`
         : '일기가 저장되었습니다.'
@@ -234,6 +256,7 @@ export default function DiaryForm({
         })
         setImageLoadError(false) // 이미지 로드 상태 초기화
         setShowPrompt(false) // 프롬프트 숨기기 (새 이미지 생성 시)
+        if (updatedDiary.emotion) setDiaryEmotion(EMOTION_LABELS[updatedDiary.emotion] ?? updatedDiary.emotion)
       }
       
       // 데이터베이스에서 최신 데이터 다시 로드
@@ -395,6 +418,11 @@ export default function DiaryForm({
                         setImageLoadError(true)
                       }}
                     />
+                    {diaryEmotion && (
+                      <p className="mt-2 text-sm text-gray-500 font-sans">
+                        오늘의 감정: <span className="font-semibold text-green-600">{diaryEmotion}</span>
+                      </p>
+                    )}
                   </div>
                 ) : existingDiary?.imageUrl && imageLoadError ? (
                   <div className="w-full max-w-md h-64 bg-gray-100 rounded-lg border-2 border-green-200 flex items-center justify-center">
@@ -415,7 +443,7 @@ export default function DiaryForm({
                       ? '재생성 중...'
                       : `🔄 이미지 재생성 (${generationCost}토큰)`}
                   </button>
-                  {existingDiary?.imagePrompt && (
+                  {isAdmin && existingDiary?.imagePrompt && (
                     <button
                       type="button"
                       onClick={() => setShowPrompt(!showPrompt)}
@@ -425,8 +453,8 @@ export default function DiaryForm({
                     </button>
                   )}
                 </div>
-                {/* 프롬프트 표시 */}
-                {showPrompt && existingDiary?.imagePrompt && (
+                {/* 프롬프트 표시 (관리자만) */}
+                {isAdmin && showPrompt && existingDiary?.imagePrompt && (
                   <div className="mt-3 p-4 bg-gray-50 border-2 border-gray-200 rounded-lg">
                     <h4 className="text-sm font-semibold text-gray-700 mb-2 font-sans">생성된 프롬프트:</h4>
                     <p className="text-xs text-gray-600 font-mono whitespace-pre-wrap break-words font-sans">
@@ -456,7 +484,7 @@ export default function DiaryForm({
             </button>
             <button
               type="submit"
-              disabled={isLoading || isGeneratingImage || (needsNewImageOnSave && hasInsufficientTokens)}
+              disabled={isLoading || isGeneratingImage}
               className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
             >
               {isGeneratingImage ? '이미지 생성 중...' : isLoading ? '저장 중...' : existingDiary ? '수정' : '저장'}

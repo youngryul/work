@@ -71,6 +71,7 @@ export const diaries = pgTable('diaries', {
   content: text('content').notNull(),
   imageUrl: text('image_url'), // 생성된 이미지 URL
   imagePrompt: text('image_prompt'), // 사용된 프롬프트
+  emotion: text('emotion'), // 감정 분석 결과
   createdAt: timestamp('createdat').defaultNow().notNull(),
   updatedAt: timestamp('updatedat').defaultNow().notNull(),
 })

@@ -13,7 +13,6 @@ const REGULAR_MENU_IDS = new Set([
   'today',
   'backlog',
   'todo-calendar',
-  'schedule-calendar',
   'diary-calendar',
 ])
 
