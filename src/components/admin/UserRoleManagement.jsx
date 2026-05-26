@@ -70,7 +70,7 @@ export default function UserRoleManagement() {
           <span className="font-semibold text-purple-700">슈퍼유저</span>: 전체 메뉴 접근 가능 (관리자 페이지 제외)
         </p>
         <p className="text-sm text-blue-800">
-          <span className="font-semibold text-green-700">일반</span>: 오늘·백로그·할 일 달력·공지사항·설정만 표시
+          <span className="font-semibold text-green-700">일반</span>: 오늘·백로그·할 일·일정·일기 달력·공지사항·설정 표시
         </p>
       </div>
 

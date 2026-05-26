@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { MENU_ICON_PATHS } from '../constants/navigationMenu.js'
+import { useAiTokenInfo } from '../hooks/useAiTokenInfo.js'
+import AiTokenBalanceBadge from './AiTokenBalanceBadge.jsx'
+import AiTokenGenerationCostNote from './AiTokenGenerationCostNote.jsx'
 import DiaryCalendar from './DiaryCalendar.jsx'
 import DiaryForm from './DiaryForm.jsx'
 import ViewPageTitle from './ViewPageTitle.jsx'
@@ -11,6 +14,7 @@ export default function CalendarView() {
   const [selectedDate, setSelectedDate] = useState(null)
   const [showDiaryForm, setShowDiaryForm] = useState(false)
   const [calendarKey, setCalendarKey] = useState(0) // 달력 새로고침을 위한 key
+  const { generationCost } = useAiTokenInfo(calendarKey)
 
   const handleDateClick = (dateString) => {
     setSelectedDate(dateString)
@@ -30,12 +34,15 @@ export default function CalendarView() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="relative max-w-4xl mx-auto p-6 pt-14">
+      <AiTokenBalanceBadge refreshDep={calendarKey} />
       {showDiaryForm ? (
         <DiaryForm
           selectedDate={selectedDate}
           onSave={handleSave}
           onCancel={handleCancel}
+          embedded
+          tokenRefreshDep={calendarKey}
         />
       ) : (
         <>
@@ -43,6 +50,7 @@ export default function CalendarView() {
             <p className="text-xl text-gray-600">
               날짜를 클릭하여 일기를 작성하고 AI 그림을 생성해보세요
             </p>
+            <AiTokenGenerationCostNote cost={generationCost} className="mt-2" />
           </ViewPageTitle>
           <DiaryCalendar key={calendarKey} onDateClick={handleDateClick} />
         </>

@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { useAiTokenInfo } from '../hooks/useAiTokenInfo.js'
 import { saveDiary, getDiaryByDate } from '../services/diaryService.js'
 import { uploadImage } from '../services/imageService.js'
 import { markDiaryReminderShown } from '../services/diaryReminderService.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import AiTokenBalanceBadge from './AiTokenBalanceBadge.jsx'
+import AiTokenGenerationCostNote from './AiTokenGenerationCostNote.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
@@ -13,8 +16,17 @@ import { showToast, TOAST_TYPES } from './Toast.jsx'
  * @param {Function} onSave - 저장 완료 핸들러
  * @param {Function} onCancel - 취소 핸들러
  * @param {boolean} isModal - 모달 안에서 사용되는지 여부
+ * @param {boolean} embedded - 상위 화면에서 토큰 배지를 표시하는 경우
+ * @param {unknown} tokenRefreshDep - 토큰 배지 새로고침 트리거
  */
-export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = false }) {
+export default function DiaryForm({
+  selectedDate,
+  onSave,
+  onCancel,
+  isModal = false,
+  embedded = false,
+  tokenRefreshDep,
+}) {
   const { user } = useAuth()
   const [content, setContent] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -26,6 +38,10 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
   const [attachedImages, setAttachedImages] = useState([]) // 첨부된 이미지 URL 목록
   const [uploadingImages, setUploadingImages] = useState({}) // 업로드 중인 이미지 상태
   const fileInputRef = useRef(null)
+
+  const { balance: tokenBalance, generationCost } = useAiTokenInfo(
+    tokenRefreshDep ?? selectedDate,
+  )
 
   // 기존 일기 로드
   useEffect(() => {
@@ -53,6 +69,10 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
     }
   }
 
+  const hasInsufficientTokens =
+    tokenBalance !== null && tokenBalance < generationCost
+  const needsNewImageOnSave = !existingDiary?.imageUrl
+
   // 저장
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -62,14 +82,25 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
       return
     }
 
+    if (needsNewImageOnSave && hasInsufficientTokens) {
+      showToast(
+        `AI 이미지 생성 토큰이 부족합니다. (보유: ${tokenBalance}, 필요: ${generationCost})`,
+        TOAST_TYPES.ERROR,
+      )
+      return
+    }
+
     setIsLoading(true)
     setIsGeneratingImage(true)
     setError(null)
 
     try {
-      await saveDiary(selectedDate, content, false, attachedImages)
-      showToast('일기가 저장되었습니다. 이미지 생성 중...', TOAST_TYPES.SUCCESS)
-      
+      const saved = await saveDiary(selectedDate, content, false, attachedImages)
+      const saveMsg = saved?.tokensConsumed
+        ? `일기가 저장되었습니다. (${generationCost}토큰 사용)`
+        : '일기가 저장되었습니다.'
+      showToast(saveMsg, TOAST_TYPES.SUCCESS)
+
       // 어제 일기를 작성한 경우 리마인더 표시 기록
       const today = new Date()
       const yesterday = new Date(today)
@@ -179,6 +210,14 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
       return
     }
 
+    if (hasInsufficientTokens) {
+      showToast(
+        `AI 이미지 생성 토큰이 부족합니다. (보유: ${tokenBalance}, 필요: ${generationCost})`,
+        TOAST_TYPES.ERROR,
+      )
+      return
+    }
+
     setIsGeneratingImage(true)
     setError(null)
 
@@ -202,7 +241,10 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
       
       // 이미지가 성공적으로 생성되었는지 확인
       if (updatedDiary?.imageUrl) {
-        showToast('이미지가 재생성되었습니다.', TOAST_TYPES.SUCCESS)
+        const costMsg = updatedDiary.tokensConsumed
+          ? ` (${generationCost}토큰 사용, 잔여 ${updatedDiary.remainingBalance ?? tokenBalance}개)`
+          : ''
+        showToast(`이미지가 재생성되었습니다.${costMsg}`, TOAST_TYPES.SUCCESS)
       } else {
         showToast('이미지 생성에 실패했습니다. 일기는 저장되었습니다.', TOAST_TYPES.ERROR)
       }
@@ -239,6 +281,7 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
         <p className="text-base text-gray-600 font-sans">
           {selectedDate && formatDate(selectedDate)}
         </p>
+        <AiTokenGenerationCostNote cost={generationCost} className="mt-2" />
       </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -365,10 +408,12 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
                   <button
                     type="button"
                     onClick={handleRegenerateImage}
-                    disabled={isGeneratingImage}
+                    disabled={isGeneratingImage || hasInsufficientTokens}
                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium font-sans disabled:opacity-50"
                   >
-                    {isGeneratingImage ? '재생성 중...' : '🔄 이미지 재생성'}
+                    {isGeneratingImage
+                      ? '재생성 중...'
+                      : `🔄 이미지 재생성 (${generationCost}토큰)`}
                   </button>
                   {existingDiary?.imagePrompt && (
                     <button
@@ -411,7 +456,7 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
             </button>
             <button
               type="submit"
-              disabled={isLoading || isGeneratingImage}
+              disabled={isLoading || isGeneratingImage || (needsNewImageOnSave && hasInsufficientTokens)}
               className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
             >
               {isGeneratingImage ? '이미지 생성 중...' : isLoading ? '저장 중...' : existingDiary ? '수정' : '저장'}
@@ -427,8 +472,17 @@ export default function DiaryForm({ selectedDate, onSave, onCancel, isModal = fa
   }
 
   // 일반 화면에서 사용되는 경우
+  if (embedded) {
+    return (
+      <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border-2 border-green-200 p-6">
+        {formContent}
+      </div>
+    )
+  }
+
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="relative max-w-4xl mx-auto p-6 pt-14">
+      <AiTokenBalanceBadge refreshDep={tokenRefreshDep ?? selectedDate} />
       <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border-2 border-green-200 p-6">
         {formContent}
       </div>

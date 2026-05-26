@@ -1,4 +1,8 @@
 import { supabase } from '../config/supabase.js'
+import {
+  assertSufficientTokensForImageGeneration,
+  consumeTokensForImageGeneration,
+} from './aiTokenService.js'
 import { generateDiaryImageFree } from './freeImageService.js'
 import { uploadImageFromUrl } from './imageService.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
@@ -7,6 +11,40 @@ import { getCurrentUserId } from '../utils/authHelper.js'
  * 일기 서비스
  * Supabase를 통한 일기 CRUD 작업 및 AI 이미지 생성
  */
+
+/**
+ * AI 일기 이미지 생성 후 토큰 차감 (신규 생성·재생성 동일)
+ * @param {string} content
+ * @param {string} date
+ * @param {{ isRegenerate?: boolean }} options
+ * @returns {Promise<{ imageUrl: string, imagePrompt: string, remainingBalance: number }>}
+ */
+async function generateDiaryImageWithTokenCharge(content, date, { isRegenerate = false } = {}) {
+  await assertSufficientTokensForImageGeneration()
+  const { imageUrl: generatedUrl, prompt } = await generateDiaryImageFree(content)
+
+  let imageUrl = generatedUrl
+  try {
+    const fileName = isRegenerate
+      ? `${date}-${Date.now()}.png`
+      : `${date}.png`
+    const permanentUrl = await uploadImageFromUrl(generatedUrl, 'diaries', fileName)
+    if (permanentUrl && permanentUrl !== generatedUrl) {
+      imageUrl = permanentUrl
+    } else {
+      console.warn('Edge Function을 사용할 수 없습니다. 임시 URL을 사용합니다. (만료될 수 있음)')
+    }
+  } catch (uploadError) {
+    console.error('이미지 업로드 실패, 임시 URL 사용:', uploadError)
+  }
+
+  const remainingBalance = await consumeTokensForImageGeneration()
+  return {
+    imageUrl,
+    imagePrompt: prompt,
+    remainingBalance,
+  }
+}
 
 /**
  * 일기 저장 (이미지 자동 생성 포함)
@@ -26,54 +64,24 @@ export async function saveDiary(date, content, regenerateImage = false, attached
     // 기존 일기 확인
     const existing = await getDiaryByDate(date)
     
-    let imageUrl = existing?.image_url || null
-    let imagePrompt = existing?.image_prompt || null
-    
-    // 이미지가 없거나 재생성 요청이 있으면 생성
+    let imageUrl = existing?.imageUrl || existing?.image_url || null
+    let imagePrompt = existing?.imagePrompt || existing?.image_prompt || null
+    let remainingBalance = null
+
+    // 이미지가 없거나 재생성 요청이 있으면 생성 (재생성도 동일하게 토큰 차감)
     if (!imageUrl || regenerateImage) {
       try {
-        const { imageUrl: generatedUrl, prompt } = await generateDiaryImageFree(content)
-        
-        // OpenAI의 임시 URL을 Supabase Storage에 업로드하여 영구 저장
-        try {
-          // 재생성 시에는 타임스탬프를 추가하여 고유한 파일명 생성 (캐시 방지)
-          const timestamp = Date.now()
-          const fileName = regenerateImage 
-            ? `${date}-${timestamp}.png` 
-            : `${date}.png`
-          
-          const permanentUrl = await uploadImageFromUrl(
-            generatedUrl,
-            'diaries',
-            fileName
-          )
-          
-          // Edge Function이 임시 URL을 반환한 경우 (폴백) 확인
-          if (permanentUrl && permanentUrl !== generatedUrl) {
-            imageUrl = permanentUrl
-          } else {
-            // Edge Function이 없거나 실패한 경우 임시 URL 사용
-            console.warn('Edge Function을 사용할 수 없습니다. 임시 URL을 사용합니다. (만료될 수 있음)')
-            imageUrl = generatedUrl
-          }
-        } catch (uploadError) {
-          console.error('이미지 업로드 실패, 임시 URL 사용:', uploadError)
-          // 업로드 실패 시 임시 URL 사용 (나중에 만료될 수 있음)
-          imageUrl = generatedUrl
-        }
-        
-        imagePrompt = prompt
+        const generated = await generateDiaryImageWithTokenCharge(content, date, {
+          isRegenerate: regenerateImage,
+        })
+        imageUrl = generated.imageUrl
+        imagePrompt = generated.imagePrompt
+        remainingBalance = generated.remainingBalance
       } catch (error) {
         console.error('이미지 생성 실패:', error)
-        // 이미지 생성 실패해도 일기는 저장
-        // 이미지 URL과 프롬프트는 기존 값 유지 또는 null
-        // 사용자에게 경고 메시지 표시는 UI에서 처리
-        // 재생성 요청인 경우에만 에러를 다시 throw하여 UI에서 처리하도록 함
         if (regenerateImage) {
-          // 재생성 실패 시 에러를 전파하여 UI에서 사용자에게 알림
           throw error
         }
-        // 일반 저장 시에는 이미지 없이 일기만 저장
       }
     }
     
@@ -125,6 +133,8 @@ export async function saveDiary(date, content, regenerateImage = false, attached
       imageUrl: data.image_url,
       imagePrompt: data.image_prompt,
       attachedImages: data.attached_images || [],
+      remainingBalance,
+      tokensConsumed: remainingBalance !== null,
     }
   } catch (error) {
     console.error('일기 저장 실패:', error)

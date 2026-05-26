@@ -9,7 +9,13 @@ import MenuIcon from './MenuIcon.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 // 역할별 메인 메뉴 제한 (null = 제한 없음)
-const REGULAR_MENU_IDS = new Set(['today', 'backlog', 'todo-calendar', 'schedule-calendar'])
+const REGULAR_MENU_IDS = new Set([
+  'today',
+  'backlog',
+  'todo-calendar',
+  'schedule-calendar',
+  'diary-calendar',
+])
 
 /**
  * 사이드바 네비게이션 컴포넌트
