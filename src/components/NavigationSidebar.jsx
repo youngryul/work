@@ -5,6 +5,7 @@ import {
   SIDEBAR_HIDDEN_MENU_ITEM_IDS,
 } from '../constants/navigationMenu.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import MenuIcon from './MenuIcon.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 // 역할별 메인 메뉴 제한 (null = 제한 없음)
@@ -112,12 +113,12 @@ export default function NavigationSidebar({
           transition-all duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0
-          ${collapsed ? 'md:w-16' : 'md:w-64'}
+          ${collapsed ? 'md:w-20' : 'md:w-64'}
         `}
       >
         <div className="flex flex-col h-full">
           {/* 헤더 */}
-          <div className={`p-6 border-b border-gray-200 ${collapsed ? 'md:p-4' : ''}`}>
+          <div className={`border-b border-gray-200 ${collapsed ? 'md:p-2 p-6' : 'p-6'}`}>
             <div className="flex items-center justify-between">
               {!collapsed && (
                 <h1 className="text-2xl font-bold text-gray-800">메뉴</h1>
@@ -143,7 +144,7 @@ export default function NavigationSidebar({
           </div>
 
           {/* 메뉴 목록 */}
-          <nav className="flex-1 overflow-y-auto p-4">
+          <nav className={`flex-1 overflow-y-auto overflow-x-visible ${collapsed ? 'md:p-2 p-4' : 'p-4'}`}>
             <div className="space-y-2">
               {NAVIGATION_MENU_ITEMS.filter(
                 item =>
@@ -162,8 +163,8 @@ export default function NavigationSidebar({
                       onClick={() => handleMenuClick(item.id, hasChildren)}
                       className={`
                         w-full rounded-lg transition-all duration-200 text-left
-                        flex items-center gap-3
-                        ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
+                        flex items-center gap-3 min-w-0
+                        ${collapsed ? 'md:justify-center md:gap-0 md:px-1.5 md:py-2.5' : 'px-4 py-3'}
                         ${
                           isActive
                             ? 'bg-green-500 text-white shadow-md'
@@ -172,7 +173,7 @@ export default function NavigationSidebar({
                       `}
                       title={collapsed ? item.label : ''}
                     >
-                      <span className="text-xl flex-shrink-0">{item.icon || '📌'}</span>
+                      <MenuIcon iconSrc={item.iconSrc} icon={item.icon} label={item.label} compact={collapsed} />
                       {!collapsed && (
                         <>
                           <span className="text-lg font-medium flex-1">{item.label}</span>
@@ -201,7 +202,7 @@ export default function NavigationSidebar({
                               }
                             `}
                           >
-                            <span className="text-lg flex-shrink-0">{child.icon || '•'}</span>
+                            <MenuIcon iconSrc={child.iconSrc} icon={child.icon} label={child.label} size="sm" />
                             <span className="text-base font-medium">{child.label}</span>
                           </button>
                         ))}
@@ -225,13 +226,13 @@ export default function NavigationSidebar({
                       rel="noopener noreferrer"
                       className={`
                         w-full rounded-lg transition-all duration-200 text-left
-                        flex items-center gap-3
-                        ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
+                        flex items-center gap-3 min-w-0
+                        ${collapsed ? 'md:justify-center md:gap-0 md:px-1.5 md:py-2.5' : 'px-4 py-3'}
                         text-gray-600 hover:bg-purple-100 hover:text-purple-600
                       `}
                       title={collapsed ? link.label : ''}
                     >
-                      {link.icon && <span className="text-xl">{link.icon}</span>}
+                      <MenuIcon iconSrc={link.iconSrc} icon={link.icon} label={link.label} compact={collapsed} />
                       {!collapsed && (
                         <span className="text-lg font-medium">{link.label}</span>
                       )}
@@ -263,7 +264,7 @@ export default function NavigationSidebar({
                         className={`
                     w-full rounded-lg transition-all duration-200 text-left
                     flex items-center gap-3
-                    ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
+                    ${collapsed ? 'md:justify-center md:gap-0 md:px-1.5 md:py-2.5' : 'px-4 py-3'}
                     ${
                             currentView === item.id
                                 ? 'bg-green-500 text-white shadow-md'
@@ -272,7 +273,7 @@ export default function NavigationSidebar({
                   `}
                         title={collapsed ? item.label : ''}
                     >
-                      <span className="text-xl flex-shrink-0">{item.icon || '📌'}</span>
+                      <MenuIcon iconSrc={item.iconSrc} icon={item.icon} label={item.label} compact={collapsed} />
                       {!collapsed && (
                           <span className="text-lg font-medium">{item.label}</span>
                       )}
@@ -288,7 +289,7 @@ export default function NavigationSidebar({
                     className={`
                       w-full rounded-lg transition-all duration-200 text-left
                       flex items-center gap-3
-                      ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
+                      ${collapsed ? 'md:justify-center md:gap-0 md:px-1.5 md:py-2.5' : 'px-4 py-3'}
                       ${
                         currentView === 'admin'
                           ? 'bg-blue-500 text-white shadow-md'
@@ -310,7 +311,7 @@ export default function NavigationSidebar({
                   className={`
                   w-full rounded-lg transition-all duration-200 text-left
                   flex items-center gap-3
-                  ${collapsed ? 'md:justify-center md:px-2 md:py-3' : 'px-4 py-3'}
+                  ${collapsed ? 'md:justify-center md:gap-0 md:px-1.5 md:py-2.5' : 'px-4 py-3'}
                   text-red-600 hover:bg-red-50 hover:text-red-700
                 `}
                   title={collapsed ? '로그아웃' : ''}

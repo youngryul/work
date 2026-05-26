@@ -281,7 +281,7 @@ function AppContent() {
       />
 
       {/* 메인 컨텐츠 영역 */}
-      <div className={`min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+      <div className={`min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
         {/* 공지사항 배너 */}
         <AnnouncementBanner />
 

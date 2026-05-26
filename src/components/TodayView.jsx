@@ -4,7 +4,9 @@ import TaskItem from './TaskItem.jsx'
 import { getWeekStart, getWeekEnd } from '../services/workReportService.js'
 import { getWeeksWithWorkReports, getWeeksWithDiaries } from '../services/workReportService.js'
 import { getDiariesByMonth } from '../services/diaryService.js'
+import { MENU_ICON_PATHS } from '../constants/navigationMenu.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
+import ViewPageTitle from './ViewPageTitle.jsx'
 
 /**
  * 오늘 날짜를 YYYY-MM-DD 형식으로 반환
@@ -333,10 +335,7 @@ export default function TodayView() {
       />
 
       <div className="max-w-2xl mx-auto p-6">
-        <div className="mb-8">
-          <h1 className="text-4xl font-handwriting text-gray-800 mb-2">
-            오늘 할 일
-          </h1>
+        <ViewPageTitle iconSrc={MENU_ICON_PATHS.today} title="오늘 할 일">
           <p className="text-lg text-gray-500 mb-2">
             {getCurrentDateString()}
           </p>
@@ -345,7 +344,7 @@ export default function TodayView() {
               ? `${completedCount}개 완료 / ${totalTodayCount}개`
               : '오늘은 무엇을 할까요?'}
           </p>
-        </div>
+        </ViewPageTitle>
 
         {/* 할 일 목록 */}
         {isLoading ? (

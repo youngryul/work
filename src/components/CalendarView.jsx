@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { MENU_ICON_PATHS } from '../constants/navigationMenu.js'
 import DiaryCalendar from './DiaryCalendar.jsx'
 import DiaryForm from './DiaryForm.jsx'
+import ViewPageTitle from './ViewPageTitle.jsx'
 
 /**
  * 일기 달력 화면 컴포넌트
@@ -37,14 +39,11 @@ export default function CalendarView() {
         />
       ) : (
         <>
-          <div className="mb-8">
-            <h1 className="text-4xl font-handwriting text-gray-800 mb-2">
-              일기 달력
-            </h1>
+          <ViewPageTitle iconSrc={MENU_ICON_PATHS.diaryCalendar} title="일기 달력">
             <p className="text-xl text-gray-600">
               날짜를 클릭하여 일기를 작성하고 AI 그림을 생성해보세요
             </p>
-          </div>
+          </ViewPageTitle>
           <DiaryCalendar key={calendarKey} onDateClick={handleDateClick} />
         </>
       )}

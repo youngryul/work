@@ -4,7 +4,9 @@ import { getDefaultCategory } from '../services/categoryService.js'
 import TaskItem from './TaskItem.jsx'
 import CategorySelector from './CategorySelector.jsx'
 import CategoryManager from './CategoryManager.jsx'
+import { MENU_ICON_PATHS } from '../constants/navigationMenu.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
+import ViewPageTitle from './ViewPageTitle.jsx'
 
 /**
  * 백로그 화면 컴포넌트
@@ -173,16 +175,13 @@ export default function BacklogView() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-4xl font-handwriting text-gray-800 mb-2">
-          백로그
-        </h1>
+      <ViewPageTitle iconSrc={MENU_ICON_PATHS.backlog} title="백로그">
         <p className="text-xl text-gray-600">
           {tasks.length > 0
             ? `총 ${tasks.length}개의 할 일`
             : '백로그가 비어있어요'}
         </p>
-      </div>
+      </ViewPageTitle>
 
       {/* 카테고리 관리 */}
       <CategoryManager 

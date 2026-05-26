@@ -1,4 +1,6 @@
+import { MENU_ICON_PATHS } from '../constants/navigationMenu.js'
 import TodoCalendar from './TodoCalendar.jsx'
+import ViewPageTitle from './ViewPageTitle.jsx'
 
 /**
  * 할 일 달력 화면 컴포넌트
@@ -6,14 +8,11 @@ import TodoCalendar from './TodoCalendar.jsx'
 export default function TodoCalendarView() {
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-4xl font-handwriting text-gray-800 mb-2">
-          할 일 달력
-        </h1>
+      <ViewPageTitle iconSrc={MENU_ICON_PATHS.todoCalendar} title="할 일 달력">
         <p className="text-xl text-gray-600">
           날짜별 완료한 할 일을 확인해보세요
         </p>
-      </div>
+      </ViewPageTitle>
       <TodoCalendar />
     </div>
   )

@@ -12,26 +12,34 @@ export const SIDEBAR_HIDDEN_MENU_ITEM_IDS = new Set([
   'food-calorie',
 ])
 
+/** 포실이 메뉴 아이콘 (public/images/menu-icons) */
+export const MENU_ICON_PATHS = {
+  today: '/images/menu-icons/today.png',
+  backlog: '/images/menu-icons/backlog.png',
+  todoCalendar: '/images/menu-icons/todo-calendar.png',
+  diaryCalendar: '/images/menu-icons/diary-calendar.png',
+}
+
 export const NAVIGATION_MENU_ITEMS = [
   {
     id: 'today',
     label: '오늘',
-    icon: '📅',
+    iconSrc: MENU_ICON_PATHS.today,
   },
   {
     id: 'backlog',
     label: '백로그',
-    icon: '📋',
+    iconSrc: MENU_ICON_PATHS.backlog,
   },
   {
     id: 'todo-calendar',
     label: '할 일 달력',
-    icon: '✅',
+    iconSrc: MENU_ICON_PATHS.todoCalendar,
   },
   {
     id: 'diary-calendar',
     label: '일기 달력',
-    icon: '📔',
+    iconSrc: MENU_ICON_PATHS.diaryCalendar,
   },
   {
     id: 'schedule-calendar',
