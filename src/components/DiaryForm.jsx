@@ -8,6 +8,7 @@ import { markDiaryReminderShown } from '../services/diaryReminderService.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import AiTokenBalanceBadge from './AiTokenBalanceBadge.jsx'
 import AiTokenGenerationCostNote from './AiTokenGenerationCostNote.jsx'
+import TokenDepositRequestModal from './TokenDepositRequestModal.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 const EMOTION_LABELS = {
@@ -44,6 +45,7 @@ const EMOTION_LABELS = {
  * @param {boolean} isModal - 모달 안에서 사용되는지 여부
  * @param {boolean} embedded - 상위 화면에서 토큰 배지를 표시하는 경우
  * @param {unknown} tokenRefreshDep - 토큰 배지 새로고침 트리거
+ * @param {Function} [onOpenDepositModal] - 토큰 부족 시 상위에서 입금 모달 열기
  */
 export default function DiaryForm({
   selectedDate,
@@ -52,6 +54,7 @@ export default function DiaryForm({
   isModal = false,
   embedded = false,
   tokenRefreshDep,
+  onOpenDepositModal,
 }) {
   const { user, isAdmin } = useAuth()
   const [content, setContent] = useState('')
@@ -65,6 +68,8 @@ export default function DiaryForm({
   const [attachedImages, setAttachedImages] = useState([]) // 첨부된 이미지 URL 목록
   const [uploadingImages, setUploadingImages] = useState({}) // 업로드 중인 이미지 상태
   const fileInputRef = useRef(null)
+  const [showDepositModal, setShowDepositModal] = useState(false)
+  const [isSavingWithoutImage, setIsSavingWithoutImage] = useState(false)
 
   const { balance: tokenBalance, generationCost } = useAiTokenInfo(
     tokenRefreshDep ?? selectedDate,
@@ -102,12 +107,85 @@ export default function DiaryForm({
     tokenBalance !== null && tokenBalance < generationCost
   const needsNewImageOnSave = !existingDiary?.imageUrl
 
-  // 저장
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    
+  const openDepositModal = () => {
+    if (onOpenDepositModal) {
+      onOpenDepositModal()
+      return
+    }
+    setShowDepositModal(true)
+  }
+
+  const isTokenError = (message) =>
+    typeof message === 'string' && (message.includes('토큰') || message.includes('token'))
+
+  const runAfterDiarySaved = async (saved, { withImage = true } = {}) => {
+    if (saved?.emotion) setDiaryEmotion(EMOTION_LABELS[saved.emotion] ?? saved.emotion)
+
+    const saveMsg = saved?.tokensConsumed
+      ? `일기가 저장되었습니다. (${generationCost}토큰 사용)`
+      : withImage
+        ? '일기가 저장되었습니다.'
+        : '일기가 저장되었습니다. (이미지 없음)'
+
+    showToast(saveMsg, TOAST_TYPES.SUCCESS)
+    setShowDepositModal(false)
+
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayDateString = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
+
+    if (selectedDate === yesterdayDateString) {
+      try {
+        await markDiaryReminderShown(user?.id)
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('refreshNotifications'))
+        }, 500)
+      } catch (err) {
+        console.error('리마인더 기록 실패:', err)
+      }
+    }
+
+    onSave?.()
+  }
+
+  /** 이미지 생성 없이 텍스트만 저장 */
+  const handleSaveWithoutImage = async () => {
     if (!content.trim()) {
       showToast('일기 내용을 입력해주세요.', TOAST_TYPES.ERROR)
+      return
+    }
+
+    setIsSavingWithoutImage(true)
+    setError(null)
+
+    try {
+      const saved = await saveDiary(selectedDate, content, false, attachedImages, {
+        skipImageGeneration: true,
+      })
+      setExistingDiary(saved)
+      await runAfterDiarySaved(saved, { withImage: false })
+    } catch (err) {
+      console.error('일기 저장 실패:', err)
+      const message = err.message || '일기 저장에 실패했습니다.'
+      setError(message)
+      showToast(message, TOAST_TYPES.ERROR)
+    } finally {
+      setIsSavingWithoutImage(false)
+    }
+  }
+
+  // 저장 (AI 이미지 생성 포함)
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    if (!content.trim()) {
+      showToast('일기 내용을 입력해주세요.', TOAST_TYPES.ERROR)
+      return
+    }
+
+    if (needsNewImageOnSave && hasInsufficientTokens) {
+      openDepositModal()
       return
     }
 
@@ -117,35 +195,17 @@ export default function DiaryForm({
 
     try {
       const saved = await saveDiary(selectedDate, content, false, attachedImages)
-      if (saved?.emotion) setDiaryEmotion(EMOTION_LABELS[saved.emotion] ?? saved.emotion)
-      const saveMsg = saved?.tokensConsumed
-        ? `일기가 저장되었습니다. (${generationCost}토큰 사용)`
-        : '일기가 저장되었습니다.'
-      showToast(saveMsg, TOAST_TYPES.SUCCESS)
-
-      // 어제 일기를 작성한 경우 리마인더 표시 기록
-      const today = new Date()
-      const yesterday = new Date(today)
-      yesterday.setDate(yesterday.getDate() - 1)
-      const yesterdayDateString = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
-      
-      if (selectedDate === yesterdayDateString) {
-        try {
-          await markDiaryReminderShown(user?.id)
-          // 알림 상태 새로고침
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('refreshNotifications'))
-          }, 500)
-        } catch (error) {
-          console.error('리마인더 기록 실패:', error)
-        }
-      }
-      
-      onSave?.()
+      setExistingDiary(saved)
+      await runAfterDiarySaved(saved)
     } catch (error) {
       console.error('일기 저장 실패:', error)
-      setError(error.message || '일기 저장에 실패했습니다.')
-      showToast(error.message || '일기 저장에 실패했습니다.', TOAST_TYPES.ERROR)
+      const message = error.message || '일기 저장에 실패했습니다.'
+      setError(message)
+      if (isTokenError(message)) {
+        openDepositModal()
+      } else {
+        showToast(message, TOAST_TYPES.ERROR)
+      }
     } finally {
       setIsLoading(false)
       setIsGeneratingImage(false)
@@ -233,10 +293,7 @@ export default function DiaryForm({
     }
 
     if (hasInsufficientTokens) {
-      showToast(
-        `AI 이미지 생성 토큰이 부족합니다. (보유: ${tokenBalance}, 필요: ${generationCost})`,
-        TOAST_TYPES.ERROR,
-      )
+      openDepositModal()
       return
     }
 
@@ -277,7 +334,9 @@ export default function DiaryForm({
       setError(errorMessage)
       
       // 사용자 친화적인 에러 메시지 표시
-      if (errorMessage.includes('결제 한도') || errorMessage.includes('크레딧') || errorMessage.includes('billing')) {
+      if (isTokenError(errorMessage)) {
+        openDepositModal()
+      } else if (errorMessage.includes('결제 한도') || errorMessage.includes('크레딧') || errorMessage.includes('billing')) {
         showToast(`⚠️ ${errorMessage}\n일기는 저장되었지만 이미지는 생성되지 않았습니다.`, TOAST_TYPES.ERROR)
       } else {
         showToast(`이미지 재생성 실패: ${errorMessage}`, TOAST_TYPES.ERROR)
@@ -473,8 +532,25 @@ export default function DiaryForm({
             </div>
           )}
 
+          {/* 토큰 부족 안내 */}
+          {needsNewImageOnSave && hasInsufficientTokens && (
+            <div className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 font-sans">
+              <p className="font-semibold">AI 그림 생성에 토큰이 부족합니다.</p>
+              <p className="mt-1 text-amber-800">
+                AI 그림이 포함된 저장은 토큰이 필요합니다. 이미지 없이 일기만 남기려면 아래 버튼을 사용하세요.
+              </p>
+              <button
+                type="button"
+                onClick={openDepositModal}
+                className="mt-2 text-sm font-semibold text-amber-700 underline hover:text-amber-900"
+              >
+                토큰 충전 신청하기 →
+              </button>
+            </div>
+          )}
+
           {/* 버튼 */}
-          <div className="flex gap-4 justify-end pt-4 border-t-2 border-green-200">
+          <div className="flex flex-wrap gap-3 justify-end pt-4 border-t-2 border-green-200">
             <button
               type="button"
               onClick={onCancel}
@@ -482,38 +558,75 @@ export default function DiaryForm({
             >
               취소
             </button>
+            {needsNewImageOnSave && hasInsufficientTokens && (
+              <button
+                type="button"
+                onClick={handleSaveWithoutImage}
+                disabled={isSavingWithoutImage || isLoading || isGeneratingImage}
+                className="px-6 py-2 border-2 border-green-400 bg-green-50 text-green-800 rounded-lg hover:bg-green-100 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
+              >
+                {isSavingWithoutImage ? '저장 중...' : '이미지 없이 저장'}
+              </button>
+            )}
             <button
               type="submit"
-              disabled={isLoading || isGeneratingImage}
+              disabled={isLoading || isGeneratingImage || isSavingWithoutImage}
               className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
             >
-              {isGeneratingImage ? '이미지 생성 중...' : isLoading ? '저장 중...' : existingDiary ? '수정' : '저장'}
+              {isGeneratingImage
+                ? '이미지 생성 중...'
+                : isLoading
+                  ? '저장 중...'
+                  : existingDiary
+                    ? '수정'
+                    : `저장${needsNewImageOnSave ? ` (${generationCost}토큰)` : ''}`}
             </button>
           </div>
         </form>
     </>
   )
 
+  const depositModal = !onOpenDepositModal && (
+    <TokenDepositRequestModal
+      isOpen={showDepositModal}
+      onClose={() => setShowDepositModal(false)}
+      tokenBalance={tokenBalance}
+      generationCost={generationCost}
+    />
+  )
+
   // 모달 안에서 사용되는 경우
   if (isModal) {
-    return formContent
+    return (
+      <>
+        {formContent}
+        {depositModal}
+      </>
+    )
   }
 
   // 일반 화면에서 사용되는 경우
   if (embedded) {
     return (
-      <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border-2 border-green-200 p-6">
-        {formContent}
-      </div>
+      <>
+        <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border-2 border-green-200 p-6">
+          {formContent}
+        </div>
+        {depositModal}
+      </>
     )
   }
 
   return (
     <div className="relative max-w-4xl mx-auto p-6 pt-14">
-      <AiTokenBalanceBadge refreshDep={tokenRefreshDep ?? selectedDate} />
+      <AiTokenBalanceBadge
+        refreshDep={tokenRefreshDep ?? selectedDate}
+        onBalanceClick={openDepositModal}
+      />
       <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border-2 border-green-200 p-6">
         {formContent}
       </div>
+      {depositModal}
     </div>
   )
 }

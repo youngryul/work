@@ -53,9 +53,17 @@ async function generateDiaryImageWithTokenCharge(content, date, { isRegenerate =
  * @param {string} content - 일기 내용
  * @param {boolean} regenerateImage - 이미지 재생성 여부 (기본값: false)
  * @param {Array<string>} attachedImages - 첨부된 이미지 URL 배열 (기본값: [])
+ * @param {{ skipImageGeneration?: boolean }} [options] - skipImageGeneration: true면 AI 이미지 생성 생략
  * @returns {Promise<Object>} 저장된 일기
  */
-export async function saveDiary(date, content, regenerateImage = false, attachedImages = []) {
+export async function saveDiary(
+  date,
+  content,
+  regenerateImage = false,
+  attachedImages = [],
+  options = {},
+) {
+  const { skipImageGeneration = false } = options
   const userId = await getCurrentUserId()
   if (!userId) {
     throw new Error('로그인이 필요합니다.')
@@ -71,7 +79,7 @@ export async function saveDiary(date, content, regenerateImage = false, attached
     let emotion = null
 
     // 이미지가 없거나 재생성 요청이 있으면 생성 (재생성도 동일하게 토큰 차감)
-    if (!imageUrl || regenerateImage) {
+    if (!skipImageGeneration && (!imageUrl || regenerateImage)) {
       try {
         const generated = await generateDiaryImageWithTokenCharge(content, date, {
           isRegenerate: regenerateImage,

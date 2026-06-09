@@ -5,6 +5,7 @@ import AiTokenBalanceBadge from './AiTokenBalanceBadge.jsx'
 import AiTokenGenerationCostNote from './AiTokenGenerationCostNote.jsx'
 import DiaryCalendar from './DiaryCalendar.jsx'
 import DiaryForm from './DiaryForm.jsx'
+import TokenDepositRequestModal from './TokenDepositRequestModal.jsx'
 import ViewPageTitle from './ViewPageTitle.jsx'
 
 /**
@@ -14,7 +15,8 @@ export default function CalendarView() {
   const [selectedDate, setSelectedDate] = useState(null)
   const [showDiaryForm, setShowDiaryForm] = useState(false)
   const [calendarKey, setCalendarKey] = useState(0) // 달력 새로고침을 위한 key
-  const { generationCost } = useAiTokenInfo(calendarKey)
+  const [showDepositModal, setShowDepositModal] = useState(false)
+  const { balance: tokenBalance, generationCost } = useAiTokenInfo(calendarKey)
 
   const handleDateClick = (dateString) => {
     setSelectedDate(dateString)
@@ -35,7 +37,16 @@ export default function CalendarView() {
 
   return (
     <div className="relative max-w-4xl mx-auto p-6 pt-14">
-      <AiTokenBalanceBadge refreshDep={calendarKey} />
+      <AiTokenBalanceBadge
+        refreshDep={calendarKey}
+        onBalanceClick={() => setShowDepositModal(true)}
+      />
+      <TokenDepositRequestModal
+        isOpen={showDepositModal}
+        onClose={() => setShowDepositModal(false)}
+        tokenBalance={tokenBalance}
+        generationCost={generationCost}
+      />
       {showDiaryForm ? (
         <DiaryForm
           selectedDate={selectedDate}
@@ -43,6 +54,7 @@ export default function CalendarView() {
           onCancel={handleCancel}
           embedded
           tokenRefreshDep={calendarKey}
+          onOpenDepositModal={() => setShowDepositModal(true)}
         />
       ) : (
         <>
