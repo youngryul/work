@@ -26,6 +26,8 @@ import SettingsView from './components/SettingsView.jsx'
 import AdminDashboard from './components/admin/AdminDashboard.jsx'
 import NonogramView from './components/NonogramView.jsx'
 import SudokuView from './components/SudokuView.jsx'
+import GachaView from './components/gacha/GachaView.jsx'
+import MyPageView from './components/gacha/MyPageView.jsx'
 import NavigationSidebar from './components/NavigationSidebar.jsx'
 import NotificationCenter from './components/NotificationCenter.jsx'
 import AnnouncementBanner from './components/AnnouncementBanner.jsx'
@@ -304,6 +306,8 @@ function AppContent() {
         {currentView === 'todo-calendar' && <TodoCalendarView />}
         {currentView === 'schedule-calendar' && <ScheduleCalendarView />}
         {currentView === 'diary-calendar' && <CalendarView />}
+        {currentView === 'gacha' && <GachaView />}
+        {currentView === 'my-page' && <MyPageView />}
         {currentView === 'review' && <AnnualReviewView />}
         {currentView === 'review-2026' && (
           <Review2026View 

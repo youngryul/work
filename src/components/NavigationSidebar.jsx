@@ -14,6 +14,8 @@ const REGULAR_MENU_IDS = new Set([
   'backlog',
   'todo-calendar',
   'diary-calendar',
+  'gacha',
+  'my-page',
 ])
 
 /**
@@ -155,6 +157,7 @@ export default function NavigationSidebar({
                 item =>
                   !SIDEBAR_HIDDEN_MENU_ITEM_IDS.has(item.id) &&
                   item.id !== 'announcements' &&
+                  item.id !== 'my-page' &&
                   item.id !== 'settings' &&
                   (visibleMenuIds === null || visibleMenuIds.has(item.id))
               ).map((item) => {
@@ -258,10 +261,10 @@ export default function NavigationSidebar({
                 </div>
               )}
 
-              {/* 공지사항·설정 (전체 역할 표시) */}
+              {/* 공지사항·마이페이지·설정 (전체 역할 표시) */}
               <div className="space-y-2">
                 {NAVIGATION_MENU_ITEMS.filter(item =>
-                  item.id === 'announcements' || item.id === 'settings'
+                  item.id === 'announcements' || item.id === 'my-page' || item.id === 'settings'
                 ).map((item) => (
                     <button
                         key={item.id}

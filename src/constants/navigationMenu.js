@@ -42,6 +42,11 @@ export const NAVIGATION_MENU_ITEMS = [
     iconSrc: MENU_ICON_PATHS.diaryCalendar,
   },
   {
+    id: 'gacha',
+    label: '뽑기 가챠',
+    icon: '🎰',
+  },
+  {
     id: 'schedule-calendar',
     label: '일정 달력',
     icon: '🗓️',
@@ -107,6 +112,11 @@ export const NAVIGATION_MENU_ITEMS = [
     id: 'announcements',
     label: '공지사항',
     icon: '📢',
+  },
+  {
+    id: 'my-page',
+    label: '마이페이지',
+    icon: '👤',
   },
   {
     id: 'settings',

@@ -7,13 +7,14 @@ import UserRoleManagement from './UserRoleManagement.jsx'
 import AdSettingsManagement from './AdSettingsManagement.jsx'
 import AiTokenManagement from './AiTokenManagement.jsx'
 import TokenPurchaseRequestManagement from './TokenPurchaseRequestManagement.jsx'
+import GachaCharacterManagement from './GachaCharacterManagement.jsx'
 
 /**
  * 관리자 대시보드 컴포넌트 (admin 역할만 접근 가능)
  */
 export default function AdminDashboard() {
   const { user, loading: authLoading, isAdmin: isAdminUser } = useAuth()
-  const [activeTab, setActiveTab] = useState('announcements') // 'announcements' | 'users' | 'data' | 'roles' | 'ads' | 'tokens' | 'purchases'
+  const [activeTab, setActiveTab] = useState('announcements') // ... | 'gacha'
 
   if (authLoading) {
     return (
@@ -41,7 +42,7 @@ export default function AdminDashboard() {
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-4 text-gray-800 font-sans">🔐 관리자 대시보드</h1>
         <p className="text-base text-gray-600 font-sans mb-4">
-          공지사항, 사용자, 데이터 통계, 권한·광고·AI 토큰·충전 신청을 관리할 수 있습니다.
+          공지사항, 사용자, 데이터 통계, 권한·광고·AI 토큰·충전 신청·포실이 가챠를 관리할 수 있습니다.
         </p>
 
         {/* 탭 */}
@@ -116,6 +117,16 @@ export default function AdminDashboard() {
           >
             토큰 충전 신청
           </button>
+          <button
+            onClick={() => setActiveTab('gacha')}
+            className={`px-6 py-2 rounded-lg font-semibold transition-colors font-sans ${
+              activeTab === 'gacha'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            포실이 가챠
+          </button>
         </div>
       </div>
 
@@ -127,6 +138,7 @@ export default function AdminDashboard() {
       {activeTab === 'ads' && <AdSettingsManagement />}
       {activeTab === 'tokens' && <AiTokenManagement />}
       {activeTab === 'purchases' && <TokenPurchaseRequestManagement />}
+      {activeTab === 'gacha' && <GachaCharacterManagement />}
     </div>
   )
 }

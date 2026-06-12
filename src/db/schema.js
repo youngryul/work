@@ -65,6 +65,30 @@ export const projectRecords = pgTable('project_records', {
  * diaries 테이블 스키마 정의
  * 일기 데이터 저장 (AI 이미지 포함)
  */
+/**
+ * gacha_characters 테이블 — 가챠 포실이 캐릭터
+ */
+export const gachaCharacters = pgTable('gacha_characters', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: text('name').notNull(),
+  grade: text('grade').notNull(),
+  imageUrl: text('image_url').notNull(),
+  dropWeight: bigint('drop_weight', { mode: 'number' }).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * user_gacha_pulls 테이블 — 사용자 가챠 뽑기 기록
+ */
+export const userGachaPulls = pgTable('user_gacha_pulls', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  characterId: uuid('character_id').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
 export const diaries = pgTable('diaries', {
   id: uuid('id').defaultRandom().primaryKey(),
   date: text('date').notNull().unique(), // YYYY-MM-DD 형식
