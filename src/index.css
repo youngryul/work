@@ -92,7 +92,7 @@ body[data-theme='blue'] {
 
 .task-leaving {
   animation: taskLeave 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  overflow: hidden;
+  overflow: visible;
   transform-origin: top center;
   pointer-events: none;
 }

@@ -6,6 +6,9 @@ import CategorySelector from './CategorySelector.jsx'
 import { uploadImage } from '../services/imageService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
+/** 완료 시 표시하는 포실이 이미지 (오늘 할 일·백로그 공통) */
+const POSILY_COMPLETE_IMAGE_SRC = '/images/포실이.png'
+
 /** 완료 애니메이션 타이밍 (ms) */
 const COMPLETE_STRIKE_DURATION_MS = 650
 const COMPLETE_HOLD_BEFORE_LEAVE_MS = 900
@@ -323,7 +326,7 @@ export default function TaskItem({
         isLeaving
           ? 'task-leaving'
           : localCompleted
-          ? 'bg-green-100'
+          ? 'bg-green-100 overflow-visible'
           : isOld
           ? 'bg-red-200 shadow-sm hover:shadow-md'
           : 'bg-white shadow-sm hover:shadow-md hover:bg-green-50'
@@ -350,33 +353,21 @@ export default function TaskItem({
         onClick={handleToggleComplete}
         onMouseDown={(e) => e.stopPropagation()}
         className={`flex-shrink-0 w-8 h-8 rounded-full border-2 transition-all duration-200 ${
-          localCompleted && !isOld
-            ? 'border-transparent bg-transparent overflow-visible relative'
-            : localCompleted && isOld
-            ? 'bg-red-500 border-red-500 overflow-hidden'
+          localCompleted
+            ? 'border-transparent bg-transparent overflow-visible relative z-10'
             : isOld
             ? 'border-red-400 hover:border-red-500 overflow-hidden'
             : 'border-gray-300 hover:border-green-500 overflow-hidden'
         }`}
         aria-label={localCompleted ? '완료 취소' : '완료'}
       >
-        {localCompleted && !isOld && (
+        {localCompleted && (
           <img
-            src="/images/포실이.png"
+            src={POSILY_COMPLETE_IMAGE_SRC}
             alt="포실이"
-            className="absolute w-48 h-48 object-contain"
+            className="absolute w-48 h-48 object-contain pointer-events-none"
             style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
           />
-        )}
-        {localCompleted && isOld && (
-          <svg
-            className="w-full h-full text-yellow-300"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-          </svg>
         )}
       </button>
 

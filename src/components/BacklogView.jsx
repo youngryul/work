@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { getBacklogTasks, createTask, moveToToday } from '../services/taskService.js'
 import { getDefaultCategory } from '../services/categoryService.js'
 import TaskItem from './TaskItem.jsx'
@@ -17,8 +17,8 @@ export default function BacklogView() {
   const [selectedCategory, setSelectedCategory] = useState('회사') // 기본값 먼저 설정
   const [isLoading, setIsLoading] = useState(true)
   const [defaultCategory, setDefaultCategory] = useState('회사') // 기본값 먼저 설정
-  const [completedTaskIds, setCompletedTaskIds] = useState(new Set())
-  const completionTimersRef = useRef({})
+  /** 완료 애니메이션 중인 할 일 ID (목록에 유지) */
+  const [completingTaskIds, setCompletingTaskIds] = useState(() => new Set())
 
   /**
    * 기본 카테고리 로드 (비동기로 처리하여 UI 블로킹 방지)
@@ -103,56 +103,25 @@ export default function BacklogView() {
   }
 
   /**
-   * 할 일 업데이트
+   * 완료 애니메이션 시작
    */
-  const handleTaskUpdate = async (updatedTask) => {
-    const updatedTasks = tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t))
-    setTasks(updatedTasks)
-    
-    // 완료된 경우 새로고침 후 3초 동안 표시
-    if (updatedTask.completed && !completedTaskIds.has(updatedTask.id)) {
-      // 완료 처리 후 즉시 새로고침하여 최신 데이터 로드
-      await loadTasks()
-      
-      // 새로고침 후 업데이트된 tasks에서 해당 항목을 completedTaskIds에 추가
-      setCompletedTaskIds(prev => new Set([...prev, updatedTask.id]))
-      
-      // 기존 타이머가 있으면 취소
-      if (completionTimersRef.current[updatedTask.id]) {
-        clearTimeout(completionTimersRef.current[updatedTask.id])
-      }
-      
-      // 3초 후 화면에서 제거 (tasks 배열에는 유지하여 개수는 정확히 표시)
-      completionTimersRef.current[updatedTask.id] = setTimeout(() => {
-        setCompletedTaskIds(prev => {
-          const newSet = new Set(prev)
-          newSet.delete(updatedTask.id)
-          return newSet
-        })
-        delete completionTimersRef.current[updatedTask.id]
-      }, 3000)
-    } else if (!updatedTask.completed && completedTaskIds.has(updatedTask.id)) {
-      // 완료 취소된 경우 타이머 취소 및 추적에서 제거
-      if (completionTimersRef.current[updatedTask.id]) {
-        clearTimeout(completionTimersRef.current[updatedTask.id])
-        delete completionTimersRef.current[updatedTask.id]
-      }
-      setCompletedTaskIds(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(updatedTask.id)
-        return newSet
-      })
-    }
+  const handleCompleteAnimationStart = (taskId) => {
+    setCompletingTaskIds((prev) => new Set(prev).add(taskId))
   }
-  
-  // 컴포넌트 언마운트 시 타이머 정리
-  useEffect(() => {
-    return () => {
-      Object.values(completionTimersRef.current).forEach(timer => {
-        if (timer) clearTimeout(timer)
-      })
-    }
-  }, [])
+
+  /**
+   * 할 일 업데이트 (애니메이션 종료 후 완료 상태 반영)
+   */
+  const handleTaskUpdate = (updatedTask) => {
+    setCompletingTaskIds((prev) => {
+      const next = new Set(prev)
+      next.delete(updatedTask.id)
+      return next
+    })
+    setTasks((prev) =>
+      prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
+    )
+  }
 
   /**
    * 할 일 삭제
@@ -162,23 +131,24 @@ export default function BacklogView() {
   }
 
 
-  /**
-   * 카테고리별로 할 일 분리 및 정렬 (가장 오래된 것부터)
-   * 완료된 항목은 3초 동안 표시 후 제외
-   */
-  const defaultCategoryTasks = tasks
-    .filter((task) => task.category === defaultCategory && (!task.completed || completedTaskIds.has(task.id)))
+  /** 미완료 + 완료 애니메이션 중인 할 일만 표시 */
+  const visibleTasks = tasks.filter(
+    (task) => !task.completed || completingTaskIds.has(task.id),
+  )
+
+  const defaultCategoryTasks = visibleTasks
+    .filter((task) => task.category === defaultCategory)
     .sort((a, b) => (a.createdAt || a.createdat || 0) - (b.createdAt || b.createdat || 0))
-  const otherTasks = tasks
-    .filter((task) => task.category !== defaultCategory && (!task.completed || completedTaskIds.has(task.id)))
+  const otherTasks = visibleTasks
+    .filter((task) => task.category !== defaultCategory)
     .sort((a, b) => (a.createdAt || a.createdat || 0) - (b.createdAt || b.createdat || 0))
 
   return (
     <div className="max-w-6xl mx-auto p-6">
       <ViewPageTitle iconSrc={MENU_ICON_PATHS.backlog} title="백로그">
         <p className="text-xl text-gray-600">
-          {tasks.length > 0
-            ? `총 ${tasks.length}개의 할 일`
+          {visibleTasks.length > 0
+            ? `총 ${visibleTasks.length}개의 할 일`
             : '백로그가 비어있어요'}
         </p>
       </ViewPageTitle>
@@ -216,14 +186,14 @@ export default function BacklogView() {
       {/* 할 일 목록 */}
       {isLoading ? (
         <div className="text-center py-8 text-gray-500 text-xl">로딩 중...</div>
-      ) : tasks.length === 0 ? (
+      ) : visibleTasks.length === 0 ? (
         <div className="text-center py-12 text-gray-400 text-xl">
           백로그가 비어있어요. 위에서 추가해보세요! ✨
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-6">
           {/* 왼쪽: 기본 카테고리 */}
-          <div className="space-y-3">
+          <div className="space-y-3 overflow-visible">
             {defaultCategoryTasks.length > 0 && (
               <h2 className="text-2xl font-handwriting text-gray-700 mb-3">{defaultCategory}</h2>
             )}
@@ -232,6 +202,7 @@ export default function BacklogView() {
                 key={task.id}
                 task={task}
                 onUpdate={handleTaskUpdate}
+                onCompleteAnimationStart={handleCompleteAnimationStart}
                 onDelete={handleTaskDelete}
                 onMoveToToday={() => handleMoveToToday(task.id)}
               />
@@ -244,7 +215,7 @@ export default function BacklogView() {
           </div>
 
           {/* 오른쪽: 나머지 카테고리 */}
-          <div className="space-y-3">
+          <div className="space-y-3 overflow-visible">
             {otherTasks.length > 0 && (
               <h2 className="text-2xl font-handwriting text-gray-700 mb-3">기타</h2>
             )}
@@ -253,6 +224,7 @@ export default function BacklogView() {
                 key={task.id}
                 task={task}
                 onUpdate={handleTaskUpdate}
+                onCompleteAnimationStart={handleCompleteAnimationStart}
                 onDelete={handleTaskDelete}
                 onMoveToToday={() => handleMoveToToday(task.id)}
               />
