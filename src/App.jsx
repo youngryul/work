@@ -288,7 +288,6 @@ function AppContent() {
   // 로그인한 경우 메인 앱 표시
   return (
     <div className={appTheme === 'blue' ? 'theme-blue' : 'theme-posily'}>
-      <JellyBalanceBadge />
       {/* 사이드바 네비게이션 */}
       <NavigationSidebar
         currentView={currentView}
@@ -301,20 +300,26 @@ function AppContent() {
 
       {/* 메인 컨텐츠 영역 */}
       <div className={`min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
-        {/* 공지사항 배너 */}
-        <AnnouncementBanner />
-
         {/* 모바일 헤더 (햄버거 메뉴) */}
-        <header className="md:hidden bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-30">
-          <div className="px-4 py-3">
+        <header className="md:hidden bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-40">
+          <div className="px-4 py-3 flex items-center justify-between gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
               className="text-gray-600 hover:text-gray-800 text-2xl"
             >
               ☰
             </button>
+            <JellyBalanceBadge inline />
           </div>
         </header>
+
+        {/* 공지사항 + 젤리 (데스크톱) */}
+        <div className="sticky top-0 z-30">
+          <AnnouncementBanner />
+          <div className="hidden md:flex justify-end px-4 py-2">
+            <JellyBalanceBadge inline />
+          </div>
+        </div>
 
         {/* 메인 컨텐츠 */}
         <main className="py-8">

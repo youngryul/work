@@ -1,17 +1,15 @@
 import { useJellyBalance } from '../hooks/useJellyBalance.js'
 
 /**
- * 젤리 보유량 배지 (전역 우측 상단)
- * @param {{ className?: string, inline?: boolean }} props
+ * 젤리 보유량 배지
+ * @param {{ className?: string, inline?: boolean }} props — inline: 상단 바에 배치 (fixed 미사용)
  */
 export default function JellyBalanceBadge({ className = '', inline = false }) {
   const { balance, isLoading } = useJellyBalance()
 
   if (isLoading || balance === null) return null
 
-  const wrapperClass = inline
-    ? className
-    : `fixed top-16 md:top-4 right-4 z-40 ${className}`
+  const wrapperClass = inline ? className : `fixed top-16 md:top-4 right-4 z-40 ${className}`
 
   return (
     <div
