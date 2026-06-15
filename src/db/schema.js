@@ -66,6 +66,16 @@ export const projectRecords = pgTable('project_records', {
  * 일기 데이터 저장 (AI 이미지 포함)
  */
 /**
+ * user_jelly 테이블 — 사용자 젤리 잔액
+ */
+export const userJelly = pgTable('user_jelly', {
+  userId: uuid('user_id').primaryKey(),
+  balance: bigint('balance', { mode: 'number' }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
  * gacha_characters 테이블 — 가챠 포실이 캐릭터
  */
 export const gachaCharacters = pgTable('gacha_characters', {

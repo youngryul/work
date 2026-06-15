@@ -33,11 +33,14 @@ import NotificationCenter from './components/NotificationCenter.jsx'
 import AnnouncementBanner from './components/AnnouncementBanner.jsx'
 import DiaryReminderModal from './components/DiaryReminderModal.jsx'
 import ToastContainer from './components/Toast.jsx'
+import JellyBalanceBadge from './components/JellyBalanceBadge.jsx'
 import AdSenseBanner from './components/AdSenseBanner.jsx'
 import { useNotifications } from './hooks/useNotifications.js'
 import { markDiaryReminderShown } from './services/diaryReminderService.js'
 import { markFiveYearQuestionReminderShown } from './services/fiveYearQuestionReminderService.js'
 import { markWeeklyReminderShown, markMonthlyReminderShown } from './utils/summaryReminder.js'
+import { JELLY_UPDATED_EVENT } from './utils/jellyEvents.js'
+import { showToast, TOAST_TYPES } from './components/Toast.jsx'
 
 /**
  * 메인 앱 컨텐츠 컴포넌트 (인증 필요)
@@ -117,6 +120,19 @@ function AppContent() {
     document.body.style.backgroundPosition = showBg ? 'center' : ''
     document.body.style.backgroundAttachment = showBg ? 'fixed' : ''
   }, [appTheme, currentView])
+
+  // 젤리 획득 토스트
+  useEffect(() => {
+    const handleJellyUpdate = (event) => {
+      const awarded = event.detail?.awarded
+      if (typeof awarded === 'number' && awarded > 0) {
+        showToast(`+${awarded} 젤리를 받았어요!`, TOAST_TYPES.SUCCESS)
+      }
+    }
+    window.addEventListener(JELLY_UPDATED_EVENT, handleJellyUpdate)
+    return () => window.removeEventListener(JELLY_UPDATED_EVENT, handleJellyUpdate)
+  }, [])
+
   const [recordView, setRecordView] = useState('main') // 'main' | 'form'
   const [editingRecord, setEditingRecord] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false) // 모바일 사이드바 상태
@@ -272,6 +288,7 @@ function AppContent() {
   // 로그인한 경우 메인 앱 표시
   return (
     <div className={appTheme === 'blue' ? 'theme-blue' : 'theme-posily'}>
+      <JellyBalanceBadge />
       {/* 사이드바 네비게이션 */}
       <NavigationSidebar
         currentView={currentView}

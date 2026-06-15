@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabase.js'
 import { getDefaultCategory } from './categoryService.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
+import { awardJellyForTaskComplete } from './jellyService.js'
 
 /**
  * 데이터베이스 컬럼명을 camelCase로 변환
@@ -260,7 +261,17 @@ export async function updateTask(id, updates) {
     throw error
   }
 
-  return normalizeTask(data)
+  const normalized = normalizeTask(data)
+
+  if (updates.completed === true && normalized.completedAt) {
+    try {
+      await awardJellyForTaskComplete(id, normalized.completedAt)
+    } catch (jellyError) {
+      console.error('젤리 지급 실패:', jellyError)
+    }
+  }
+
+  return normalized
 }
 
 /**

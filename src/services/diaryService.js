@@ -6,6 +6,7 @@ import {
 import { generateDiaryImageFree } from './freeImageService.js'
 import { uploadImageFromUrl } from './imageService.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
+import { awardJellyForDiaryWrite } from './jellyService.js'
 
 /**
  * 일기 서비스
@@ -142,6 +143,14 @@ export async function saveDiary(
       console.error('일기 저장 오류:', error)
       throw error
     }
+
+    let jellyAwarded = 0
+    try {
+      const jellyResult = await awardJellyForDiaryWrite(date)
+      jellyAwarded = jellyResult?.awarded ?? 0
+    } catch (jellyError) {
+      console.error('젤리 지급 실패:', jellyError)
+    }
     
     return {
       ...data,
@@ -151,6 +160,7 @@ export async function saveDiary(
       attachedImages: data.attached_images || [],
       remainingBalance,
       tokensConsumed: remainingBalance !== null,
+      jellyAwarded,
     }
   } catch (error) {
     console.error('일기 저장 실패:', error)
