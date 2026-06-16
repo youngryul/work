@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { getNotificationSettings, saveNotificationSettings } from '../services/notificationSettingsService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { APP_THEMES } from '../constants/appThemes.js'
 
 /**
  * 설정 화면 컴포넌트
@@ -182,7 +183,7 @@ export default function SettingsView({ currentTheme = 'posily', onThemeChange })
           <h2 className="text-2xl font-bold text-gray-800 mb-2">테마 설정</h2>
           <p className="text-sm text-gray-600 mb-6">원하는 앱 분위기를 선택하세요.</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             <button
               type="button"
               onClick={() => {
@@ -223,6 +224,35 @@ export default function SettingsView({ currentTheme = 'posily', onThemeChange })
               </div>
               <div className="h-20 rounded-lg border border-blue-200 bg-gradient-to-r from-blue-100 to-blue-300" />
               <p className="text-sm text-gray-600 mt-3">이미지 없이 심플한 블루 톤 테마</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onThemeChange?.(APP_THEMES.EXCEL)
+                showToast('엑셀 테마로 변경되었습니다.', TOAST_TYPES.SUCCESS)
+              }}
+              className={`text-left rounded-xl border-2 p-4 transition-all ${currentTheme === APP_THEMES.EXCEL ? 'border-[#217346] ring-2 ring-[#c6e7d4]' : 'border-gray-200 hover:border-[#8fd4a8]'}`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-semibold text-gray-800">📊 엑셀 테마</h3>
+                {currentTheme === APP_THEMES.EXCEL && (
+                  <span className="text-xs px-2 py-1 rounded bg-[#e7f5ee] text-[#217346]">선택됨</span>
+                )}
+              </div>
+              <div className="h-20 rounded-lg border border-[#d4d4d4] overflow-hidden">
+                <div className="h-5 bg-[#217346]" />
+                <div
+                  className="h-full"
+                  style={{
+                    backgroundImage:
+                      'linear-gradient(#e2e2e2 1px, transparent 1px), linear-gradient(90deg, #e2e2e2 1px, transparent 1px)',
+                    backgroundSize: '14px 14px',
+                    backgroundColor: '#f3f2f1',
+                  }}
+                />
+              </div>
+              <p className="text-sm text-gray-600 mt-3">회색 격자와 엑셀 그린 포인트의 업무용 테마</p>
             </button>
           </div>
         </div>

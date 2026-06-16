@@ -5,6 +5,7 @@ import { getWeekStart, getWeekEnd } from '../services/workReportService.js'
 import { getWeeksWithWorkReports, getWeeksWithDiaries } from '../services/workReportService.js'
 import { getDiariesByMonth } from '../services/diaryService.js'
 import { MENU_ICON_PATHS } from '../constants/navigationMenu.js'
+import { APP_THEMES, shouldShowTodayBackgroundImage, shouldShowTodayExcelGrid } from '../constants/appThemes.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 import ViewPageTitle from './ViewPageTitle.jsx'
 
@@ -35,8 +36,9 @@ const getYesterdayDateString = () => {
 
 /**
  * 오늘 할 일 화면 컴포넌트
+ * @param {{ appTheme?: string }} props
  */
-export default function TodayView() {
+export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
   const [tasks, setTasks] = useState([])
   /** 완료 애니메이션 중인 할 일 ID (목록에서 유지) */
   const [completingTaskIds, setCompletingTaskIds] = useState(() => new Set())
@@ -328,13 +330,17 @@ export default function TodayView() {
 
   return (
     <>
-      {/* 배경 이미지 */}
-      <div
-        className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/images/todo.png')" }}
-      />
+      {shouldShowTodayBackgroundImage(appTheme) && (
+        <div
+          className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/images/todo.png')" }}
+        />
+      )}
+      {shouldShowTodayExcelGrid(appTheme) && (
+        <div className="fixed inset-0 -z-10 excel-grid-bg" />
+      )}
 
-      <div className="max-w-2xl mx-auto p-6">
+      <div className={`max-w-2xl mx-auto p-6 ${appTheme === APP_THEMES.EXCEL ? 'today-view--excel' : ''}`}>
         <ViewPageTitle iconSrc={MENU_ICON_PATHS.today} title="오늘 할 일">
           <p className="text-lg text-gray-500 mb-2">
             {getCurrentDateString()}

@@ -34,11 +34,13 @@ import AnnouncementBanner from './components/AnnouncementBanner.jsx'
 import DiaryReminderModal from './components/DiaryReminderModal.jsx'
 import ToastContainer from './components/Toast.jsx'
 import JellyBalanceBadge from './components/JellyBalanceBadge.jsx'
+import ExcelThemeHeader from './components/ExcelThemeHeader.jsx'
 import AdSenseBanner from './components/AdSenseBanner.jsx'
 import { useNotifications } from './hooks/useNotifications.js'
 import { markDiaryReminderShown } from './services/diaryReminderService.js'
 import { markFiveYearQuestionReminderShown } from './services/fiveYearQuestionReminderService.js'
 import { markWeeklyReminderShown, markMonthlyReminderShown } from './utils/summaryReminder.js'
+import { getThemeWrapperClass, APP_THEMES } from './constants/appThemes.js'
 import { JELLY_UPDATED_EVENT } from './utils/jellyEvents.js'
 import { showToast, TOAST_TYPES } from './components/Toast.jsx'
 
@@ -114,7 +116,7 @@ function AppContent() {
 
   // 배경 이미지: posily 테마 + 오늘 할일 아닌 경우에만 적용
   useEffect(() => {
-    const showBg = appTheme === 'posily' && currentView !== 'today'
+    const showBg = appTheme === APP_THEMES.POSILY && currentView !== 'today'
     document.body.style.backgroundImage = showBg ? 'url(/images/심플배경화면.png)' : ''
     document.body.style.backgroundSize = showBg ? 'cover' : ''
     document.body.style.backgroundPosition = showBg ? 'center' : ''
@@ -287,7 +289,7 @@ function AppContent() {
 
   // 로그인한 경우 메인 앱 표시
   return (
-    <div className={appTheme === 'blue' ? 'theme-blue' : 'theme-posily'}>
+    <div className={getThemeWrapperClass(appTheme)}>
       {/* 사이드바 네비게이션 */}
       <NavigationSidebar
         currentView={currentView}
@@ -301,17 +303,32 @@ function AppContent() {
       {/* 메인 컨텐츠 영역 */}
       <div className={`min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
         {/* 모바일 헤더 (햄버거 메뉴) */}
-        <header className="md:hidden bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-40">
+        <header
+          className={`md:hidden sticky top-0 z-50 ${
+            appTheme === APP_THEMES.EXCEL
+              ? 'bg-[#217346] text-white shadow-sm'
+              : 'bg-white/80 backdrop-blur-sm shadow-sm'
+          }`}
+        >
           <div className="px-4 py-3 flex items-center justify-between gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="text-gray-600 hover:text-gray-800 text-2xl"
+              className={`text-2xl ${
+                appTheme === APP_THEMES.EXCEL
+                  ? 'text-white hover:text-white/80'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
             >
               ☰
             </button>
             <JellyBalanceBadge inline />
           </div>
         </header>
+
+        {/* 엑셀 테마 상단 UI */}
+        {appTheme === APP_THEMES.EXCEL && (
+          <ExcelThemeHeader currentView={currentView} />
+        )}
 
         {/* 공지사항 + 젤리 (데스크톱) */}
         <div className="sticky top-0 z-30">
@@ -323,7 +340,7 @@ function AppContent() {
 
         {/* 메인 컨텐츠 */}
         <main className="py-8">
-        {currentView === 'today' && <TodayView />}
+        {currentView === 'today' && <TodayView appTheme={appTheme} />}
         {currentView === 'backlog' && <BacklogView />}
         {currentView === 'todo-calendar' && <TodoCalendarView />}
         {currentView === 'schedule-calendar' && <ScheduleCalendarView />}

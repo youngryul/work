@@ -29,6 +29,109 @@ body[data-theme='blue'] {
   background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 60%, #bfdbfe 100%);
 }
 
+body[data-theme='excel'] {
+  font-family: 'Segoe UI', 'Calibri', 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  background-color: #f3f2f1;
+  background-image:
+    linear-gradient(#e2e2e2 1px, transparent 1px),
+    linear-gradient(90deg, #e2e2e2 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.excel-grid-bg {
+  background-color: #f3f2f1;
+  background-image:
+    linear-gradient(#e2e2e2 1px, transparent 1px),
+    linear-gradient(90deg, #e2e2e2 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.theme-excel {
+  --excel-green: #217346;
+  --excel-green-dark: #185c37;
+  --excel-green-light: #e7f5ee;
+  --excel-border: #d4d4d4;
+  --excel-header: #f9f9f9;
+}
+
+.theme-excel .font-handwriting,
+.theme-excel .font-sans {
+  font-family: 'Segoe UI', 'Calibri', 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+}
+
+.theme-excel nav .bg-green-500,
+.theme-excel main .bg-green-400,
+.theme-excel main .bg-green-500 {
+  background-color: var(--excel-green) !important;
+}
+
+.theme-excel nav .hover\:bg-green-50:hover,
+.theme-excel main .hover\:bg-green-50:hover {
+  background-color: var(--excel-green-light) !important;
+}
+
+.theme-excel nav .border-green-200,
+.theme-excel main .border-green-200 {
+  border-color: var(--excel-border) !important;
+}
+
+.theme-excel main .bg-white\/80,
+.theme-excel main .bg-white {
+  background-color: #ffffff !important;
+}
+
+.theme-excel main .shadow-md,
+.theme-excel main .shadow-sm {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+}
+
+.theme-excel main .today-view--excel h1,
+.theme-excel main .today-view--excel p {
+  color: #323130;
+}
+
+.theme-excel main .today-view--excel .group.bg-white {
+  border: 1px solid var(--excel-border);
+  border-radius: 2px;
+}
+
+.theme-excel main .bg-green-100 {
+  background-color: var(--excel-green-light) !important;
+}
+
+.theme-excel main .bg-green-200 {
+  background-color: #d4edda !important;
+}
+
+.theme-excel main .text-green-700 {
+  color: var(--excel-green-dark) !important;
+}
+
+.theme-excel main .border-green-100,
+.theme-excel main .border-green-200,
+.theme-excel main .border-green-300 {
+  border-color: var(--excel-border) !important;
+}
+
+.theme-excel main .hover\:border-green-500:hover,
+.theme-excel main .focus\:border-green-400:focus,
+.theme-excel main .focus\:border-green-500:focus {
+  border-color: var(--excel-green) !important;
+}
+
+.excel-theme-header {
+  font-family: 'Segoe UI', 'Calibri', 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+}
+
+.excel-theme-header .scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.excel-theme-header .scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 * {
   box-sizing: border-box;
 }
