@@ -70,7 +70,10 @@ export default function UserRoleManagement() {
           <span className="font-semibold text-purple-700">슈퍼유저</span>: 전체 메뉴 접근 가능 (관리자 페이지 제외)
         </p>
         <p className="text-sm text-blue-800">
-          <span className="font-semibold text-green-700">일반</span>: 오늘·백로그·할 일·일정·일기 달력·공지사항·설정 표시
+          <span className="font-semibold text-green-700">일반</span>: 관리자가 설정한 메뉴만 표시 (기본: 오늘·백로그·할일·일기 달력·뽑기 가챠·공지·마이페이지·설정)
+        </p>
+        <p className="text-sm text-indigo-800 mt-2">
+          메뉴 구성은 <strong>메뉴 설정</strong> 탭에서 역할별로 변경할 수 있습니다.
         </p>
       </div>
 

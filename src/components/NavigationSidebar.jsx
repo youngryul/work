@@ -2,21 +2,14 @@ import { useState, useEffect } from 'react'
 import {
   NAVIGATION_MENU_ITEMS,
   EXTERNAL_LINKS,
-  SIDEBAR_HIDDEN_MENU_ITEM_IDS,
 } from '../constants/navigationMenu.js'
+import { isMainMenuItemAllowed } from '../constants/roleMenuPermissions.js'
+import { useRoleMenuPermissions } from '../hooks/useRoleMenuPermissions.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import MenuIcon from './MenuIcon.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
-// 역할별 메인 메뉴 제한 (null = 제한 없음)
-const REGULAR_MENU_IDS = new Set([
-  'today',
-  'backlog',
-  'todo-calendar',
-  'diary-calendar',
-  'gacha',
-  'my-page',
-])
+// 역할별 메인 메뉴 제한은 DB 설정(role_menu_permissions) 사용
 
 /**
  * 사이드바 네비게이션 컴포넌트
@@ -35,13 +28,15 @@ export default function NavigationSidebar({
   collapsed = false,
   onToggleCollapse
 }) {
-  const { signOut, user, isAdmin: isAdminUser, isSuperuser, userRole } = useAuth()
+  const { signOut, user, isAdmin: isAdminUser, userRole } = useAuth()
   const [expandedMenus, setExpandedMenus] = useState(new Set())
+  const { permissions: menuPermissions } = useRoleMenuPermissions(userRole)
 
-  // 역할별 메인 메뉴 필터 (admin·superuser = 제한 없음, regular = 3개만)
-  const visibleMenuIds = (isAdminUser || isSuperuser) ? null : REGULAR_MENU_IDS
-  // 외부 링크는 admin·superuser만 표시
-  const showExternalLinks = isAdminUser || isSuperuser
+  const allowedMenuIds = new Set(menuPermissions?.allowedMenuIds ?? [])
+  const allowedFooterMenuIds = new Set(menuPermissions?.allowedFooterMenuIds ?? [])
+  const allowedExternalLinkIds = new Set(menuPermissions?.allowedExternalLinkIds ?? [])
+  const showAdminMenu = Boolean(menuPermissions?.showAdminMenu && isAdminUser)
+  const showExternalLinks = allowedExternalLinkIds.size > 0
 
   /**
    * 하위 메뉴가 있는 메뉴의 펼침/접힘 상태 관리
@@ -154,12 +149,11 @@ export default function NavigationSidebar({
           <nav className={`flex-1 overflow-y-auto overflow-x-visible ${collapsed ? 'md:p-2 p-4' : 'p-4'}`}>
             <div className="space-y-2">
               {NAVIGATION_MENU_ITEMS.filter(
-                item =>
-                  !SIDEBAR_HIDDEN_MENU_ITEM_IDS.has(item.id) &&
+                (item) =>
                   item.id !== 'announcements' &&
                   item.id !== 'my-page' &&
                   item.id !== 'settings' &&
-                  (visibleMenuIds === null || visibleMenuIds.has(item.id))
+                  isMainMenuItemAllowed(item.id, allowedMenuIds, item)
               ).map((item) => {
                 const hasChildren = item.children && item.children.length > 0
                 const isExpanded = expandedMenus.has(item.id)
@@ -196,7 +190,9 @@ export default function NavigationSidebar({
                     {/* 하위 메뉴 */}
                     {hasChildren && !collapsed && isExpanded && (
                       <div className="ml-4 space-y-1">
-                        {item.children.map((child) => (
+                        {item.children
+                          .filter((child) => allowedMenuIds.has(child.id))
+                          .map((child) => (
                           <button
                             key={child.id}
                             onClick={() => handleMenuClick(child.id)}
@@ -226,7 +222,7 @@ export default function NavigationSidebar({
               <>
                 <div className={`border-t border-gray-200 ${collapsed ? 'my-4' : 'my-6'}`} />
                 <div className="space-y-2">
-                  {EXTERNAL_LINKS.map((link) => (
+                  {EXTERNAL_LINKS.filter((link) => allowedExternalLinkIds.has(link.id)).map((link) => (
                     <a
                       key={link.id}
                       href={link.href}
@@ -263,8 +259,9 @@ export default function NavigationSidebar({
 
               {/* 공지사항·마이페이지·설정 (전체 역할 표시) */}
               <div className="space-y-2">
-                {NAVIGATION_MENU_ITEMS.filter(item =>
-                  item.id === 'announcements' || item.id === 'my-page' || item.id === 'settings'
+                {NAVIGATION_MENU_ITEMS.filter((item) =>
+                  allowedFooterMenuIds.has(item.id) &&
+                  (item.id === 'announcements' || item.id === 'my-page' || item.id === 'settings')
                 ).map((item) => (
                     <button
                         key={item.id}
@@ -289,8 +286,8 @@ export default function NavigationSidebar({
                 ))}
               </div>
 
-              {/* 관리자 메뉴 (관리자만 표시, 공지사항 아래) */}
-              {isAdminUser && (
+              {/* 관리자 메뉴 */}
+              {showAdminMenu && (
                 <div className="space-y-2">
                   <button
                     onClick={() => handleMenuClick('admin')}

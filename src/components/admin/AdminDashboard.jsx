@@ -8,6 +8,7 @@ import AdSettingsManagement from './AdSettingsManagement.jsx'
 import AiTokenManagement from './AiTokenManagement.jsx'
 import TokenPurchaseRequestManagement from './TokenPurchaseRequestManagement.jsx'
 import GachaCharacterManagement from './GachaCharacterManagement.jsx'
+import RoleMenuManagement from './RoleMenuManagement.jsx'
 
 /**
  * 관리자 대시보드 컴포넌트 (admin 역할만 접근 가능)
@@ -42,7 +43,7 @@ export default function AdminDashboard() {
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-4 text-gray-800 font-sans">🔐 관리자 대시보드</h1>
         <p className="text-base text-gray-600 font-sans mb-4">
-          공지사항, 사용자, 데이터 통계, 권한·광고·AI 토큰·충전 신청·포실이 가챠를 관리할 수 있습니다.
+          공지사항, 사용자, 데이터 통계, 권한·메뉴·광고·AI 토큰·충전 신청·포실이 가챠를 관리할 수 있습니다.
         </p>
 
         {/* 탭 */}
@@ -86,6 +87,16 @@ export default function AdminDashboard() {
             }`}
           >
             권한 관리
+          </button>
+          <button
+            onClick={() => setActiveTab('menus')}
+            className={`px-6 py-2 rounded-lg font-semibold transition-colors font-sans ${
+              activeTab === 'menus'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            메뉴 설정
           </button>
           <button
             onClick={() => setActiveTab('ads')}
@@ -135,6 +146,7 @@ export default function AdminDashboard() {
       {activeTab === 'users' && <UserStatistics />}
       {activeTab === 'data' && <DataStatistics />}
       {activeTab === 'roles' && <UserRoleManagement />}
+      {activeTab === 'menus' && <RoleMenuManagement />}
       {activeTab === 'ads' && <AdSettingsManagement />}
       {activeTab === 'tokens' && <AiTokenManagement />}
       {activeTab === 'purchases' && <TokenPurchaseRequestManagement />}
