@@ -2,11 +2,13 @@ import { useAiTokenInfo } from '../hooks/useAiTokenInfo.js'
 
 /**
  * AI 토큰 보유량 (화면 오른쪽 상단, 변동 시 즉시 갱신)
- * @param {{ refreshDep?: unknown, className?: string, onBalanceClick?: () => void, onLowBalanceClick?: () => void }} props
+ * @param {{ refreshDep?: unknown, className?: string, inline?: boolean, compact?: boolean, onBalanceClick?: () => void, onLowBalanceClick?: () => void }} props
  */
 export default function AiTokenBalanceBadge({
   refreshDep,
   className = '',
+  inline = false,
+  compact = false,
   onBalanceClick,
   onLowBalanceClick,
 }) {
@@ -31,9 +33,13 @@ export default function AiTokenBalanceBadge({
     </>
   )
 
+  const wrapperClass = inline
+    ? `flex flex-col items-end gap-0.5 ${className}`
+    : `absolute top-0 right-0 z-10 flex flex-col items-end gap-0.5 ${className}`
+
   return (
     <div
-      className={`absolute top-0 right-0 z-10 flex flex-col items-end gap-0.5 ${className}`}
+      className={wrapperClass}
       aria-label={`AI 토큰 보유 ${balance}개`}
     >
       {handleBalanceClick ? (
@@ -48,7 +54,7 @@ export default function AiTokenBalanceBadge({
       ) : (
         <div className={badgeClass}>{badgeContent}</div>
       )}
-      {handleBalanceClick && (
+      {handleBalanceClick && !compact && (
         <button
           type="button"
           onClick={handleBalanceClick}

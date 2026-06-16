@@ -34,6 +34,8 @@ import AnnouncementBanner from './components/AnnouncementBanner.jsx'
 import DiaryReminderModal from './components/DiaryReminderModal.jsx'
 import ToastContainer from './components/Toast.jsx'
 import JellyBalanceBadge from './components/JellyBalanceBadge.jsx'
+import DiaryCalendarBalanceBar from './components/DiaryCalendarBalanceBar.jsx'
+import TokenDepositRequestModal from './components/TokenDepositRequestModal.jsx'
 import ExcelThemeHeader from './components/ExcelThemeHeader.jsx'
 import AdSenseBanner from './components/AdSenseBanner.jsx'
 import { useNotifications } from './hooks/useNotifications.js'
@@ -41,6 +43,7 @@ import { markDiaryReminderShown } from './services/diaryReminderService.js'
 import { markFiveYearQuestionReminderShown } from './services/fiveYearQuestionReminderService.js'
 import { markWeeklyReminderShown, markMonthlyReminderShown } from './utils/summaryReminder.js'
 import { getThemeWrapperClass, APP_THEMES } from './constants/appThemes.js'
+import { useAiTokenInfo } from './hooks/useAiTokenInfo.js'
 import { JELLY_UPDATED_EVENT } from './utils/jellyEvents.js'
 import { showToast, TOAST_TYPES } from './components/Toast.jsx'
 
@@ -113,6 +116,24 @@ function AppContent() {
     const savedView = localStorage.getItem('lastView')
     return savedView || 'today'
   })
+  const [diaryCalendarKey, setDiaryCalendarKey] = useState(0)
+  const [diaryDepositModalOpen, setDiaryDepositModalOpen] = useState(false)
+  const { balance: diaryTokenBalance, generationCost: diaryGenerationCost } = useAiTokenInfo(
+    currentView === 'diary-calendar' ? diaryCalendarKey : null,
+  )
+
+  useEffect(() => {
+    if (currentView !== 'diary-calendar') {
+      setDiaryDepositModalOpen(false)
+    }
+  }, [currentView])
+
+  const diaryCalendarBalanceBar = (
+    <DiaryCalendarBalanceBar
+      refreshDep={diaryCalendarKey}
+      onDepositClick={() => setDiaryDepositModalOpen(true)}
+    />
+  )
 
   // 배경 이미지: posily 테마 + 오늘 할일 아닌 경우에만 적용
   useEffect(() => {
@@ -321,7 +342,7 @@ function AppContent() {
             >
               ☰
             </button>
-            <JellyBalanceBadge inline />
+            {currentView === 'diary-calendar' ? diaryCalendarBalanceBar : <JellyBalanceBadge inline />}
           </div>
         </header>
 
@@ -334,9 +355,18 @@ function AppContent() {
         <div className="sticky top-0 z-30">
           <AnnouncementBanner />
           <div className="hidden md:flex justify-end px-4 py-2">
-            <JellyBalanceBadge inline />
+            {currentView === 'diary-calendar' ? diaryCalendarBalanceBar : <JellyBalanceBadge inline />}
           </div>
         </div>
+
+        {currentView === 'diary-calendar' && (
+          <TokenDepositRequestModal
+            isOpen={diaryDepositModalOpen}
+            onClose={() => setDiaryDepositModalOpen(false)}
+            tokenBalance={diaryTokenBalance}
+            generationCost={diaryGenerationCost}
+          />
+        )}
 
         {/* 메인 컨텐츠 */}
         <main className="py-8">
@@ -344,7 +374,13 @@ function AppContent() {
         {currentView === 'backlog' && <BacklogView />}
         {currentView === 'todo-calendar' && <TodoCalendarView />}
         {currentView === 'schedule-calendar' && <ScheduleCalendarView />}
-        {currentView === 'diary-calendar' && <CalendarView />}
+        {currentView === 'diary-calendar' && (
+          <CalendarView
+            calendarKey={diaryCalendarKey}
+            onCalendarKeyChange={setDiaryCalendarKey}
+            onOpenDepositModal={() => setDiaryDepositModalOpen(true)}
+          />
+        )}
         {currentView === 'gacha' && <GachaView />}
         {currentView === 'my-page' && <MyPageView />}
         {currentView === 'review' && <AnnualReviewView />}

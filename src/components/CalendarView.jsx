@@ -1,22 +1,27 @@
 import { useState } from 'react'
 import { MENU_ICON_PATHS } from '../constants/navigationMenu.js'
 import { useAiTokenInfo } from '../hooks/useAiTokenInfo.js'
-import AiTokenBalanceBadge from './AiTokenBalanceBadge.jsx'
 import AiTokenGenerationCostNote from './AiTokenGenerationCostNote.jsx'
 import DiaryCalendar from './DiaryCalendar.jsx'
 import DiaryForm from './DiaryForm.jsx'
-import TokenDepositRequestModal from './TokenDepositRequestModal.jsx'
 import ViewPageTitle from './ViewPageTitle.jsx'
 
 /**
  * 일기 달력 화면 컴포넌트
+ * @param {{
+ *   calendarKey: number,
+ *   onCalendarKeyChange: (value: number | ((prev: number) => number)) => void,
+ *   onOpenDepositModal: () => void,
+ * }} props
  */
-export default function CalendarView() {
+export default function CalendarView({
+  calendarKey,
+  onCalendarKeyChange,
+  onOpenDepositModal,
+}) {
   const [selectedDate, setSelectedDate] = useState(null)
   const [showDiaryForm, setShowDiaryForm] = useState(false)
-  const [calendarKey, setCalendarKey] = useState(0) // 달력 새로고침을 위한 key
-  const [showDepositModal, setShowDepositModal] = useState(false)
-  const { balance: tokenBalance, generationCost } = useAiTokenInfo(calendarKey)
+  const { generationCost } = useAiTokenInfo(calendarKey)
 
   const handleDateClick = (dateString) => {
     setSelectedDate(dateString)
@@ -26,8 +31,7 @@ export default function CalendarView() {
   const handleSave = () => {
     setShowDiaryForm(false)
     setSelectedDate(null)
-    // 달력 새로고침을 위해 key 변경 (페이지 리로드 없이)
-    setCalendarKey(prev => prev + 1)
+    onCalendarKeyChange((prev) => prev + 1)
   }
 
   const handleCancel = () => {
@@ -36,17 +40,7 @@ export default function CalendarView() {
   }
 
   return (
-    <div className="relative max-w-4xl mx-auto p-6 pt-14">
-      <AiTokenBalanceBadge
-        refreshDep={calendarKey}
-        onBalanceClick={() => setShowDepositModal(true)}
-      />
-      <TokenDepositRequestModal
-        isOpen={showDepositModal}
-        onClose={() => setShowDepositModal(false)}
-        tokenBalance={tokenBalance}
-        generationCost={generationCost}
-      />
+    <div className="max-w-4xl mx-auto p-6">
       {showDiaryForm ? (
         <DiaryForm
           selectedDate={selectedDate}
@@ -54,7 +48,7 @@ export default function CalendarView() {
           onCancel={handleCancel}
           embedded
           tokenRefreshDep={calendarKey}
-          onOpenDepositModal={() => setShowDepositModal(true)}
+          onOpenDepositModal={onOpenDepositModal}
         />
       ) : (
         <>
@@ -70,5 +64,3 @@ export default function CalendarView() {
     </div>
   )
 }
-
-
