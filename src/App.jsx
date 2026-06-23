@@ -117,6 +117,7 @@ function AppContent() {
     return savedView || 'today'
   })
   const [diaryCalendarKey, setDiaryCalendarKey] = useState(0)
+  const [diaryOpenDate, setDiaryOpenDate] = useState(null)
   const [diaryDepositModalOpen, setDiaryDepositModalOpen] = useState(false)
   const { balance: diaryTokenBalance, generationCost: diaryGenerationCost } = useAiTokenInfo(
     currentView === 'diary-calendar' ? diaryCalendarKey : null,
@@ -125,8 +126,28 @@ function AppContent() {
   useEffect(() => {
     if (currentView !== 'diary-calendar') {
       setDiaryDepositModalOpen(false)
+      setDiaryOpenDate(null)
     }
   }, [currentView])
+
+  // 공유 링크 (?view=diary-calendar&date=YYYY-MM-DD) 처리
+  useEffect(() => {
+    if (!user) return
+
+    const params = new URLSearchParams(window.location.search)
+    const view = params.get('view')
+    const date = params.get('date')
+
+    if (view === 'diary-calendar') {
+      setCurrentView('diary-calendar')
+      if (date) setDiaryOpenDate(date)
+    }
+
+    if (view || date) {
+      const cleanUrl = window.location.pathname + window.location.hash
+      window.history.replaceState({}, '', cleanUrl)
+    }
+  }, [user])
 
   const diaryCalendarBalanceBar = (
     <DiaryCalendarBalanceBar
@@ -379,6 +400,7 @@ function AppContent() {
             calendarKey={diaryCalendarKey}
             onCalendarKeyChange={setDiaryCalendarKey}
             onOpenDepositModal={() => setDiaryDepositModalOpen(true)}
+            initialOpenDate={diaryOpenDate}
           />
         )}
         {currentView === 'gacha' && <GachaView />}

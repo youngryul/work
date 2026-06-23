@@ -9,33 +9,11 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import AiTokenBalanceBadge from './AiTokenBalanceBadge.jsx'
 import AiTokenGenerationCostNote from './AiTokenGenerationCostNote.jsx'
 import TokenDepositRequestModal from './TokenDepositRequestModal.jsx'
+import DiaryShareButton from './DiaryShareButton.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
+import { DIARY_EMOTION_LABELS, getDiaryEmotionLabel } from '../constants/diaryEmotions.js'
 
-const EMOTION_LABELS = {
-  calm: '평온',
-  comfort: '편안',
-  happiness: '행복',
-  sadness: '슬픔',
-  anxiety: '불안',
-  loneliness: '외로움',
-  hope: '희망',
-  tiredness: '피곤',
-  excitement: '설렘',
-  gratitude: '감사',
-  nostalgia: '그리움',
-  frustration: '답답',
-  relief: '안도',
-  pride: '뿌듯함',
-  embarrassment: '부끄러움',
-  envy: '부러움',
-  determination: '의지',
-  confusion: '혼란',
-  peace: '평화',
-  love: '사랑',
-  anger: '화남',
-  disappointment: '실망',
-  satisfaction: '만족',
-}
+const EMOTION_LABELS = DIARY_EMOTION_LABELS
 
 /**
  * 일기 작성/수정 폼 컴포넌트
@@ -90,7 +68,7 @@ export default function DiaryForm({
         setExistingDiary(diary)
         setImageLoadError(false)
         setAttachedImages(diary.attachedImages || [])
-        setDiaryEmotion(diary.emotion ? (EMOTION_LABELS[diary.emotion] ?? diary.emotion) : null)
+        setDiaryEmotion(getDiaryEmotionLabel(diary.emotion) ?? null)
       } else {
         setContent('')
         setExistingDiary(null)
@@ -491,7 +469,14 @@ export default function DiaryForm({
                     </div>
                   </div>
                 ) : null}
-                <div className="flex gap-2 mt-2">
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {existingDiary?.imageUrl && !imageLoadError && !isGeneratingImage && (
+                    <DiaryShareButton
+                      imageUrl={existingDiary.imageUrl}
+                      dateString={selectedDate}
+                      emotionLabel={diaryEmotion || undefined}
+                    />
+                  )}
                   <button
                     type="button"
                     onClick={handleRegenerateImage}

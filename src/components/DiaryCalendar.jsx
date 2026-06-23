@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getDiariesByMonth, getDiaryByDate } from '../services/diaryService.js'
+import DiaryShareButton from './DiaryShareButton.jsx'
+import { getDiaryEmotionLabel } from '../constants/diaryEmotions.js'
 
 /**
  * 일기 달력 컴포넌트
@@ -273,19 +275,29 @@ export default function DiaryCalendar({ onDateClick }) {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
             {/* 팝업 헤더 */}
-            <div className="flex items-center justify-between p-6 border-b">
+            <div className="flex items-center justify-between p-6 border-b gap-3">
               <div>
                 <h3 className="text-3xl font-handwriting text-gray-800">
                   {formatDateForPopup(selectedDate)}
                 </h3>
               </div>
-              <button
-                onClick={handleClosePopup}
-                className="text-gray-400 hover:text-gray-600 text-4xl leading-none"
-                aria-label="닫기"
-              >
-                ×
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                {selectedDiary.imageUrl && (
+                  <DiaryShareButton
+                    imageUrl={selectedDiary.imageUrl}
+                    dateString={selectedDate}
+                    emotionLabel={getDiaryEmotionLabel(selectedDiary.emotion)}
+                    size="sm"
+                  />
+                )}
+                <button
+                  onClick={handleClosePopup}
+                  className="text-gray-400 hover:text-gray-600 text-4xl leading-none"
+                  aria-label="닫기"
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             {/* 일기 내용 */}

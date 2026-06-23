@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MENU_ICON_PATHS } from '../constants/navigationMenu.js'
 import { useAiTokenInfo } from '../hooks/useAiTokenInfo.js'
 import AiTokenGenerationCostNote from './AiTokenGenerationCostNote.jsx'
@@ -12,16 +12,24 @@ import ViewPageTitle from './ViewPageTitle.jsx'
  *   calendarKey: number,
  *   onCalendarKeyChange: (value: number | ((prev: number) => number)) => void,
  *   onOpenDepositModal: () => void,
+ *   initialOpenDate?: string | null,
  * }} props
  */
 export default function CalendarView({
   calendarKey,
   onCalendarKeyChange,
   onOpenDepositModal,
+  initialOpenDate = null,
 }) {
   const [selectedDate, setSelectedDate] = useState(null)
   const [showDiaryForm, setShowDiaryForm] = useState(false)
   const { generationCost } = useAiTokenInfo(calendarKey)
+
+  useEffect(() => {
+    if (!initialOpenDate) return
+    setSelectedDate(initialOpenDate)
+    setShowDiaryForm(true)
+  }, [initialOpenDate])
 
   const handleDateClick = (dateString) => {
     setSelectedDate(dateString)
