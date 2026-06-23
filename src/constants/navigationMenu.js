@@ -47,6 +47,11 @@ export const NAVIGATION_MENU_ITEMS = [
     icon: '🎰',
   },
   {
+    id: 'stocks',
+    label: '주식 확인',
+    icon: '📈',
+  },
+  {
     id: 'schedule-calendar',
     label: '일정 달력',
     icon: '🗓️',

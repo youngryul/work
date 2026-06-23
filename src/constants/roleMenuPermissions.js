@@ -72,6 +72,7 @@ export const DEFAULT_ROLE_MENU_PERMISSIONS = {
       'todo-calendar',
       'diary-calendar',
       'gacha',
+      'stocks',
     ],
     allowedFooterMenuIds: [...DEFAULT_FOOTER_MENU_IDS],
     allowedExternalLinkIds: [],
@@ -97,7 +98,7 @@ export const DEFAULT_ROLE_MENU_PERMISSIONS = {
 export const ROLE_MENU_CONFIG_GROUPS = [
   {
     title: '할 일·일기',
-    menuIds: ['today', 'backlog', 'todo-calendar', 'diary-calendar', 'gacha', 'schedule-calendar'],
+    menuIds: ['today', 'backlog', 'todo-calendar', 'diary-calendar', 'gacha', 'stocks', 'schedule-calendar'],
   },
   {
     title: '기록·목표',

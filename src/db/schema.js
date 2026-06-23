@@ -99,6 +99,19 @@ export const userGachaPulls = pgTable('user_gacha_pulls', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+/**
+ * user_stock_watchlist — 사용자 주식 관심 종목
+ */
+export const userStockWatchlist = pgTable('user_stock_watchlist', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  symbol: text('symbol').notNull(),
+  displayName: text('display_name').notNull(),
+  exchange: text('exchange'),
+  sortOrder: bigint('sort_order', { mode: 'number' }).default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
 export const diaries = pgTable('diaries', {
   id: uuid('id').defaultRandom().primaryKey(),
   date: text('date').notNull().unique(), // YYYY-MM-DD 형식
