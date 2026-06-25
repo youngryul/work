@@ -8,6 +8,18 @@ import ReactMarkdown from 'react-markdown'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
+ * 완료 일자 포맷
+ * @param {string | null | undefined} dateStr
+ * @returns {string}
+ */
+function formatCompletedDate(dateStr) {
+  if (!dateStr) return ''
+  const [year, month, day] = dateStr.split('-').map(Number)
+  if (!year || !month || !day) return dateStr
+  return `${year}년 ${month}월 ${day}일`
+}
+
+/**
  * 독서 관리 메인 뷰
  */
 export default function ReadingView() {
@@ -387,6 +399,11 @@ export default function ReadingView() {
                         </button>
                       </div>
                       <p className="text-gray-600 text-sm">저자: {book.author || '알 수 없음'}</p>
+                      {book.isCompleted && book.completedAt && (
+                        <p className="text-green-700 text-sm font-medium">
+                          완료일: {formatCompletedDate(book.completedAt)}
+                        </p>
+                      )}
                       {book.pageCount > 0 && (
                         <p className="text-gray-600 text-sm">페이지: {book.pageCount}페이지</p>
                       )}

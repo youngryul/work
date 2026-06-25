@@ -257,6 +257,18 @@ export async function getBookById(id) {
 }
 
 /**
+ * 한국 시간 기준 오늘 날짜 (YYYY-MM-DD)
+ * @returns {string}
+ */
+function getTodayDateString() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+/**
  * 책 완료 상태 업데이트 및 한줄 인사이트 저장
  * @param {string} bookId - 책 ID
  * @param {boolean} isCompleted - 완료 여부
@@ -273,6 +285,12 @@ export async function updateBookCompletion(bookId, isCompleted, oneLineInsight =
     const updateData = {
       is_completed: isCompleted,
       updated_at: new Date().toISOString(),
+    }
+
+    if (isCompleted) {
+      updateData.completed_at = getTodayDateString()
+    } else {
+      updateData.completed_at = null
     }
 
     if (oneLineInsight !== null) {
@@ -313,6 +331,7 @@ function normalizeBook(book) {
     apiId: book.api_id ?? book.apiId,
     isCompleted: book.is_completed ?? book.isCompleted ?? false,
     oneLineInsight: book.one_line_insight ?? book.oneLineInsight ?? null,
+    completedAt: book.completed_at ?? book.completedAt ?? null,
     createdAt: book.created_at ?? book.createdAt,
     updatedAt: book.updated_at ?? book.updatedAt,
   }
