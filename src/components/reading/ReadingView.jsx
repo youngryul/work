@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { getAllBooks, updateBookCompletion } from '../../services/bookService.js'
-import { getReadingRecordsByBook, getMonthlyReadingStats, generateMonthlyReadingAnalysis, deleteReadingRecord } from '../../services/readingService.js'
+import { getReadingRecordsByBook, getMonthlyReadingStats, deleteReadingRecord } from '../../services/readingService.js'
 import BookSearch from './BookSearch.jsx'
 import ReadingRecordForm from './ReadingRecordForm.jsx'
+import ReadingBookStack from './ReadingBookStack.jsx'
 import OneLineInsightModal from './OneLineInsightModal.jsx'
-import ReactMarkdown from 'react-markdown'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
@@ -33,8 +33,6 @@ export default function ReadingView() {
   const [editingRecord, setEditingRecord] = useState(null)
   const [currentDate, setCurrentDate] = useState(new Date())
   const [monthlyStats, setMonthlyStats] = useState(null)
-  const [monthlyAnalysis, setMonthlyAnalysis] = useState(null)
-  const [isGeneratingAnalysis, setIsGeneratingAnalysis] = useState(false)
   const [showInsightModal, setShowInsightModal] = useState(false)
   const [bookToComplete, setBookToComplete] = useState(null)
 
@@ -146,44 +144,6 @@ export default function ReadingView() {
       setMonthlyStats(stats)
     } catch (error) {
       console.error('월별 통계 로드 오류:', error)
-    }
-  }
-
-  /**
-   * 현재 월 기준 이전 월인지 확인
-   */
-  const isPastMonth = () => {
-    const today = new Date()
-    const currentYear = today.getFullYear()
-    const currentMonth = today.getMonth() + 1
-    
-    if (year < currentYear) {
-      return true
-    }
-    if (year === currentYear && month < currentMonth) {
-      return true
-    }
-    return false
-  }
-
-  /**
-   * 월별 AI 분석 생성
-   */
-  const handleGenerateAnalysis = async () => {
-    if (!isPastMonth()) {
-      showToast('현재 월과 미래 월은 분석을 생성할 수 없습니다. 이전 월만 분석 가능합니다.', TOAST_TYPES.ERROR)
-      return
-    }
-
-    setIsGeneratingAnalysis(true)
-    try {
-      const analysis = await generateMonthlyReadingAnalysis(year, month)
-      setMonthlyAnalysis(analysis)
-    } catch (error) {
-      console.error('AI 분석 생성 오류:', error)
-      showToast('AI 분석 생성에 실패했습니다.', TOAST_TYPES.ERROR)
-    } finally {
-      setIsGeneratingAnalysis(false)
     }
   }
 
@@ -511,47 +471,7 @@ export default function ReadingView() {
         </div>
       </div>
 
-      {/* 월별 AI 분석 (하단 배치) */}
-      <div className="mt-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-3xl font-bold text-gray-800">월별 독서 분석</h2>
-          <button
-            onClick={handleGenerateAnalysis}
-            disabled={isGeneratingAnalysis || !isPastMonth()}
-            className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors duration-200 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            title={!isPastMonth() ? '현재 월과 미래 월은 분석을 생성할 수 없습니다. 이전 월만 분석 가능합니다.' : ''}
-          >
-            {isGeneratingAnalysis ? '분석 중...' : '🤖 AI 분석 생성'}
-          </button>
-        </div>
-        {!isPastMonth() && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-            <p className="text-yellow-800 text-sm">
-              현재 월과 미래 월은 분석을 생성할 수 없습니다. 이전 월만 분석 가능합니다.
-            </p>
-          </div>
-        )}
-        {monthlyAnalysis && (
-          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-gray-800 font-sans leading-relaxed">
-              <ReactMarkdown
-                components={{
-                  h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-3 text-gray-900" {...props} />,
-                  h2: ({ node, ...props }) => <h2 className="text-xl font-bold mt-4 mb-2 text-gray-900" {...props} />,
-                  h3: ({ node, ...props }) => <h3 className="text-lg font-semibold mt-3 mb-2 text-gray-800" {...props} />,
-                  p: ({ node, ...props }) => <p className="mb-2 text-gray-700 text-sm" {...props} />,
-                  ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-2 space-y-1 text-gray-700 text-sm" {...props} />,
-                  ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-2 space-y-1 text-gray-700 text-sm" {...props} />,
-                  li: ({ node, ...props }) => <li className="ml-4" {...props} />,
-                  strong: ({ node, ...props }) => <strong className="font-semibold text-gray-900" {...props} />,
-                }}
-              >
-                {monthlyAnalysis}
-              </ReactMarkdown>
-            </div>
-          </div>
-        )}
-      </div>
+      <ReadingBookStack books={books} />
 
       {/* 책 검색 모달 */}
       {showBookSearch && (
