@@ -1,4 +1,8 @@
 import { useState, useEffect } from 'react'
+import {
+  estimateReadingMinutesFromPages,
+  READING_MINUTES_PER_PAGE,
+} from '../../constants/reading.js'
 import { createReadingRecord, updateReadingRecord } from '../../services/readingService.js'
 import ReadingTimer from './ReadingTimer.jsx'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
@@ -23,6 +27,7 @@ export default function ReadingRecordForm({ book, initialRecord, onSave, onCance
   const [pagesRead, setPagesRead] = useState('')
   const [notes, setNotes] = useState('')
   const [readingMinutes, setReadingMinutes] = useState(null)
+  const [isMinutesManual, setIsMinutesManual] = useState(false)
   const [useTimer, setUseTimer] = useState(false)
   const [startTime, setStartTime] = useState(null)
   const [endTime, setEndTime] = useState(null)
@@ -34,10 +39,22 @@ export default function ReadingRecordForm({ book, initialRecord, onSave, onCance
       setPagesRead(initialRecord.pagesRead ? String(initialRecord.pagesRead) : '')
       setNotes(initialRecord.notes || '')
       setReadingMinutes(initialRecord.readingMinutes || null)
+      setIsMinutesManual(Boolean(initialRecord.readingMinutes))
       setStartTime(initialRecord.startTime || null)
       setEndTime(initialRecord.endTime || null)
     }
   }, [initialRecord])
+
+  /**
+   * 읽은 페이지 변경 — 타이머 미사용 시 분 자동 계산
+   */
+  const handlePagesReadChange = (value) => {
+    setPagesRead(value)
+
+    if (useTimer || isMinutesManual) return
+
+    setReadingMinutes(estimateReadingMinutesFromPages(value))
+  }
 
   /**
    * 타이머 완료 처리
@@ -112,9 +129,8 @@ export default function ReadingRecordForm({ book, initialRecord, onSave, onCance
         console.log('[독서 기록 저장] 시작:', startTime)
         console.log('[독서 기록 저장] 종료:', endTime)
         console.log('[독서 기록 저장] 실제 차이:', diffMs, 'ms =', finalReadingMinutes, '분')
-      } else if (!finalReadingMinutes) {
-        // 타이머를 사용하지 않은 경우에만 페이지 기반 추정 사용
-        finalReadingMinutes = pagesRead ? parseInt(pagesRead) * 2 : null
+      } else if (finalReadingMinutes == null) {
+        finalReadingMinutes = estimateReadingMinutesFromPages(pagesRead)
       }
 
       if (initialRecord) {
@@ -145,6 +161,7 @@ export default function ReadingRecordForm({ book, initialRecord, onSave, onCance
       setPagesRead('')
       setNotes('')
       setReadingMinutes(null)
+      setIsMinutesManual(false)
       setStartTime(null)
       setEndTime(null)
     } catch (error) {
@@ -189,11 +206,14 @@ export default function ReadingRecordForm({ book, initialRecord, onSave, onCance
             checked={useTimer}
             onChange={(e) => {
               setUseTimer(e.target.checked)
-              // 타이머 체크박스를 해제하면 초기화
               if (!e.target.checked) {
                 setStartTime(null)
                 setEndTime(null)
+                setIsMinutesManual(false)
+                setReadingMinutes(estimateReadingMinutesFromPages(pagesRead))
+              } else {
                 setReadingMinutes(null)
+                setIsMinutesManual(false)
               }
             }}
             className="w-5 h-5"
@@ -212,23 +232,6 @@ export default function ReadingRecordForm({ book, initialRecord, onSave, onCance
           />
         )}
 
-        {/* 독서 시간 (타이머 미사용 시) */}
-        {!useTimer && (
-          <div>
-            <label className="block text-base font-medium text-gray-700 mb-2">
-              독서 시간 (분)
-            </label>
-            <input
-              type="number"
-              value={readingMinutes || ''}
-              onChange={(e) => setReadingMinutes(e.target.value ? parseInt(e.target.value) || null : null)}
-              min="0"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
-              placeholder="독서한 시간을 입력하세요"
-            />
-          </div>
-        )}
-
         {/* 읽은 페이지 */}
         <div>
           <label className="block text-base font-medium text-gray-700 mb-2">
@@ -237,12 +240,37 @@ export default function ReadingRecordForm({ book, initialRecord, onSave, onCance
           <input
             type="number"
             value={pagesRead}
-            onChange={(e) => setPagesRead(e.target.value)}
+            onChange={(e) => handlePagesReadChange(e.target.value)}
             min="0"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
             placeholder="읽은 페이지 수를 입력하세요"
           />
+          {!useTimer && (
+            <p className="mt-1 text-xs text-gray-500">
+              페이지만 입력해도 독서 시간이 자동 계산됩니다 (1페이지당 {READING_MINUTES_PER_PAGE}분).
+            </p>
+          )}
         </div>
+
+        {/* 독서 시간 (타이머 미사용 시) */}
+        {!useTimer && (
+          <div>
+            <label className="block text-base font-medium text-gray-700 mb-2">
+              독서 시간 (분)
+            </label>
+            <input
+              type="number"
+              value={readingMinutes ?? ''}
+              onChange={(e) => {
+                setIsMinutesManual(true)
+                setReadingMinutes(e.target.value ? parseInt(e.target.value, 10) || null : null)
+              }}
+              min="0"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+              placeholder="페이지 입력 시 자동 계산됩니다"
+            />
+          </div>
+        )}
 
         {/* 메모 */}
         <div>
