@@ -8,6 +8,8 @@ import { getCurrentUserId } from '../utils/authHelper.js'
  * @property {string} displayName
  * @property {string | null} exchange
  * @property {number} sortOrder
+ * @property {number | null} holdingsQuantity
+ * @property {number | null} averagePrice
  */
 
 /**
@@ -15,12 +17,17 @@ import { getCurrentUserId } from '../utils/authHelper.js'
  * @returns {StockWatchlistItem}
  */
 function mapWatchlistRow(row) {
+  const holdingsQuantity = row.holdings_quantity ?? row.holdingsQuantity
+  const averagePrice = row.average_price ?? row.averagePrice
+
   return {
     id: row.id,
     symbol: row.symbol,
     displayName: row.display_name ?? row.displayName,
     exchange: row.exchange ?? null,
     sortOrder: row.sort_order ?? row.sortOrder ?? 0,
+    holdingsQuantity: holdingsQuantity != null ? Number(holdingsQuantity) : null,
+    averagePrice: averagePrice != null ? Number(averagePrice) : null,
   }
 }
 
@@ -33,7 +40,7 @@ export async function getMyStockWatchlist() {
 
   const { data, error } = await supabase
     .from('user_stock_watchlist')
-    .select('id, symbol, display_name, exchange, sort_order')
+    .select('id, symbol, display_name, exchange, sort_order, holdings_quantity, average_price')
     .eq('user_id', userId)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
@@ -74,7 +81,7 @@ export async function addStockToWatchlist({ symbol, displayName, exchange = null
       exchange,
       sort_order: nextSortOrder,
     })
-    .select('id, symbol, display_name, exchange, sort_order')
+    .select('id, symbol, display_name, exchange, sort_order, holdings_quantity, average_price')
     .single()
 
   if (error) {
@@ -101,4 +108,29 @@ export async function removeStockFromWatchlist(id) {
     .eq('user_id', userId)
 
   if (error) throw error
+}
+
+/**
+ * 보유량·평단가 업데이트
+ * @param {string} id
+ * @param {{ holdingsQuantity?: number | null, averagePrice?: number | null }} holdings
+ * @returns {Promise<StockWatchlistItem>}
+ */
+export async function updateStockHoldings(id, { holdingsQuantity = null, averagePrice = null }) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const { data, error } = await supabase
+    .from('user_stock_watchlist')
+    .update({
+      holdings_quantity: holdingsQuantity,
+      average_price: averagePrice,
+    })
+    .eq('id', id)
+    .eq('user_id', userId)
+    .select('id, symbol, display_name, exchange, sort_order, holdings_quantity, average_price')
+    .single()
+
+  if (error) throw error
+  return mapWatchlistRow(data)
 }

@@ -13,6 +13,7 @@ import {
   addStockToWatchlist,
   getMyStockWatchlist,
   removeStockFromWatchlist,
+  updateStockHoldings,
 } from '../services/stockWatchlistService.js'
 
 /**
@@ -29,6 +30,7 @@ import {
  *   reloadWatchlist: () => Promise<void>,
  *   addSymbol: (item: { symbol: string, displayName: string, exchange?: string | null }) => Promise<void>,
  *   removeSymbol: (id: string) => Promise<void>,
+ *   updateHoldings: (id: string, holdings: { holdingsQuantity?: number | null, averagePrice?: number | null }) => Promise<void>,
  *   refreshQuotes: () => Promise<void>,
  * }}
  */
@@ -179,6 +181,11 @@ export function useStockLiveQuotes() {
     }
   }, [watchlist])
 
+  const updateHoldings = useCallback(async (id, holdings) => {
+    const updated = await updateStockHoldings(id, holdings)
+    setWatchlist((prev) => prev.map((item) => (item.id === id ? updated : item)))
+  }, [])
+
   return {
     watchlist,
     quotes,
@@ -191,6 +198,7 @@ export function useStockLiveQuotes() {
     reloadWatchlist,
     addSymbol,
     removeSymbol,
+    updateHoldings,
     refreshQuotes,
   }
 }

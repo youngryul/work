@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   STOCK_SEARCH_DEBOUNCE_MS,
   STOCK_SEARCH_MIN_LENGTH,
@@ -15,6 +15,13 @@ import {
   searchStockSymbols,
   StockApiKeyMissingError,
 } from '../../services/stockMarketService.js'
+import {
+  calculateStockProfitLoss,
+  formatStockProfitLoss,
+  formatStockProfitLossPercent,
+  hasStockHoldings,
+  parseHoldingsNumber,
+} from '../../utils/stockHoldings.js'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
 import ViewPageTitle from '../ViewPageTitle.jsx'
 
@@ -47,6 +54,7 @@ export default function StockWatchView() {
     error,
     addSymbol,
     removeSymbol,
+    updateHoldings,
     refreshQuotes,
   } = useStockLiveQuotes()
 
@@ -64,6 +72,42 @@ export default function StockWatchView() {
   const [searchResults, setSearchResults] = useState([])
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState(null)
+  const [holdingsDraft, setHoldingsDraft] = useState({})
+  const [savingHoldingsId, setSavingHoldingsId] = useState(null)
+  const [expandedHoldingsIds, setExpandedHoldingsIds] = useState(() => new Set())
+
+  const holdingsItems = useMemo(
+    () => watchlist.filter((item) => hasStockHoldings(item)),
+    [watchlist],
+  )
+
+  const interestItems = useMemo(
+    () => watchlist.filter((item) => !hasStockHoldings(item)),
+    [watchlist],
+  )
+
+  const totalHoldingsProfitLoss = useMemo(() => {
+    return holdingsItems.reduce((sum, item) => {
+      const quote = quotes[item.symbol]
+      const result = calculateStockProfitLoss(
+        quote?.currentPrice,
+        item.averagePrice,
+        item.holdingsQuantity,
+      )
+      return sum + (result?.profitLoss ?? 0)
+    }, 0)
+  }, [holdingsItems, quotes])
+
+  useEffect(() => {
+    const next = {}
+    watchlist.forEach((item) => {
+      next[item.id] = {
+        quantity: item.holdingsQuantity != null ? String(item.holdingsQuantity) : '',
+        averagePrice: item.averagePrice != null ? String(item.averagePrice) : '',
+      }
+    })
+    setHoldingsDraft(next)
+  }, [watchlist])
 
   useEffect(() => {
     const trimmed = searchQuery.trim()
@@ -124,11 +168,210 @@ export default function StockWatchView() {
     }
   }
 
+  const handleHoldingsDraftChange = (id, field, value) => {
+    setHoldingsDraft((prev) => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [field]: value,
+      },
+    }))
+  }
+
+  const isHoldingsFormExpanded = (id) => expandedHoldingsIds.has(id)
+
+  const toggleHoldingsForm = (id) => {
+    setExpandedHoldingsIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const collapseHoldingsForm = (id) => {
+    setExpandedHoldingsIds((prev) => {
+      if (!prev.has(id)) return prev
+      const next = new Set(prev)
+      next.delete(id)
+      return next
+    })
+  }
+
+  const handleSaveHoldings = async (item) => {
+    const draft = holdingsDraft[item.id] || { quantity: '', averagePrice: '' }
+    const quantity = parseHoldingsNumber(draft.quantity)
+    const averagePrice = parseHoldingsNumber(draft.averagePrice)
+
+    if ((quantity && !averagePrice) || (!quantity && averagePrice)) {
+      showToast('보유량과 평단가를 함께 입력해주세요.', TOAST_TYPES.ERROR)
+      return
+    }
+
+    setSavingHoldingsId(item.id)
+    try {
+      await updateHoldings(item.id, {
+        holdingsQuantity: quantity,
+        averagePrice,
+      })
+      collapseHoldingsForm(item.id)
+      showToast(
+        quantity && averagePrice ? '보유 주식으로 등록되었습니다.' : '보유 정보가 저장되었습니다.',
+        TOAST_TYPES.SUCCESS,
+      )
+    } catch (err) {
+      showToast(err?.message || '보유 정보 저장에 실패했습니다.', TOAST_TYPES.ERROR)
+    } finally {
+      setSavingHoldingsId(null)
+    }
+  }
+
+  const handleClearHoldings = async (item) => {
+    setSavingHoldingsId(item.id)
+    try {
+      await updateHoldings(item.id, {
+        holdingsQuantity: null,
+        averagePrice: null,
+      })
+      collapseHoldingsForm(item.id)
+      showToast('보유 정보를 해제했습니다. 관심 종목으로 이동합니다.', TOAST_TYPES.SUCCESS)
+    } catch (err) {
+      showToast(err?.message || '보유 해제에 실패했습니다.', TOAST_TYPES.ERROR)
+    } finally {
+      setSavingHoldingsId(null)
+    }
+  }
+
+  const getQuoteChangeColor = (quote) => {
+    const isUp = (quote?.change ?? 0) > 0
+    const isDown = (quote?.change ?? 0) < 0
+    if (isUp) return 'text-red-600'
+    if (isDown) return 'text-blue-600'
+    return 'text-gray-600'
+  }
+
+  const getProfitLossColor = (value) => {
+    if (value > 0) return 'text-red-600'
+    if (value < 0) return 'text-blue-600'
+    return 'text-gray-600'
+  }
+
+  const renderQuoteSummary = (item, quote) => (
+    <div className="text-right shrink-0">
+      <p className="text-2xl font-bold text-gray-900 font-sans tabular-nums">
+        {quote ? formatStockPrice(quote.currentPrice, item.symbol) : '-'}
+      </p>
+      {quote && (
+        <p className={`text-sm font-medium font-sans tabular-nums ${getQuoteChangeColor(quote)}`}>
+          {quote.change > 0 ? '+' : ''}
+          {formatStockPrice(quote.change, item.symbol)} (
+          {formatStockChangePercent(quote.changePercent)})
+          {quote.source === 'websocket' ? ' · 실시간' : ''}
+        </p>
+      )}
+    </div>
+  )
+
+  const renderHoldingsForm = (item, { showCancel = false } = {}) => {
+    const draft = holdingsDraft[item.id] || { quantity: '', averagePrice: '' }
+    const quantity = parseHoldingsNumber(draft.quantity)
+    const averagePrice = parseHoldingsNumber(draft.averagePrice)
+    const quote = quotes[item.symbol]
+    const profitLossResult = quote
+      ? calculateStockProfitLoss(quote.currentPrice, averagePrice, quantity)
+      : null
+
+    return (
+      <div className="pt-3 border-t border-gray-200 space-y-3">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex-1 min-w-[120px]">
+            <label className="block text-xs font-medium text-gray-600 mb-1 font-sans">
+              보유량
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="any"
+              value={draft.quantity}
+              onChange={(e) => handleHoldingsDraftChange(item.id, 'quantity', e.target.value)}
+              placeholder="0"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-sans tabular-nums"
+            />
+          </div>
+          <div className="flex-1 min-w-[120px]">
+            <label className="block text-xs font-medium text-gray-600 mb-1 font-sans">
+              평단가
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="any"
+              value={draft.averagePrice}
+              onChange={(e) => handleHoldingsDraftChange(item.id, 'averagePrice', e.target.value)}
+              placeholder="0"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-sans tabular-nums"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => handleSaveHoldings(item)}
+            disabled={savingHoldingsId === item.id}
+            className="px-3 py-2 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-600 disabled:opacity-50 font-sans"
+          >
+            {savingHoldingsId === item.id ? '저장 중...' : '저장'}
+          </button>
+          {showCancel && (
+            <button
+              type="button"
+              onClick={() => collapseHoldingsForm(item.id)}
+              className="px-3 py-2 rounded-lg border border-gray-300 text-gray-600 text-sm hover:bg-white font-sans"
+            >
+              취소
+            </button>
+          )}
+        </div>
+        {profitLossResult && (
+          <div className={`text-sm font-semibold font-sans tabular-nums ${getProfitLossColor(profitLossResult.profitLoss)}`}>
+            예상 평가손익 {formatStockProfitLoss(profitLossResult.profitLoss, item.symbol)}
+            {' '}
+            ({formatStockProfitLossPercent(profitLossResult.profitLossPercent)})
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const renderHoldingsFormToggle = (item, { variant = 'default' } = {}) => {
+    const isExpanded = isHoldingsFormExpanded(item.id)
+    const label = variant === 'interest'
+      ? (isExpanded ? '접기 ▲' : '보유 등록 ▼')
+      : (isExpanded ? '보유 정보 접기 ▲' : '보유량·평단가 ▼')
+    const buttonClass = isExpanded
+      ? 'px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 font-sans whitespace-nowrap'
+      : variant === 'interest'
+        ? 'px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600 font-sans whitespace-nowrap'
+        : 'px-3 py-1.5 rounded-lg border border-emerald-400 bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600 font-sans whitespace-nowrap'
+
+    return (
+      <button
+        type="button"
+        onClick={() => toggleHoldingsForm(item.id)}
+        className={buttonClass}
+        aria-expanded={isExpanded}
+      >
+        {label}
+      </button>
+    )
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <ViewPageTitle icon="📈" title="주식 확인">
         <p className="text-xl text-gray-600">
-          종목을 검색해 관심 목록에 추가하고 시세 변동을 확인하세요.
+          관심 종목 시세를 확인하고, 보유 주식은 평단가 기준 손익을 확인하세요.
         </p>
       </ViewPageTitle>
 
@@ -207,10 +450,14 @@ export default function StockWatchView() {
       <div className="bg-white rounded-xl shadow-md border border-gray-200 p-5 mb-6">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
-            <h2 className="text-xl font-bold text-gray-800 font-sans">관심 종목</h2>
+            <h2 className="text-xl font-bold text-gray-800 font-sans">보유 주식</h2>
             <p className="text-sm text-gray-500 font-sans mt-1">
-              {isLiveConnected ? '🟢 실시간 연결됨' : '⚪ 폴링 갱신'}
-              {lastUpdatedAt ? ` · 마지막 갱신 ${formatUpdatedAt(lastUpdatedAt)}` : ''}
+              보유량·평단가를 입력한 종목 · {holdingsItems.length}종목
+              {holdingsItems.length > 0 && Number.isFinite(totalHoldingsProfitLoss) && (
+                <span className={`ml-2 font-semibold tabular-nums ${getProfitLossColor(totalHoldingsProfitLoss)}`}>
+                  총 평가손익 {formatStockProfitLoss(totalHoldingsProfitLoss)}
+                </span>
+              )}
             </p>
           </div>
           <button
@@ -229,59 +476,132 @@ export default function StockWatchView() {
 
         {isLoading ? (
           <p className="text-center py-10 text-gray-500 font-sans">로딩 중...</p>
-        ) : watchlist.length === 0 ? (
+        ) : holdingsItems.length === 0 ? (
           <p className="text-center py-10 text-gray-400 font-sans">
-            아직 추가한 종목이 없습니다. 위에서 검색해 추가해 보세요.
+            등록된 보유 주식이 없습니다. 관심 종목에서 보유 등록을 해 보세요.
           </p>
         ) : (
           <div className="space-y-3">
-            {watchlist.map((item) => {
+            {holdingsItems.map((item) => {
               const quote = quotes[item.symbol]
-              const isUp = (quote?.change ?? 0) > 0
-              const isDown = (quote?.change ?? 0) < 0
-              const changeColor = isUp
-                ? 'text-red-600'
-                : isDown
-                  ? 'text-blue-600'
-                  : 'text-gray-600'
+              const profitLossResult = quote
+                ? calculateStockProfitLoss(
+                    quote.currentPrice,
+                    item.averagePrice,
+                    item.holdingsQuantity,
+                  )
+                : null
 
               return (
                 <div
                   key={item.id}
-                  className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border border-gray-200 bg-gray-50"
+                  className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 space-y-3"
                 >
-                  <div className="min-w-0">
-                    <p className="font-semibold text-gray-800 font-sans">{item.displayName}</p>
-                    <p className="text-sm text-gray-500 font-sans">
-                      {item.symbol}
-                      {item.exchange ? ` · ${item.exchange}` : ''}
-                    </p>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-800 font-sans">{item.displayName}</p>
+                      <p className="text-sm text-gray-500 font-sans">
+                        {item.symbol}
+                        {item.exchange ? ` · ${item.exchange}` : ''}
+                      </p>
+                      <p className="text-sm text-emerald-800 font-medium font-sans mt-1 tabular-nums">
+                        {item.holdingsQuantity}주 · 평단 {formatStockPrice(item.averagePrice, item.symbol)}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      {renderQuoteSummary(item, quote)}
+                      <div className="flex flex-col gap-2">
+                        {renderHoldingsFormToggle(item)}
+                        <button
+                          type="button"
+                          onClick={() => handleClearHoldings(item)}
+                          disabled={savingHoldingsId === item.id}
+                          className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 text-sm hover:bg-white font-sans whitespace-nowrap"
+                        >
+                          보유 해제
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSymbol(item.id, item.displayName)}
+                          className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 text-sm hover:bg-red-50 font-sans"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-gray-900 font-sans tabular-nums">
-                        {quote
-                          ? formatStockPrice(quote.currentPrice, item.symbol)
-                          : '-'}
-                      </p>
-                      {quote && (
-                        <p className={`text-sm font-medium font-sans tabular-nums ${changeColor}`}>
-                          {quote.change > 0 ? '+' : ''}
-                          {formatStockPrice(quote.change, item.symbol)} (
-                          {formatStockChangePercent(quote.changePercent)})
-                          {quote.source === 'websocket' ? ' · 실시간' : ''}
-                        </p>
-                      )}
+                  {profitLossResult && (
+                    <div className={`text-base font-bold font-sans tabular-nums ${getProfitLossColor(profitLossResult.profitLoss)}`}>
+                      평가손익 {formatStockProfitLoss(profitLossResult.profitLoss, item.symbol)}
+                      {' '}
+                      ({formatStockProfitLossPercent(profitLossResult.profitLossPercent)})
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSymbol(item.id, item.displayName)}
-                      className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 text-sm hover:bg-white font-sans"
-                    >
-                      삭제
-                    </button>
+                  )}
+
+                  {isHoldingsFormExpanded(item.id) && renderHoldingsForm(item)}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white rounded-xl shadow-md border border-gray-200 p-5 mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800 font-sans">관심 종목</h2>
+            <p className="text-sm text-gray-500 font-sans mt-1">
+              {isLiveConnected ? '🟢 실시간 연결됨' : '⚪ 폴링 갱신'}
+              {lastUpdatedAt ? ` · 마지막 갱신 ${formatUpdatedAt(lastUpdatedAt)}` : ''}
+              {' · '}{interestItems.length}종목
+            </p>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <p className="text-center py-10 text-gray-500 font-sans">로딩 중...</p>
+        ) : interestItems.length === 0 ? (
+          <p className="text-center py-10 text-gray-400 font-sans">
+            관심 종목이 없습니다. 위에서 검색해 추가해 보세요.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {interestItems.map((item) => {
+              const quote = quotes[item.symbol]
+              const isExpanded = isHoldingsFormExpanded(item.id)
+
+              return (
+                <div
+                  key={item.id}
+                  className="p-4 rounded-xl border border-gray-200 bg-gray-50 space-y-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-800 font-sans">{item.displayName}</p>
+                      <p className="text-sm text-gray-500 font-sans">
+                        {item.symbol}
+                        {item.exchange ? ` · ${item.exchange}` : ''}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      {renderQuoteSummary(item, quote)}
+                      <div className="flex flex-col gap-2">
+                        {renderHoldingsFormToggle(item, { variant: 'interest' })}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSymbol(item.id, item.displayName)}
+                          className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 text-sm hover:bg-white font-sans"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </div>
                   </div>
+
+                  {isExpanded && renderHoldingsForm(item, { showCancel: true })}
                 </div>
               )
             })}

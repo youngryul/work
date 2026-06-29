@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, bigint, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, boolean, bigint, timestamp, numeric } from 'drizzle-orm/pg-core'
 
 /**
  * categories 테이블 스키마 정의
@@ -109,6 +109,8 @@ export const userStockWatchlist = pgTable('user_stock_watchlist', {
   displayName: text('display_name').notNull(),
   exchange: text('exchange'),
   sortOrder: bigint('sort_order', { mode: 'number' }).default(0).notNull(),
+  holdingsQuantity: numeric('holdings_quantity'),
+  averagePrice: numeric('average_price'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
