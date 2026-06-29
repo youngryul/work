@@ -3,6 +3,7 @@ options:
   bundleIdPrefix: com.youngryul
   deploymentTarget:
     macOS: "14.0"
+    iOS: "17.0"
 
 settings:
   base:
@@ -42,3 +43,31 @@ targets:
       properties:
         com.apple.security.app-sandbox: true
         com.apple.security.network.client: true
+
+  PotatoBuddyiOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: PotatoBuddyiOS
+      - path: Shared
+    resources:
+      - path: PotatoBuddyiOS/모바일배경.png
+      - path: PotatoBuddyiOS/포실이(투명).png
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.youngryul.potatobuddy.ios
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    info:
+      path: PotatoBuddyiOS/Info.plist
+      properties:
+        CFBundleDisplayName: 포실이
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        CFBundleURLTypes:
+          - CFBundleURLName: com.youngryul.potatobuddy.ios
+            CFBundleURLSchemes:
+              - potatobuddy

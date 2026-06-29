@@ -48,6 +48,3 @@ struct OverlayRootView: View {
     }
 }
 
-extension Notification.Name {
-    static let authStateChanged = Notification.Name("authStateChanged")
-}
