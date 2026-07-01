@@ -8,34 +8,65 @@
 
 /* Begin PBXBuildFile section */
 		0D648CC2344F8F6DE1B44C6D /* ChatBubbleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE7618036880053779773CE5 /* ChatBubbleView.swift */; };
+		185BD51875CC63C284691670 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 541FF1C427BD52922B298737 /* Notifications.swift */; };
 		199DCDDF68F8713C189D05FD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDA9374BFB496DC310B133F /* AppDelegate.swift */; };
+		1B20A10E1FD42DE2DAD38071 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FFB9D50D2473DC4EA80FC2 /* Config.swift */; };
+		2DA5A0A4C9F98B31BECE0E43 /* 포실이(투명).png in Resources */ = {isa = PBXBuildFile; fileRef = 6BEEDF33B6BA4C250F262C91 /* 포실이(투명).png */; };
+		395ED4F51127F437671E11B5 /* DiaryWriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 547F99007C6FCE58B7F29335 /* DiaryWriteView.swift */; };
+		3C139AFE68DCE619848DCB71 /* DiaryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C694A851AB63F042A05AC1 /* DiaryItem.swift */; };
+		3EC67E34991A9E1E85726F5E /* BacklogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D826A844BE6F7D286ED09B9 /* BacklogView.swift */; };
+		46548972895E7944B033EF46 /* DiaryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52D20FD884239995BBDC00C /* DiaryListView.swift */; };
+		46AC3A0AFBE0EE18BAD84F1B /* TaskItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE031E1DC9B579555F16B096 /* TaskItem.swift */; };
+		51DF8B94BE030B25BDFABE60 /* 모바일배경.png in Resources */ = {isa = PBXBuildFile; fileRef = 12DF9FBB4D85C2F270AAC672 /* 모바일배경.png */; };
 		52949332A075AC22A6D74643 /* DownwardBubbleShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D55F9D7FCCE9503B15B63A5 /* DownwardBubbleShape.swift */; };
 		53051C295875E02B85336103 /* TodoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DD29BCF03B4DCC1F72234C3 /* TodoViewModel.swift */; };
+		64C40FAC4244CB7FA87E505E /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 541FF1C427BD52922B298737 /* Notifications.swift */; };
+		680B1FB46FFFBEB496161FC8 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CB4229136599A8BA65F44C /* MainTabView.swift */; };
 		6903FAAFADF91E26AED656F6 /* 포실이(투명).png in Resources */ = {isa = PBXBuildFile; fileRef = 7C66F6E22CD38ED9563C49F4 /* 포실이(투명).png */; };
 		69E6B81F2C9230C1DCA47B37 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */; };
 		6B1E60F44EA898EC371A4B4E /* OverlayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC4808FE02D6272C60A42FA /* OverlayRootView.swift */; };
 		7E18E6B2DE7080B7F6B76D0C /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B02DFAC49D9D4482ECF09A64 /* LoginView.swift */; };
 		8F3CE139D3BD95A22AF354BB /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FFB9D50D2473DC4EA80FC2 /* Config.swift */; };
+		943E1D60032F7A8DC0C5C579 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */; };
+		95DAAF8BAF3088F722036F91 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70E0F19BC75F1A6C397BBE1C /* ContentView.swift */; };
 		9614CADE3D87EF9BA758FAF4 /* 물 주는 포실이.gif in Resources */ = {isa = PBXBuildFile; fileRef = A116B7DBFAC47A89BE9EA8BE /* 물 주는 포실이.gif */; };
+		A64122DBEB6634B70B142AAC /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 852B8983CE9BC8617F83ECBD /* LoginView.swift */; };
+		A7125755B5C6272EF6489109 /* DiaryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C694A851AB63F042A05AC1 /* DiaryItem.swift */; };
 		ACC434D4F3C6CB14E9B5D645 /* TaskItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE031E1DC9B579555F16B096 /* TaskItem.swift */; };
 		BF72152F5A83BBC8013D7216 /* 포실이 앱 아이콘.png in Resources */ = {isa = PBXBuildFile; fileRef = 87A559DEF644037CCB12B963 /* 포실이 앱 아이콘.png */; };
+		D159B7C3FCC77C25D462E9FE /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 301769FE9AC7E8DA1E0CB788 /* AuthService.swift */; };
 		D2ED8A232E2920AC0D900135 /* PotatoBuddyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABB608B81557591785536A64 /* PotatoBuddyApp.swift */; };
+		E07C57782C90A202B7737328 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607BDE05A4DD4BE69A4932DA /* TodayView.swift */; };
 		E55319BA3F5F13380251C8DB /* CharacterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34391A214A69FA4C5B297D86 /* CharacterView.swift */; };
+		E912479265FEF7F1D9EB383C /* PotatoBuddyiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1135FADE4C8DF6A8508C291E /* PotatoBuddyiOSApp.swift */; };
+		EF1F6C5100CD872A2E638934 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17F2503650D67FEFAECD28EC /* SettingsView.swift */; };
 		FC7F1B03C1972CCA1401550E /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 301769FE9AC7E8DA1E0CB788 /* AuthService.swift */; };
 		FCE237435B2D654EEE2A4100 /* FloatingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1135FADE4C8DF6A8508C291E /* PotatoBuddyiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotatoBuddyiOSApp.swift; sourceTree = "<group>"; };
+		12DF9FBB4D85C2F270AAC672 /* 모바일배경.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "모바일배경.png"; sourceTree = "<group>"; };
+		16ED2268DFB8CD43F90BC3BA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		17F2503650D67FEFAECD28EC /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		1D826A844BE6F7D286ED09B9 /* BacklogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BacklogView.swift; sourceTree = "<group>"; };
 		301769FE9AC7E8DA1E0CB788 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		34391A214A69FA4C5B297D86 /* CharacterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterView.swift; sourceTree = "<group>"; };
 		394B0F1AC9D67928D58637F1 /* PotatoBuddy.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PotatoBuddy.entitlements; sourceTree = "<group>"; };
+		47CB4229136599A8BA65F44C /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		4D55F9D7FCCE9503B15B63A5 /* DownwardBubbleShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownwardBubbleShape.swift; sourceTree = "<group>"; };
+		541FF1C427BD52922B298737 /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
+		547F99007C6FCE58B7F29335 /* DiaryWriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryWriteView.swift; sourceTree = "<group>"; };
+		607BDE05A4DD4BE69A4932DA /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
 		6320DB8612B044B1392DDE75 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		68FFB9D50D2473DC4EA80FC2 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		6BEEDF33B6BA4C250F262C91 /* 포실이(투명).png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이(투명).png"; sourceTree = "<group>"; };
 		6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingWindow.swift; sourceTree = "<group>"; };
 		6EC4808FE02D6272C60A42FA /* OverlayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayRootView.swift; sourceTree = "<group>"; };
+		70E0F19BC75F1A6C397BBE1C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseService.swift; sourceTree = "<group>"; };
 		7C66F6E22CD38ED9563C49F4 /* 포실이(투명).png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이(투명).png"; sourceTree = "<group>"; };
+		852B8983CE9BC8617F83ECBD /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		87A559DEF644037CCB12B963 /* 포실이 앱 아이콘.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이 앱 아이콘.png"; sourceTree = "<group>"; };
 		8DD29BCF03B4DCC1F72234C3 /* TodoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoViewModel.swift; sourceTree = "<group>"; };
 		A116B7DBFAC47A89BE9EA8BE /* 물 주는 포실이.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = "물 주는 포실이.gif"; sourceTree = "<group>"; };
@@ -43,7 +74,10 @@
 		ABB608B81557591785536A64 /* PotatoBuddyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotatoBuddyApp.swift; sourceTree = "<group>"; };
 		AE031E1DC9B579555F16B096 /* TaskItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskItem.swift; sourceTree = "<group>"; };
 		B02DFAC49D9D4482ECF09A64 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		D2C694A851AB63F042A05AC1 /* DiaryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryItem.swift; sourceTree = "<group>"; };
+		DC39AB8BC8BEB8056A67FDB4 /* PotatoBuddyiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PotatoBuddyiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DDDA9374BFB496DC310B133F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		E52D20FD884239995BBDC00C /* DiaryListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryListView.swift; sourceTree = "<group>"; };
 		FE7618036880053779773CE5 /* ChatBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBubbleView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -53,6 +87,8 @@
 			children = (
 				301769FE9AC7E8DA1E0CB788 /* AuthService.swift */,
 				68FFB9D50D2473DC4EA80FC2 /* Config.swift */,
+				D2C694A851AB63F042A05AC1 /* DiaryItem.swift */,
+				541FF1C427BD52922B298737 /* Notifications.swift */,
 				7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */,
 				AE031E1DC9B579555F16B096 /* TaskItem.swift */,
 			);
@@ -63,9 +99,29 @@
 			isa = PBXGroup;
 			children = (
 				E1DEB7488353FCD1EA2C956E /* PotatoBuddy */,
+				A0404CF5825ADE4B7DE25604 /* PotatoBuddyiOS */,
 				146C1958BB83CF47CD3CFAAE /* Shared */,
 				F8742928AEF3C31BE092B60D /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		A0404CF5825ADE4B7DE25604 /* PotatoBuddyiOS */ = {
+			isa = PBXGroup;
+			children = (
+				12DF9FBB4D85C2F270AAC672 /* 모바일배경.png */,
+				6BEEDF33B6BA4C250F262C91 /* 포실이(투명).png */,
+				1D826A844BE6F7D286ED09B9 /* BacklogView.swift */,
+				70E0F19BC75F1A6C397BBE1C /* ContentView.swift */,
+				E52D20FD884239995BBDC00C /* DiaryListView.swift */,
+				547F99007C6FCE58B7F29335 /* DiaryWriteView.swift */,
+				16ED2268DFB8CD43F90BC3BA /* Info.plist */,
+				852B8983CE9BC8617F83ECBD /* LoginView.swift */,
+				47CB4229136599A8BA65F44C /* MainTabView.swift */,
+				1135FADE4C8DF6A8508C291E /* PotatoBuddyiOSApp.swift */,
+				17F2503650D67FEFAECD28EC /* SettingsView.swift */,
+				607BDE05A4DD4BE69A4932DA /* TodayView.swift */,
+			);
+			path = PotatoBuddyiOS;
 			sourceTree = "<group>";
 		};
 		E1DEB7488353FCD1EA2C956E /* PotatoBuddy */ = {
@@ -93,6 +149,7 @@
 			isa = PBXGroup;
 			children = (
 				A3AC895187BF5EB8BF855D3C /* PotatoBuddy.app */,
+				DC39AB8BC8BEB8056A67FDB4 /* PotatoBuddyiOS.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -116,6 +173,24 @@
 			);
 			productName = PotatoBuddy;
 			productReference = A3AC895187BF5EB8BF855D3C /* PotatoBuddy.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D45BE051683D611D64F1B86F /* PotatoBuddyiOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B4E01DB805C50C48B6DA7A4C /* Build configuration list for PBXNativeTarget "PotatoBuddyiOS" */;
+			buildPhases = (
+				CE6CBF883395EA5D00AD94DC /* Sources */,
+				58ECAEB6290F206BCB7B3063 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PotatoBuddyiOS;
+			packageProductDependencies = (
+			);
+			productName = PotatoBuddyiOS;
+			productReference = DC39AB8BC8BEB8056A67FDB4 /* PotatoBuddyiOS.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -144,11 +219,21 @@
 			projectRoot = "";
 			targets = (
 				92DAB7EEB3DD410E9174C54F /* PotatoBuddy */,
+				D45BE051683D611D64F1B86F /* PotatoBuddyiOS */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		58ECAEB6290F206BCB7B3063 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				51DF8B94BE030B25BDFABE60 /* 모바일배경.png in Resources */,
+				2DA5A0A4C9F98B31BECE0E43 /* 포실이(투명).png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B169C214686BBBF50A5EA5A9 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -171,9 +256,11 @@
 				E55319BA3F5F13380251C8DB /* CharacterView.swift in Sources */,
 				0D648CC2344F8F6DE1B44C6D /* ChatBubbleView.swift in Sources */,
 				8F3CE139D3BD95A22AF354BB /* Config.swift in Sources */,
+				3C139AFE68DCE619848DCB71 /* DiaryItem.swift in Sources */,
 				52949332A075AC22A6D74643 /* DownwardBubbleShape.swift in Sources */,
 				FCE237435B2D654EEE2A4100 /* FloatingWindow.swift in Sources */,
 				7E18E6B2DE7080B7F6B76D0C /* LoginView.swift in Sources */,
+				64C40FAC4244CB7FA87E505E /* Notifications.swift in Sources */,
 				6B1E60F44EA898EC371A4B4E /* OverlayRootView.swift in Sources */,
 				D2ED8A232E2920AC0D900135 /* PotatoBuddyApp.swift in Sources */,
 				69E6B81F2C9230C1DCA47B37 /* SupabaseService.swift in Sources */,
@@ -182,9 +269,48 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CE6CBF883395EA5D00AD94DC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D159B7C3FCC77C25D462E9FE /* AuthService.swift in Sources */,
+				3EC67E34991A9E1E85726F5E /* BacklogView.swift in Sources */,
+				1B20A10E1FD42DE2DAD38071 /* Config.swift in Sources */,
+				95DAAF8BAF3088F722036F91 /* ContentView.swift in Sources */,
+				A7125755B5C6272EF6489109 /* DiaryItem.swift in Sources */,
+				46548972895E7944B033EF46 /* DiaryListView.swift in Sources */,
+				395ED4F51127F437671E11B5 /* DiaryWriteView.swift in Sources */,
+				A64122DBEB6634B70B142AAC /* LoginView.swift in Sources */,
+				680B1FB46FFFBEB496161FC8 /* MainTabView.swift in Sources */,
+				185BD51875CC63C284691670 /* Notifications.swift in Sources */,
+				E912479265FEF7F1D9EB383C /* PotatoBuddyiOSApp.swift in Sources */,
+				EF1F6C5100CD872A2E638934 /* SettingsView.swift in Sources */,
+				943E1D60032F7A8DC0C5C579 /* SupabaseService.swift in Sources */,
+				46AC3A0AFBE0EE18BAD84F1B /* TaskItem.swift in Sources */,
+				E07C57782C90A202B7737328 /* TodayView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		43CCA6676C7F54BE70E111DF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = PotatoBuddyiOS/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.youngryul.potatobuddy.ios;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		45DD3783C25A37F8BACF1766 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -246,11 +372,11 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.9;
@@ -270,6 +396,23 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.youngryul.potatobuddy;
 				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		D4E5F243164FCA5179CB9764 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = PotatoBuddyiOS/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.youngryul.potatobuddy.ios;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -324,12 +467,12 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.9;
@@ -344,6 +487,15 @@
 			buildConfigurations = (
 				C418C4E3E7DA07B68D929144 /* Debug */,
 				45DD3783C25A37F8BACF1766 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B4E01DB805C50C48B6DA7A4C /* Build configuration list for PBXNativeTarget "PotatoBuddyiOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D4E5F243164FCA5179CB9764 /* Debug */,
+				43CCA6676C7F54BE70E111DF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
