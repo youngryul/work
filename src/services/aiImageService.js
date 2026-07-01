@@ -1,4 +1,8 @@
 import OpenAI from 'openai'
+import {
+  DIARY_IMAGE_GPT_NO_TEXT_RULES,
+  finalizeDiaryImagePrompt,
+} from '../constants/diaryImagePrompt.js'
 
 const openai = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_API_KEY,
@@ -20,7 +24,7 @@ Rules:
 - Describe a single scene that captures the mood or key moment of the diary.
 - Keep the prompt under 130 words.
 - Always start the prompt with the main color description and overall color palette.
-- Do NOT include any text or letters in the image.
+${DIARY_IMAGE_GPT_NO_TEXT_RULES}
 - Output only the prompt, nothing else.`
 
   const response = await openai.chat.completions.create({
@@ -48,7 +52,7 @@ export async function generateDiaryImage(diaryContent) {
 
   try {
     // 1단계: 일기 내용 → 이미지 프롬프트 변환
-    const prompt = await buildPromptFromDiary(diaryContent)
+    const prompt = finalizeDiaryImagePrompt(await buildPromptFromDiary(diaryContent))
 
     // 2단계: gpt-image-1으로 이미지 생성
     const response = await openai.images.generate({
