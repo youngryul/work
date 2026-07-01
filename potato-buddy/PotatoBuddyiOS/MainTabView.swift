@@ -21,6 +21,16 @@ struct MainTabView: View {
                     Label("일기", systemImage: "book.fill")
                 }
 
+            ScheduleCalendarView()
+                .tabItem {
+                    Label("일정", systemImage: "calendar")
+                }
+
+            PomodoroView()
+                .tabItem {
+                    Label("뽀모도로", systemImage: "timer")
+                }
+
             SettingsView(showLogoutConfirm: $showLogoutConfirm)
                 .tabItem {
                     Label("설정", systemImage: "gearshape.fill")

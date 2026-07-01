@@ -15,6 +15,9 @@
 		395ED4F51127F437671E11B5 /* DiaryWriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 547F99007C6FCE58B7F29335 /* DiaryWriteView.swift */; };
 		3C139AFE68DCE619848DCB71 /* DiaryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C694A851AB63F042A05AC1 /* DiaryItem.swift */; };
 		3EC67E34991A9E1E85726F5E /* BacklogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D826A844BE6F7D286ED09B9 /* BacklogView.swift */; };
+		4A8B2C1D9E3F5A7B0C2D4E6F /* ScheduleItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B9C3D2E8F4A6B0C1D3E5F7A /* ScheduleItem.swift */; };
+		5C0D4E3F9A2B6C8D1E3F5A7B /* ScheduleCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D1E5F4A0B3C7D9E2F4A6B8C /* ScheduleCalendarView.swift */; };
+		7E8F9A0B1C2D3E4F5A6B7C8D /* ScheduleItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B9C3D2E8F4A6B0C1D3E5F7A /* ScheduleItem.swift */; };
 		46548972895E7944B033EF46 /* DiaryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52D20FD884239995BBDC00C /* DiaryListView.swift */; };
 		46AC3A0AFBE0EE18BAD84F1B /* TaskItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE031E1DC9B579555F16B096 /* TaskItem.swift */; };
 		51DF8B94BE030B25BDFABE60 /* 모바일배경.png in Resources */ = {isa = PBXBuildFile; fileRef = 12DF9FBB4D85C2F270AAC672 /* 모바일배경.png */; };
@@ -42,6 +45,9 @@
 		EF1F6C5100CD872A2E638934 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17F2503650D67FEFAECD28EC /* SettingsView.swift */; };
 		FC7F1B03C1972CCA1401550E /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 301769FE9AC7E8DA1E0CB788 /* AuthService.swift */; };
 		FCE237435B2D654EEE2A4100 /* FloatingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* PomodoroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293A4B5C6D /* PomodoroView.swift */; };
+		C3D4E5F60718293A4B5C6D7E /* PomodoroTimerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F60718293A4B5C6D7E8F /* PomodoroTimerViewModel.swift */; };
+		E5F60718293A4B5C6D7E8F90 /* 포실이뽀모도로.png in Resources */ = {isa = PBXBuildFile; fileRef = F60718293A4B5C6D7E8F9012 /* 포실이뽀모도로.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -55,6 +61,8 @@
 		394B0F1AC9D67928D58637F1 /* PotatoBuddy.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PotatoBuddy.entitlements; sourceTree = "<group>"; };
 		47CB4229136599A8BA65F44C /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		4D55F9D7FCCE9503B15B63A5 /* DownwardBubbleShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownwardBubbleShape.swift; sourceTree = "<group>"; };
+		5B9C3D2E8F4A6B0C1D3E5F7A /* ScheduleItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleItem.swift; sourceTree = "<group>"; };
+		6D1E5F4A0B3C7D9E2F4A6B8C /* ScheduleCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleCalendarView.swift; sourceTree = "<group>"; };
 		541FF1C427BD52922B298737 /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
 		547F99007C6FCE58B7F29335 /* DiaryWriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryWriteView.swift; sourceTree = "<group>"; };
 		607BDE05A4DD4BE69A4932DA /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
@@ -79,6 +87,9 @@
 		DDDA9374BFB496DC310B133F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		E52D20FD884239995BBDC00C /* DiaryListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryListView.swift; sourceTree = "<group>"; };
 		FE7618036880053779773CE5 /* ChatBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBubbleView.swift; sourceTree = "<group>"; };
+		B2C3D4E5F60718293A4B5C6D /* PomodoroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroView.swift; sourceTree = "<group>"; };
+		D4E5F60718293A4B5C6D7E8F /* PomodoroTimerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroTimerViewModel.swift; sourceTree = "<group>"; };
+		F60718293A4B5C6D7E8F9012 /* 포실이뽀모도로.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이뽀모도로.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -89,6 +100,7 @@
 				68FFB9D50D2473DC4EA80FC2 /* Config.swift */,
 				D2C694A851AB63F042A05AC1 /* DiaryItem.swift */,
 				541FF1C427BD52922B298737 /* Notifications.swift */,
+				5B9C3D2E8F4A6B0C1D3E5F7A /* ScheduleItem.swift */,
 				7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */,
 				AE031E1DC9B579555F16B096 /* TaskItem.swift */,
 			);
@@ -117,9 +129,13 @@
 				16ED2268DFB8CD43F90BC3BA /* Info.plist */,
 				852B8983CE9BC8617F83ECBD /* LoginView.swift */,
 				47CB4229136599A8BA65F44C /* MainTabView.swift */,
+				B2C3D4E5F60718293A4B5C6D /* PomodoroView.swift */,
+				D4E5F60718293A4B5C6D7E8F /* PomodoroTimerViewModel.swift */,
 				1135FADE4C8DF6A8508C291E /* PotatoBuddyiOSApp.swift */,
+				6D1E5F4A0B3C7D9E2F4A6B8C /* ScheduleCalendarView.swift */,
 				17F2503650D67FEFAECD28EC /* SettingsView.swift */,
 				607BDE05A4DD4BE69A4932DA /* TodayView.swift */,
+				F60718293A4B5C6D7E8F9012 /* 포실이뽀모도로.png */,
 			);
 			path = PotatoBuddyiOS;
 			sourceTree = "<group>";
@@ -231,6 +247,7 @@
 			files = (
 				51DF8B94BE030B25BDFABE60 /* 모바일배경.png in Resources */,
 				2DA5A0A4C9F98B31BECE0E43 /* 포실이(투명).png in Resources */,
+				E5F60718293A4B5C6D7E8F90 /* 포실이뽀모도로.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -264,6 +281,7 @@
 				6B1E60F44EA898EC371A4B4E /* OverlayRootView.swift in Sources */,
 				D2ED8A232E2920AC0D900135 /* PotatoBuddyApp.swift in Sources */,
 				69E6B81F2C9230C1DCA47B37 /* SupabaseService.swift in Sources */,
+				4A8B2C1D9E3F5A7B0C2D4E6F /* ScheduleItem.swift in Sources */,
 				ACC434D4F3C6CB14E9B5D645 /* TaskItem.swift in Sources */,
 				53051C295875E02B85336103 /* TodoViewModel.swift in Sources */,
 			);
@@ -283,7 +301,11 @@
 				A64122DBEB6634B70B142AAC /* LoginView.swift in Sources */,
 				680B1FB46FFFBEB496161FC8 /* MainTabView.swift in Sources */,
 				185BD51875CC63C284691670 /* Notifications.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* PomodoroView.swift in Sources */,
+				C3D4E5F60718293A4B5C6D7E /* PomodoroTimerViewModel.swift in Sources */,
 				E912479265FEF7F1D9EB383C /* PotatoBuddyiOSApp.swift in Sources */,
+				5C0D4E3F9A2B6C8D1E3F5A7B /* ScheduleCalendarView.swift in Sources */,
+				7E8F9A0B1C2D3E4F5A6B7C8D /* ScheduleItem.swift in Sources */,
 				EF1F6C5100CD872A2E638934 /* SettingsView.swift in Sources */,
 				943E1D60032F7A8DC0C5C579 /* SupabaseService.swift in Sources */,
 				46AC3A0AFBE0EE18BAD84F1B /* TaskItem.swift in Sources */,

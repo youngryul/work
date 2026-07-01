@@ -249,4 +249,77 @@ final class SupabaseService {
         }
         return item
     }
+
+    // MARK: - 월별 일정 조회
+
+    func fetchSchedules(year: Int, month: Int) async throws -> [ScheduleItem] {
+        let (userId, token) = await authInfo()
+        let range = ScheduleDateHelper.monthRange(year: year, month: month)
+        guard !range.start.isEmpty, !range.end.isEmpty else { return [] }
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/schedule_calendar_events")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "schedule_date", value: "lte.\(range.end)"),
+            URLQueryItem(
+                name: "or",
+                value: "(end_date.gte.\(range.start),and(end_date.is.null,schedule_date.gte.\(range.start)))"
+            ),
+            URLQueryItem(name: "select", value: "id,schedule_date,end_date,title,tag"),
+            URLQueryItem(name: "order", value: "schedule_date.asc,created_at.asc"),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return try JSONDecoder().decode([ScheduleItem].self, from: data)
+    }
+
+    // MARK: - 일정 추가
+
+    func createSchedule(
+        scheduleDate: String,
+        endDate: String,
+        title: String,
+        tag: String
+    ) async throws -> ScheduleItem {
+        let (userId, token) = await authInfo()
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/schedule_calendar_events")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        let body: [String: Any] = [
+            "user_id": userId,
+            "schedule_date": scheduleDate,
+            "end_date": endDate,
+            "title": title,
+            "tag": tag,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, _) = try await URLSession.shared.data(for: request)
+        let items = try JSONDecoder().decode([ScheduleItem].self, from: data)
+        guard let item = items.first else {
+            throw URLError(.badServerResponse)
+        }
+        return item
+    }
+
+    // MARK: - 일정 삭제
+
+    func deleteSchedule(id: String) async throws {
+        let (userId, token) = await authInfo()
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/schedule_calendar_events?id=eq.\(id)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+
+        _ = try await URLSession.shared.data(for: request)
+    }
 }
