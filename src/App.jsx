@@ -20,6 +20,7 @@ import DomesticTravelView from './components/travel/DomesticTravelView.jsx'
 import FiveYearQuestionView from './components/FiveYearQuestionView.jsx'
 import CategorySettingsModal from './components/CategorySettingsModal.jsx'
 import FoodCalorieCalculator from './components/FoodCalorieCalculator.jsx'
+import WeightTrackingView from './components/weight/WeightTrackingView.jsx'
 import CongratulatoryMoneyView from './components/CongratulatoryMoneyView.jsx'
 import AnnouncementView from './components/AnnouncementView.jsx'
 import SettingsView from './components/SettingsView.jsx'
@@ -439,6 +440,7 @@ function AppContent() {
         {currentView === 'domestic-travel' && <DomesticTravelView />}
         {currentView === 'five-year-questions' && <FiveYearQuestionView />}
         {currentView === 'food-calorie' && <FoodCalorieCalculator />}
+        {currentView === 'weight-tracking' && <WeightTrackingView />}
         {currentView === 'congratulatory-money' && <CongratulatoryMoneyView />}
         {currentView === 'settings' && (
           <SettingsView

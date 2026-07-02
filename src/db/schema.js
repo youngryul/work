@@ -114,6 +114,30 @@ export const userStockWatchlist = pgTable('user_stock_watchlist', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+/**
+ * weight_records — 사용자 몸무게 일별 기록
+ */
+export const weightRecords = pgTable('weight_records', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  recordDate: text('record_date').notNull(),
+  weightKg: numeric('weight_kg').notNull(),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * weight_goals — 사용자 목표 몸무게
+ */
+export const weightGoals = pgTable('weight_goals', {
+  userId: uuid('user_id').primaryKey(),
+  targetWeightKg: numeric('target_weight_kg').notNull(),
+  targetDate: text('target_date'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
 export const diaries = pgTable('diaries', {
   id: uuid('id').defaultRandom().primaryKey(),
   date: text('date').notNull().unique(), // YYYY-MM-DD 형식

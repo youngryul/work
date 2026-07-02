@@ -109,6 +109,11 @@ export const NAVIGATION_MENU_ITEMS = [
     icon: '🍽️',
   },
   {
+    id: 'weight-tracking',
+    label: '몸무게 기록',
+    icon: '⚖️',
+  },
+  {
     id: 'congratulatory-money',
     label: '경조사 기록',
     icon: '💐',

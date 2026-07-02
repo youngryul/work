@@ -266,3 +266,21 @@ body[data-theme='excel'] {
   background: rgba(180, 83, 9, 0.35);
   border-radius: 9999px;
 }
+
+/* 몸무게 기록 — 포실이 바운스 */
+@keyframes weight-posily-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.weight-posily-bounce {
+  animation: weight-posily-bounce 2.5s ease-in-out infinite;
+}
+
+.weight-progress-bar {
+  box-shadow: 0 0 8px rgba(251, 146, 60, 0.4);
+}

@@ -4,6 +4,8 @@ import {
   JELLY_REWARD_DIARY_WRITE,
   JELLY_REWARD_REASON,
   JELLY_REWARD_TASK_COMPLETE,
+  JELLY_REWARD_WEIGHT_GOAL_REACHED,
+  JELLY_REWARD_WEIGHT_RECORD,
 } from '../constants/jellyRewards.js'
 import { notifyJellyUpdated } from '../utils/jellyEvents.js'
 
@@ -83,5 +85,35 @@ export async function awardJellyForDiaryWrite(date) {
     JELLY_REWARD_DIARY_WRITE,
     JELLY_REWARD_REASON.DIARY_WRITE,
     `diary:${date}`,
+  )
+}
+
+/**
+ * 몸무게 기록 시 젤리 지급 (날짜당 1회)
+ * @param {string} date - YYYY-MM-DD
+ */
+export async function awardJellyForWeightRecord(date) {
+  const userId = await getCurrentUserId()
+  if (!userId || !date) return null
+
+  return awardJelly(
+    JELLY_REWARD_WEIGHT_RECORD,
+    JELLY_REWARD_REASON.WEIGHT_RECORD,
+    `weight:${date}`,
+  )
+}
+
+/**
+ * 목표 몸무게 달성 시 젤리 지급 (1회)
+ * @param {string} goalKey - 목표 식별 키
+ */
+export async function awardJellyForWeightGoalReached(goalKey) {
+  const userId = await getCurrentUserId()
+  if (!userId || !goalKey) return null
+
+  return awardJelly(
+    JELLY_REWARD_WEIGHT_GOAL_REACHED,
+    JELLY_REWARD_REASON.WEIGHT_GOAL_REACHED,
+    `weight_goal:${goalKey}`,
   )
 }

@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS jelly_rewards_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   amount INTEGER NOT NULL CHECK (amount > 0),
-  reason TEXT NOT NULL CHECK (reason IN ('task_complete', 'diary_write')),
+  reason TEXT NOT NULL CHECK (reason IN ('task_complete', 'diary_write', 'weight_record', 'weight_goal_reached')),
   idempotency_key TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (user_id, idempotency_key)
@@ -88,7 +88,7 @@ BEGIN
     RAISE EXCEPTION '지급 젤리는 1 이상이어야 합니다.';
   END IF;
 
-  IF p_reason NOT IN ('task_complete', 'diary_write') THEN
+  IF p_reason NOT IN ('task_complete', 'diary_write', 'weight_record', 'weight_goal_reached') THEN
     RAISE EXCEPTION '유효하지 않은 지급 사유입니다.';
   END IF;
 

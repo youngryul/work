@@ -110,6 +110,7 @@ export const ROLE_MENU_CONFIG_GROUPS = [
       'reading',
       'five-year-questions',
       'food-calorie',
+      'weight-tracking',
       'congratulatory-money',
     ],
   },
