@@ -138,6 +138,18 @@ export const weightGoals = pgTable('weight_goals', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
+/**
+ * user_farm_progress — 포실이 농장 성장 진행
+ */
+export const userFarmProgress = pgTable('user_farm_progress', {
+  userId: uuid('user_id').primaryKey(),
+  stage: bigint('stage', { mode: 'number' }).notNull(),
+  xp: bigint('xp', { mode: 'number' }).notNull(),
+  farmUnlocked: boolean('farm_unlocked').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
 export const diaries = pgTable('diaries', {
   id: uuid('id').defaultRandom().primaryKey(),
   date: text('date').notNull().unique(), // YYYY-MM-DD 형식

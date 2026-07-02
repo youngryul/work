@@ -284,3 +284,17 @@ body[data-theme='excel'] {
 .weight-progress-bar {
   box-shadow: 0 0 8px rgba(251, 146, 60, 0.4);
 }
+
+/* 농장 — 아기 포실이 바운스 */
+@keyframes farm-baby-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.farm-baby-bounce {
+  animation: farm-baby-bounce 2s ease-in-out infinite;
+}

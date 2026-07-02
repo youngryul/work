@@ -6,6 +6,7 @@ import {
 import { isMainMenuItemAllowed } from '../constants/roleMenuPermissions.js'
 import { useRoleMenuPermissions } from '../hooks/useRoleMenuPermissions.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { getMyFarmProgress } from '../services/farmService.js'
 import MenuIcon from './MenuIcon.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
@@ -30,6 +31,7 @@ export default function NavigationSidebar({
 }) {
   const { signOut, user, isAdmin: isAdminUser, userRole } = useAuth()
   const [expandedMenus, setExpandedMenus] = useState(new Set())
+  const [isFarmUnlocked, setIsFarmUnlocked] = useState(false)
   const { permissions: menuPermissions } = useRoleMenuPermissions(userRole)
 
   const allowedMenuIds = new Set(menuPermissions?.allowedMenuIds ?? [])
@@ -41,6 +43,25 @@ export default function NavigationSidebar({
   /**
    * 하위 메뉴가 있는 메뉴의 펼침/접힘 상태 관리
    */
+  useEffect(() => {
+    const loadFarmProgress = async () => {
+      if (!user) {
+        setIsFarmUnlocked(false)
+        return
+      }
+
+      try {
+        const progress = await getMyFarmProgress()
+        setIsFarmUnlocked(Boolean(progress?.farmUnlocked))
+      } catch (error) {
+        console.error('농장 해금 상태 조회 실패:', error)
+        setIsFarmUnlocked(false)
+      }
+    }
+
+    loadFarmProgress()
+  }, [user, currentView])
+
   useEffect(() => {
     // 현재 뷰가 하위 메뉴에 속하는지 확인하고 상위 메뉴를 펼침
     const menuWithChildren = NAVIGATION_MENU_ITEMS.find(
@@ -149,11 +170,18 @@ export default function NavigationSidebar({
           <nav className={`flex-1 overflow-y-auto overflow-x-visible ${collapsed ? 'md:p-2 p-4' : 'p-4'}`}>
             <div className="space-y-2">
               {NAVIGATION_MENU_ITEMS.filter(
-                (item) =>
-                  item.id !== 'announcements' &&
-                  item.id !== 'my-page' &&
-                  item.id !== 'settings' &&
-                  isMainMenuItemAllowed(item.id, allowedMenuIds, item)
+                (item) => {
+                  if (item.id === 'announcements' || item.id === 'my-page' || item.id === 'settings') {
+                    return false
+                  }
+
+                  // 농장 메뉴는 2단계 해금 시 권한 DB 반영 전이라도 노출
+                  if (item.id === 'farm-field') {
+                    return isFarmUnlocked
+                  }
+
+                  return isMainMenuItemAllowed(item.id, allowedMenuIds, item)
+                }
               ).map((item) => {
                 const hasChildren = item.children && item.children.length > 0
                 const isExpanded = expandedMenus.has(item.id)

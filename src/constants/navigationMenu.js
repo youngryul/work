@@ -47,6 +47,16 @@ export const NAVIGATION_MENU_ITEMS = [
     icon: '🎰',
   },
   {
+    id: 'farm',
+    label: '포실이 성장',
+    icon: '🐣',
+  },
+  {
+    id: 'farm-field',
+    label: '농장',
+    icon: '🌾',
+  },
+  {
     id: 'stocks',
     label: '주식 확인',
     icon: '📈',
