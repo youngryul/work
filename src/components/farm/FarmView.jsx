@@ -142,6 +142,13 @@ export default function FarmView() {
 
   const feedEmoji = stage === 1 ? '🍼' : '🍱'
 
+  const stageGuideMessage =
+    stage === 1
+      ? '2단계로 가면 농장이 열려요.'
+      : stage === 2
+        ? '3단계로 가면 포실이를 뽑을 수 있어요 · 작물을 구입할 수 있어요.'
+        : null
+
 
 
   const handleFeedMilk = async () => {
@@ -285,6 +292,16 @@ export default function FarmView() {
                 />
 
               </div>
+
+              {stageGuideMessage && (
+
+                <p className="mt-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-2 py-1">
+
+                  {stageGuideMessage}
+
+                </p>
+
+              )}
 
             </div>
 

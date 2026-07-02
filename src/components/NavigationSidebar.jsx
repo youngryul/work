@@ -32,6 +32,7 @@ export default function NavigationSidebar({
   const { signOut, user, isAdmin: isAdminUser, userRole } = useAuth()
   const [expandedMenus, setExpandedMenus] = useState(new Set())
   const [isFarmUnlocked, setIsFarmUnlocked] = useState(false)
+  const [farmStage, setFarmStage] = useState(1)
   const { permissions: menuPermissions } = useRoleMenuPermissions(userRole)
 
   const allowedMenuIds = new Set(menuPermissions?.allowedMenuIds ?? [])
@@ -47,15 +48,18 @@ export default function NavigationSidebar({
     const loadFarmProgress = async () => {
       if (!user) {
         setIsFarmUnlocked(false)
+        setFarmStage(1)
         return
       }
 
       try {
         const progress = await getMyFarmProgress()
         setIsFarmUnlocked(Boolean(progress?.farmUnlocked))
+        setFarmStage(Number(progress?.stage || 1))
       } catch (error) {
         console.error('농장 해금 상태 조회 실패:', error)
         setIsFarmUnlocked(false)
+        setFarmStage(1)
       }
     }
 
@@ -175,9 +179,19 @@ export default function NavigationSidebar({
                     return false
                   }
 
-                  // 농장 메뉴는 2단계 해금 시 권한 DB 반영 전이라도 노출
+                  // 포실이 성장은 1단계부터 항상 노출
+                  if (item.id === 'farm') {
+                    return true
+                  }
+
+                  // 농장 메뉴는 2단계부터 노출 (권한 DB 설정과 무관)
                   if (item.id === 'farm-field') {
-                    return isFarmUnlocked
+                    return farmStage >= 2
+                  }
+
+                  // 뽑기 가챠는 3단계부터 노출 (권한 DB 설정과 무관)
+                  if (item.id === 'gacha') {
+                    return farmStage >= 3
                   }
 
                   return isMainMenuItemAllowed(item.id, allowedMenuIds, item)
