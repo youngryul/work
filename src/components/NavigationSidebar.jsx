@@ -303,7 +303,8 @@ export default function NavigationSidebar({
               <div className="space-y-2">
                 {NAVIGATION_MENU_ITEMS.filter((item) =>
                   allowedFooterMenuIds.has(item.id) &&
-                  (item.id === 'announcements' || item.id === 'my-page' || item.id === 'settings')
+                  (item.id === 'announcements' || item.id === 'my-page' || item.id === 'settings') &&
+                  (item.id !== 'my-page' || farmStage >= 3)
                 ).map((item) => (
                     <button
                         key={item.id}
