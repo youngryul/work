@@ -1,3 +1,10 @@
+/** 가챠 캡슐 디스플레이 이미지 (고정 3종) */
+export const GACHA_CAPSULE_IMAGES = [
+  '/images/캡슐파랑.png',
+  '/images/캡슐노랑.png',
+  '/images/캡슐빨강.png',
+]
+
 /** 가챠 등급 정의 */
 
 export const GACHA_GRADES = [

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { getGachaGradeMeta } from '../../constants/gachaGrades.js'
+import { getGachaGradeMeta, GACHA_CAPSULE_IMAGES } from '../../constants/gachaGrades.js'
 
 import { getActiveGachaCharacters } from '../../services/gachaCharacterService.js'
 
@@ -187,41 +187,20 @@ export default function GachaView() {
               </div>
 
             ) : (
-
-              <div className="flex flex-wrap gap-2 justify-center">
-
-                {[...Array(Math.min(poolSize || 6, 12))].map((_, i) => (
-
-                  <div
-
-                    key={i}
-
-                    className={`w-10 h-14 rounded-full border-2 border-white shadow-md ${
-
-                      i % 4 === 0
-
-                        ? 'bg-red-400'
-
-                        : i % 4 === 1
-
-                          ? 'bg-blue-400'
-
-                          : i % 4 === 2
-
-                            ? 'bg-yellow-400'
-
-                            : 'bg-green-400'
-
-                    } ${phase === PHASE.SHAKING ? 'animate-gacha-capsule' : ''}`}
-
+              <div className="flex gap-3 justify-center items-end">
+                {GACHA_CAPSULE_IMAGES.map((src, i) => (
+                  <img
+                    key={src}
+                    src={src}
+                    alt=""
+                    aria-hidden
+                    className={`w-16 h-20 sm:w-20 sm:h-24 object-contain drop-shadow-md ${
+                      phase === PHASE.SHAKING ? 'animate-gacha-capsule' : ''
+                    }`}
                     style={{ animationDelay: `${i * 0.08}s` }}
-
                   />
-
                 ))}
-
               </div>
-
             )}
 
           </div>
