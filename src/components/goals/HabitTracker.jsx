@@ -1,35 +1,23 @@
 /**
  * Habit Tracker 컴포넌트
- * 하트 모양의 달력으로 습관을 추적하는 컴포넌트
+ * 트래커.png + 밭 위 미니 월 달력(7열) + 도장 포실이
  */
 import { useState, useEffect, useRef } from 'react'
 import { toggleHabitTrackerDay, updateHabitTrackerTitle } from '../../services/goalService.js'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
-
-/**
- * 바둑판 형태의 그리드 생성 함수
- * 해당 월의 일수에 맞춰 격자 형태로 날짜를 배치
- */
-const generateGridPattern = (totalDays) => {
-  const rows = []
-  const daysPerRow = 7 // 주 7일
-  let currentDay = 1
-  
-  while (currentDay <= totalDays) {
-    const row = []
-    for (let i = 0; i < daysPerRow && currentDay <= totalDays; i++) {
-      row.push(currentDay)
-      currentDay++
-    }
-    // 마지막 행이 7개가 아니면 빈 셀로 채움
-    while (row.length < daysPerRow) {
-      row.push(0)
-    }
-    rows.push(row)
-  }
-  
-  return rows
-}
+import {
+  HABIT_TRACKER_BG_IMAGE,
+  HABIT_TRACKER_POSILY_IMAGE,
+  HABIT_TRACKER_SOIL_AREA,
+  HABIT_TRACKER_TITLE_AREA,
+  HABIT_TRACKER_WEEKDAYS,
+  buildCalendarCells,
+  getDaysInMonth,
+  isFutureTrackerDay,
+  isTodayTrackerDay,
+  isSundayColumn,
+  isSaturdayColumn,
+} from '../../constants/habitTracker.js'
 
 /**
  * @param {Object} tracker - Habit Tracker 데이터
@@ -45,9 +33,10 @@ export default function HabitTracker({ tracker, year, month, onUpdate }) {
   const [titleDraft, setTitleDraft] = useState('')
   const [titleSaving, setTitleSaving] = useState(false)
   const titleInputRef = useRef(null)
+  const calendarCells = buildCalendarCells(year, month)
 
   useEffect(() => {
-    if (tracker && tracker.days) {
+    if (tracker?.days) {
       setDays(tracker.days)
       setTotalDays(getDaysInMonth(year, month))
     }
@@ -66,54 +55,48 @@ export default function HabitTracker({ tracker, year, month, onUpdate }) {
     }
   }, [isEditingTitle])
 
-  /**
-   * 특정 날짜의 완료 상태 확인
-   */
   const getDayStatus = (day) => {
-    if (day === 0 || day > totalDays) return null
-    const dayData = days.find(d => d.day === day)
+    const dayData = days.find((d) => d.day === day)
     return dayData ? dayData.isCompleted : false
   }
 
-  /**
-   * 날짜 클릭 핸들러
-   */
   const handleDayClick = async (day) => {
-    if (day === 0 || day > totalDays || !tracker) return
+    if (!tracker || isFutureTrackerDay(day, year, month)) return
 
     const currentStatus = getDayStatus(day)
     const newStatus = !currentStatus
-
-    // 애니메이션 시작
     setAnimatingDay(day)
 
     try {
       await toggleHabitTrackerDay(tracker.id, day, newStatus)
-      
-      // 로컬 상태 업데이트
-      const dayData = days.find(d => d.day === day)
+
+      const dayData = days.find((d) => d.day === day)
       if (dayData) {
-        setDays(days.map(d => 
-          d.id === dayData.id 
-            ? { ...d, isCompleted: newStatus, completedAt: newStatus ? new Date().toISOString() : null }
-            : d
-        ))
+        setDays(
+          days.map((d) =>
+            d.id === dayData.id
+              ? {
+                  ...d,
+                  isCompleted: newStatus,
+                  completedAt: newStatus ? new Date().toISOString() : null,
+                }
+              : d
+          )
+        )
       } else {
-        // 새로 생성
-        setDays([...days, {
-          id: `temp-${day}`,
-          habitTrackerId: tracker.id,
-          day: day,
-          isCompleted: newStatus,
-          completedAt: newStatus ? new Date().toISOString() : null,
-        }])
+        setDays([
+          ...days,
+          {
+            id: `temp-${day}`,
+            habitTrackerId: tracker.id,
+            day,
+            isCompleted: newStatus,
+            completedAt: newStatus ? new Date().toISOString() : null,
+          },
+        ])
       }
 
-      // 애니메이션 종료
-      setTimeout(() => {
-        setAnimatingDay(null)
-      }, 600)
-
+      setTimeout(() => setAnimatingDay(null), 420)
       onUpdate?.()
     } catch (error) {
       console.error('Habit Tracker 업데이트 실패:', error)
@@ -122,10 +105,7 @@ export default function HabitTracker({ tracker, year, month, onUpdate }) {
     }
   }
 
-  /**
-   * 완료율 계산
-   */
-  const completedCount = days.filter(d => d.isCompleted).length
+  const completedCount = days.filter((d) => d.isCompleted).length
   const completionRate = totalDays > 0 ? Math.round((completedCount / totalDays) * 100) : 0
 
   const beginEditTitle = () => {
@@ -173,124 +153,177 @@ export default function HabitTracker({ tracker, year, month, onUpdate }) {
   }
 
   return (
-    <div className="bg-white rounded-lg border-2 border-gray-200 p-5 hover:border-green-300 transition-all duration-200">
-      {/* 제목 바 */}
-      <div 
-        className="rounded-t-lg px-4 py-2 mb-4 pr-10"
-        style={{ backgroundColor: tracker?.color || '#FFB6C1' }}
-      >
-        {isEditingTitle ? (
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
-            <input
-              ref={titleInputRef}
-              type="text"
-              value={titleDraft}
-              onChange={(e) => setTitleDraft(e.target.value)}
-              onKeyDown={handleTitleKeyDown}
-              disabled={titleSaving}
-              className="min-w-0 flex-1 px-2 py-1 rounded border border-gray-400 text-base font-semibold text-gray-800 font-sans bg-white/95 focus:outline-none focus:ring-2 focus:ring-green-500"
-              aria-label="습관 제목"
-            />
-            <div className="flex shrink-0 gap-1 justify-end">
-              <button
-                type="button"
-                onClick={cancelEditTitle}
+    <div className="w-full rounded-2xl border-2 border-amber-200/90 bg-gradient-to-b from-sky-50 to-amber-50/80 p-2 shadow-md hover:border-green-300 transition-all duration-200">
+      <div className="relative mx-auto aspect-square w-full">
+        <img
+          src={HABIT_TRACKER_BG_IMAGE}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 h-full w-full select-none object-fill"
+          draggable={false}
+        />
+
+        {/* 습관 제목 — 이미지 점선 박스 */}
+        <div
+          className="absolute z-20 flex -translate-x-1/2 items-center justify-center text-center"
+          style={{
+            top: HABIT_TRACKER_TITLE_AREA.top,
+            left: HABIT_TRACKER_TITLE_AREA.left,
+            width: HABIT_TRACKER_TITLE_AREA.width,
+            height: HABIT_TRACKER_TITLE_AREA.height,
+          }}
+        >
+          {isEditingTitle ? (
+            <div className="w-full rounded-lg border-2 border-amber-400/70 bg-white/95 px-2 py-1.5 shadow-md">
+              <input
+                ref={titleInputRef}
+                type="text"
+                value={titleDraft}
+                onChange={(e) => setTitleDraft(e.target.value)}
+                onKeyDown={handleTitleKeyDown}
                 disabled={titleSaving}
-                className="px-2 py-1 text-xs font-medium text-gray-700 bg-white/80 rounded border border-gray-400 hover:bg-white disabled:opacity-50 font-sans"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={saveTitle}
-                disabled={titleSaving}
-                className="px-2 py-1 text-xs font-medium text-white bg-gray-800 rounded hover:bg-gray-900 disabled:opacity-50 font-sans"
-              >
-                {titleSaving ? '저장…' : '저장'}
-              </button>
+                className="w-full border-b-2 border-amber-300 bg-transparent px-1 py-0.5 text-center text-base font-extrabold text-gray-900 focus:border-green-500 focus:outline-none font-sans sm:text-lg"
+                aria-label="습관 제목"
+                placeholder="습관 제목"
+              />
+              <div className="mt-1.5 flex justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={cancelEditTitle}
+                  disabled={titleSaving}
+                  className="rounded-lg border border-amber-300 px-3 py-1 text-xs text-amber-900 hover:bg-amber-50 disabled:opacity-50 font-sans"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={saveTitle}
+                  disabled={titleSaving}
+                  className="rounded-lg bg-green-600 px-3 py-1 text-xs font-semibold text-white hover:bg-green-700 disabled:opacity-50 font-sans"
+                >
+                  {titleSaving ? '저장 중…' : '저장'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={beginEditTitle}
+              aria-label="제목을 눌러 수정"
+              className="group flex h-full w-full items-center justify-center rounded-lg px-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+            >
+              <p className="line-clamp-2 w-full text-center text-base font-extrabold leading-snug text-gray-900 drop-shadow-[0_1px_0_rgba(255,255,255,0.95),0_0_8px_rgba(255,255,255,0.75)] font-sans group-hover:underline sm:text-lg">
+                {tracker?.title || '습관 제목을 눌러 입력'}
+              </p>
+            </button>
+          )}
+        </div>
+
+        {/* 밭 위 미니 월 달력 */}
+        <div
+          className="absolute z-10 flex items-center justify-center px-1"
+          style={{
+            top: HABIT_TRACKER_SOIL_AREA.top,
+            left: HABIT_TRACKER_SOIL_AREA.left,
+            width: HABIT_TRACKER_SOIL_AREA.width,
+            height: HABIT_TRACKER_SOIL_AREA.height,
+          }}
+        >
+          <div className="w-full max-h-full rounded-md border border-amber-800/25 bg-[#fffaf0]/92 px-1.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+            {/* 요일 헤더 */}
+            <div className="mb-1 grid grid-cols-7 gap-0.5 rounded-sm bg-amber-900/10 px-0.5 py-0.5">
+              {HABIT_TRACKER_WEEKDAYS.map((label, columnIndex) => (
+                <span
+                  key={label}
+                  className={`
+                    text-center text-[9px] font-extrabold leading-none font-sans sm:text-[10px]
+                    [text-shadow:0_1px_0_rgba(255,255,255,0.9)]
+                    ${isSundayColumn(columnIndex) ? 'text-red-600' : ''}
+                    ${isSaturdayColumn(columnIndex) ? 'text-blue-600' : ''}
+                    ${!isSundayColumn(columnIndex) && !isSaturdayColumn(columnIndex) ? 'text-amber-950' : ''}
+                  `}
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+
+            {/* 날짜 그리드 */}
+            <div className="grid grid-cols-7 gap-0.5">
+              {calendarCells.map((day, index) => {
+                if (day === 0) {
+                  return <div key={`empty-${index}`} className="aspect-square" aria-hidden="true" />
+                }
+
+                const columnIndex = index % 7
+                const isCompleted = getDayStatus(day)
+                const isAnimating = animatingDay === day
+                const isFuture = isFutureTrackerDay(day, year, month)
+                const isToday = isTodayTrackerDay(day, year, month)
+
+                return (
+                  <button
+                    key={`day-${day}`}
+                    type="button"
+                    onClick={() => handleDayClick(day)}
+                    disabled={isFuture}
+                    aria-label={`${day}일 ${isCompleted ? '달성됨' : '미달성'}`}
+                    className={`
+                      relative flex aspect-square flex-col items-center justify-center rounded-[3px]
+                      border shadow-sm transition-all
+                      ${isFuture
+                        ? 'cursor-not-allowed border-amber-200/40 bg-white/35 opacity-45'
+                        : 'cursor-pointer border-amber-300/80 bg-white/90 hover:bg-white active:scale-95'
+                      }
+                      ${isToday ? 'ring-2 ring-green-500 ring-offset-1 ring-offset-[#fffaf0]' : ''}
+                      ${isCompleted ? 'border-amber-500/70 bg-amber-50' : ''}
+                    `}
+                  >
+                    {!isCompleted && (
+                      <span
+                        className={`
+                          text-[9px] font-extrabold leading-none font-sans sm:text-[10px]
+                          [text-shadow:0_1px_0_#ffffff,0_0_1px_rgba(0,0,0,0.15)]
+                          ${isSundayColumn(columnIndex) ? 'text-red-600' : ''}
+                          ${isSaturdayColumn(columnIndex) ? 'text-blue-600' : ''}
+                          ${!isSundayColumn(columnIndex) && !isSaturdayColumn(columnIndex) ? 'text-gray-900' : ''}
+                        `}
+                      >
+                        {day}
+                      </span>
+                    )}
+
+                    {isCompleted && (
+                      <img
+                        src={HABIT_TRACKER_POSILY_IMAGE}
+                        alt=""
+                        className={`h-[78%] w-[78%] object-contain drop-shadow-sm ${isAnimating ? 'tracker-stamp' : ''}`}
+                        draggable={false}
+                      />
+                    )}
+                  </button>
+                )
+              })}
             </div>
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={beginEditTitle}
-            aria-label="제목을 눌러 수정"
-            className="w-full min-w-0 text-left text-lg font-semibold text-gray-800 font-sans break-words rounded-sm cursor-pointer hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-700 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-          >
-            {tracker?.title || 'Habit Tracker'}
-          </button>
-        )}
-      </div>
-
-      {/* 바둑판 형태 달력 */}
-      <div className="flex flex-col items-center mb-4">
-        <div className="grid grid-cols-7 gap-1">
-          {generateGridPattern(totalDays).map((row, rowIndex) => (
-            row.map((day, colIndex) => {
-              if (day === 0) {
-                return <div key={`${rowIndex}-${colIndex}`} className="w-8 h-8" />
-              }
-
-              const isCompleted = getDayStatus(day)
-              const isAnimating = animatingDay === day
-              const isPast = day <= new Date().getDate() && month === new Date().getMonth() + 1 && year === new Date().getFullYear()
-              const isFuture = day > totalDays
-
-              return (
-                <button
-                  key={`${rowIndex}-${colIndex}`}
-                  onClick={() => handleDayClick(day)}
-                  disabled={isFuture}
-                  className={`
-                    w-8 h-8 rounded text-xs font-medium
-                    transition-all duration-300
-                    ${isFuture 
-                      ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
-                      : isCompleted
-                        ? 'bg-green-400 text-white shadow-md scale-110'
-                        : 'bg-gray-200 text-gray-600 hover:bg-green-200 hover:scale-105'
-                    }
-                    ${isAnimating ? 'animate-pulse scale-125' : ''}
-                    ${!isPast && !isCompleted ? 'opacity-60' : ''}
-                  `}
-                  style={{
-                    backgroundColor: isCompleted ? (tracker?.color || '#FFB6C1') : undefined,
-                  }}
-                >
-                  {day}
-                </button>
-              )
-            })
-          ))}
         </div>
       </div>
 
-      {/* 완료율 표시 */}
-      <div className="mt-4">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium text-gray-600 font-sans">완료율</span>
-          <span className="text-xs font-bold text-gray-800 font-sans">
-            {completedCount} / {totalDays} ({completionRate}%)
+      {/* 완료율 */}
+      <div className="mt-2 px-1 pb-0.5">
+        <div className="mb-0.5 flex items-center justify-between">
+          <span className="text-[10px] font-medium text-amber-900/80 font-sans">완료율</span>
+          <span className="text-[10px] font-bold text-amber-950 font-sans">
+            {completedCount}/{totalDays} ({completionRate}%)
           </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="h-1.5 w-full rounded-full bg-amber-100">
           <div
-            className="h-2 rounded-full transition-all duration-300"
-            style={{ 
-              width: `${completionRate}%`,
-              backgroundColor: tracker?.color || '#FFB6C1',
-            }}
+            className="h-full rounded-full bg-gradient-to-r from-amber-400 to-green-400 transition-all duration-300"
+            style={{ width: `${completionRate}%` }}
           />
         </div>
       </div>
     </div>
   )
 }
-
-/**
- * 특정 연도/월의 일수 계산
- */
-function getDaysInMonth(year, month) {
-  return new Date(year, month, 0).getDate()
-}
-

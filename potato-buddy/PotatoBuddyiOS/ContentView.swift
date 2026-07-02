@@ -17,6 +17,14 @@ struct ContentView: View {
         }
         .onChange(of: auth.isLoggedIn) { newValue in
             isLoggedIn = newValue
+            if newValue {
+                Task { await ScheduleWidgetService.refreshTodayWidget() }
+            }
+        }
+        .task {
+            if auth.isLoggedIn {
+                await ScheduleWidgetService.refreshTodayWidget()
+            }
         }
     }
 }

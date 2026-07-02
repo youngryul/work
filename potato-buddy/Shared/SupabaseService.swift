@@ -322,4 +322,190 @@ final class SupabaseService {
 
         _ = try await URLSession.shared.data(for: request)
     }
+
+    // MARK: - 습관 트래커 조회
+
+    func fetchHabitTrackers(year: Int, month: Int) async throws -> [HabitTrackerItem] {
+        let (userId, token) = await authInfo()
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/habit_trackers")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "year", value: "eq.\(year)"),
+            URLQueryItem(name: "month", value: "eq.\(month)"),
+            URLQueryItem(name: "select", value: "id,year,month,title,color"),
+            URLQueryItem(name: "order", value: "created_at.asc"),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let (data, _) = try await URLSession.shared.data(for: request)
+        var trackers = try JSONDecoder().decode([HabitTrackerItem].self, from: data)
+
+        try await withThrowingTaskGroup(of: (Int, [HabitTrackerDayItem]).self) { group in
+            for index in trackers.indices {
+                let trackerId = trackers[index].id
+                group.addTask {
+                    let days = try await self.fetchHabitTrackerDays(trackerId: trackerId)
+                    return (index, days)
+                }
+            }
+
+            for try await (index, days) in group {
+                trackers[index].days = days
+            }
+        }
+
+        return trackers
+    }
+
+    private func fetchHabitTrackerDays(trackerId: String) async throws -> [HabitTrackerDayItem] {
+        let (userId, token) = await authInfo()
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/habit_tracker_days")!
+        components.queryItems = [
+            URLQueryItem(name: "habit_tracker_id", value: "eq.\(trackerId)"),
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "select", value: "id,habit_tracker_id,day,is_completed"),
+            URLQueryItem(name: "order", value: "day.asc"),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return try JSONDecoder().decode([HabitTrackerDayItem].self, from: data)
+    }
+
+    // MARK: - 습관 트래커 생성
+
+    func createHabitTracker(
+        year: Int,
+        month: Int,
+        title: String,
+        color: String
+    ) async throws -> HabitTrackerItem {
+        let (userId, token) = await authInfo()
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/habit_trackers")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        let body: [String: Any] = [
+            "user_id": userId,
+            "year": year,
+            "month": month,
+            "title": title,
+            "color": color,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, _) = try await URLSession.shared.data(for: request)
+        let items = try JSONDecoder().decode([HabitTrackerItem].self, from: data)
+        guard let item = items.first else {
+            throw URLError(.badServerResponse)
+        }
+        return item
+    }
+
+    // MARK: - 습관 트래커 삭제
+
+    func deleteHabitTracker(id: String) async throws {
+        let (userId, token) = await authInfo()
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/habit_trackers?id=eq.\(id)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+
+        _ = try await URLSession.shared.data(for: request)
+    }
+
+    // MARK: - 습관 트래커 제목 수정
+
+    func updateHabitTrackerTitle(id: String, title: String) async throws {
+        let (userId, token) = await authInfo()
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/habit_trackers?id=eq.\(id)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+
+        let body = ["title": title]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        _ = try await URLSession.shared.data(for: request)
+    }
+
+    // MARK: - 습관 트래커 일별 체크 토글
+
+    func toggleHabitTrackerDay(
+        trackerId: String,
+        day: Int,
+        isCompleted: Bool
+    ) async throws -> HabitTrackerDayItem {
+        let (userId, token) = await authInfo()
+
+        var existingComponents = URLComponents(string: "\(Config.supabaseURL)/rest/v1/habit_tracker_days")!
+        existingComponents.queryItems = [
+            URLQueryItem(name: "habit_tracker_id", value: "eq.\(trackerId)"),
+            URLQueryItem(name: "day", value: "eq.\(day)"),
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "select", value: "id"),
+            URLQueryItem(name: "limit", value: "1"),
+        ]
+
+        var existingRequest = URLRequest(url: existingComponents.url!)
+        headers(token: token).forEach { existingRequest.addValue($1, forHTTPHeaderField: $0) }
+
+        let (existingData, _) = try await URLSession.shared.data(for: existingRequest)
+        struct ExistingDay: Decodable { let id: String }
+        let existingItems = try JSONDecoder().decode([ExistingDay].self, from: existingData)
+
+        let completedAt = isCompleted ? ISO8601DateFormatter().string(from: Date()) : NSNull()
+        let payload: [String: Any] = [
+            "is_completed": isCompleted,
+            "completed_at": completedAt,
+        ]
+
+        if let existing = existingItems.first {
+            let url = URL(string: "\(Config.supabaseURL)/rest/v1/habit_tracker_days?id=eq.\(existing.id)&user_id=eq.\(userId)")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "PATCH"
+            headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+            request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+            request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+
+            let (data, _) = try await URLSession.shared.data(for: request)
+            let items = try JSONDecoder().decode([HabitTrackerDayItem].self, from: data)
+            guard let item = items.first else {
+                throw URLError(.badServerResponse)
+            }
+            return item
+        }
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/habit_tracker_days")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        var insertPayload = payload
+        insertPayload["user_id"] = userId
+        insertPayload["habit_tracker_id"] = trackerId
+        insertPayload["day"] = day
+        request.httpBody = try JSONSerialization.data(withJSONObject: insertPayload)
+
+        let (data, _) = try await URLSession.shared.data(for: request)
+        let items = try JSONDecoder().decode([HabitTrackerDayItem].self, from: data)
+        guard let item = items.first else {
+            throw URLError(.badServerResponse)
+        }
+        return item
+    }
 }

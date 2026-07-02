@@ -313,6 +313,7 @@ struct ScheduleCalendarView: View {
                 year: selectedYear,
                 month: selectedMonth
             )
+            syncWidgetIfNeeded()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -334,6 +335,7 @@ struct ScheduleCalendarView: View {
             )
             schedules.append(created)
             schedules.sort { $0.scheduleDate < $1.scheduleDate }
+            syncWidgetIfNeeded()
             showAddSheet = false
             newTitle = ""
         } catch {
@@ -354,6 +356,19 @@ struct ScheduleCalendarView: View {
                 return
             }
         }
+        syncWidgetIfNeeded()
+    }
+
+    private func syncWidgetIfNeeded() {
+        let calendar = Calendar.current
+        let now = Date()
+        let currentYear = calendar.component(.year, from: now)
+        let currentMonth = calendar.component(.month, from: now)
+        guard selectedYear == currentYear, selectedMonth == currentMonth else { return }
+
+        let today = ScheduleDateHelper.todayString()
+        let todaySchedules = schedules.filter { $0.contains(date: today) }
+        ScheduleWidgetService.syncWidgetSnapshot(schedules: todaySchedules, dateString: today)
     }
 
     private func changeMonth(by value: Int) {

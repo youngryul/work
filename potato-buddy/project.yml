@@ -17,6 +17,8 @@ targets:
     sources:
       - path: PotatoBuddy
       - path: Shared
+        excludes:
+          - WidgetScheduleStore.swift
     resources:
       - path: PotatoBuddy/Assets.xcassets
       - path: PotatoBuddy/물 주는 포실이.gif
@@ -59,6 +61,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.youngryul.potatobuddy.ios
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        CODE_SIGN_ENTITLEMENTS: PotatoBuddyiOS/PotatoBuddyiOS.entitlements
     info:
       path: PotatoBuddyiOS/Info.plist
       properties:
@@ -72,3 +75,35 @@ targets:
           - CFBundleURLName: com.youngryul.potatobuddy.ios
             CFBundleURLSchemes:
               - potatobuddy
+    entitlements:
+      path: PotatoBuddyiOS/PotatoBuddyiOS.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.youngryul.potatobuddy.ios
+    dependencies:
+      - target: ScheduleWidgetExtension
+        embed: true
+
+  ScheduleWidgetExtension:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: ScheduleWidget
+      - path: Shared/WidgetScheduleStore.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.youngryul.potatobuddy.ios.schedulewidget
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        CODE_SIGN_ENTITLEMENTS: ScheduleWidget/ScheduleWidget.entitlements
+    info:
+      path: ScheduleWidget/Info.plist
+      properties:
+        CFBundleDisplayName: 오늘 일정
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: ScheduleWidget/ScheduleWidget.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.youngryul.potatobuddy.ios

@@ -31,6 +31,11 @@ struct MainTabView: View {
                     Label("뽀모도로", systemImage: "timer")
                 }
 
+            HabitTrackerView()
+                .tabItem {
+                    Label("습관", systemImage: "chart.bar.fill")
+                }
+
             SettingsView(showLogoutConfirm: $showLogoutConfirm)
                 .tabItem {
                     Label("설정", systemImage: "gearshape.fill")

@@ -48,6 +48,16 @@
 		A1B2C3D4E5F60718293A4B5C /* PomodoroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293A4B5C6D /* PomodoroView.swift */; };
 		C3D4E5F60718293A4B5C6D7E /* PomodoroTimerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F60718293A4B5C6D7E8F /* PomodoroTimerViewModel.swift */; };
 		E5F60718293A4B5C6D7E8F90 /* 포실이뽀모도로.png in Resources */ = {isa = PBXBuildFile; fileRef = F60718293A4B5C6D7E8F9012 /* 포실이뽀모도로.png */; };
+		F1A2B3C4D5E60718293A4B5D /* HabitTrackerItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B3C4D5E60718293A4B5D6E /* HabitTrackerItem.swift */; };
+		B3C4D5E60718293A4B5D6E7F /* HabitTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4D5E60718293A4B5D6E7F80 /* HabitTrackerView.swift */; };
+		D5E60718293A4B5D6E7F8091 /* HabitTrackerCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E60718293A4B5D6E7F809102 /* HabitTrackerCardView.swift */; };
+		60718293A4B5D6E7F8091021 /* HabitTrackerFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 718293A4B5D6E7F809102132 /* HabitTrackerFormView.swift */; };
+		8293A4B5D6E7F8091021324 /* HabitTrackerItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B3C4D5E60718293A4B5D6E /* HabitTrackerItem.swift */; };
+		A1A2A3A4A5A6A7A8A9A0A1A2 /* ScheduleWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C4D5E6F708192A3B4C5D6E7 /* ScheduleWidgetBundle.swift */; };
+		B2B3B4B5B6B7B8B9B0B1B2B3 /* WidgetScheduleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5E6F708192A3B4C5D6E7F8 /* WidgetScheduleStore.swift */; };
+		C3C4C5C6C7C8C9C0C1C2C3C4 /* WidgetScheduleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5E6F708192A3B4C5D6E7F8 /* WidgetScheduleStore.swift */; };
+		D4D5D6D7D8D9D0D1D2D3D4D5 /* ScheduleWidgetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8192A3B4C5D6E7F809101112 /* ScheduleWidgetService.swift */; };
+		E5E6E7E8E9E0E1E2E3E4E5E6 /* ScheduleWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F708192A3B4C5D6D6 /* ScheduleWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -90,6 +100,17 @@
 		B2C3D4E5F60718293A4B5C6D /* PomodoroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroView.swift; sourceTree = "<group>"; };
 		D4E5F60718293A4B5C6D7E8F /* PomodoroTimerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroTimerViewModel.swift; sourceTree = "<group>"; };
 		F60718293A4B5C6D7E8F9012 /* 포실이뽀모도로.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이뽀모도로.png"; sourceTree = "<group>"; };
+		A2B3C4D5E60718293A4B5D6E /* HabitTrackerItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitTrackerItem.swift; sourceTree = "<group>"; };
+		C4D5E60718293A4B5D6E7F80 /* HabitTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitTrackerView.swift; sourceTree = "<group>"; };
+		E60718293A4B5D6E7F809102 /* HabitTrackerCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitTrackerCardView.swift; sourceTree = "<group>"; };
+		718293A4B5D6E7F809102132 /* HabitTrackerFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitTrackerFormView.swift; sourceTree = "<group>"; };
+		2B3C4D5E6F708192A3B4C5D6D6 /* ScheduleWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ScheduleWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		3C4D5E6F708192A3B4C5D6E7 /* ScheduleWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleWidgetBundle.swift; sourceTree = "<group>"; };
+		4D5E6F708192A3B4C5D6E7F8 /* WidgetScheduleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetScheduleStore.swift; sourceTree = "<group>"; };
+		5E6F708192A3B4C5D6E7F809 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		6F708192A3B4C5D6E7F80910 /* ScheduleWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ScheduleWidget.entitlements; sourceTree = "<group>"; };
+		708192A3B4C5D6E7F8091011 /* PotatoBuddyiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PotatoBuddyiOS.entitlements; sourceTree = "<group>"; };
+		8192A3B4C5D6E7F809101112 /* ScheduleWidgetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleWidgetService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -99,10 +120,12 @@
 				301769FE9AC7E8DA1E0CB788 /* AuthService.swift */,
 				68FFB9D50D2473DC4EA80FC2 /* Config.swift */,
 				D2C694A851AB63F042A05AC1 /* DiaryItem.swift */,
+				A2B3C4D5E60718293A4B5D6E /* HabitTrackerItem.swift */,
 				541FF1C427BD52922B298737 /* Notifications.swift */,
 				5B9C3D2E8F4A6B0C1D3E5F7A /* ScheduleItem.swift */,
 				7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */,
 				AE031E1DC9B579555F16B096 /* TaskItem.swift */,
+				4D5E6F708192A3B4C5D6E7F8 /* WidgetScheduleStore.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -112,9 +135,20 @@
 			children = (
 				E1DEB7488353FCD1EA2C956E /* PotatoBuddy */,
 				A0404CF5825ADE4B7DE25604 /* PotatoBuddyiOS */,
+				WGT003GROUP00000000001 /* ScheduleWidget */,
 				146C1958BB83CF47CD3CFAAE /* Shared */,
 				F8742928AEF3C31BE092B60D /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		WGT003GROUP00000000001 /* ScheduleWidget */ = {
+			isa = PBXGroup;
+			children = (
+				3C4D5E6F708192A3B4C5D6E7 /* ScheduleWidgetBundle.swift */,
+				5E6F708192A3B4C5D6E7F809 /* Info.plist */,
+				6F708192A3B4C5D6E7F80910 /* ScheduleWidget.entitlements */,
+			);
+			path = ScheduleWidget;
 			sourceTree = "<group>";
 		};
 		A0404CF5825ADE4B7DE25604 /* PotatoBuddyiOS */ = {
@@ -125,14 +159,19 @@
 				1D826A844BE6F7D286ED09B9 /* BacklogView.swift */,
 				70E0F19BC75F1A6C397BBE1C /* ContentView.swift */,
 				E52D20FD884239995BBDC00C /* DiaryListView.swift */,
+				C4D5E60718293A4B5D6E7F80 /* HabitTrackerView.swift */,
+				E60718293A4B5D6E7F809102 /* HabitTrackerCardView.swift */,
+				718293A4B5D6E7F809102132 /* HabitTrackerFormView.swift */,
 				547F99007C6FCE58B7F29335 /* DiaryWriteView.swift */,
 				16ED2268DFB8CD43F90BC3BA /* Info.plist */,
+				708192A3B4C5D6E7F8091011 /* PotatoBuddyiOS.entitlements */,
 				852B8983CE9BC8617F83ECBD /* LoginView.swift */,
 				47CB4229136599A8BA65F44C /* MainTabView.swift */,
 				B2C3D4E5F60718293A4B5C6D /* PomodoroView.swift */,
 				D4E5F60718293A4B5C6D7E8F /* PomodoroTimerViewModel.swift */,
 				1135FADE4C8DF6A8508C291E /* PotatoBuddyiOSApp.swift */,
 				6D1E5F4A0B3C7D9E2F4A6B8C /* ScheduleCalendarView.swift */,
+				8192A3B4C5D6E7F809101112 /* ScheduleWidgetService.swift */,
 				17F2503650D67FEFAECD28EC /* SettingsView.swift */,
 				607BDE05A4DD4BE69A4932DA /* TodayView.swift */,
 				F60718293A4B5C6D7E8F9012 /* 포실이뽀모도로.png */,
@@ -166,6 +205,7 @@
 			children = (
 				A3AC895187BF5EB8BF855D3C /* PotatoBuddy.app */,
 				DC39AB8BC8BEB8056A67FDB4 /* PotatoBuddyiOS.app */,
+				2B3C4D5E6F708192A3B4C5D6D6 /* ScheduleWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -197,10 +237,12 @@
 			buildPhases = (
 				CE6CBF883395EA5D00AD94DC /* Sources */,
 				58ECAEB6290F206BCB7B3063 /* Resources */,
+				A7A8A9A0A1A2A3A4A5A6A7A8 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C9C0C1C2C3C4C5C6C7C8C9C0 /* PBXTargetDependency */,
 			);
 			name = PotatoBuddyiOS;
 			packageProductDependencies = (
@@ -209,7 +251,56 @@
 			productReference = DC39AB8BC8BEB8056A67FDB4 /* PotatoBuddyiOS.app */;
 			productType = "com.apple.product-type.application";
 		};
+		1A2B3C4D5E6F708192A3B4C5 /* ScheduleWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D0D1D2D3D4D5D6D7D8D9D0D1 /* Build configuration list for PBXNativeTarget "ScheduleWidgetExtension" */;
+			buildPhases = (
+				F6F7F8F9F0F1F2F3F4F5F6F7 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ScheduleWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = ScheduleWidgetExtension;
+			productReference = 2B3C4D5E6F708192A3B4C5D6D6 /* ScheduleWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		B8B9B0B1B2B3B4B5B6B7B8B9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EF4541F350B298A2E4439678 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1A2B3C4D5E6F708192A3B4C5;
+			remoteInfo = ScheduleWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A7A8A9A0A1A2A3A4A5A6A7A8 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E5E6E7E8E9E0E1E2E3E4E5E6 /* ScheduleWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C9C0C1C2C3C4C5C6C7C8C9C0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1A2B3C4D5E6F708192A3B4C5 /* ScheduleWidgetExtension */;
+			targetProxy = B8B9B0B1B2B3B4B5B6B7B8B9 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		EF4541F350B298A2E4439678 /* Project object */ = {
@@ -236,6 +327,7 @@
 			targets = (
 				92DAB7EEB3DD410E9174C54F /* PotatoBuddy */,
 				D45BE051683D611D64F1B86F /* PotatoBuddyiOS */,
+				1A2B3C4D5E6F708192A3B4C5 /* ScheduleWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -282,6 +374,7 @@
 				D2ED8A232E2920AC0D900135 /* PotatoBuddyApp.swift in Sources */,
 				69E6B81F2C9230C1DCA47B37 /* SupabaseService.swift in Sources */,
 				4A8B2C1D9E3F5A7B0C2D4E6F /* ScheduleItem.swift in Sources */,
+				F1A2B3C4D5E60718293A4B5D /* HabitTrackerItem.swift in Sources */,
 				ACC434D4F3C6CB14E9B5D645 /* TaskItem.swift in Sources */,
 				53051C295875E02B85336103 /* TodoViewModel.swift in Sources */,
 			);
@@ -298,6 +391,10 @@
 				A7125755B5C6272EF6489109 /* DiaryItem.swift in Sources */,
 				46548972895E7944B033EF46 /* DiaryListView.swift in Sources */,
 				395ED4F51127F437671E11B5 /* DiaryWriteView.swift in Sources */,
+				B3C4D5E60718293A4B5D6E7F /* HabitTrackerView.swift in Sources */,
+				D5E60718293A4B5D6E7F8091 /* HabitTrackerCardView.swift in Sources */,
+				60718293A4B5D6E7F8091021 /* HabitTrackerFormView.swift in Sources */,
+				8293A4B5D6E7F8091021324 /* HabitTrackerItem.swift in Sources */,
 				A64122DBEB6634B70B142AAC /* LoginView.swift in Sources */,
 				680B1FB46FFFBEB496161FC8 /* MainTabView.swift in Sources */,
 				185BD51875CC63C284691670 /* Notifications.swift in Sources */,
@@ -305,11 +402,22 @@
 				C3D4E5F60718293A4B5C6D7E /* PomodoroTimerViewModel.swift in Sources */,
 				E912479265FEF7F1D9EB383C /* PotatoBuddyiOSApp.swift in Sources */,
 				5C0D4E3F9A2B6C8D1E3F5A7B /* ScheduleCalendarView.swift in Sources */,
+				D4D5D6D7D8D9D0D1D2D3D4D5 /* ScheduleWidgetService.swift in Sources */,
 				7E8F9A0B1C2D3E4F5A6B7C8D /* ScheduleItem.swift in Sources */,
 				EF1F6C5100CD872A2E638934 /* SettingsView.swift in Sources */,
 				943E1D60032F7A8DC0C5C579 /* SupabaseService.swift in Sources */,
 				46AC3A0AFBE0EE18BAD84F1B /* TaskItem.swift in Sources */,
 				E07C57782C90A202B7737328 /* TodayView.swift in Sources */,
+				C3C4C5C6C7C8C9C0C1C2C3C4 /* WidgetScheduleStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F6F7F8F9F0F1F2F3F4F5F6F7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1A2A3A4A5A6A7A8A9A0A1A2 /* ScheduleWidgetBundle.swift in Sources */,
+				B2B3B4B5B6B7B8B9B0B1B2B3 /* WidgetScheduleStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -320,6 +428,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = PotatoBuddyiOS/PotatoBuddyiOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				INFOPLIST_FILE = PotatoBuddyiOS/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -425,6 +534,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = PotatoBuddyiOS/PotatoBuddyiOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				INFOPLIST_FILE = PotatoBuddyiOS/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -501,6 +611,44 @@
 			};
 			name = Debug;
 		};
+		E1E2E3E4E5E6E7E8E9E0E1E2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ScheduleWidget/ScheduleWidget.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = ScheduleWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.youngryul.potatobuddy.ios.schedulewidget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F2F3F4F5F6F7F8F9F0F1F2F3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ScheduleWidget/ScheduleWidget.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = ScheduleWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.youngryul.potatobuddy.ios.schedulewidget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -518,6 +666,15 @@
 			buildConfigurations = (
 				D4E5F243164FCA5179CB9764 /* Debug */,
 				43CCA6676C7F54BE70E111DF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D0D1D2D3D4D5D6D7D8D9D0D1 /* Build configuration list for PBXNativeTarget "ScheduleWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1E2E3E4E5E6E7E8E9E0E1E2 /* Debug */,
+				F2F3F4F5F6F7F8F9F0F1F2F3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

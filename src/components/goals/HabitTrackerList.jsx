@@ -83,9 +83,9 @@ export default function HabitTrackerList({ year, month, monthlyGoals = [] }) {
           <p className="text-sm text-gray-400 font-sans">습관을 추적해보세요!</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-5">
           {habitTrackers.map((tracker) => (
-            <div key={tracker.id} className="relative">
+            <div key={tracker.id} className="relative w-full min-w-0">
               <HabitTracker
                 tracker={tracker}
                 year={year}
@@ -94,8 +94,9 @@ export default function HabitTrackerList({ year, month, monthlyGoals = [] }) {
               />
               <button
                 onClick={() => handleDeleteTracker(tracker.id)}
-                className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors text-xs font-bold shadow-md"
+                className="absolute top-2 right-2 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-red-500/90 text-xs font-bold text-white shadow-md hover:bg-red-600 font-sans"
                 title="삭제"
+                aria-label="트래커 삭제"
               >
                 ×
               </button>
