@@ -72,10 +72,16 @@ struct PomodoroView: View {
             let size = min(geometry.size.width, geometry.size.height)
 
             ZStack {
-                Image(imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: size, height: size)
+                Group {
+                    if let uiImage = UIImage(named: imageName) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFit()
+                    } else {
+                        Text("🥔").font(.system(size: size * 0.5))
+                    }
+                }
+                .frame(width: size, height: size)
 
                 Color.white
                     .opacity(0.92)

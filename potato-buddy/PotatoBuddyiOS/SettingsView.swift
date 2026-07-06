@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @StateObject private var auth = AuthService.shared
+    @ObservedObject private var auth = AuthService.shared
     @Binding var showLogoutConfirm: Bool
 
     var body: some View {

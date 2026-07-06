@@ -20,6 +20,41 @@ final class SupabaseService {
         ]
     }
 
+    /// HTTP 응답 상태코드 확인 후 에러 메시지 throw
+    private func checkResponse(_ data: Data, _ response: URLResponse) throws {
+        guard let http = response as? HTTPURLResponse else { return }
+        guard (200..<300).contains(http.statusCode) else {
+            let msg = (try? JSONDecoder().decode(SupabaseError.self, from: data))?.message
+                ?? String(data: data, encoding: .utf8)
+                ?? "HTTP \(http.statusCode)"
+            throw NSError(domain: "SupabaseService", code: http.statusCode,
+                          userInfo: [NSLocalizedDescriptionKey: msg])
+        }
+    }
+
+    private struct SupabaseError: Decodable {
+        let message: String?
+    }
+
+    /// JWT 만료 시 자동 갱신 후 1회 재시도
+    private func fetch(_ request: URLRequest) async throws -> (Data, URLResponse) {
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        if let http = response as? HTTPURLResponse, http.statusCode == 401 {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            if body.contains("jwt expired") || body.contains("JWT expired") {
+                try await AuthService.shared.refreshSession()
+                let newToken = await MainActor.run { AuthService.shared.accessToken }
+
+                var retryRequest = request
+                retryRequest.setValue("Bearer \(newToken)", forHTTPHeaderField: "Authorization")
+                return try await URLSession.shared.data(for: retryRequest)
+            }
+        }
+
+        return (data, response)
+    }
+
     // MARK: - 오늘 할일 조회
 
     func fetchTodayTasks() async throws -> [TaskItem] {
@@ -37,7 +72,8 @@ final class SupabaseService {
         var request = URLRequest(url: components.url!)
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
         return try JSONDecoder().decode([TaskItem].self, from: data)
     }
 
@@ -56,7 +92,7 @@ final class SupabaseService {
         let body: [String: Any] = ["completed": true, "completedat": now]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        _ = try await URLSession.shared.data(for: request)
+        _ = try await fetch(request)
     }
 
     // MARK: - 할일 추가
@@ -80,7 +116,7 @@ final class SupabaseService {
             "user_id":   userId,
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        _ = try await URLSession.shared.data(for: request)
+        _ = try await fetch(request)
     }
 
     // MARK: - 백로그 조회 (istoday = false, completed = false)
@@ -100,7 +136,8 @@ final class SupabaseService {
         var request = URLRequest(url: components.url!)
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
         return try JSONDecoder().decode([TaskItem].self, from: data)
     }
 
@@ -125,7 +162,7 @@ final class SupabaseService {
             "user_id":   userId,
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        _ = try await URLSession.shared.data(for: request)
+        _ = try await fetch(request)
     }
 
     // MARK: - 백로그 → 오늘 이동
@@ -146,7 +183,7 @@ final class SupabaseService {
             "movedtotodayat": now,
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        _ = try await URLSession.shared.data(for: request)
+        _ = try await fetch(request)
     }
 
     // MARK: - 할일 삭제
@@ -160,7 +197,7 @@ final class SupabaseService {
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
         request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
 
-        _ = try await URLSession.shared.data(for: request)
+        _ = try await fetch(request)
     }
 
     // MARK: - 월별 일기 목록 조회
@@ -197,7 +234,8 @@ final class SupabaseService {
         var request = URLRequest(url: components.url!)
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
         return try JSONDecoder().decode([DiaryItem].self, from: data)
     }
 
@@ -216,7 +254,8 @@ final class SupabaseService {
         var request = URLRequest(url: components.url!)
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
         let items = try JSONDecoder().decode([DiaryItem].self, from: data)
         return items.first
     }
@@ -242,7 +281,8 @@ final class SupabaseService {
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
         let items = try JSONDecoder().decode([DiaryItem].self, from: data)
         guard let item = items.first else {
             throw URLError(.badServerResponse)
@@ -272,7 +312,8 @@ final class SupabaseService {
         var request = URLRequest(url: components.url!)
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
         return try JSONDecoder().decode([ScheduleItem].self, from: data)
     }
 
@@ -301,7 +342,8 @@ final class SupabaseService {
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
         let items = try JSONDecoder().decode([ScheduleItem].self, from: data)
         guard let item = items.first else {
             throw URLError(.badServerResponse)
@@ -320,7 +362,7 @@ final class SupabaseService {
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
         request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
 
-        _ = try await URLSession.shared.data(for: request)
+        _ = try await fetch(request)
     }
 
     // MARK: - 습관 트래커 조회
@@ -340,7 +382,8 @@ final class SupabaseService {
         var request = URLRequest(url: components.url!)
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
         var trackers = try JSONDecoder().decode([HabitTrackerItem].self, from: data)
 
         try await withThrowingTaskGroup(of: (Int, [HabitTrackerDayItem]).self) { group in
@@ -374,7 +417,8 @@ final class SupabaseService {
         var request = URLRequest(url: components.url!)
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
         return try JSONDecoder().decode([HabitTrackerDayItem].self, from: data)
     }
 
@@ -403,7 +447,8 @@ final class SupabaseService {
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
         let items = try JSONDecoder().decode([HabitTrackerItem].self, from: data)
         guard let item = items.first else {
             throw URLError(.badServerResponse)
@@ -422,7 +467,7 @@ final class SupabaseService {
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
         request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
 
-        _ = try await URLSession.shared.data(for: request)
+        _ = try await fetch(request)
     }
 
     // MARK: - 습관 트래커 제목 수정
@@ -439,7 +484,7 @@ final class SupabaseService {
         let body = ["title": title]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        _ = try await URLSession.shared.data(for: request)
+        _ = try await fetch(request)
     }
 
     // MARK: - 습관 트래커 일별 체크 토글
@@ -463,11 +508,13 @@ final class SupabaseService {
         var existingRequest = URLRequest(url: existingComponents.url!)
         headers(token: token).forEach { existingRequest.addValue($1, forHTTPHeaderField: $0) }
 
-        let (existingData, _) = try await URLSession.shared.data(for: existingRequest)
+        let (existingData, existingResponse) = try await fetch(existingRequest)
         struct ExistingDay: Decodable { let id: String }
+        try checkResponse(existingData, existingResponse)
         let existingItems = try JSONDecoder().decode([ExistingDay].self, from: existingData)
 
-        let completedAt = isCompleted ? ISO8601DateFormatter().string(from: Date()) : NSNull()
+        var completedAt: Any = NSNull()
+        if isCompleted { completedAt = ISO8601DateFormatter().string(from: Date()) }
         let payload: [String: Any] = [
             "is_completed": isCompleted,
             "completed_at": completedAt,
@@ -481,7 +528,8 @@ final class SupabaseService {
             request.addValue("return=representation", forHTTPHeaderField: "Prefer")
             request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
-            let (data, _) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await fetch(request)
+            try checkResponse(data, response)
             let items = try JSONDecoder().decode([HabitTrackerDayItem].self, from: data)
             guard let item = items.first else {
                 throw URLError(.badServerResponse)
@@ -501,7 +549,8 @@ final class SupabaseService {
         insertPayload["day"] = day
         request.httpBody = try JSONSerialization.data(withJSONObject: insertPayload)
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
         let items = try JSONDecoder().decode([HabitTrackerDayItem].self, from: data)
         guard let item = items.first else {
             throw URLError(.badServerResponse)

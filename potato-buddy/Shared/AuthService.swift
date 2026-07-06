@@ -9,8 +9,9 @@ final class AuthService: ObservableObject {
     @Published var accessToken: String = ""
 
     private let defaults = UserDefaults.standard
-    private let tokenKey = "pb_accessToken"
-    private let userIdKey = "pb_userId"
+    private let tokenKey        = "pb_accessToken"
+    private let refreshTokenKey = "pb_refreshToken"
+    private let userIdKey       = "pb_userId"
 
     private init() {
         if let token = defaults.string(forKey: tokenKey),
@@ -19,6 +20,40 @@ final class AuthService: ObservableObject {
             self.accessToken = token
             self.userId      = uid
             self.isLoggedIn  = true
+        }
+    }
+
+    // MARK: - 토큰 갱신
+
+    func refreshSession() async throws {
+        guard let refreshToken = defaults.string(forKey: refreshTokenKey), !refreshToken.isEmpty else {
+            signOut()
+            throw AuthError.invalidCredentials
+        }
+
+        let url = URL(string: "\(Config.supabaseURL)/auth/v1/token?grant_type=refresh_token")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue(Config.anonKey, forHTTPHeaderField: "apikey")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["refresh_token": refreshToken])
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            signOut()
+            throw AuthError.invalidCredentials
+        }
+
+        let decoded = try JSONDecoder().decode(AuthResponse.self, from: data)
+        self.accessToken = decoded.accessToken
+        self.userId      = decoded.user.id
+        self.isLoggedIn  = true
+
+        defaults.set(decoded.accessToken, forKey: tokenKey)
+        defaults.set(decoded.user.id, forKey: userIdKey)
+        if let rt = decoded.refreshToken {
+            defaults.set(rt, forKey: refreshTokenKey)
         }
     }
 
@@ -84,6 +119,9 @@ final class AuthService: ObservableObject {
 
         defaults.set(decoded.accessToken, forKey: tokenKey)
         defaults.set(decoded.user.id, forKey: userIdKey)
+        if let rt = decoded.refreshToken {
+            defaults.set(rt, forKey: refreshTokenKey)
+        }
     }
 
     // MARK: - 외부 세션 저장 (웹 로그인 콜백)
@@ -103,6 +141,7 @@ final class AuthService: ObservableObject {
         userId      = ""
         isLoggedIn  = false
         defaults.removeObject(forKey: tokenKey)
+        defaults.removeObject(forKey: refreshTokenKey)
         defaults.removeObject(forKey: userIdKey)
     }
 }
@@ -128,9 +167,11 @@ enum AuthError: LocalizedError {
 
 private struct AuthResponse: Decodable {
     let accessToken: String
+    let refreshToken: String?
     let user: AuthUser
     enum CodingKeys: String, CodingKey {
-        case accessToken = "access_token"
+        case accessToken  = "access_token"
+        case refreshToken = "refresh_token"
         case user
     }
 }

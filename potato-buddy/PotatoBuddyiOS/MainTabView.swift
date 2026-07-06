@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MainTabView: View {
-    @StateObject private var auth = AuthService.shared
+    @ObservedObject private var auth = AuthService.shared
     @State private var showLogoutConfirm = false
 
     var body: some View {

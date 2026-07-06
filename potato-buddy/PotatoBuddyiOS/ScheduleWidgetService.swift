@@ -3,7 +3,8 @@ import WidgetKit
 
 enum ScheduleWidgetService {
     static func refreshTodayWidget() async {
-        guard AuthService.shared.isLoggedIn else {
+        let isLoggedIn = await MainActor.run { AuthService.shared.isLoggedIn }
+        guard isLoggedIn else {
             WidgetScheduleStore.clear()
             reloadWidgetTimelines()
             return

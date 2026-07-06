@@ -1,22 +1,17 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var auth = AuthService.shared
-    @State private var isLoggedIn: Bool = AuthService.shared.isLoggedIn
+    @ObservedObject private var auth = AuthService.shared
 
     var body: some View {
         Group {
-            if isLoggedIn {
+            if auth.isLoggedIn {
                 MainTabView()
             } else {
                 LoginView()
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .authStateChanged)) { _ in
-            isLoggedIn = AuthService.shared.isLoggedIn
-        }
-        .onChange(of: auth.isLoggedIn) { newValue in
-            isLoggedIn = newValue
+        .onChange(of: auth.isLoggedIn) { _, newValue in
             if newValue {
                 Task { await ScheduleWidgetService.refreshTodayWidget() }
             }

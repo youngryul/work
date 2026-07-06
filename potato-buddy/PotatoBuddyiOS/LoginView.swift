@@ -22,29 +22,32 @@ struct WelcomeView: View {
     private let bottomColor = Color(red: 162/255, green: 124/255, blue: 70/255)  // #a27c46 (갈색)
 
     var body: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .bottom) {
-                // 상단/하단 배경 그라디언트 (이미지 가장자리와 동일한 색)
-                LinearGradient(
-                    stops: [
-                        .init(color: topColor,    location: 0.0),
-                        .init(color: topColor,    location: 0.1),
-                        .init(color: bottomColor, location: 0.9),
-                        .init(color: bottomColor, location: 1.0),
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+        ZStack {
+            // 상단/하단 배경 그라디언트
+            LinearGradient(
+                stops: [
+                    .init(color: topColor,    location: 0.0),
+                    .init(color: topColor,    location: 0.1),
+                    .init(color: bottomColor, location: 0.9),
+                    .init(color: bottomColor, location: 1.0),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
-                // 배경 이미지 - 정중앙 정렬
+            VStack(spacing: 0) {
+                Spacer()
+
+                // 배경 이미지 - 가운데 정렬
                 if let uiImage = UIImage(named: "모바일배경") {
                     Image(uiImage: uiImage)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: geo.size.width)
-                        .position(x: geo.size.width / 2, y: geo.size.height / 2)
+                        .frame(maxWidth: .infinity)
                 }
+
+                Spacer()
 
                 // 시작하기 버튼
                 Button {
