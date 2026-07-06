@@ -9,7 +9,8 @@ import { useCallback, useEffect, useState } from 'react'
 import {
 
   FARM_MAX_STAGE,
-
+  FARM_STAGE2_WELCOME_SEED_COUNT,
+  getFarmFeedJellyCost,
   getFarmStageImage,
 
   getFarmStageLabel,
@@ -63,6 +64,7 @@ export default function FarmView() {
   const [isFeeding, setIsFeeding] = useState(false)
 
   const [levelUpStage, setLevelUpStage] = useState(null)
+  const [levelUpSeedGranted, setLevelUpSeedGranted] = useState(false)
 
   const { balance: jellyBalance } = useJellyBalance()
 
@@ -128,6 +130,8 @@ export default function FarmView() {
 
 
 
+  const feedJellyCost = progress.feedJellyCost ?? getFarmFeedJellyCost(stage, settings)
+
   const canFeed =
 
     milkEvent &&
@@ -155,7 +159,7 @@ export default function FarmView() {
 
     if (!milkEvent || !canFeed) return
 
-    if ((jellyBalance ?? 0) < milkEvent.jellyCost) {
+    if ((jellyBalance ?? 0) < feedJellyCost) {
 
       showToast('젤리가 부족해요. 아래 방법으로 젤리를 모아보세요!', TOAST_TYPES.ERROR)
 
@@ -172,10 +176,13 @@ export default function FarmView() {
       const result = await feedMilk()
 
       if (result?.leveledUp) {
-
         setLevelUpStage(result.stage)
-
-        showToast(`${result.stage}단계로 성장했어요! 🌾`, TOAST_TYPES.SUCCESS)
+        setLevelUpSeedGranted((result?.seedGranted ?? 0) > 0)
+        const seedMsg =
+          result.stage === 2 && (result?.seedGranted ?? 0) > 0
+            ? ` 씨앗 ${FARM_STAGE2_WELCOME_SEED_COUNT}개도 받았어요!`
+            : ''
+        showToast(`${result.stage}단계로 성장했어요! 🌾${seedMsg}`, TOAST_TYPES.SUCCESS)
 
       } else if (result?.xpAwarded > 0) {
 
@@ -339,7 +346,7 @@ export default function FarmView() {
 
           <p className="text-sm text-gray-600 mb-4">
 
-            젤리 {milkEvent.jellyCost}개를 사용해 {stage === 1 ? '분유' : '음식'}를 먹이면 성장 경험치 +{milkEvent.xpAmount}를
+            젤리 {feedJellyCost}개를 사용해 {stage === 1 ? '분유' : '음식'}를 먹이면 성장 경험치 +{milkEvent.xpAmount}를
 
             얻어요.
 
@@ -351,7 +358,7 @@ export default function FarmView() {
 
             onClick={handleFeedMilk}
 
-            disabled={isFeeding || (jellyBalance ?? 0) < milkEvent.jellyCost}
+            disabled={isFeeding || (jellyBalance ?? 0) < feedJellyCost}
 
             className="w-full py-3 rounded-xl bg-gradient-to-r from-pink-500 to-rose-400 text-white font-bold shadow-md hover:from-pink-600 hover:to-rose-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
 
@@ -361,7 +368,7 @@ export default function FarmView() {
 
               ? '먹이는 중…'
 
-              : `${feedEmoji} ${feedTitle} (젤리 ${milkEvent.jellyCost} · XP +${milkEvent.xpAmount})`}
+              : `${feedEmoji} ${feedTitle} (젤리 ${feedJellyCost} · XP +${milkEvent.xpAmount})`}
 
           </button>
 
@@ -460,20 +467,21 @@ export default function FarmView() {
             </h3>
 
             <p className="text-gray-600 text-sm mb-6">
-
-              {levelUpStage >= FARM_MAX_STAGE
-
-                ? '포실이가 최고 단계까지 자랐어요!'
-
-                : '포실이가 한 단계 더 자랐어요. 계속 키워보세요!'}
-
+              {levelUpStage === 2 && levelUpSeedGranted
+                ? `농장이 열렸어요! 씨앗 ${FARM_STAGE2_WELCOME_SEED_COUNT}개를 받았어요.`
+                : levelUpStage >= FARM_MAX_STAGE
+                  ? '포실이가 최고 단계까지 자랐어요!'
+                  : '포실이가 한 단계 더 자랐어요. 계속 키워보세요!'}
             </p>
 
             <button
 
               type="button"
 
-              onClick={() => setLevelUpStage(null)}
+              onClick={() => {
+                setLevelUpStage(null)
+                setLevelUpSeedGranted(false)
+              }}
 
               className="px-8 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600"
 

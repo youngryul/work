@@ -19,7 +19,9 @@ INSERT INTO farm_settings (key, value, label) VALUES
   ('stage_8_xp_required', '960', '8→9단계 필요 경험치'),
   ('stage_9_xp_required', '1160', '9→10단계 필요 경험치'),
   ('stage_1_image', '/images/아기포실이.png', '1단계 캐릭터 이미지'),
-  ('stage_2_image', '/images/포실이.png', '2단계 이상 캐릭터 이미지')
+  ('stage_2_image', '/images/포실이.png', '2단계 이상 캐릭터 이미지'),
+  ('milk_feed_jelly_cost_default', '3', '1~2단계 먹이 젤리'),
+  ('milk_feed_jelly_cost_stage_3_plus', '5', '3단계 이상 먹이 젤리')
 ON CONFLICT (key) DO NOTHING;
 
 -- ─── 경험치 이벤트 (관리자 CRUD) ───
@@ -50,6 +52,15 @@ CREATE TABLE IF NOT EXISTS user_farm_progress (
   stage INTEGER NOT NULL DEFAULT 1 CHECK (stage >= 1 AND stage <= 10),
   xp INTEGER NOT NULL DEFAULT 0 CHECK (xp >= 0),
   farm_unlocked BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ─── 사용자 농장 인벤토리 (씨앗 등) ───
+CREATE TABLE IF NOT EXISTS user_farm_inventory (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  seed_count INTEGER NOT NULL DEFAULT 0 CHECK (seed_count >= 0),
+  welcome_seed_granted BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -89,6 +100,7 @@ ALTER TABLE jelly_rewards_log ADD CONSTRAINT jelly_rewards_log_reason_check
 ALTER TABLE farm_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE farm_xp_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_farm_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_farm_inventory ENABLE ROW LEVEL SECURITY;
 ALTER TABLE farm_xp_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE jelly_spend_log ENABLE ROW LEVEL SECURITY;
 
@@ -114,6 +126,10 @@ CREATE POLICY "admins_manage_farm_xp_events" ON farm_xp_events
 
 DROP POLICY IF EXISTS "users_read_own_farm_progress" ON user_farm_progress;
 CREATE POLICY "users_read_own_farm_progress" ON user_farm_progress
+  FOR SELECT TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "users_read_own_farm_inventory" ON user_farm_inventory;
+CREATE POLICY "users_read_own_farm_inventory" ON user_farm_inventory
   FOR SELECT TO authenticated USING (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "users_read_own_farm_xp_log" ON farm_xp_log;
@@ -190,6 +206,56 @@ BEGIN
 END;
 $$;
 
+-- ─── 단계별 먹이 젤리 비용 ───
+CREATE OR REPLACE FUNCTION get_milk_feed_jelly_cost(p_stage INTEGER)
+RETURNS INTEGER
+LANGUAGE plpgsql
+STABLE
+SET search_path = public
+AS $$
+DECLARE
+  v_cost INTEGER;
+BEGIN
+  IF COALESCE(p_stage, 1) >= 3 THEN
+    SELECT COALESCE(value::INTEGER, 5) INTO v_cost
+    FROM farm_settings
+    WHERE key = 'milk_feed_jelly_cost_stage_3_plus';
+    RETURN COALESCE(v_cost, 5);
+  END IF;
+
+  SELECT COALESCE(value::INTEGER, 3) INTO v_cost
+  FROM farm_settings
+  WHERE key = 'milk_feed_jelly_cost_default';
+  RETURN COALESCE(v_cost, 3);
+END;
+$$;
+
+-- ─── 2단계 달성 환영 씨앗 지급 (최초 1회) ───
+CREATE OR REPLACE FUNCTION grant_stage2_welcome_seed(p_user_id UUID)
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_granted INTEGER := 0;
+BEGIN
+  INSERT INTO user_farm_inventory (user_id, seed_count, welcome_seed_granted)
+  VALUES (p_user_id, 0, false)
+  ON CONFLICT (user_id) DO NOTHING;
+
+  UPDATE user_farm_inventory
+  SET seed_count = seed_count + 1,
+      welcome_seed_granted = true,
+      updated_at = NOW()
+  WHERE user_id = p_user_id
+    AND welcome_seed_granted = false
+  RETURNING 1 INTO v_granted;
+
+  RETURN COALESCE(v_granted, 0);
+END;
+$$;
+
 -- ─── 농장 경험치 이벤트 처리 RPC (젤리 분유 → 10단계 성장) ───
 CREATE OR REPLACE FUNCTION process_farm_xp_event(
   p_event_key TEXT,
@@ -212,6 +278,8 @@ DECLARE
   v_spend_key TEXT;
   v_log_key TEXT;
   v_new_stage INTEGER;
+  v_seed_granted INTEGER := 0;
+  v_feed_jelly_cost INTEGER := 0;
 BEGIN
   IF v_user_id IS NULL THEN
     RAISE EXCEPTION '로그인이 필요합니다.';
@@ -252,10 +320,16 @@ BEGIN
     'manual:' || p_event_key || ':' || gen_random_uuid()::text
   );
 
-  IF v_event.jelly_cost > 0 THEN
+  IF p_event_key = 'milk_feed' THEN
+    v_feed_jelly_cost := get_milk_feed_jelly_cost(v_progress.stage);
+  ELSIF v_event.jelly_cost > 0 THEN
+    v_feed_jelly_cost := v_event.jelly_cost;
+  END IF;
+
+  IF v_feed_jelly_cost > 0 THEN
     v_spend_key := 'farm:' || v_log_key;
-    PERFORM spend_jelly(v_event.jelly_cost, 'farm_' || p_event_key, v_spend_key);
-    v_jelly_spent := v_event.jelly_cost;
+    PERFORM spend_jelly(v_feed_jelly_cost, 'farm_' || p_event_key, v_spend_key);
+    v_jelly_spent := v_feed_jelly_cost;
   END IF;
 
   v_new_xp := v_progress.xp + v_event.xp_amount;
@@ -279,6 +353,10 @@ BEGIN
         farm_unlocked = v_new_stage >= 2,
         updated_at = NOW()
     WHERE user_id = v_user_id;
+
+    IF v_new_stage = 2 THEN
+      v_seed_granted := grant_stage2_welcome_seed(v_user_id);
+    END IF;
   ELSE
     UPDATE user_farm_progress
     SET xp = v_new_xp,
@@ -303,6 +381,8 @@ BEGIN
     'jellySpent', v_jelly_spent,
     'leveledUp', v_leveled_up,
     'alreadyAwarded', false,
+    'seedGranted', v_seed_granted,
+    'feedJellyCost', get_milk_feed_jelly_cost(v_progress.stage),
     'nextStageXpRequired', CASE WHEN v_progress.stage >= 10 THEN NULL ELSE COALESCE(v_threshold, 100) END,
     'maxStage', 10
   );
@@ -320,6 +400,7 @@ DECLARE
   v_user_id UUID := auth.uid();
   v_progress user_farm_progress%ROWTYPE;
   v_threshold INTEGER;
+  v_seed_count INTEGER := 0;
 BEGIN
   IF v_user_id IS NULL THEN
     RAISE EXCEPTION '로그인이 필요합니다.';
@@ -330,6 +411,14 @@ BEGIN
   ON CONFLICT (user_id) DO NOTHING;
 
   SELECT * INTO v_progress FROM user_farm_progress WHERE user_id = v_user_id;
+
+  IF v_progress.stage >= 2 THEN
+    PERFORM grant_stage2_welcome_seed(v_user_id);
+  END IF;
+
+  SELECT COALESCE(seed_count, 0) INTO v_seed_count
+  FROM user_farm_inventory
+  WHERE user_id = v_user_id;
 
   IF v_progress.stage >= 10 THEN
     v_threshold := NULL;
@@ -343,12 +432,15 @@ BEGIN
     'stage', v_progress.stage,
     'xp', v_progress.xp,
     'farmUnlocked', v_progress.farm_unlocked,
+    'seedCount', v_seed_count,
+    'feedJellyCost', get_milk_feed_jelly_cost(v_progress.stage),
     'nextStageXpRequired', v_threshold,
     'maxStage', 10
   );
 END;
 $$;
 
+GRANT EXECUTE ON FUNCTION get_milk_feed_jelly_cost(INTEGER) TO authenticated;
 GRANT EXECUTE ON FUNCTION spend_jelly(INTEGER, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION process_farm_xp_event(TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_my_farm_progress() TO authenticated;
@@ -358,5 +450,6 @@ SET allowed_menu_ids = array_append(allowed_menu_ids, 'farm')
 WHERE NOT ('farm' = ANY(allowed_menu_ids));
 
 COMMENT ON TABLE user_farm_progress IS '사용자 포실이 농장 성장 진행';
+COMMENT ON TABLE user_farm_inventory IS '사용자 농장 인벤토리 (씨앗 등)';
 COMMENT ON TABLE farm_xp_events IS '농장 경험치 이벤트 (관리자 설정)';
 COMMENT ON TABLE farm_settings IS '농장 전역 설정';

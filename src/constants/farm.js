@@ -9,6 +9,32 @@ export const FARM_DEFAULT_IMAGES = {
 
 export const FARM_MILK_EVENT_KEY = 'milk_feed'
 
+/** 2단계 달성 시 지급되는 환영 씨앗 개수 */
+export const FARM_STAGE2_WELCOME_SEED_COUNT = 1
+
+/** 1~2단계 먹이 젤리 */
+export const FARM_FEED_JELLY_COST_DEFAULT = 3
+
+/** 3단계 이상 먹이 젤리 */
+export const FARM_FEED_JELLY_COST_STAGE_3_PLUS = 5
+
+/** 3단계부터 먹이 젤리 상향 */
+export const FARM_FEED_JELLY_STAGE_THRESHOLD = 3
+
+/**
+ * @param {number} stage
+ * @param {Record<string, string>} [settings]
+ * @returns {number}
+ */
+export function getFarmFeedJellyCost(stage, settings = {}) {
+  if (stage >= FARM_FEED_JELLY_STAGE_THRESHOLD) {
+    const fromSettings = settings.milk_feed_jelly_cost_stage_3_plus
+    return fromSettings != null ? Number(fromSettings) : FARM_FEED_JELLY_COST_STAGE_3_PLUS
+  }
+  const fromSettings = settings.milk_feed_jelly_cost_default
+  return fromSettings != null ? Number(fromSettings) : FARM_FEED_JELLY_COST_DEFAULT
+}
+
 /**
  * @param {number} stage
  * @returns {string}

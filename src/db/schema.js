@@ -150,6 +150,31 @@ export const userFarmProgress = pgTable('user_farm_progress', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
+/**
+ * user_farm_inventory — 농장 인벤토리 (씨앗 등)
+ */
+export const userFarmInventory = pgTable('user_farm_inventory', {
+  userId: uuid('user_id').primaryKey(),
+  seedCount: bigint('seed_count', { mode: 'number' }).notNull(),
+  welcomeSeedGranted: boolean('welcome_seed_granted').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * farm_field_crops — 농장 밭 작물 (5×4 격자)
+ */
+export const farmFieldCrops = pgTable('farm_field_crops', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  cellRow: bigint('cell_row', { mode: 'number' }).notNull(),
+  cellCol: bigint('cell_col', { mode: 'number' }).notNull(),
+  stage: bigint('stage', { mode: 'number' }).notNull(),
+  xp: bigint('xp', { mode: 'number' }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
 export const diaries = pgTable('diaries', {
   id: uuid('id').defaultRandom().primaryKey(),
   date: text('date').notNull().unique(), // YYYY-MM-DD 형식
