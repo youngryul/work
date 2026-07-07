@@ -40,3 +40,11 @@ export function getCropXpPercent(crop) {
   if (required <= 0) return 100
   return Math.min(100, Math.round((crop.xp / required) * 100))
 }
+
+/**
+ * @param {Object} crop
+ * @returns {boolean}
+ */
+export function hasCropHarvestImage(crop) {
+  return crop?.stage >= CROP_MAX_STAGE && Boolean(crop?.cropImageUrl)
+}

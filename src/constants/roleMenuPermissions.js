@@ -74,6 +74,7 @@ export const DEFAULT_ROLE_MENU_PERMISSIONS = {
       'gacha',
       'farm',
       'farm-field',
+      'shop',
       'stocks',
     ],
     allowedFooterMenuIds: [...DEFAULT_FOOTER_MENU_IDS],
@@ -100,7 +101,7 @@ export const DEFAULT_ROLE_MENU_PERMISSIONS = {
 export const ROLE_MENU_CONFIG_GROUPS = [
   {
     title: '할 일·일기',
-    menuIds: ['today', 'backlog', 'todo-calendar', 'diary-calendar', 'gacha', 'farm', 'farm-field', 'stocks', 'schedule-calendar'],
+    menuIds: ['today', 'backlog', 'todo-calendar', 'diary-calendar', 'gacha', 'farm', 'farm-field', 'shop', 'stocks', 'schedule-calendar'],
   },
   {
     title: '기록·목표',

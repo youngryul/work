@@ -176,6 +176,8 @@ function normalizeFieldCrop(crop) {
     xp: crop.xp,
     nextStageXpRequired: crop.nextStageXpRequired,
     maxStage: crop.maxStage ?? 4,
+    cropImageUrl: crop.cropImageUrl ?? null,
+    cropName: crop.cropName ?? null,
   }
 }
 

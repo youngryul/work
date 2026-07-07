@@ -85,6 +85,7 @@ export const gachaCharacters = pgTable('gacha_characters', {
   imageUrl: text('image_url').notNull(),
   dropWeight: bigint('drop_weight', { mode: 'number' }).notNull(),
   isActive: boolean('is_active').default(true).notNull(),
+  isCrop: boolean('is_crop').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
@@ -172,6 +173,7 @@ export const farmFieldCrops = pgTable('farm_field_crops', {
   cellCol: bigint('cell_col', { mode: 'number' }).notNull(),
   stage: bigint('stage', { mode: 'number' }).notNull(),
   xp: bigint('xp', { mode: 'number' }).notNull(),
+  cropGachaCharacterId: uuid('crop_gacha_character_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })

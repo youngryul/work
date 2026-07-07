@@ -37,7 +37,7 @@ const EMPTY_FORM = {
   dropWeight: GACHA_GRADE_DEFAULT_DROP_WEIGHT.common,
 
   isActive: true,
-
+  isCrop: false,
   imageUrl: '',
 
   imagePreview: '',
@@ -67,6 +67,7 @@ export default function GachaCharacterManagement() {
   const [isUploading, setIsUploading] = useState(false)
 
   const [isSaving, setIsSaving] = useState(false)
+  const [inlineSavingId, setInlineSavingId] = useState(null)
 
   const fileInputRef = useRef(null)
 
@@ -179,7 +180,7 @@ export default function GachaCharacterManagement() {
       dropWeight: char.dropWeight,
 
       isActive: char.isActive,
-
+      isCrop: char.isCrop ?? false,
       imageUrl: char.imageUrl,
 
       imagePreview: char.imageUrl,
@@ -229,7 +230,7 @@ export default function GachaCharacterManagement() {
         dropWeight: Number(form.dropWeight) || 100,
 
         isActive: form.isActive,
-
+        isCrop: form.isCrop,
       }
 
 
@@ -268,6 +269,36 @@ export default function GachaCharacterManagement() {
 
 
 
+  const handleInlineUpdate = async (char, updates) => {
+    const prevCharacters = characters
+    setCharacters((list) =>
+      list.map((item) => (item.id === char.id ? { ...item, ...updates } : item)),
+    )
+    setInlineSavingId(char.id)
+
+    try {
+      const updated = await updateGachaCharacter(char.id, updates)
+      setCharacters((list) =>
+        list.map((item) => (item.id === char.id ? { ...item, ...updated } : item)),
+      )
+    } catch (error) {
+      setCharacters(prevCharacters)
+      showToast(error?.message || '저장에 실패했습니다.', TOAST_TYPES.ERROR)
+    } finally {
+      setInlineSavingId(null)
+    }
+  }
+
+  const handleDropWeightBlur = async (char, rawValue) => {
+    const next = Number(rawValue)
+    if (!Number.isFinite(next) || next < 1) {
+      showToast('가중치는 1 이상이어야 합니다.', TOAST_TYPES.ERROR)
+      return
+    }
+    if (next === char.dropWeight) return
+    await handleInlineUpdate(char, { dropWeight: next })
+  }
+
   const handleDelete = async (id) => {
 
     if (!confirm('이 포실이를 삭제하시겠습니까?')) return
@@ -283,24 +314,6 @@ export default function GachaCharacterManagement() {
     } catch (error) {
 
       showToast(error?.message || '삭제에 실패했습니다.', TOAST_TYPES.ERROR)
-
-    }
-
-  }
-
-
-
-  const toggleActive = async (char) => {
-
-    try {
-
-      await updateGachaCharacter(char.id, { isActive: !char.isActive })
-
-      load()
-
-    } catch (error) {
-
-      showToast(error?.message || '상태 변경에 실패했습니다.', TOAST_TYPES.ERROR)
 
     }
 
@@ -511,6 +524,15 @@ export default function GachaCharacterManagement() {
 
 
           <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={form.isCrop}
+              onChange={(e) => setForm((p) => ({ ...p, isCrop: e.target.checked }))}
+            />
+            <span className="text-sm text-gray-700">작물 (농장 4단계에서 랜덤 표시, 가챠 뽑기 제외)</span>
+          </label>
+
+          <label className="flex items-center gap-2">
 
             <input
 
@@ -601,8 +623,8 @@ export default function GachaCharacterManagement() {
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">등급</th>
 
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">가중치</th>
-
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">상태</th>
+                  <th className="text-center px-4 py-3 font-semibold text-gray-700">작물</th>
+                  <th className="text-center px-4 py-3 font-semibold text-gray-700">활성</th>
 
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">관리</th>
 
@@ -646,32 +668,46 @@ export default function GachaCharacterManagement() {
 
                       </td>
 
-                      <td className="px-4 py-3 text-gray-600">{char.dropWeight}</td>
-
                       <td className="px-4 py-3">
+                        <input
+                          type="number"
+                          min={1}
+                          defaultValue={char.dropWeight}
+                          key={`weight-${char.id}-${char.dropWeight}`}
+                          disabled={inlineSavingId === char.id}
+                          onBlur={(e) => handleDropWeightBlur(char, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') e.currentTarget.blur()
+                          }}
+                          className="w-20 px-2 py-1 border border-gray-300 rounded-md text-gray-800 focus:border-pink-400 focus:outline-none focus:ring-1 focus:ring-pink-300 disabled:opacity-50"
+                          aria-label={`${char.name} 드롭 가중치`}
+                        />
+                      </td>
 
-                        <button
+                      <td className="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(char.isCrop)}
+                          disabled={inlineSavingId === char.id}
+                          onChange={(e) =>
+                            handleInlineUpdate(char, { isCrop: e.target.checked })
+                          }
+                          className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-400 disabled:opacity-50"
+                          aria-label={`${char.name} 작물`}
+                        />
+                      </td>
 
-                          type="button"
-
-                          onClick={() => toggleActive(char)}
-
-                          className={`px-2 py-0.5 rounded text-xs font-semibold ${
-
-                            char.isActive
-
-                              ? 'bg-green-100 text-green-800'
-
-                              : 'bg-gray-100 text-gray-500'
-
-                          }`}
-
-                        >
-
-                          {char.isActive ? '활성' : '비활성'}
-
-                        </button>
-
+                      <td className="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(char.isActive)}
+                          disabled={inlineSavingId === char.id}
+                          onChange={(e) =>
+                            handleInlineUpdate(char, { isActive: e.target.checked })
+                          }
+                          className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-400 disabled:opacity-50"
+                          aria-label={`${char.name} 활성`}
+                        />
                       </td>
 
                       <td className="px-4 py-3">

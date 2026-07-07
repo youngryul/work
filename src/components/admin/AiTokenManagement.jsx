@@ -6,10 +6,14 @@ import {
   setUserAiTokenBalance,
   updateAiTokenSettings,
 } from '../../services/aiTokenService.js'
+import {
+  getJellyBalancesForUsers,
+  setUserJellyBalance,
+} from '../../services/jellyService.js'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
- * 관리자: AI 이미지 생성 토큰 설정 및 유저별 잔액 관리
+ * 관리자: AI 토큰·젤리 설정 및 유저별 잔액 관리
  */
 export default function AiTokenManagement() {
   const [rows, setRows] = useState([])
@@ -18,7 +22,8 @@ export default function AiTokenManagement() {
   const [generationCost, setGenerationCost] = useState(3)
   const [isSavingSettings, setIsSavingSettings] = useState(false)
   const [isSavingAllBalances, setIsSavingAllBalances] = useState(false)
-  const [draftBalances, setDraftBalances] = useState({})
+  const [draftTokenBalances, setDraftTokenBalances] = useState({})
+  const [draftJellyBalances, setDraftJellyBalances] = useState({})
 
   const load = async () => {
     setLoading(true)
@@ -30,15 +35,28 @@ export default function AiTokenManagement() {
       setDefaultBalance(settings.defaultBalance)
       setGenerationCost(settings.generationCost)
 
-      const tokenRows = await getTokenBalancesForUsers(users)
-      setRows(tokenRows)
-      const drafts = {}
-      tokenRows.forEach((row) => {
-        drafts[row.userId] = String(row.balance)
+      const [tokenRows, jellyRows] = await Promise.all([
+        getTokenBalancesForUsers(users),
+        getJellyBalancesForUsers(users),
+      ])
+
+      const jellyMap = new Map(jellyRows.map((row) => [row.userId, row.balance]))
+      const merged = tokenRows.map((row) => ({
+        ...row,
+        jellyBalance: jellyMap.get(row.userId) ?? 0,
+      }))
+
+      setRows(merged)
+      const tokenDrafts = {}
+      const jellyDrafts = {}
+      merged.forEach((row) => {
+        tokenDrafts[row.userId] = String(row.balance)
+        jellyDrafts[row.userId] = String(row.jellyBalance)
       })
-      setDraftBalances(drafts)
+      setDraftTokenBalances(tokenDrafts)
+      setDraftJellyBalances(jellyDrafts)
     } catch {
-      showToast('토큰 목록을 불러오지 못했습니다.', TOAST_TYPES.ERROR)
+      showToast('토큰·젤리 목록을 불러오지 못했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setLoading(false)
     }
@@ -77,33 +95,51 @@ export default function AiTokenManagement() {
 
   const handleSaveAllUserBalances = async () => {
     for (const row of rows) {
-      const nextBalance = Number(draftBalances[row.userId])
-      if (Number.isNaN(nextBalance) || nextBalance < 0) {
+      const nextToken = Number(draftTokenBalances[row.userId])
+      const nextJelly = Number(draftJellyBalances[row.userId])
+      if (Number.isNaN(nextToken) || nextToken < 0) {
         showToast(`"${row.email}"의 토큰은 0 이상의 숫자여야 합니다.`, TOAST_TYPES.ERROR)
+        return
+      }
+      if (Number.isNaN(nextJelly) || nextJelly < 0) {
+        showToast(`"${row.email}"의 젤리는 0 이상의 숫자여야 합니다.`, TOAST_TYPES.ERROR)
         return
       }
     }
 
-    const changedCount = rows.filter(
-      (row) => Number(draftBalances[row.userId]) !== row.balance,
+    const changedTokenCount = rows.filter(
+      (row) => Number(draftTokenBalances[row.userId]) !== row.balance,
+    ).length
+    const changedJellyCount = rows.filter(
+      (row) => Number(draftJellyBalances[row.userId]) !== row.jellyBalance,
     ).length
 
-    if (changedCount === 0) {
-      showToast('변경된 토큰이 없습니다.', TOAST_TYPES.INFO)
+    if (changedTokenCount === 0 && changedJellyCount === 0) {
+      showToast('변경된 잔액이 없습니다.', TOAST_TYPES.INFO)
       return
     }
 
     setIsSavingAllBalances(true)
     try {
       await Promise.all(
-        rows.map((row) =>
-          setUserAiTokenBalance(row.userId, Number(draftBalances[row.userId])),
-        ),
+        rows.flatMap((row) => {
+          const tasks = []
+          if (Number(draftTokenBalances[row.userId]) !== row.balance) {
+            tasks.push(setUserAiTokenBalance(row.userId, Number(draftTokenBalances[row.userId])))
+          }
+          if (Number(draftJellyBalances[row.userId]) !== row.jellyBalance) {
+            tasks.push(setUserJellyBalance(row.userId, Number(draftJellyBalances[row.userId])))
+          }
+          return tasks
+        }),
       )
-      showToast(`${changedCount}명의 토큰 잔액을 저장했습니다.`, TOAST_TYPES.SUCCESS)
+      showToast(
+        `토큰 ${changedTokenCount}명 · 젤리 ${changedJellyCount}명 잔액을 저장했습니다.`,
+        TOAST_TYPES.SUCCESS,
+      )
       await load()
     } catch (error) {
-      showToast(error?.message || '토큰 저장에 실패했습니다.', TOAST_TYPES.ERROR)
+      showToast(error?.message || '잔액 저장에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setIsSavingAllBalances(false)
     }
@@ -124,12 +160,13 @@ export default function AiTokenManagement() {
           일기 AI 이미지 생성 시 <strong>생성 비용</strong>만큼 토큰이 차감됩니다.
         </p>
         <p className="text-sm text-amber-800">
-          신규 유저는 <strong>기본 토큰</strong>으로 시작하며, 아래에서 유저별 잔액을 직접 조절할 수 있습니다.
+          젤리는 포실이·농장·가챠에 사용됩니다. 신규 유저는 <strong>기본 토큰</strong>으로 시작하며,
+          아래에서 유저별 토큰·젤리 잔액을 직접 조절할 수 있습니다.
         </p>
       </div>
 
       <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">전역 설정</h3>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">AI 토큰 전역 설정</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <label className="block">
             <span className="text-sm text-gray-600 mb-1 block">신규 유저 기본 토큰</span>
@@ -165,7 +202,7 @@ export default function AiTokenManagement() {
       <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-800">
-            유저별 토큰 ({rows.length}명)
+            유저별 토큰·젤리 ({rows.length}명)
           </h3>
           <p className="text-sm text-gray-500 mt-1">수정 후 하단 저장 버튼으로 한 번에 반영합니다.</p>
         </div>
@@ -175,12 +212,16 @@ export default function AiTokenManagement() {
               <tr>
                 <th className="text-left px-6 py-3 font-semibold text-gray-700">이메일</th>
                 <th className="text-left px-6 py-3 font-semibold text-gray-700">보유 토큰</th>
+                <th className="text-left px-6 py-3 font-semibold text-gray-700">보유 젤리</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => {
-                const draftValue = draftBalances[row.userId] ?? String(row.balance)
-                const isChanged = Number(draftValue) !== row.balance
+                const draftToken = draftTokenBalances[row.userId] ?? String(row.balance)
+                const draftJelly = draftJellyBalances[row.userId] ?? String(row.jellyBalance)
+                const tokenChanged = Number(draftToken) !== row.balance
+                const jellyChanged = Number(draftJelly) !== row.jellyBalance
+                const isChanged = tokenChanged || jellyChanged
                 return (
                   <tr
                     key={row.userId}
@@ -191,17 +232,34 @@ export default function AiTokenManagement() {
                       <input
                         type="number"
                         min={0}
-                        value={draftValue}
+                        value={draftToken}
                         onChange={(e) =>
-                          setDraftBalances((prev) => ({
+                          setDraftTokenBalances((prev) => ({
                             ...prev,
                             [row.userId]: e.target.value,
                           }))
                         }
                         className="w-24 px-2 py-1 border border-gray-300 rounded"
                       />
-                      {isChanged && (
+                      {tokenChanged && (
                         <span className="ml-2 text-xs text-amber-700">변경됨</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-3">
+                      <input
+                        type="number"
+                        min={0}
+                        value={draftJelly}
+                        onChange={(e) =>
+                          setDraftJellyBalances((prev) => ({
+                            ...prev,
+                            [row.userId]: e.target.value,
+                          }))
+                        }
+                        className="w-24 px-2 py-1 border border-gray-300 rounded"
+                      />
+                      {jellyChanged && (
+                        <span className="ml-2 text-xs text-pink-700">변경됨</span>
                       )}
                     </td>
                   </tr>

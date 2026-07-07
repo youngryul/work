@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { formatKrw } from '../../constants/aiTokenPurchase.js'
+import { formatKrw, SHOP_PURCHASE_TYPES } from '../../constants/shop.js'
 import {
   getAllTokenPurchaseRequests,
   updateTokenPurchaseRequestStatus,
@@ -12,13 +12,19 @@ const STATUS_LABELS = {
   rejected: { text: '반려', className: 'bg-red-100 text-red-800' },
 }
 
+const PURCHASE_TYPE_LABELS = {
+  [SHOP_PURCHASE_TYPES.AI_TOKEN]: { text: 'AI 토큰', className: 'bg-amber-100 text-amber-800' },
+  [SHOP_PURCHASE_TYPES.JELLY]: { text: '젤리', className: 'bg-pink-100 text-pink-800' },
+}
+
 /**
- * 관리자: AI 토큰 무통장 충전 신청 목록
+ * 관리자: 무통장 충전 신청 목록 (토큰·젤리)
  */
 export default function TokenPurchaseRequestManagement() {
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState('all')
   const [updatingId, setUpdatingId] = useState('')
 
   const load = async () => {
@@ -49,9 +55,13 @@ export default function TokenPurchaseRequestManagement() {
 
       if (status === 'completed') {
         const emailLabel = result.userEmail || targetRequest?.userEmail || '해당 사용자'
-        const added = result.addedTokens ?? targetRequest?.requestedTokens ?? 0
+        const isJelly = result.purchaseType === SHOP_PURCHASE_TYPES.JELLY
+        const added = isJelly
+          ? (result.addedJelly ?? targetRequest?.requestedJelly ?? 0)
+          : (result.addedTokens ?? targetRequest?.requestedTokens ?? 0)
+        const unit = isJelly ? '젤리' : '토큰'
         showToast(
-          `${emailLabel}에게 ${added}토큰이 지급되었습니다. (잔액 ${result.newBalance ?? '-'}개)`,
+          `${emailLabel}에게 ${added}${unit}이 지급되었습니다. (잔액 ${result.newBalance ?? '-'}개)`,
           TOAST_TYPES.SUCCESS,
         )
       } else {
@@ -64,9 +74,11 @@ export default function TokenPurchaseRequestManagement() {
     }
   }
 
-  const filtered = requests.filter(
-    (item) => statusFilter === 'all' || item.status === statusFilter,
-  )
+  const filtered = requests.filter((item) => {
+    if (statusFilter !== 'all' && item.status !== statusFilter) return false
+    if (typeFilter !== 'all' && item.purchaseType !== typeFilter) return false
+    return true
+  })
 
   if (loading) {
     return (
@@ -81,13 +93,13 @@ export default function TokenPurchaseRequestManagement() {
       <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
         <p className="text-sm text-purple-900">
           사용자가 제출한 무통장 충전 신청입니다. 입금 확인 후 <strong>완료</strong>를 누르면
-          신청 이메일 계정에 신청 토큰이 자동으로 추가됩니다.
+          신청 이메일 계정에 <strong>토큰</strong> 또는 <strong>젤리</strong>가 자동으로 추가됩니다.
         </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
         {[
-          { id: 'all', label: '전체' },
+          { id: 'all', label: '전체 상태' },
           { id: 'pending', label: '대기' },
           { id: 'completed', label: '완료' },
           { id: 'rejected', label: '반려' },
@@ -99,6 +111,25 @@ export default function TokenPurchaseRequestManagement() {
             className={`px-4 py-2 rounded-lg text-sm font-medium ${
               statusFilter === tab.id
                 ? 'bg-purple-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+        <span className="text-gray-300 hidden sm:inline">|</span>
+        {[
+          { id: 'all', label: '전체 유형' },
+          { id: SHOP_PURCHASE_TYPES.AI_TOKEN, label: '토큰' },
+          { id: SHOP_PURCHASE_TYPES.JELLY, label: '젤리' },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setTypeFilter(tab.id)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              typeFilter === tab.id
+                ? 'bg-pink-600 text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
@@ -129,10 +160,11 @@ export default function TokenPurchaseRequestManagement() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">신청일</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">유형</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">이메일</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">입금자명</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">입금액</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">신청 토큰</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700">신청 수량</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">상태</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">처리</th>
                 </tr>
@@ -140,15 +172,25 @@ export default function TokenPurchaseRequestManagement() {
               <tbody>
                 {filtered.map((item) => {
                   const statusMeta = STATUS_LABELS[item.status] || STATUS_LABELS.pending
+                  const typeMeta = PURCHASE_TYPE_LABELS[item.purchaseType] || PURCHASE_TYPE_LABELS.ai_token
+                  const isJelly = item.purchaseType === SHOP_PURCHASE_TYPES.JELLY
+                  const qtyLabel = isJelly
+                    ? `${item.requestedJelly ?? 0}젤리`
+                    : `${item.requestedTokens ?? 0}토큰`
                   return (
                     <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
                         {new Date(item.createdAt).toLocaleString('ko-KR')}
                       </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex px-2 py-0.5 rounded text-xs font-semibold ${typeMeta.className}`}>
+                          {typeMeta.text}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-gray-800">{item.userEmail || '-'}</td>
                       <td className="px-4 py-3 font-medium text-gray-800">{item.depositorName}</td>
                       <td className="px-4 py-3 text-gray-800">{formatKrw(item.depositAmountKrw)}</td>
-                      <td className="px-4 py-3 font-semibold text-gray-800">{item.requestedTokens}개</td>
+                      <td className="px-4 py-3 font-semibold text-gray-800">{qtyLabel}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex px-2 py-0.5 rounded text-xs font-semibold ${statusMeta.className}`}>
                           {statusMeta.text}

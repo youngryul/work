@@ -57,6 +57,11 @@ export const NAVIGATION_MENU_ITEMS = [
     icon: '🌾',
   },
   {
+    id: 'shop',
+    label: '상점',
+    icon: '🛒',
+  },
+  {
     id: 'stocks',
     label: '주식 확인',
     icon: '📈',

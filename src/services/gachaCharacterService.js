@@ -27,7 +27,7 @@ function normalizeCharacter(row) {
     dropWeight: row.drop_weight,
 
     isActive: row.is_active,
-
+    isCrop: Boolean(row.is_crop),
     createdAt: row.created_at,
 
     updatedAt: row.updated_at,
@@ -55,6 +55,8 @@ export async function getActiveGachaCharacters() {
     .select('*')
 
     .eq('is_active', true)
+
+    .eq('is_crop', false)
 
     .order('grade', { ascending: true })
 
@@ -155,7 +157,7 @@ export async function createGachaCharacter(params) {
       drop_weight: params.dropWeight ?? 100,
 
       is_active: params.isActive !== false,
-
+      is_crop: Boolean(params.isCrop),
     }])
 
     .select('*')
@@ -207,6 +209,7 @@ export async function updateGachaCharacter(id, params) {
   if (params.dropWeight !== undefined) updates.drop_weight = params.dropWeight
 
   if (params.isActive !== undefined) updates.is_active = params.isActive
+  if (params.isCrop !== undefined) updates.is_crop = params.isCrop
 
 
 

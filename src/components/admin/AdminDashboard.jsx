@@ -43,7 +43,7 @@ export default function AdminDashboard() {
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-4 text-gray-800 font-sans">🔐 관리자 대시보드</h1>
         <p className="text-base text-gray-600 font-sans mb-4">
-          공지사항, 사용자, 데이터 통계, 권한·메뉴·광고·AI 토큰·충전 신청·포실이 가챠를 관리할 수 있습니다.
+          공지사항, 사용자, 데이터 통계, 권한·메뉴·광고·토큰·젤리·충전 신청·포실이 가챠를 관리할 수 있습니다.
         </p>
 
         {/* 탭 */}
@@ -116,7 +116,7 @@ export default function AdminDashboard() {
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            AI 토큰
+            AI 토큰·젤리
           </button>
           <button
             onClick={() => setActiveTab('purchases')}
@@ -126,7 +126,7 @@ export default function AdminDashboard() {
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            토큰 충전 신청
+            충전 신청
           </button>
           <button
             onClick={() => setActiveTab('gacha')}

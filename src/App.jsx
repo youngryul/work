@@ -31,6 +31,7 @@ import StockWatchView from './components/stock/StockWatchView.jsx'
 import GachaView from './components/gacha/GachaView.jsx'
 import FarmView from './components/farm/FarmView.jsx'
 import FarmFieldView from './components/farm/FarmFieldView.jsx'
+import ShopView from './components/shop/ShopView.jsx'
 import MyPageView from './components/gacha/MyPageView.jsx'
 import NavigationSidebar from './components/NavigationSidebar.jsx'
 import NotificationCenter from './components/NotificationCenter.jsx'
@@ -410,6 +411,7 @@ function AppContent() {
         {currentView === 'gacha' && <GachaView />}
         {currentView === 'farm' && <FarmView />}
         {currentView === 'farm-field' && <FarmFieldView />}
+        {currentView === 'shop' && <ShopView />}
         {currentView === 'stocks' && <StockWatchView />}
         {currentView === 'my-page' && <MyPageView />}
         {currentView === 'review' && <AnnualReviewView />}

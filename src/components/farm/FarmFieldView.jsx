@@ -6,14 +6,32 @@ import {
   getCropStageLabel,
   getCropStageMeta,
   getCropXpPercent,
+  hasCropHarvestImage,
 } from '../../constants/farmField.js'
 import { useJellyBalance } from '../../hooks/useJellyBalance.js'
 import { getMyFarmField, plantFarmSeed, waterFarmCrop } from '../../services/farmService.js'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
 import ViewPageTitle from '../ViewPageTitle.jsx'
 
+function renderCropCellContent(crop) {
+  if (hasCropHarvestImage(crop)) {
+    return (
+      <img
+        src={crop.cropImageUrl}
+        alt={crop.cropName || '작물'}
+        className="w-[78%] h-[78%] object-contain drop-shadow-md"
+        draggable={false}
+      />
+    )
+  }
+  return (
+    <span className="text-2xl sm:text-3xl drop-shadow-md select-none">
+      {getCropStageMeta(crop.stage).emoji}
+    </span>
+  )
+}
+
 /**
- * @param {Array} crops
  * @param {number} row
  * @param {number} col
  */
@@ -209,9 +227,7 @@ export default function FarmFieldView() {
                     }
                   >
                     {crop ? (
-                      <span className="text-2xl sm:text-3xl drop-shadow-md select-none">
-                        {getCropStageMeta(crop.stage).emoji}
-                      </span>
+                      renderCropCellContent(crop)
                     ) : plantMode ? (
                       <span className="text-green-700 text-xl opacity-70">+</span>
                     ) : null}
@@ -233,9 +249,21 @@ export default function FarmFieldView() {
         <section className="rounded-2xl border border-sky-200 bg-sky-50 p-4 space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span className="text-3xl">{getCropStageMeta(selectedCrop.stage).emoji}</span>
+              {hasCropHarvestImage(selectedCrop) ? (
+                <img
+                  src={selectedCrop.cropImageUrl}
+                  alt={selectedCrop.cropName || '작물'}
+                  className="w-12 h-12 object-contain"
+                />
+              ) : (
+                <span className="text-3xl">{getCropStageMeta(selectedCrop.stage).emoji}</span>
+              )}
               <div>
-                <p className="font-bold text-sky-900">{getCropStageLabel(selectedCrop.stage)}</p>
+                <p className="font-bold text-sky-900">
+                  {hasCropHarvestImage(selectedCrop) && selectedCrop.cropName
+                    ? selectedCrop.cropName
+                    : getCropStageLabel(selectedCrop.stage)}
+                </p>
                 <p className="text-sm text-sky-700">
                   {selectedCrop.row + 1}행 {selectedCrop.col + 1}열
                 </p>
@@ -255,7 +283,11 @@ export default function FarmFieldView() {
               />
             </div>
           ) : (
-            <p className="text-sm text-green-700 font-medium">완전히 자란 작물이에요! 🎉</p>
+            <p className="text-sm text-green-700 font-medium">
+              {selectedCrop.cropName
+                ? `${selectedCrop.cropName}이(가) 완전히 자랐어요! 🎉`
+                : '완전히 자란 작물이에요! 🎉'}
+            </p>
           )}
         </section>
       )}
@@ -300,9 +332,20 @@ export default function FarmFieldView() {
       {cropLevelUpStage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border-2 border-green-200">
-            <span className="text-6xl block mb-4">{getCropStageMeta(cropLevelUpStage).emoji}</span>
+            {cropLevelUpStage >= CROP_MAX_STAGE && field.crops.find((c) => c.id === selectedCropId)?.cropImageUrl ? (
+              <img
+                src={field.crops.find((c) => c.id === selectedCropId)?.cropImageUrl}
+                alt="작물"
+                className="w-24 h-24 mx-auto object-contain mb-4"
+              />
+            ) : (
+              <span className="text-6xl block mb-4">{getCropStageMeta(cropLevelUpStage).emoji}</span>
+            )}
             <h3 className="text-2xl font-bold text-green-800 mb-2">
-              {getCropStageMeta(cropLevelUpStage).label} 단계!
+              {cropLevelUpStage >= CROP_MAX_STAGE &&
+              field.crops.find((c) => c.id === selectedCropId)?.cropName
+                ? field.crops.find((c) => c.id === selectedCropId)?.cropName
+                : `${getCropStageMeta(cropLevelUpStage).label} 단계!`}
             </h3>
             <p className="text-gray-600 text-sm mb-6">
               {cropLevelUpStage >= CROP_MAX_STAGE
