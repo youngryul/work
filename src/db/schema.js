@@ -146,6 +146,7 @@ export const userFarmProgress = pgTable('user_farm_progress', {
   stage: bigint('stage', { mode: 'number' }).notNull(),
   xp: bigint('xp', { mode: 'number' }).notNull(),
   farmUnlocked: boolean('farm_unlocked').notNull(),
+  activeCharacterId: uuid('active_character_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })

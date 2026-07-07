@@ -75,9 +75,11 @@ export default function FiveYearQuestionView() {
 
     setIsSaving(true)
     try {
-      await saveAnswer(question.id, currentYear, currentAnswer.trim())
+      const saveResult = await saveAnswer(question.id, currentYear, currentAnswer.trim())
       await loadQuestionAndAnswers()
-      showToast('답변이 저장되었습니다.', TOAST_TYPES.SUCCESS)
+      const jellyMsg =
+        saveResult?.jellyAwarded > 0 ? ` 젤리 +${saveResult.jellyAwarded}` : ''
+      showToast(`답변이 저장되었습니다.${jellyMsg}`, TOAST_TYPES.SUCCESS)
       
       // 오늘 날짜의 질문에 답변을 저장한 경우 리마인더 표시 기록
       const today = new Date()

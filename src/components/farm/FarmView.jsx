@@ -10,8 +10,8 @@ import {
 
   FARM_MAX_STAGE,
   FARM_STAGE2_WELCOME_SEED_COUNT,
+  getFarmDisplayImage,
   getFarmFeedJellyCost,
-  getFarmStageImage,
 
   getFarmStageLabel,
 
@@ -118,7 +118,7 @@ export default function FarmView() {
 
   const isMaxStage = stage >= FARM_MAX_STAGE
 
-  const stageImage = getFarmStageImage(stage, settings)
+  const stageImage = getFarmDisplayImage(stage, settings, progress.activeCharacter)
 
   const nextRequired = progress.nextStageXpRequired || 100
 
@@ -269,6 +269,18 @@ export default function FarmView() {
             />
 
           </div>
+
+          {stage >= 2 && progress.activeCharacter && (
+            <p className="mt-2 text-sm font-semibold text-green-800">
+              {progress.activeCharacter.name}
+            </p>
+          )}
+
+          {stage >= 3 && !progress.activeCharacter && (
+            <p className="mt-2 text-xs text-emerald-700">
+              마이페이지에서 내 캐릭터로 설정하면 여기에 표시돼요!
+            </p>
+          )}
 
 
 
@@ -452,7 +464,7 @@ export default function FarmView() {
 
             <img
 
-              src={getFarmStageImage(levelUpStage, settings)}
+              src={getFarmDisplayImage(levelUpStage, settings, progress.activeCharacter)}
 
               alt="포실이"
 

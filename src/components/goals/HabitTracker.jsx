@@ -68,7 +68,7 @@ export default function HabitTracker({ tracker, year, month, onUpdate }) {
     setAnimatingDay(day)
 
     try {
-      await toggleHabitTrackerDay(tracker.id, day, newStatus)
+      const result = await toggleHabitTrackerDay(tracker.id, day, newStatus)
 
       const dayData = days.find((d) => d.day === day)
       if (dayData) {
@@ -97,6 +97,9 @@ export default function HabitTracker({ tracker, year, month, onUpdate }) {
       }
 
       setTimeout(() => setAnimatingDay(null), 420)
+      if (newStatus && result?.jellyAwarded > 0) {
+        showToast(`이 습관 오늘 첫 달성! 젤리 +${result.jellyAwarded}`, TOAST_TYPES.SUCCESS)
+      }
       onUpdate?.()
     } catch (error) {
       console.error('Habit Tracker 업데이트 실패:', error)

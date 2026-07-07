@@ -10,10 +10,18 @@ export const JELLY_REWARD_WEIGHT_RECORD = 2
 /** 목표 몸무게 달성 시 젤리 보상 (1회) */
 export const JELLY_REWARD_WEIGHT_GOAL_REACHED = 10
 
+/** 오늘 5년 질문 최초 답변 시 젤리 보상 (하루 1회) */
+export const JELLY_REWARD_FIVE_YEAR_ANSWER = 3
+
+/** 습관 트래커별 오늘 최초 달성 시 젤리 보상 (트래커·하루 1회) */
+export const JELLY_REWARD_HABIT_TRACKER_FIRST_TODAY = 2
+
 /** 젤리 지급 사유 */
 export const JELLY_REWARD_REASON = {
   TASK_COMPLETE: 'task_complete',
   DIARY_WRITE: 'diary_write',
   WEIGHT_RECORD: 'weight_record',
   WEIGHT_GOAL_REACHED: 'weight_goal_reached',
+  FIVE_YEAR_ANSWER: 'five_year_answer',
+  HABIT_TRACKER_FIRST_TODAY: 'habit_tracker_first_today',
 }

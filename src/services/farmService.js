@@ -29,6 +29,19 @@ function normalizeFarmXpEvent(row) {
 }
 
 /**
+ * @param {Object|null|undefined} data
+ */
+function normalizeActiveCharacter(data) {
+  if (!data) return null
+  return {
+    characterId: data.characterId,
+    name: data.name,
+    grade: data.grade,
+    imageUrl: data.imageUrl,
+  }
+}
+
+/**
  * @returns {Promise<Object>}
  */
 export async function getMyFarmProgress() {
@@ -42,6 +55,9 @@ export async function getMyFarmProgress() {
       maxStage: FARM_MAX_STAGE,
       seedCount: 0,
       feedJellyCost: 3,
+      gachaPullJellyCost: 10,
+      gachaUnlocked: false,
+      activeCharacter: null,
     }
   }
 
@@ -56,6 +72,9 @@ export async function getMyFarmProgress() {
       maxStage: data?.maxStage ?? FARM_MAX_STAGE,
       seedCount: data?.seedCount ?? 0,
       feedJellyCost: data?.feedJellyCost ?? 3,
+      gachaPullJellyCost: data?.gachaPullJellyCost ?? 10,
+      gachaUnlocked: Boolean(data?.gachaUnlocked),
+      activeCharacter: normalizeActiveCharacter(data?.activeCharacter),
     }
   } catch (error) {
     console.error('농장 진행 조회 실패:', error)
@@ -67,6 +86,9 @@ export async function getMyFarmProgress() {
       maxStage: FARM_MAX_STAGE,
       seedCount: 0,
       feedJellyCost: 3,
+      gachaPullJellyCost: 10,
+      gachaUnlocked: false,
+      activeCharacter: null,
     }
   }
 }

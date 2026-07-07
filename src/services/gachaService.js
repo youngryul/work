@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabase.js'
 
 import { getCurrentUserId } from '../utils/authHelper.js'
+import { notifyJellyUpdated } from '../utils/jellyEvents.js'
 
 
 
@@ -32,7 +33,9 @@ export async function drawGacha() {
 
   }
 
-
+  if (data?.jellySpent > 0) {
+    notifyJellyUpdated({ balance: null, awarded: -data.jellySpent })
+  }
 
   return {
 
@@ -45,6 +48,8 @@ export async function drawGacha() {
     grade: data.grade,
 
     imageUrl: data.imageUrl,
+
+    jellySpent: data.jellySpent ?? 0,
 
   }
 
@@ -196,6 +201,32 @@ export async function getMyGachaPullCount() {
 
   return count ?? 0
 
+}
+
+/**
+ * 내 캐릭터로 설정 (포실이 성장 화면 표시)
+ * @param {string} characterId
+ * @returns {Promise<{ characterId: string, name: string, grade: string, imageUrl: string }>}
+ */
+export async function setActiveGachaCharacter(characterId) {
+  const userId = await getCurrentUserId()
+  if (!userId || !characterId) throw new Error('로그인이 필요합니다.')
+
+  const { data, error } = await supabase.rpc('set_active_gacha_character', {
+    p_character_id: characterId,
+  })
+
+  if (error) {
+    console.error('내 캐릭터 설정 오류:', error)
+    throw new Error(error.message || '캐릭터 설정에 실패했습니다.')
+  }
+
+  return {
+    characterId: data.characterId,
+    name: data.name,
+    grade: data.grade,
+    imageUrl: data.imageUrl,
+  }
 }
 
 

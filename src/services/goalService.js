@@ -4,7 +4,9 @@
  */
 import { supabase } from '../config/supabase.js'
 import { MAX_YEARLY_GOALS, MAX_MONTHLY_GOALS } from '../constants/goalCategories.js'
+import { isTodayTrackerDay } from '../constants/habitTracker.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
+import { awardJellyForHabitTrackerFirstToday } from './jellyService.js'
 
 /**
  * 연간 목표 목록 조회
@@ -1003,11 +1005,17 @@ export async function toggleHabitTrackerDay(habitTrackerId, day, isCompleted) {
     throw new Error('로그인이 필요합니다.')
   }
 
+  const formatDateKey = (date) => {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+
   try {
-    // habit_tracker의 user_id 확인
     const { data: tracker } = await supabase
         .from('habit_trackers')
-        .select('user_id')
+        .select('user_id, year, month')
         .eq('id', habitTrackerId)
         .eq('user_id', userId)
         .single()
@@ -1066,7 +1074,25 @@ export async function toggleHabitTrackerDay(habitTrackerId, day, isCompleted) {
       result = parseHabitTrackerDay(data)
     }
 
-    return result
+    let jellyAwarded = 0
+    if (
+      isCompleted &&
+      tracker?.year != null &&
+      tracker?.month != null &&
+      isTodayTrackerDay(day, tracker.year, tracker.month)
+    ) {
+      try {
+        const jellyResult = await awardJellyForHabitTrackerFirstToday(
+          habitTrackerId,
+          formatDateKey(new Date()),
+        )
+        jellyAwarded = jellyResult?.awarded ?? 0
+      } catch (jellyError) {
+        console.error('젤리 지급 실패:', jellyError)
+      }
+    }
+
+    return { ...result, jellyAwarded }
   } catch (error) {
     console.error('Habit Tracker 일별 체크 업데이트 오류:', error)
     throw error

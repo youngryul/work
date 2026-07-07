@@ -4,6 +4,7 @@
  */
 import { supabase } from '../config/supabase.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
+import { awardJellyForFiveYearAnswer } from './jellyService.js'
 
 /**
  * 날짜를 day_of_year로 변환 (1-365)
@@ -17,8 +18,14 @@ function getDayOfYear(date) {
   return Math.floor(diff / oneDay)
 }
 
+function formatDateKey(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 /**
- * 특정 날짜의 질문 조회
  * @param {Date} date - 날짜 객체
  * @returns {Promise<Object|null>} 질문 객체
  */
@@ -111,7 +118,7 @@ export async function getQuestionAndAnswersByDate(date) {
  * @param {string} questionId - 질문 ID
  * @param {number} year - 연도
  * @param {string} content - 답변 내용
- * @returns {Promise<Object>} 저장된 답변
+ * @returns {Promise<Object>} 저장된 답변 및 젤리 지급 정보
  */
 export async function saveAnswer(questionId, year, content) {
   const userId = await getCurrentUserId()
@@ -144,8 +151,19 @@ export async function saveAnswer(questionId, year, content) {
         throw error
       }
 
-      return data
+      return { ...data, jellyAwarded: 0 }
     } else {
+      const { data: question, error: questionError } = await supabase
+        .from('five_year_questions')
+        .select('day_of_year')
+        .eq('id', questionId)
+        .single()
+
+      if (questionError) {
+        console.error('질문 조회 오류:', questionError)
+        throw questionError
+      }
+
       // 생성
       const { data, error } = await supabase
         .from('five_year_answers')
@@ -163,7 +181,18 @@ export async function saveAnswer(questionId, year, content) {
         throw error
       }
 
-      return data
+      let jellyAwarded = 0
+      const today = new Date()
+      if (question?.day_of_year === getDayOfYear(today)) {
+        try {
+          const jellyResult = await awardJellyForFiveYearAnswer(formatDateKey(today))
+          jellyAwarded = jellyResult?.awarded ?? 0
+        } catch (jellyError) {
+          console.error('젤리 지급 실패:', jellyError)
+        }
+      }
+
+      return { ...data, jellyAwarded }
     }
   } catch (error) {
     console.error('답변 저장 실패:', error)

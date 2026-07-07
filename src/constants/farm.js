@@ -49,6 +49,22 @@ export function getFarmStageLabel(stage) {
 /**
  * @param {number} stage
  * @param {Record<string, string>} [settings]
+ * @param {{ imageUrl?: string } | null} [activeCharacter]
+ * @returns {string}
+ */
+export function getFarmDisplayImage(stage, settings = {}, activeCharacter = null) {
+  if (stage === 1) {
+    return settings.stage_1_image || FARM_DEFAULT_IMAGES[1]
+  }
+  if (activeCharacter?.imageUrl) {
+    return activeCharacter.imageUrl
+  }
+  return getFarmStageImage(stage, settings)
+}
+
+/**
+ * @param {number} stage
+ * @param {Record<string, string>} [settings]
  * @returns {string}
  */
 export function getFarmStageImage(stage, settings = {}) {
