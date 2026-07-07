@@ -108,9 +108,10 @@ export async function getBacklogTasks() {
  * @param {string} title - 할 일 제목
  * @param {string} category - 카테고리
  * @param {boolean} isToday - 오늘 할 일 여부
+ * @param {{ scheduledDate?: string | null, memo?: string | null }} [options]
  * @returns {Promise<Object|null>} 생성된 할 일
  */
-export async function createTask(title, category, isToday = false) {
+export async function createTask(title, category, isToday = false, options = {}) {
   const userId = await getCurrentUserId()
   if (!userId) {
     throw new Error('로그인이 필요합니다.')
@@ -151,6 +152,13 @@ export async function createTask(title, category, isToday = false) {
     createdat: Date.now(),
     user_id: userId,
     priority: priority,
+  }
+
+  if (options.scheduledDate) {
+    newTask.scheduled_date = options.scheduledDate
+  }
+  if (options.memo) {
+    newTask.memo = options.memo
   }
 
   const { data, error } = await supabase

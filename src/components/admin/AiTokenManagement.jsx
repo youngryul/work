@@ -20,6 +20,7 @@ export default function AiTokenManagement() {
   const [loading, setLoading] = useState(true)
   const [defaultBalance, setDefaultBalance] = useState(10)
   const [generationCost, setGenerationCost] = useState(3)
+  const [backlogAssistantCost, setBacklogAssistantCost] = useState(1)
   const [isSavingSettings, setIsSavingSettings] = useState(false)
   const [isSavingAllBalances, setIsSavingAllBalances] = useState(false)
   const [draftTokenBalances, setDraftTokenBalances] = useState({})
@@ -34,6 +35,7 @@ export default function AiTokenManagement() {
       ])
       setDefaultBalance(settings.defaultBalance)
       setGenerationCost(settings.generationCost)
+      setBacklogAssistantCost(settings.backlogAssistantCost)
 
       const [tokenRows, jellyRows] = await Promise.all([
         getTokenBalancesForUsers(users),
@@ -69,12 +71,17 @@ export default function AiTokenManagement() {
   const handleSaveSettings = async () => {
     const nextDefault = Number(defaultBalance)
     const nextCost = Number(generationCost)
+    const nextBacklogCost = Number(backlogAssistantCost)
     if (Number.isNaN(nextDefault) || nextDefault < 0) {
       showToast('기본 토큰은 0 이상의 숫자여야 합니다.', TOAST_TYPES.ERROR)
       return
     }
     if (Number.isNaN(nextCost) || nextCost <= 0) {
-      showToast('생성 비용은 1 이상의 숫자여야 합니다.', TOAST_TYPES.ERROR)
+      showToast('이미지 생성 비용은 1 이상의 숫자여야 합니다.', TOAST_TYPES.ERROR)
+      return
+    }
+    if (Number.isNaN(nextBacklogCost) || nextBacklogCost <= 0) {
+      showToast('백로그 어시스턴트 비용은 1 이상의 숫자여야 합니다.', TOAST_TYPES.ERROR)
       return
     }
 
@@ -83,6 +90,7 @@ export default function AiTokenManagement() {
       await updateAiTokenSettings({
         defaultBalance: nextDefault,
         generationCost: nextCost,
+        backlogAssistantCost: nextBacklogCost,
       })
       showToast('전역 토큰 설정을 저장했습니다.', TOAST_TYPES.SUCCESS)
       await load()
@@ -161,13 +169,13 @@ export default function AiTokenManagement() {
         </p>
         <p className="text-sm text-amber-800">
           젤리는 포실이·농장·가챠에 사용됩니다. 신규 유저는 <strong>기본 토큰</strong>으로 시작하며,
-          아래에서 유저별 토큰·젤리 잔액을 직접 조절할 수 있습니다.
+          일기 이미지·백로그 AI 어시스턴트에 토큰이 소모됩니다.
         </p>
       </div>
 
       <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">AI 토큰 전역 설정</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
           <label className="block">
             <span className="text-sm text-gray-600 mb-1 block">신규 유저 기본 토큰</span>
             <input
@@ -185,6 +193,16 @@ export default function AiTokenManagement() {
               min={1}
               value={generationCost}
               onChange={(e) => setGenerationCost(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            />
+          </label>
+          <label className="block">
+            <span className="text-sm text-gray-600 mb-1 block">백로그 AI 분석 1회 비용</span>
+            <input
+              type="number"
+              min={1}
+              value={backlogAssistantCost}
+              onChange={(e) => setBacklogAssistantCost(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg"
             />
           </label>

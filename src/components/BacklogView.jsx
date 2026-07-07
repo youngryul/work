@@ -7,6 +7,7 @@ import CategoryManager from './CategoryManager.jsx'
 import { MENU_ICON_PATHS } from '../constants/navigationMenu.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 import ViewPageTitle from './ViewPageTitle.jsx'
+import BacklogAssistantChat from './backlog/BacklogAssistantChat.jsx'
 
 /**
  * 백로그 화면 컴포넌트
@@ -145,6 +146,7 @@ export default function BacklogView() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
+      <BacklogAssistantChat onTasksCreated={loadTasks} />
       <ViewPageTitle iconSrc={MENU_ICON_PATHS.backlog} title="백로그">
         <p className="text-xl text-gray-600">
           {visibleTasks.length > 0
