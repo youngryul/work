@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, bigint, timestamp, numeric, primaryKey } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, boolean, bigint, timestamp, numeric, primaryKey, integer } from 'drizzle-orm/pg-core'
 
 /**
  * categories 테이블 스키마 정의
@@ -189,6 +189,32 @@ export const farmFieldCrops = pgTable('farm_field_crops', {
   stage: bigint('stage', { mode: 'number' }).notNull(),
   xp: bigint('xp', { mode: 'number' }).notNull(),
   cropGachaCharacterId: uuid('crop_gacha_character_id'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * menstrual_cycle_settings — 생리 주기 설정
+ */
+export const menstrualCycleSettings = pgTable('menstrual_cycle_settings', {
+  userId: uuid('user_id').primaryKey(),
+  cycleLength: integer('cycle_length').notNull(),
+  periodLength: integer('period_length').notNull(),
+  isEnabled: boolean('is_enabled').notNull(),
+  onboardingCompleted: boolean('onboarding_completed').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * menstrual_period_records — 생리 기간 기록
+ */
+export const menstrualPeriodRecords = pgTable('menstrual_period_records', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  startDate: text('start_date').notNull(),
+  endDate: text('end_date').notNull(),
+  notes: text('notes'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })

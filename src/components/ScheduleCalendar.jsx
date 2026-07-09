@@ -10,6 +10,17 @@ import {
   replaceScheduleTagForUser,
   updateScheduleDate,
 } from '../services/scheduleCalendarService.js'
+import {
+  getMenstrualCycleSettings,
+  getPeriodRecordsInRange,
+  saveMenstrualFeaturePreference,
+} from '../services/menstrualCycleService.js'
+import { MENSTRUAL_MARKER_TYPE, MENSTRUAL_PREDICTION_MONTHS } from '../constants/menstrualCycle.js'
+import {
+  buildMenstrualDateMarkers,
+  getMonthDateRange,
+} from '../utils/menstrualCycleCalendar.js'
+import MenstrualCyclePanel from './schedule/MenstrualCyclePanel.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
@@ -103,6 +114,11 @@ export default function ScheduleCalendar() {
   const [editStartDateDraft, setEditStartDateDraft] = useState('')
   const [editEndDateDraft, setEditEndDateDraft] = useState('')
   const [updatingScheduleId, setUpdatingScheduleId] = useState('')
+  const [cycleSettings, setCycleSettings] = useState(null)
+  const [periodRecords, setPeriodRecords] = useState([])
+  const [isMenstrualLoading, setIsMenstrualLoading] = useState(true)
+  const [isSavingMenstrualToggle, setIsSavingMenstrualToggle] = useState(false)
+  const [showMenstrualOnboarding, setShowMenstrualOnboarding] = useState(false)
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth() + 1
@@ -129,6 +145,30 @@ export default function ScheduleCalendar() {
 
   useEffect(() => {
     loadSchedules()
+  }, [year, month])
+
+  const loadMenstrualData = async () => {
+    setIsMenstrualLoading(true)
+    try {
+      const visibleRange = getMonthDateRange(year, month, 0)
+      const predictionRange = getMonthDateRange(year, month, MENSTRUAL_PREDICTION_MONTHS)
+      const settings = await getMenstrualCycleSettings()
+      const records = settings.isEnabled
+        ? await getPeriodRecordsInRange(visibleRange.rangeStart, predictionRange.rangeEnd)
+        : []
+      setCycleSettings(settings)
+      setPeriodRecords(records)
+      setShowMenstrualOnboarding(!settings.onboardingCompleted)
+    } catch (error) {
+      console.error('생리 일정 로드 실패:', error)
+      showToast('생리 일정을 불러오지 못했습니다.', TOAST_TYPES.ERROR)
+    } finally {
+      setIsMenstrualLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadMenstrualData()
   }, [year, month])
 
   const loadTags = async () => {
@@ -167,6 +207,33 @@ export default function ScheduleCalendar() {
     tagSettings.forEach((item) => map.set(item.name, item.color))
     return map
   }, [tagSettings])
+
+  const menstrualMarkers = useMemo(() => {
+    if (!cycleSettings?.isEnabled) return new Map()
+    const visibleRange = getMonthDateRange(year, month, 0)
+    return buildMenstrualDateMarkers(
+      periodRecords,
+      cycleSettings,
+      visibleRange.rangeStart,
+      visibleRange.rangeEnd,
+    )
+  }, [periodRecords, cycleSettings, year, month])
+
+  const handleSaveMenstrualToggle = async (nextEnabled) => {
+    setIsSavingMenstrualToggle(true)
+    try {
+      await saveMenstrualFeaturePreference(nextEnabled)
+      await loadMenstrualData()
+      showToast(
+        nextEnabled ? '생리 기능을 사용으로 설정했습니다.' : '생리 기능을 사용 안 함으로 설정했습니다.',
+        TOAST_TYPES.SUCCESS,
+      )
+    } catch (error) {
+      showToast(error?.message || '생리 기능 설정 저장에 실패했습니다.', TOAST_TYPES.ERROR)
+    } finally {
+      setIsSavingMenstrualToggle(false)
+    }
+  }
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(year, month - 2, 1))
@@ -429,6 +496,7 @@ export default function ScheduleCalendar() {
         const now = new Date()
         return now.getFullYear() === year && now.getMonth() + 1 === month && now.getDate() === day
       })()
+      const menstrualMarker = menstrualMarkers.get(dateString)
 
       cells.push(
         <button
@@ -438,16 +506,32 @@ export default function ScheduleCalendar() {
           className={`aspect-square rounded-xl border p-2 text-left transition-all ${
             isSelected
               ? 'border-blue-500 bg-blue-50 shadow-sm'
-              : 'border-gray-200 bg-white hover:border-blue-300'
+              : menstrualMarker?.type === MENSTRUAL_MARKER_TYPE.RECORDED
+                ? 'border-pink-300 bg-pink-100 hover:border-pink-400'
+                : menstrualMarker?.type === MENSTRUAL_MARKER_TYPE.PREDICTED
+                  ? 'border-pink-200 border-dashed bg-pink-50 hover:border-pink-300'
+                  : 'border-gray-200 bg-white hover:border-blue-300'
           }`}
         >
           <div className="flex items-center justify-between">
             <span className={`text-sm font-semibold ${isToday ? 'text-blue-700' : 'text-gray-700'}`}>{day}</span>
-            {daySchedules.length > 0 && (
-              <span className="text-[10px] font-semibold text-blue-600">
-                {daySchedules.length}개
-              </span>
-            )}
+            <div className="flex items-center gap-1">
+              {menstrualMarker && (
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    menstrualMarker.type === MENSTRUAL_MARKER_TYPE.RECORDED
+                      ? 'bg-pink-500'
+                      : 'bg-pink-300'
+                  }`}
+                  title={menstrualMarker.type === MENSTRUAL_MARKER_TYPE.RECORDED ? '생리 기록' : '예상 생리'}
+                />
+              )}
+              {daySchedules.length > 0 && (
+                <span className="text-[10px] font-semibold text-blue-600">
+                  {daySchedules.length}개
+                </span>
+              )}
+            </div>
           </div>
           <div className="mt-2 space-y-1">
             {daySchedules.slice(0, 2).map((item) => (
@@ -497,9 +581,23 @@ export default function ScheduleCalendar() {
         {isLoading ? (
           <div className="py-16 text-center text-gray-500">일정을 불러오는 중...</div>
         ) : (
-          <div className="grid grid-cols-7 gap-2">
-            {generateCalendarCells()}
-          </div>
+          <>
+            {cycleSettings?.isEnabled && (
+              <div className="flex flex-wrap gap-3 mb-3 text-xs text-gray-600">
+                <span className="inline-flex items-center gap-1">
+                  <span className="w-3 h-3 rounded bg-pink-200 border border-pink-300" />
+                  생리 기록
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="w-3 h-3 rounded bg-pink-50 border border-dashed border-pink-300" />
+                  예상 생리
+                </span>
+              </div>
+            )}
+            <div className="grid grid-cols-7 gap-2">
+              {generateCalendarCells()}
+            </div>
+          </>
         )}
       </section>
 
@@ -684,13 +782,33 @@ export default function ScheduleCalendar() {
             </div>
           ))}
         </div>
+
+        {cycleSettings?.isEnabled ? (
+          <MenstrualCyclePanel
+            selectedDate={addScheduleDate}
+            periodRecords={periodRecords}
+            cycleSettings={cycleSettings}
+            onChanged={loadMenstrualData}
+            formatSelectedDate={formatSelectedDate}
+          />
+        ) : (
+          <section className="mt-6 pt-6 border-t border-gray-200">
+            <h3 className="text-lg font-bold text-gray-800 mb-1">생리 일정</h3>
+            <p className="text-xs text-gray-500">
+              일정 달력 설정에서 생리 기능을 켜면 생리 일정 기록/예상 표시를 사용할 수 있어요.
+            </p>
+          </section>
+        )}
+        {isMenstrualLoading && (
+          <p className="mt-2 text-xs text-gray-400">생리 일정 불러오는 중...</p>
+        )}
       </aside>
 
       {showTagSettings && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="text-lg font-bold text-gray-800">태그 설정</h4>
+              <h4 className="text-lg font-bold text-gray-800">일정 달력 설정</h4>
               <button
                 type="button"
                 onClick={() => {
@@ -704,6 +822,21 @@ export default function ScheduleCalendar() {
               </button>
             </div>
             <p className="text-sm text-gray-500 mb-3">태그 이름 변경 또는 삭제가 가능합니다.</p>
+            <div className="mb-4 rounded-lg border border-pink-200 bg-pink-50/60 p-3">
+              <label className="flex items-center justify-between gap-3">
+                <span className="text-sm font-semibold text-gray-700">생리 기능 사용</span>
+                <input
+                  type="checkbox"
+                  checked={Boolean(cycleSettings?.isEnabled)}
+                  onChange={(e) => handleSaveMenstrualToggle(e.target.checked)}
+                  disabled={isSavingMenstrualToggle}
+                  className="rounded border-gray-300 text-pink-600 focus:ring-pink-400"
+                />
+              </label>
+              <p className="mt-2 text-xs text-gray-500">
+                켜면 일정 달력에 생리 기록/예상일이 표시됩니다.
+              </p>
+            </div>
             <div className="mb-4 flex items-center gap-2">
               <input
                 type="text"
@@ -801,6 +934,35 @@ export default function ScheduleCalendar() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showMenstrualOnboarding && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl border border-gray-200 shadow-xl p-5">
+            <h4 className="text-lg font-bold text-gray-800 mb-2">생리 기능 사용 설정</h4>
+            <p className="text-sm text-gray-600 mb-4">
+              일정 달력에서 생리 일정(기록/예상일)을 함께 관리할까요?
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => handleSaveMenstrualToggle(false)}
+                disabled={isSavingMenstrualToggle}
+                className="px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                사용 안 함
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSaveMenstrualToggle(true)}
+                disabled={isSavingMenstrualToggle}
+                className="px-3 py-2 rounded-lg bg-pink-600 text-white text-sm font-medium hover:bg-pink-700 disabled:opacity-50"
+              >
+                사용할게요
+              </button>
             </div>
           </div>
         </div>
