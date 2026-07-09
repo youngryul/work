@@ -12,6 +12,12 @@ export const FARM_MILK_EVENT_KEY = 'milk_feed'
 /** 2단계 달성 시 지급되는 환영 씨앗 개수 */
 export const FARM_STAGE2_WELCOME_SEED_COUNT = 1
 
+/** 3단계 이후 단계 성장 시 지급되는 씨앗 개수 */
+export const FARM_STAGE_GROWTH_SEED_COUNT = 1
+
+/** 단계 성장 씨앗 지급이 시작되는 단계 */
+export const FARM_STAGE_GROWTH_SEED_FROM_STAGE = 3
+
 /** 1~2단계 먹이 젤리 */
 export const FARM_FEED_JELLY_COST_DEFAULT = 3
 

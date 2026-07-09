@@ -10,6 +10,8 @@ import {
 
   FARM_MAX_STAGE,
   FARM_STAGE2_WELCOME_SEED_COUNT,
+  FARM_STAGE_GROWTH_SEED_COUNT,
+  FARM_STAGE_GROWTH_SEED_FROM_STAGE,
   getFarmDisplayImage,
   getFarmFeedJellyCost,
 
@@ -179,8 +181,12 @@ export default function FarmView() {
         setLevelUpStage(result.stage)
         setLevelUpSeedGranted((result?.seedGranted ?? 0) > 0)
         const seedMsg =
-          result.stage === 2 && (result?.seedGranted ?? 0) > 0
-            ? ` 씨앗 ${FARM_STAGE2_WELCOME_SEED_COUNT}개도 받았어요!`
+          (result?.seedGranted ?? 0) > 0
+            ? result.stage === 2
+              ? ` 씨앗 ${FARM_STAGE2_WELCOME_SEED_COUNT}개도 받았어요!`
+              : result.stage >= FARM_STAGE_GROWTH_SEED_FROM_STAGE
+                ? ` 씨앗 ${FARM_STAGE_GROWTH_SEED_COUNT}개도 받았어요!`
+                : ''
             : ''
         showToast(`${result.stage}단계로 성장했어요! 🌾${seedMsg}`, TOAST_TYPES.SUCCESS)
 
@@ -481,9 +487,11 @@ export default function FarmView() {
             <p className="text-gray-600 text-sm mb-6">
               {levelUpStage === 2 && levelUpSeedGranted
                 ? `농장이 열렸어요! 씨앗 ${FARM_STAGE2_WELCOME_SEED_COUNT}개를 받았어요.`
-                : levelUpStage >= FARM_MAX_STAGE
-                  ? '포실이가 최고 단계까지 자랐어요!'
-                  : '포실이가 한 단계 더 자랐어요. 계속 키워보세요!'}
+                : levelUpSeedGranted && levelUpStage >= FARM_STAGE_GROWTH_SEED_FROM_STAGE
+                  ? `씨앗 ${FARM_STAGE_GROWTH_SEED_COUNT}개를 받았어요!`
+                  : levelUpStage >= FARM_MAX_STAGE
+                    ? '포실이가 최고 단계까지 자랐어요!'
+                    : '포실이가 한 단계 더 자랐어요. 계속 키워보세요!'}
             </p>
 
             <button

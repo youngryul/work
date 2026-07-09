@@ -4,9 +4,12 @@
  */
 import { supabase } from '../config/supabase.js'
 import { MAX_YEARLY_GOALS, MAX_MONTHLY_GOALS } from '../constants/goalCategories.js'
-import { isTodayTrackerDay } from '../constants/habitTracker.js'
+import { isFutureTrackerDay, isTodayTrackerDay } from '../constants/habitTracker.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
-import { awardJellyForHabitTrackerFirstToday } from './jellyService.js'
+import {
+  awardJellyForHabitTrackerFirstToday,
+  awardJellyForHabitTrackerOther,
+} from './jellyService.js'
 
 /**
  * 연간 목표 목록 조회
@@ -1075,17 +1078,22 @@ export async function toggleHabitTrackerDay(habitTrackerId, day, isCompleted) {
     }
 
     let jellyAwarded = 0
+    const wasCompleted = existing?.is_completed ?? false
+    const isNewlyCompleted = isCompleted && !wasCompleted
+
     if (
-      isCompleted &&
+      isNewlyCompleted &&
       tracker?.year != null &&
       tracker?.month != null &&
-      isTodayTrackerDay(day, tracker.year, tracker.month)
+      !isFutureTrackerDay(day, tracker.year, tracker.month)
     ) {
+      const dateKey = formatDateKey(new Date(tracker.year, tracker.month - 1, day))
+      const isToday = isTodayTrackerDay(day, tracker.year, tracker.month)
+
       try {
-        const jellyResult = await awardJellyForHabitTrackerFirstToday(
-          habitTrackerId,
-          formatDateKey(new Date()),
-        )
+        const jellyResult = isToday
+          ? await awardJellyForHabitTrackerFirstToday(habitTrackerId, dateKey)
+          : await awardJellyForHabitTrackerOther(habitTrackerId, dateKey)
         jellyAwarded = jellyResult?.awarded ?? 0
       } catch (jellyError) {
         console.error('젤리 지급 실패:', jellyError)

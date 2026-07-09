@@ -98,7 +98,7 @@ export default function HabitTracker({ tracker, year, month, onUpdate }) {
 
       setTimeout(() => setAnimatingDay(null), 420)
       if (newStatus && result?.jellyAwarded > 0) {
-        showToast(`이 습관 오늘 첫 달성! 젤리 +${result.jellyAwarded}`, TOAST_TYPES.SUCCESS)
+        showToast(`이 습관 달성! 젤리 +${result.jellyAwarded}`, TOAST_TYPES.SUCCESS)
       }
       onUpdate?.()
     } catch (error) {

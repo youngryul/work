@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, bigint, timestamp, numeric } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, boolean, bigint, timestamp, numeric, primaryKey } from 'drizzle-orm/pg-core'
 
 /**
  * categories 테이블 스키마 정의
@@ -162,6 +162,21 @@ export const userFarmInventory = pgTable('user_farm_inventory', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
+
+/**
+ * user_farm_stage_seed_grants — 단계 성장 씨앗 지급 이력 (3~10단계)
+ */
+export const userFarmStageSeedGrants = pgTable(
+  'user_farm_stage_seed_grants',
+  {
+    userId: uuid('user_id').notNull(),
+    stage: bigint('stage', { mode: 'number' }).notNull(),
+    grantedAt: timestamp('granted_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.stage] }),
+  }),
+)
 
 /**
  * farm_field_crops — 농장 밭 작물 (5×4 격자)

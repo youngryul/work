@@ -41,14 +41,14 @@ export const JELLY_EARNING_GUIDE = [
     id: 'five_year',
     icon: '📖',
     label: '5년 질문 답변',
-    description: '오늘 질문에 처음 답하면 젤리를 받아요. (하루 1회)',
+    description: '오늘 질문 첫 답변 3젤리, 다른 날짜 질문 첫 답변 1젤리 (각 1회)',
     amount: JELLY_REWARD_FIVE_YEAR_ANSWER,
   },
   {
     id: 'habit_tracker',
     icon: '📌',
     label: '습관 트래커 달성',
-    description: '습관 트래커마다 오늘 처음 달성할 때 젤리를 받아요. (트래커별 하루 1회)',
+    description: '오늘 달성 2젤리, 이전 날짜 달성 1젤리 (트래커·날짜당 1회)',
     amount: JELLY_REWARD_HABIT_TRACKER_FIRST_TODAY,
   },
 ]

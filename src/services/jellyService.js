@@ -4,7 +4,9 @@ import { isAdmin } from './adminService.js'
 import {
   JELLY_REWARD_DIARY_WRITE,
   JELLY_REWARD_FIVE_YEAR_ANSWER,
+  JELLY_REWARD_FIVE_YEAR_ANSWER_OTHER,
   JELLY_REWARD_HABIT_TRACKER_FIRST_TODAY,
+  JELLY_REWARD_HABIT_TRACKER_OTHER,
   JELLY_REWARD_REASON,
   JELLY_REWARD_TASK_COMPLETE,
   JELLY_REWARD_WEIGHT_GOAL_REACHED,
@@ -137,7 +139,23 @@ export async function awardJellyForFiveYearAnswer(date) {
 }
 
 /**
- * 습관 트래커별 오늘 최초 달성 시 젤리 지급 (트래커·하루 1회)
+ * 오늘 외 날짜 5년 질문 최초 답변 시 젤리 지급 (질문·연도당 1회)
+ * @param {string} questionId
+ * @param {number} year
+ */
+export async function awardJellyForFiveYearAnswerOther(questionId, year) {
+  const userId = await getCurrentUserId()
+  if (!userId || !questionId || !year) return null
+
+  return awardJelly(
+    JELLY_REWARD_FIVE_YEAR_ANSWER_OTHER,
+    JELLY_REWARD_REASON.FIVE_YEAR_ANSWER,
+    `five_year:other:${questionId}:${year}`,
+  )
+}
+
+/**
+ * 습관 트래커 날짜별 최초 달성 시 젤리 지급 (트래커·날짜당 1회)
  * @param {string} habitTrackerId
  * @param {string} date - YYYY-MM-DD
  */
@@ -149,6 +167,22 @@ export async function awardJellyForHabitTrackerFirstToday(habitTrackerId, date) 
     JELLY_REWARD_HABIT_TRACKER_FIRST_TODAY,
     JELLY_REWARD_REASON.HABIT_TRACKER_FIRST_TODAY,
     `habit_tracker:${habitTrackerId}:${date}`,
+  )
+}
+
+/**
+ * 습관 트래커 오늘 외 날짜 최초 달성 시 젤리 지급 (트래커·날짜당 1회)
+ * @param {string} habitTrackerId
+ * @param {string} date - YYYY-MM-DD
+ */
+export async function awardJellyForHabitTrackerOther(habitTrackerId, date) {
+  const userId = await getCurrentUserId()
+  if (!userId || !habitTrackerId || !date) return null
+
+  return awardJelly(
+    JELLY_REWARD_HABIT_TRACKER_OTHER,
+    JELLY_REWARD_REASON.HABIT_TRACKER_FIRST_TODAY,
+    `habit_tracker:other:${habitTrackerId}:${date}`,
   )
 }
 

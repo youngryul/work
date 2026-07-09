@@ -4,7 +4,7 @@
  */
 import { supabase } from '../config/supabase.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
-import { awardJellyForFiveYearAnswer } from './jellyService.js'
+import { awardJellyForFiveYearAnswer, awardJellyForFiveYearAnswerOther } from './jellyService.js'
 
 /**
  * 날짜를 day_of_year로 변환 (1-365)
@@ -183,13 +183,18 @@ export async function saveAnswer(questionId, year, content) {
 
       let jellyAwarded = 0
       const today = new Date()
-      if (question?.day_of_year === getDayOfYear(today)) {
-        try {
+      const isTodayQuestion = question?.day_of_year === getDayOfYear(today)
+
+      try {
+        if (isTodayQuestion) {
           const jellyResult = await awardJellyForFiveYearAnswer(formatDateKey(today))
           jellyAwarded = jellyResult?.awarded ?? 0
-        } catch (jellyError) {
-          console.error('젤리 지급 실패:', jellyError)
+        } else {
+          const jellyResult = await awardJellyForFiveYearAnswerOther(questionId, year)
+          jellyAwarded = jellyResult?.awarded ?? 0
         }
+      } catch (jellyError) {
+        console.error('젤리 지급 실패:', jellyError)
       }
 
       return { ...data, jellyAwarded }

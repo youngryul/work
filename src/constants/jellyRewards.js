@@ -13,8 +13,14 @@ export const JELLY_REWARD_WEIGHT_GOAL_REACHED = 10
 /** 오늘 5년 질문 최초 답변 시 젤리 보상 (하루 1회) */
 export const JELLY_REWARD_FIVE_YEAR_ANSWER = 3
 
-/** 습관 트래커별 오늘 최초 달성 시 젤리 보상 (트래커·하루 1회) */
+/** 오늘 외 날짜 5년 질문 최초 답변 시 젤리 보상 (질문·연도당 1회) */
+export const JELLY_REWARD_FIVE_YEAR_ANSWER_OTHER = 1
+
+/** 습관 트래커 오늘 최초 달성 시 젤리 보상 (트래커·날짜당 1회) */
 export const JELLY_REWARD_HABIT_TRACKER_FIRST_TODAY = 2
+
+/** 습관 트래커 오늘 외 날짜 최초 달성 시 젤리 보상 (트래커·날짜당 1회) */
+export const JELLY_REWARD_HABIT_TRACKER_OTHER = 1
 
 /** 젤리 지급 사유 */
 export const JELLY_REWARD_REASON = {
