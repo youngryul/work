@@ -15,6 +15,7 @@ export const NOTIFICATION_TYPES = {
   WEEKLY_SUMMARY: 'weekly_summary',
   MONTHLY_SUMMARY: 'monthly_summary',
   FIVE_YEAR_QUESTION: 'five_year_question',
+  PURCHASE_REQUEST: 'purchase_request',
 }
 
 /**
@@ -26,6 +27,7 @@ export default function NotificationCenter({
   weeklySummaryReminder,
   monthlySummaryReminder,
   fiveYearQuestionReminder,
+  purchaseRequestReminder,
   onDiaryReminderClose,
   onWeeklySummaryGenerate,
   onMonthlySummaryGenerate,
@@ -35,6 +37,8 @@ export default function NotificationCenter({
   onMonthlySummaryClose,
   onFiveYearQuestionAnswer,
   onFiveYearQuestionClose,
+  onPurchaseRequestOpen,
+  onPurchaseRequestClose,
 }) {
   const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
@@ -47,8 +51,15 @@ export default function NotificationCenter({
     if (weeklySummaryReminder?.isOpen) count++
     if (monthlySummaryReminder?.isOpen) count++
     if (fiveYearQuestionReminder?.isOpen) count++
+    if (purchaseRequestReminder?.isOpen) count++
     setUnreadCount(count)
-  }, [diaryReminder?.isOpen, weeklySummaryReminder?.isOpen, monthlySummaryReminder?.isOpen, fiveYearQuestionReminder?.isOpen])
+  }, [
+    diaryReminder?.isOpen,
+    weeklySummaryReminder?.isOpen,
+    monthlySummaryReminder?.isOpen,
+    fiveYearQuestionReminder?.isOpen,
+    purchaseRequestReminder?.isOpen,
+  ])
 
   // 알림 목록 토글
   const toggleNotifications = () => {
@@ -430,6 +441,47 @@ export default function NotificationCenter({
                                   console.error('할 일 추가 실패:', error)
                                   showToast('할 일 추가에 실패했습니다.', TOAST_TYPES.ERROR)
                                 }
+                              }}
+                              className="px-3 py-1.5 border border-gray-300 text-gray-700 text-xs rounded-lg hover:bg-gray-50 transition-colors font-sans"
+                            >
+                              나중에
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 충전 신청 알림 */}
+                  {purchaseRequestReminder?.isOpen && (
+                    <div className="p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 font-sans mb-1">
+                            충전 신청 확인이 필요합니다
+                          </p>
+                          <p className="text-xs text-gray-600 font-sans mb-3">
+                            대기 중인 토큰/젤리 충전 신청이 {purchaseRequestReminder.count}건 있습니다.
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                if (onPurchaseRequestOpen) {
+                                  onPurchaseRequestOpen()
+                                }
+                                handleClose()
+                              }}
+                              className="px-3 py-1.5 bg-green-500 text-white text-xs rounded-lg hover:bg-green-700 transition-colors font-sans"
+                            >
+                              지금 확인하기
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (onPurchaseRequestClose) {
+                                  onPurchaseRequestClose()
+                                }
+                                handleClose()
                               }}
                               className="px-3 py-1.5 border border-gray-300 text-gray-700 text-xs rounded-lg hover:bg-gray-50 transition-colors font-sans"
                             >

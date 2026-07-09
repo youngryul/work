@@ -197,10 +197,12 @@ function AppContent() {
     weeklySummaryReminder,
     monthlySummaryReminder,
     fiveYearQuestionReminder,
+    purchaseRequestReminder,
     setDiaryReminder,
     setWeeklySummaryReminder,
     setMonthlySummaryReminder,
     setFiveYearQuestionReminder,
+    setPurchaseRequestReminder,
     refreshNotifications,
   } = useNotifications()
 
@@ -469,6 +471,7 @@ function AppContent() {
         weeklySummaryReminder={weeklySummaryReminder}
         monthlySummaryReminder={monthlySummaryReminder}
         fiveYearQuestionReminder={fiveYearQuestionReminder}
+        purchaseRequestReminder={purchaseRequestReminder}
         onDiaryReminderClose={async () => {
           setDiaryReminder({ isOpen: false, yesterdayDate: null })
           // 리마인더가 닫혔을 때도 DB에 기록 (나중에 버튼 클릭 시)
@@ -578,6 +581,16 @@ function AppContent() {
             console.error('리마인더 기록 실패:', error)
           }
           // 알림 상태 새로고침
+          setTimeout(() => {
+            refreshNotifications()
+          }, 500)
+        }}
+        onPurchaseRequestOpen={() => {
+          setCurrentView('admin')
+          setPurchaseRequestReminder({ isOpen: false, count: 0 })
+        }}
+        onPurchaseRequestClose={() => {
+          setPurchaseRequestReminder({ isOpen: false, count: 0 })
           setTimeout(() => {
             refreshNotifications()
           }, 500)

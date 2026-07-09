@@ -53,6 +53,15 @@ export default function TokenDepositRequestModal({
   }, [isOpen, purchaseType])
 
   useEffect(() => {
+    if (!isOpen) return
+    if (isJelly) {
+      showToast('젤리 충전 신청 폼이 열렸어요. 입금 후 신청서를 제출해 주세요.', TOAST_TYPES.INFO)
+      return
+    }
+    showToast('AI 토큰 충전 신청 폼이 열렸어요. 입금 후 신청서를 제출해 주세요.', TOAST_TYPES.INFO)
+  }, [isOpen, isJelly])
+
+  useEffect(() => {
     const qty = Number(requestedQty)
     if (!requestedQty || Number.isNaN(qty) || qty <= 0) return
     const price = isJelly ? getRecommendedJellyPriceKrw(qty) : getRecommendedPriceKrw(qty)
@@ -85,6 +94,7 @@ export default function TokenDepositRequestModal({
       })
       const label = isJelly ? '젤리' : '토큰'
       showToast(`충전 신청이 접수되었습니다. 입금 확인 후 ${label}이 지급됩니다.`, TOAST_TYPES.SUCCESS)
+      window.dispatchEvent(new CustomEvent('refreshNotifications'))
       onClose()
     } catch (error) {
       showToast(error?.message || '신청에 실패했습니다.', TOAST_TYPES.ERROR)

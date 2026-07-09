@@ -109,6 +109,27 @@ export async function getAllTokenPurchaseRequests() {
 }
 
 /**
+ * 관리자: 대기 중인 충전 신청 건수 조회
+ * @returns {Promise<number>}
+ */
+export async function getPendingTokenPurchaseRequestCount() {
+  const userId = await getCurrentUserId()
+  if (!userId) return 0
+
+  const { count, error } = await supabase
+    .from('ai_token_purchase_requests')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'pending')
+
+  if (error) {
+    console.error('대기 충전 신청 건수 조회 오류:', error)
+    return 0
+  }
+
+  return count || 0
+}
+
+/**
  * 관리자: 완료 처리 — 이메일로 사용자를 찾아 신청 수량을 잔액에 추가
  * @param {string} requestId
  */

@@ -6,6 +6,7 @@ import { hasSummaryReminderToday } from '../services/summaryReminderService.js'
 import { hasFiveYearQuestionReminderToday } from '../services/fiveYearQuestionReminderService.js'
 import { getQuestionAndAnswersByDate } from '../services/fiveYearQuestionService.js'
 import { getNotificationSettings } from '../services/notificationSettingsService.js'
+import { getPendingTokenPurchaseRequestCount } from '../services/aiTokenPurchaseService.js'
 import { 
   shouldShowWeeklyReminder, 
   shouldShowMonthlyReminder, 
@@ -49,6 +50,10 @@ export function useNotifications() {
     todayDate: null,
     question: null,
   })
+  const [purchaseRequestReminder, setPurchaseRequestReminder] = useState({
+    isOpen: false,
+    count: 0,
+  })
   const [isLoading, setIsLoading] = useState(true)
 
   /**
@@ -61,6 +66,7 @@ export function useNotifications() {
       setWeeklySummaryReminder({ isOpen: false, period: '', weekStart: null, weekEnd: null })
       setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
       setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
+      setPurchaseRequestReminder({ isOpen: false, count: 0 })
       setIsLoading(false)
       return
     }
@@ -145,6 +151,17 @@ export function useNotifications() {
       } else {
         setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
       }
+
+      // 충전 신청 알림 (관리자만)
+      if (userRole === 'admin') {
+        const pendingPurchaseCount = await getPendingTokenPurchaseRequestCount()
+        setPurchaseRequestReminder({
+          isOpen: pendingPurchaseCount > 0,
+          count: pendingPurchaseCount,
+        })
+      } else {
+        setPurchaseRequestReminder({ isOpen: false, count: 0 })
+      }
     } catch (error) {
       console.error('알림 확인 오류:', error)
     } finally {
@@ -160,6 +177,7 @@ export function useNotifications() {
       setWeeklySummaryReminder({ isOpen: false, period: '', weekStart: null, weekEnd: null })
       setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
       setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
+      setPurchaseRequestReminder({ isOpen: false, count: 0 })
       setIsLoading(false)
       return
     }
@@ -178,11 +196,13 @@ export function useNotifications() {
     weeklySummaryReminder,
     monthlySummaryReminder,
     fiveYearQuestionReminder,
+    purchaseRequestReminder,
     isLoading,
     setDiaryReminder,
     setWeeklySummaryReminder,
     setMonthlySummaryReminder,
     setFiveYearQuestionReminder,
+    setPurchaseRequestReminder,
     refreshNotifications: checkNotifications,
   }
 }
