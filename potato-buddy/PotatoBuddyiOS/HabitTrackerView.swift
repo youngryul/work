@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct HabitTrackerView: View {
+    @EnvironmentObject private var jellyStore: JellyBalanceStore
     @State private var trackers: [HabitTrackerItem] = []
     @State private var isLoading = false
     @State private var errorMessage = ""
@@ -10,6 +11,7 @@ struct HabitTrackerView: View {
     @State private var trackerToDelete: HabitTrackerItem?
     @State private var trackerToEdit: HabitTrackerItem?
     @State private var editTitleDraft = ""
+    @State private var jellyEarnedMessage = ""
 
     private let calendar = Calendar(identifier: .gregorian)
 
@@ -43,6 +45,9 @@ struct HabitTrackerView: View {
             .navigationTitle("습관 트래커")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    JellyBalanceBadgeView()
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         showAddForm = true
@@ -109,9 +114,19 @@ struct HabitTrackerView: View {
             } message: {
                 Text(errorMessage)
             }
+            .alert("젤리 획득", isPresented: Binding(
+                get: { !jellyEarnedMessage.isEmpty },
+                set: { _ in jellyEarnedMessage = "" }
+            )) {
+                Button("확인") { jellyEarnedMessage = "" }
+            } message: {
+                Text(jellyEarnedMessage)
+            }
         }
         .task {
-            await loadTrackers()
+            async let trackersLoad: Void = loadTrackers()
+            async let jellyLoad: Void = jellyStore.refresh()
+            _ = await (trackersLoad, jellyLoad)
         }
     }
 
@@ -205,6 +220,8 @@ struct HabitTrackerView: View {
         do {
             let updatedDay = try await SupabaseService.shared.toggleHabitTrackerDay(
                 trackerId: trackerId,
+                year: selectedYear,
+                month: selectedMonth,
                 day: day,
                 isCompleted: isCompleted
             )
@@ -212,10 +229,15 @@ struct HabitTrackerView: View {
             guard let trackerIndex = trackers.firstIndex(where: { $0.id == trackerId }) else { return }
 
             if let dayIndex = trackers[trackerIndex].days.firstIndex(where: { $0.day == day }) {
-                trackers[trackerIndex].days[dayIndex] = updatedDay
+                trackers[trackerIndex].days[dayIndex] = updatedDay.item
             } else {
-                trackers[trackerIndex].days.append(updatedDay)
+                trackers[trackerIndex].days.append(updatedDay.item)
                 trackers[trackerIndex].days.sort { $0.day < $1.day }
+            }
+
+            if updatedDay.awarded > 0 {
+                jellyEarnedMessage = "젤리 +\(updatedDay.awarded)을 획득했어요."
+                await jellyStore.refresh()
             }
         } catch {
             errorMessage = error.localizedDescription

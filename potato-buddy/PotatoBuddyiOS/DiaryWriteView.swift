@@ -5,9 +5,11 @@ struct DiaryWriteView: View {
     let existingDiary: DiaryItem?
 
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var jellyStore: JellyBalanceStore
     @State private var content: String = ""
     @State private var isSaving: Bool = false
     @State private var errorMessage: String = ""
+    @State private var jellyEarnedMessage: String = ""
 
     // 감정 한글 매핑
     private let emotionLabels: [String: String] = [
@@ -132,6 +134,14 @@ struct DiaryWriteView: View {
                     .disabled(isSaving || content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
+            .alert("젤리 획득", isPresented: Binding(get: { !jellyEarnedMessage.isEmpty }, set: { _ in jellyEarnedMessage = "" })) {
+                Button("확인") {
+                    jellyEarnedMessage = ""
+                    dismiss()
+                }
+            } message: {
+                Text(jellyEarnedMessage)
+            }
         }
     }
 
@@ -139,8 +149,13 @@ struct DiaryWriteView: View {
         isSaving = true
         errorMessage = ""
         do {
-            _ = try await SupabaseService.shared.saveDiary(date: date, content: content)
-            dismiss()
+            let result = try await SupabaseService.shared.saveDiary(date: date, content: content)
+            if result.awarded > 0 {
+                jellyEarnedMessage = "젤리 +\(result.awarded)을 획득했어요."
+                await jellyStore.refresh()
+            } else {
+                dismiss()
+            }
         } catch {
             errorMessage = error.localizedDescription
         }

@@ -66,7 +66,11 @@ enum WidgetScheduleDateFormatter {
     }()
 
     static func todayString() -> String {
-        dayFormatter.string(from: Date())
+        string(from: Date())
+    }
+
+    static func string(from date: Date) -> String {
+        dayFormatter.string(from: date)
     }
 
     static func label(for dateString: String) -> String {

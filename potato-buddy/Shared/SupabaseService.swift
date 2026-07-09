@@ -36,6 +36,28 @@ final class SupabaseService {
         let message: String?
     }
 
+    struct JellyAwardResult: Decodable {
+        let balance: Int
+        let awarded: Int
+        let alreadyAwarded: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case balance
+            case awarded
+            case alreadyAwarded
+            case alreadyAwardedSnake = "already_awarded"
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            balance = try container.decodeIfPresent(Int.self, forKey: .balance) ?? 0
+            awarded = try container.decodeIfPresent(Int.self, forKey: .awarded) ?? 0
+            let camel = try container.decodeIfPresent(Bool.self, forKey: .alreadyAwarded)
+            let snake = try container.decodeIfPresent(Bool.self, forKey: .alreadyAwardedSnake)
+            alreadyAwarded = camel ?? snake ?? false
+        }
+    }
+
     /// JWT 만료 시 자동 갱신 후 1회 재시도
     private func fetch(_ request: URLRequest) async throws -> (Data, URLResponse) {
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -53,6 +75,48 @@ final class SupabaseService {
         }
 
         return (data, response)
+    }
+
+    private func awardJelly(amount: Int, reason: String, idempotencyKey: String) async throws -> JellyAwardResult {
+        let (_, token) = await authInfo()
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/rpc/award_jelly")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let body: [String: Any] = [
+            "p_amount": amount,
+            "p_reason": reason,
+            "p_idempotency_key": idempotencyKey,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        return try JSONDecoder().decode(JellyAwardResult.self, from: data)
+    }
+
+    func getMyJellyBalance() async throws -> Int {
+        let (_, token) = await authInfo()
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/rpc/get_my_jelly_balance")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.httpBody = try JSONSerialization.data(withJSONObject: [:])
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+
+        if let value = try? JSONDecoder().decode(Int.self, from: data) {
+            return value
+        }
+        if let stringValue = String(data: data, encoding: .utf8),
+           let value = Int(stringValue.trimmingCharacters(in: .whitespacesAndNewlines)) {
+            return value
+        }
+        return 0
     }
 
     // MARK: - 오늘 할일 조회
@@ -79,7 +143,7 @@ final class SupabaseService {
 
     // MARK: - 할일 완료 처리
 
-    func completeTask(id: String) async throws {
+    func completeTask(id: String) async throws -> Int {
         let (userId, token) = await authInfo()
 
         let url = URL(string: "\(Config.supabaseURL)/rest/v1/tasks?id=eq.\(id)&user_id=eq.\(userId)")!
@@ -93,6 +157,13 @@ final class SupabaseService {
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         _ = try await fetch(request)
+
+        let jelly = try await awardJelly(
+            amount: JellyRewardAmount.taskComplete,
+            reason: JellyRewardReason.taskComplete,
+            idempotencyKey: "task:\(id):\(now)"
+        )
+        return jelly.awarded
     }
 
     // MARK: - 할일 추가
@@ -262,7 +333,7 @@ final class SupabaseService {
 
     // MARK: - 일기 저장/수정 (upsert)
 
-    func saveDiary(date: String, content: String) async throws -> DiaryItem {
+    func saveDiary(date: String, content: String) async throws -> (item: DiaryItem, awarded: Int) {
         let (userId, token) = await authInfo()
 
         let url = URL(string: "\(Config.supabaseURL)/rest/v1/diaries")!
@@ -287,7 +358,12 @@ final class SupabaseService {
         guard let item = items.first else {
             throw URLError(.badServerResponse)
         }
-        return item
+        let jelly = try await awardJelly(
+            amount: JellyRewardAmount.diaryWrite,
+            reason: JellyRewardReason.diaryWrite,
+            idempotencyKey: "diary:\(date)"
+        )
+        return (item, jelly.awarded)
     }
 
     // MARK: - 월별 일정 조회
@@ -491,9 +567,11 @@ final class SupabaseService {
 
     func toggleHabitTrackerDay(
         trackerId: String,
+        year: Int,
+        month: Int,
         day: Int,
         isCompleted: Bool
-    ) async throws -> HabitTrackerDayItem {
+    ) async throws -> (item: HabitTrackerDayItem, awarded: Int) {
         let (userId, token) = await authInfo()
 
         var existingComponents = URLComponents(string: "\(Config.supabaseURL)/rest/v1/habit_tracker_days")!
@@ -534,7 +612,14 @@ final class SupabaseService {
             guard let item = items.first else {
                 throw URLError(.badServerResponse)
             }
-            return item
+            let awarded = try await awardHabitTrackerJelly(
+                trackerId: trackerId,
+                year: year,
+                month: month,
+                day: day,
+                isCompleted: isCompleted
+            )
+            return (item, awarded)
         }
 
         let url = URL(string: "\(Config.supabaseURL)/rest/v1/habit_tracker_days")!
@@ -555,6 +640,36 @@ final class SupabaseService {
         guard let item = items.first else {
             throw URLError(.badServerResponse)
         }
-        return item
+        let awarded = try await awardHabitTrackerJelly(
+            trackerId: trackerId,
+            year: year,
+            month: month,
+            day: day,
+            isCompleted: isCompleted
+        )
+        return (item, awarded)
+    }
+
+    private func awardHabitTrackerJelly(
+        trackerId: String,
+        year: Int,
+        month: Int,
+        day: Int,
+        isCompleted: Bool
+    ) async throws -> Int {
+        guard isCompleted else { return 0 }
+
+        let dateKey = String(format: "%04d-%02d-%02d", year, month, day)
+        let todayKey = ScheduleDateHelper.string(from: Date())
+        let isToday = (dateKey == todayKey)
+        let amount = isToday ? JellyRewardAmount.habitTrackerFirstToday : JellyRewardAmount.habitTrackerOther
+        let idempotencyPrefix = isToday ? "habit_tracker" : "habit_tracker:other"
+
+        let jelly = try await awardJelly(
+            amount: amount,
+            reason: JellyRewardReason.habitTrackerFirstToday,
+            idempotencyKey: "\(idempotencyPrefix):\(trackerId):\(dateKey)"
+        )
+        return jelly.awarded
     }
 }

@@ -87,6 +87,7 @@ targets:
           - CFBundleURLName: com.youngryul.potatobuddy.ios
             CFBundleURLSchemes:
               - potatobuddy
+        NSMotionUsageDescription: 오늘 걸음 수를 만보기처럼 확인하기 위해 동작 및 피트니스 데이터가 필요합니다.
     entitlements:
       path: PotatoBuddyiOS/PotatoBuddyiOS.entitlements
       properties:

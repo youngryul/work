@@ -1,45 +1,55 @@
 import SwiftUI
 
 struct MainTabView: View {
+    static let scheduleTabTag = 3
+
+    @Binding var selectedTab: Int
     @ObservedObject private var auth = AuthService.shared
     @State private var showLogoutConfirm = false
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             TodayView()
                 .tabItem {
                     Label("오늘 할일", systemImage: "house.fill")
                 }
+                .tag(0)
 
             BacklogView()
                 .tabItem {
                     Label("백로그", systemImage: "tray.fill")
                 }
+                .tag(1)
 
             DiaryListView()
                 .tabItem {
                     Label("일기", systemImage: "book.fill")
                 }
+                .tag(2)
 
             ScheduleCalendarView()
                 .tabItem {
                     Label("일정", systemImage: "calendar")
                 }
+                .tag(Self.scheduleTabTag)
 
             PomodoroView()
                 .tabItem {
                     Label("뽀모도로", systemImage: "timer")
                 }
+                .tag(4)
 
             HabitTrackerView()
                 .tabItem {
                     Label("습관", systemImage: "chart.bar.fill")
                 }
+                .tag(5)
 
             SettingsView(showLogoutConfirm: $showLogoutConfirm)
                 .tabItem {
                     Label("설정", systemImage: "gearshape.fill")
                 }
+                .tag(6)
         }
         .tint(.green)
         .confirmationDialog("로그아웃", isPresented: $showLogoutConfirm) {

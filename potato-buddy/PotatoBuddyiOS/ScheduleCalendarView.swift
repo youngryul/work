@@ -217,9 +217,6 @@ struct ScheduleCalendarView: View {
                             ForEach(selectedDaySchedules) { schedule in
                                 scheduleRow(schedule)
                             }
-                            .onDelete { indexSet in
-                                Task { await deleteSchedules(at: indexSet) }
-                            }
                         }
                         .listStyle(.plain)
                         .refreshable {
@@ -258,8 +255,33 @@ struct ScheduleCalendarView: View {
                     }
                 }
             }
+
+            Spacer(minLength: 0)
+
+            Button(role: .destructive) {
+                Task { await deleteSchedule(schedule) }
+            } label: {
+                Image(systemName: "trash")
+                    .font(.body)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel("일정 삭제")
         }
         .padding(.vertical, 4)
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                Task { await deleteSchedule(schedule) }
+            } label: {
+                Label("삭제", systemImage: "trash")
+            }
+        }
+        .contextMenu {
+            Button(role: .destructive) {
+                Task { await deleteSchedule(schedule) }
+            } label: {
+                Label("삭제", systemImage: "trash")
+            }
+        }
     }
 
     private var addScheduleSheet: some View {
@@ -344,19 +366,15 @@ struct ScheduleCalendarView: View {
         isSaving = false
     }
 
-    private func deleteSchedules(at offsets: IndexSet) async {
-        let targets = offsets.map { selectedDaySchedules[$0] }
-        for schedule in targets {
-            do {
-                try await SupabaseService.shared.deleteSchedule(id: schedule.id)
-                schedules.removeAll { $0.id == schedule.id }
-            } catch {
-                errorMessage = error.localizedDescription
-                await loadSchedules()
-                return
-            }
+    private func deleteSchedule(_ schedule: ScheduleItem) async {
+        do {
+            try await SupabaseService.shared.deleteSchedule(id: schedule.id)
+            schedules.removeAll { $0.id == schedule.id }
+            syncWidgetIfNeeded()
+        } catch {
+            errorMessage = error.localizedDescription
+            await loadSchedules()
         }
-        syncWidgetIfNeeded()
     }
 
     private func syncWidgetIfNeeded() {
