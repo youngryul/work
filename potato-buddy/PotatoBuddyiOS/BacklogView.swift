@@ -2,15 +2,18 @@ import SwiftUI
 
 struct BacklogView: View {
     @State private var tasks: [TaskItem] = []
+    @State private var categories: [CategoryItem] = []
+    @State private var selectedCategoryName: String = CategoryConstants.fallbackDefaultName
     @State private var isLoading: Bool = false
     @State private var errorMessage: String = ""
-    @State private var showAddAlert: Bool = false
+    @State private var showAddSheet: Bool = false
     @State private var newTaskTitle: String = ""
+    @State private var isSaving: Bool = false
 
     var body: some View {
         NavigationView {
             Group {
-                if isLoading {
+                if isLoading && tasks.isEmpty {
                     ProgressView("불러오는 중...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if tasks.isEmpty {
@@ -41,7 +44,6 @@ struct BacklogView: View {
 
                                 Spacer()
 
-                                // 오늘로 이동 버튼
                                 Button {
                                     Task { await moveToToday(task) }
                                 } label: {
@@ -66,7 +68,7 @@ struct BacklogView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         newTaskTitle = ""
-                        showAddAlert = true
+                        Task { await prepareAddSheet() }
                     } label: {
                         Image(systemName: "plus")
                             .foregroundColor(.green)
@@ -76,16 +78,8 @@ struct BacklogView: View {
             .refreshable {
                 await loadTasks()
             }
-            .alert("백로그 추가", isPresented: $showAddAlert) {
-                TextField("할일 제목", text: $newTaskTitle)
-                Button("추가") {
-                    if !newTaskTitle.trimmingCharacters(in: .whitespaces).isEmpty {
-                        Task { await addBacklogTask() }
-                    }
-                }
-                Button("취소", role: .cancel) {}
-            } message: {
-                Text("백로그에 추가됩니다")
+            .sheet(isPresented: $showAddSheet) {
+                addBacklogSheet
             }
             .alert("오류", isPresented: Binding(get: { !errorMessage.isEmpty }, set: { _ in errorMessage = "" })) {
                 Button("확인") { errorMessage = "" }
@@ -95,6 +89,66 @@ struct BacklogView: View {
         }
         .task {
             await loadTasks()
+        }
+    }
+
+    private var addBacklogSheet: some View {
+        NavigationView {
+            Form {
+                Section("할일") {
+                    TextField("할일 제목", text: $newTaskTitle)
+                }
+
+                Section("카테고리") {
+                    if categories.isEmpty {
+                        Text("카테고리를 불러오는 중...")
+                            .foregroundColor(.secondary)
+                    } else {
+                        Picker("카테고리", selection: $selectedCategoryName) {
+                            ForEach(categories) { category in
+                                Text(category.displayName)
+                                    .tag(category.name)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+                }
+            }
+            .navigationTitle("백로그 추가")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("취소") { showAddSheet = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("추가") {
+                        Task { await addBacklogTask() }
+                    }
+                    .disabled(
+                        newTaskTitle.trimmingCharacters(in: .whitespaces).isEmpty
+                            || selectedCategoryName.isEmpty
+                            || isSaving
+                    )
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    private func prepareAddSheet() async {
+        do {
+            if categories.isEmpty {
+                categories = try await SupabaseService.shared.fetchCategories()
+            }
+            let defaultName = try await SupabaseService.shared.fetchDefaultCategoryName()
+            if categories.contains(where: { $0.name == defaultName }) {
+                selectedCategoryName = defaultName
+            } else if let first = categories.first {
+                selectedCategoryName = first.name
+            }
+            showAddSheet = true
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 
@@ -132,8 +186,18 @@ struct BacklogView: View {
 
     private func addBacklogTask() async {
         let title = newTaskTitle.trimmingCharacters(in: .whitespaces)
+        guard !title.isEmpty else { return }
+
+        isSaving = true
+        defer { isSaving = false }
+
         do {
-            try await SupabaseService.shared.addBacklogTask(title: title, category: "작업")
+            try await SupabaseService.shared.addBacklogTask(
+                title: title,
+                category: selectedCategoryName
+            )
+            showAddSheet = false
+            newTaskTitle = ""
             await loadTasks()
         } catch {
             errorMessage = error.localizedDescription

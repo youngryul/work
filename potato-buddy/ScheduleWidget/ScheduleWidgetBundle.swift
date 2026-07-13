@@ -58,21 +58,40 @@ struct ScheduleWidgetView: View {
         WidgetScheduleDateFormatter.string(from: entry.date)
     }
 
+    /// 스냅샷이 오늘인지 (다가오는 일정이면 false)
+    private var isShowingToday: Bool {
+        let snapshotDate = entry.snapshot.dateString
+        if snapshotDate.isEmpty { return true }
+        return snapshotDate == entryDateString
+    }
+
     private var displayLabel: String {
-        WidgetScheduleDateFormatter.label(for: entryDateString)
+        if entry.snapshot.dateString.isEmpty {
+            return WidgetScheduleDateFormatter.label(for: entryDateString)
+        }
+        if !entry.snapshot.dateLabel.isEmpty {
+            return entry.snapshot.dateLabel
+        }
+        return WidgetScheduleDateFormatter.label(for: entry.snapshot.dateString)
     }
 
     private var displayItems: [WidgetScheduleEntryItem] {
-        guard entry.snapshot.dateString == entryDateString else { return [] }
+        let snapshotDate = entry.snapshot.dateString
+        // 위젯 기준일이 스냅샷 날짜를 지난 경우(자정 이후 등)는 숨김
+        if !snapshotDate.isEmpty, snapshotDate < entryDateString {
+            return []
+        }
         return entry.snapshot.items
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(displayLabel)
-                .font(.system(.headline, design: .rounded))
-                .fontWeight(.bold)
-                .foregroundStyle(.primary)
+                .font(isShowingToday
+                      ? .system(.headline, design: .rounded)
+                      : .system(.caption, design: .rounded))
+                .fontWeight(isShowingToday ? .bold : .semibold)
+                .foregroundStyle(isShowingToday ? .primary : .secondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
 
@@ -132,7 +151,7 @@ struct ScheduleWidget: Widget {
                 }
         }
         .configurationDisplayName("오늘 일정")
-        .description("오늘의 일정을 한눈에 확인하세요.")
+        .description("오늘 일정이 없으면 다가오는 일정을 보여줍니다.")
         .supportedFamilies([.systemSmall])
     }
 }

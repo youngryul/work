@@ -366,6 +366,143 @@ final class SupabaseService {
         return (item, jelly.awarded)
     }
 
+    // MARK: - 카테고리 조회 (웹과 동일)
+
+    func fetchCategories() async throws -> [CategoryItem] {
+        let (userId, token) = await authInfo()
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/categories")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "select", value: "id,name,emoji"),
+            URLQueryItem(name: "order", value: "name.asc"),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        var categories = try JSONDecoder().decode([CategoryItem].self, from: data)
+
+        if categories.isEmpty {
+            try await seedDefaultCategories(userId: userId, token: token)
+            let (retryData, retryResponse) = try await fetch(request)
+            try checkResponse(retryData, retryResponse)
+            categories = try JSONDecoder().decode([CategoryItem].self, from: retryData)
+        }
+
+        if !categories.contains(where: { $0.name == CategoryConstants.systemDailyName }) {
+            categories.insert(
+                CategoryItem(
+                    id: "system_daily",
+                    name: CategoryConstants.systemDailyName,
+                    emoji: CategoryConstants.systemDailyEmoji
+                ),
+                at: 0
+            )
+        }
+
+        let defaultName = (try? await fetchDefaultCategoryName()) ?? CategoryConstants.fallbackDefaultName
+        if defaultName != CategoryConstants.systemDailyName,
+           let defaultIndex = categories.firstIndex(where: { $0.name == defaultName }),
+           defaultIndex > 0 {
+            let defaultCat = categories.remove(at: defaultIndex)
+            let systemIndex = categories.firstIndex(where: { $0.name == CategoryConstants.systemDailyName }) ?? -1
+            categories.insert(defaultCat, at: min(systemIndex + 1, categories.count))
+        }
+
+        return categories
+    }
+
+    func fetchDefaultCategoryName() async throws -> String {
+        let (userId, token) = await authInfo()
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/user_preferences")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "select", value: "default_category"),
+            URLQueryItem(name: "limit", value: "1"),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        do {
+            let (data, response) = try await fetch(request)
+            try checkResponse(data, response)
+            struct PreferenceRow: Decodable { let default_category: String? }
+            let rows = try JSONDecoder().decode([PreferenceRow].self, from: data)
+            if let name = rows.first?.default_category, !name.isEmpty {
+                return name
+            }
+        } catch {
+            // 설정 테이블이 없거나 비어 있으면 폴백
+        }
+
+        return CategoryConstants.fallbackDefaultName
+    }
+
+    private func seedDefaultCategories(userId: String, token: String) async throws {
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/categories")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+
+        let body = CategoryConstants.defaultSeed.map { cat -> [String: String] in
+            [
+                "name": cat.name,
+                "emoji": cat.emoji,
+                "user_id": userId,
+            ]
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        _ = try await fetch(request)
+    }
+
+    // MARK: - 일정 태그 조회 (웹과 동일)
+
+    func fetchOrCreateScheduleTags() async throws -> [ScheduleTagItem] {
+        let (userId, token) = await authInfo()
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/schedule_calendar_tags")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "select", value: "id,name,color"),
+            URLQueryItem(name: "order", value: "created_at.asc"),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        let existing = try JSONDecoder().decode([ScheduleTagItem].self, from: data)
+        if !existing.isEmpty {
+            return existing
+        }
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/schedule_calendar_tags")!
+        var insertRequest = URLRequest(url: url)
+        insertRequest.httpMethod = "POST"
+        headers(token: token).forEach { insertRequest.addValue($1, forHTTPHeaderField: $0) }
+        insertRequest.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        let body = DefaultScheduleTags.seed.map { tag -> [String: String] in
+            [
+                "user_id": userId,
+                "name": tag.name,
+                "color": tag.color,
+            ]
+        }
+        insertRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (insertData, insertResponse) = try await fetch(insertRequest)
+        try checkResponse(insertData, insertResponse)
+        return try JSONDecoder().decode([ScheduleTagItem].self, from: insertData)
+    }
+
     // MARK: - 월별 일정 조회
 
     func fetchSchedules(year: Int, month: Int) async throws -> [ScheduleItem] {

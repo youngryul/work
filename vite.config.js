@@ -5,6 +5,27 @@ import { normalizeNaverExchangeResponse } from './src/utils/exchangeRate.js'
 
 const NAVER_EXCHANGE_API = 'https://api.stock.naver.com/marketindex/exchange'
 
+async function fetchFrankfurterKrw(currencyCode) {
+  const response = await fetch(
+    `https://api.frankfurter.app/latest?from=${encodeURIComponent(currencyCode)}&to=KRW`,
+    { headers: { Accept: 'application/json' } },
+  )
+  if (!response.ok) return null
+  const data = await response.json()
+  return typeof data?.rates?.KRW === 'number' ? data.rates.KRW : null
+}
+
+async function fetchOpenErApiKrw(currencyCode) {
+  const response = await fetch(
+    `https://open.er-api.com/v6/latest/${encodeURIComponent(currencyCode)}`,
+    { headers: { Accept: 'application/json' } },
+  )
+  if (!response.ok) return null
+  const data = await response.json()
+  if (data?.result !== 'success') return null
+  return typeof data?.rates?.KRW === 'number' ? data.rates.KRW : null
+}
+
 /** 로컬 dev — 환율 API (Vercel 함수와 동일 동작) */
 function koreanExchangeRatesDevPlugin() {
   return {
@@ -48,6 +69,50 @@ function koreanExchangeRatesDevPlugin() {
           res.end(JSON.stringify({ rates }))
         } catch (error) {
           console.error('korean-exchange-rates dev error:', error)
+          res.statusCode = 500
+          res.end(JSON.stringify({ error: '환율 조회 중 오류가 발생했습니다.' }))
+        }
+      })
+
+      server.middlewares.use('/api/currency-to-krw', async (req, res) => {
+        if (req.method !== 'GET') {
+          res.statusCode = 405
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
+          res.end(JSON.stringify({ error: 'Method not allowed' }))
+          return
+        }
+
+        const url = new URL(req.url || '/', 'http://localhost')
+        const from = (url.searchParams.get('from') || '').trim().toUpperCase()
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.setHeader('Cache-Control', 'no-store')
+
+        if (!from || from.length !== 3) {
+          res.statusCode = 400
+          res.end(JSON.stringify({ error: 'from 통화 코드가 필요합니다.' }))
+          return
+        }
+
+        if (from === 'KRW') {
+          res.end(JSON.stringify({ from, to: 'KRW', rate: 1, source: 'identity' }))
+          return
+        }
+
+        try {
+          let rate = await fetchFrankfurterKrw(from)
+          let source = 'frankfurter'
+          if (rate == null) {
+            rate = await fetchOpenErApiKrw(from)
+            source = 'open-er-api'
+          }
+          if (rate == null) {
+            res.statusCode = 404
+            res.end(JSON.stringify({ error: `${from} 환율을 찾을 수 없습니다.` }))
+            return
+          }
+          res.end(JSON.stringify({ from, to: 'KRW', rate, source }))
+        } catch (error) {
+          console.error('currency-to-krw dev error:', error)
           res.statusCode = 500
           res.end(JSON.stringify({ error: '환율 조회 중 오류가 발생했습니다.' }))
         }
@@ -107,4 +172,3 @@ export default defineConfig({
     },
   },
 })
-

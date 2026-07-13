@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ScheduleCalendarView: View {
     @State private var schedules: [ScheduleItem] = []
+    @State private var scheduleTags: [ScheduleTagItem] = []
     @State private var isLoading = false
     @State private var errorMessage = ""
     @State private var selectedYear: Int
@@ -9,11 +10,15 @@ struct ScheduleCalendarView: View {
     @State private var selectedDate: String
     @State private var showAddSheet = false
     @State private var newTitle = ""
-    @State private var newTag: ScheduleTagOption = .work
+    @State private var newTagName: String = "업무"
     @State private var isSaving = false
 
     private let weekdaySymbols = ["일", "월", "화", "수", "목", "금", "토"]
     private let calendar = Calendar(identifier: .gregorian)
+
+    private var tagColorMap: [String: Color] {
+        Dictionary(uniqueKeysWithValues: scheduleTags.map { ($0.name, $0.swiftUIColor) })
+    }
 
     init() {
         let now = Date()
@@ -69,7 +74,9 @@ struct ScheduleCalendarView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         newTitle = ""
-                        newTag = .work
+                        newTagName = scheduleTags.first?.name
+                            ?? DefaultScheduleTags.seed.first?.name
+                            ?? "업무"
                         showAddSheet = true
                     } label: {
                         Image(systemName: "plus")
@@ -91,7 +98,9 @@ struct ScheduleCalendarView: View {
             }
         }
         .task {
-            await loadSchedules()
+            async let schedulesLoad: Void = loadSchedules()
+            async let tagsLoad: Void = loadTags()
+            _ = await (schedulesLoad, tagsLoad)
         }
     }
 
@@ -296,18 +305,23 @@ struct ScheduleCalendarView: View {
                 }
 
                 Section("태그") {
-                    Picker("태그", selection: $newTag) {
-                        ForEach(ScheduleTagOption.allCases) { tag in
-                            HStack {
-                                Circle()
-                                    .fill(tag.color)
-                                    .frame(width: 10, height: 10)
-                                Text(tag.rawValue)
+                    if scheduleTags.isEmpty {
+                        Text("태그를 불러오는 중...")
+                            .foregroundColor(.secondary)
+                    } else {
+                        Picker("태그", selection: $newTagName) {
+                            ForEach(scheduleTags) { tag in
+                                HStack {
+                                    Circle()
+                                        .fill(tag.swiftUIColor)
+                                        .frame(width: 10, height: 10)
+                                    Text(tag.name)
+                                }
+                                .tag(tag.name)
                             }
-                            .tag(tag)
                         }
+                        .pickerStyle(.menu)
                     }
-                    .pickerStyle(.menu)
                 }
             }
             .navigationTitle("일정 추가")
@@ -325,6 +339,20 @@ struct ScheduleCalendarView: View {
             }
         }
         .presentationDetents([.medium])
+    }
+
+    private func loadTags() async {
+        do {
+            scheduleTags = try await SupabaseService.shared.fetchOrCreateScheduleTags()
+            if !scheduleTags.contains(where: { $0.name == newTagName }) {
+                newTagName = scheduleTags.first?.name ?? "업무"
+            }
+        } catch {
+            // 태그 로드 실패 시 기본값으로 폴백
+            scheduleTags = DefaultScheduleTags.seed.enumerated().map { index, tag in
+                ScheduleTagItem(id: "default-\(index)", name: tag.name, color: tag.color)
+            }
+        }
     }
 
     private func loadSchedules() async {
@@ -353,7 +381,7 @@ struct ScheduleCalendarView: View {
                 scheduleDate: selectedDate,
                 endDate: selectedDate,
                 title: title,
-                tag: newTag.rawValue
+                tag: newTagName
             )
             schedules.append(created)
             schedules.sort { $0.scheduleDate < $1.scheduleDate }
@@ -384,9 +412,9 @@ struct ScheduleCalendarView: View {
         let currentMonth = calendar.component(.month, from: now)
         guard selectedYear == currentYear, selectedMonth == currentMonth else { return }
 
-        let today = ScheduleDateHelper.todayString()
-        let todaySchedules = schedules.filter { $0.contains(date: today) }
-        ScheduleWidgetService.syncWidgetSnapshot(schedules: todaySchedules, dateString: today)
+        // 오늘 일정이 없으면 이후 가장 가까운 일정으로 위젯 갱신
+        // (다음 달 일정이 필요할 수 있어 전체 refresh 사용)
+        Task { await ScheduleWidgetService.refreshTodayWidget() }
     }
 
     private func changeMonth(by value: Int) {
@@ -433,6 +461,9 @@ struct ScheduleCalendarView: View {
     }
 
     private func tagColor(for name: String) -> Color {
-        ScheduleTagOption(rawValue: name)?.color ?? .gray
+        if let color = tagColorMap[name] {
+            return color
+        }
+        return ScheduleTagOption(rawValue: name)?.color ?? .gray
     }
 }

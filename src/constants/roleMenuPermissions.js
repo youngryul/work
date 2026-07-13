@@ -119,7 +119,7 @@ export const ROLE_MENU_CONFIG_GROUPS = [
   },
   {
     title: '여행',
-    menuIds: ['travel-menu', 'travel', 'domestic-travel'],
+    menuIds: ['travel-menu', 'travel', 'domestic-travel', 'travel-itinerary'],
   },
   {
     title: '게임',

@@ -111,6 +111,11 @@ export const NAVIGATION_MENU_ITEMS = [
         label: '국내 여행 기록',
         icon: '🗺️',
       },
+      {
+        id: 'travel-itinerary',
+        label: '여행 일정',
+        icon: '🗓️',
+      },
     ],
   },
   {
