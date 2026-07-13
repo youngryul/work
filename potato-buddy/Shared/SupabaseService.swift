@@ -241,20 +241,42 @@ final class SupabaseService {
     func moveToToday(id: String) async throws {
         let (userId, token) = await authInfo()
 
+        // 오늘 미완료 할일 중 최대 priority 조회 (맨 아래에 배치)
+        var priorityComponents = URLComponents(string: "\(Config.supabaseURL)/rest/v1/tasks")!
+        priorityComponents.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "istoday", value: "eq.true"),
+            URLQueryItem(name: "completed", value: "eq.false"),
+            URLQueryItem(name: "id", value: "neq.\(id)"),
+            URLQueryItem(name: "select", value: "priority"),
+        ]
+        var priorityRequest = URLRequest(url: priorityComponents.url!)
+        headers(token: token).forEach { priorityRequest.addValue($1, forHTTPHeaderField: $0) }
+        let (priorityData, priorityResponse) = try await fetch(priorityRequest)
+        try checkResponse(priorityData, priorityResponse)
+
+        struct PriorityRow: Decodable { let priority: Int? }
+        let priorityRows = (try? JSONDecoder().decode([PriorityRow].self, from: priorityData)) ?? []
+        let maxPriority = priorityRows.compactMap(\.priority).max() ?? -1
+        let nextPriority = maxPriority + 1
+
         let url = URL(string: "\(Config.supabaseURL)/rest/v1/tasks?id=eq.\(id)&user_id=eq.\(userId)")!
         var request = URLRequest(url: url)
         request.httpMethod = "PATCH"
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
         request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
 
-        let formatter = ISO8601DateFormatter()
-        let now = formatter.string(from: Date())
+        // 웹과 동일: movedtotodayat은 epoch 밀리초
+        let now = Int(Date().timeIntervalSince1970 * 1000)
         let body: [String: Any] = [
-            "istoday":        true,
+            "istoday": true,
             "movedtotodayat": now,
+            "priority": nextPriority,
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        _ = try await fetch(request)
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
     }
 
     // MARK: - 할일 삭제
@@ -808,5 +830,173 @@ final class SupabaseService {
             idempotencyKey: "\(idempotencyPrefix):\(trackerId):\(dateKey)"
         )
         return jelly.awarded
+    }
+
+    // MARK: - 해외 여행 일정
+
+    func fetchAbroadTrips() async throws -> [AbroadTrip] {
+        let (userId, token) = await authInfo()
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/travel_abroad_trips")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "select", value: "id,title,country_code,departure_at,return_at"),
+            URLQueryItem(name: "order", value: "departure_at.desc"),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        return try JSONDecoder().decode([AbroadTrip].self, from: data)
+    }
+
+    func createAbroadTrip(
+        title: String,
+        countryCode: String,
+        departureAt: String,
+        returnAt: String
+    ) async throws -> AbroadTrip {
+        let (userId, token) = await authInfo()
+        let code = countryCode.uppercased()
+        guard code != "KR" else {
+            throw NSError(domain: "SupabaseService", code: 400, userInfo: [NSLocalizedDescriptionKey: "해외 여행만 등록할 수 있습니다."])
+        }
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/travel_abroad_trips")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        let body: [String: Any] = [
+            "user_id": userId,
+            "title": title,
+            "country_code": code,
+            "departure_at": departureAt,
+            "return_at": returnAt,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        let items = try JSONDecoder().decode([AbroadTrip].self, from: data)
+        guard let item = items.first else { throw URLError(.badServerResponse) }
+        return item
+    }
+
+    func deleteAbroadTrip(id: String) async throws {
+        let (userId, token) = await authInfo()
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/travel_abroad_trips?id=eq.\(id)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+    }
+
+    func fetchAbroadItineraryItems(tripId: String, itemDate: String?) async throws -> [AbroadItineraryItem] {
+        let (userId, token) = await authInfo()
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/travel_abroad_itinerary_items")!
+        var queryItems = [
+            URLQueryItem(name: "trip_id", value: "eq.\(tripId)"),
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "select", value: "id,trip_id,item_date,start_minute,end_minute,title,memo"),
+            URLQueryItem(name: "order", value: "item_date.asc,start_minute.asc"),
+        ]
+        if let itemDate, !itemDate.isEmpty {
+            queryItems.append(URLQueryItem(name: "item_date", value: "eq.\(itemDate)"))
+        }
+        components.queryItems = queryItems
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        return try JSONDecoder().decode([AbroadItineraryItem].self, from: data)
+    }
+
+    func createAbroadItineraryItem(
+        tripId: String,
+        itemDate: String,
+        startMinute: Int,
+        endMinute: Int,
+        title: String,
+        memo: String?
+    ) async throws -> AbroadItineraryItem {
+        let (userId, token) = await authInfo()
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/travel_abroad_itinerary_items")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        var body: [String: Any] = [
+            "trip_id": tripId,
+            "user_id": userId,
+            "item_date": itemDate,
+            "start_minute": startMinute,
+            "end_minute": endMinute,
+            "title": title,
+        ]
+        if let memo, !memo.isEmpty {
+            body["memo"] = memo
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        let items = try JSONDecoder().decode([AbroadItineraryItem].self, from: data)
+        guard let item = items.first else { throw URLError(.badServerResponse) }
+        return item
+    }
+
+    func updateAbroadItineraryItem(
+        id: String,
+        itemDate: String,
+        startMinute: Int,
+        endMinute: Int,
+        title: String,
+        memo: String?
+    ) async throws -> AbroadItineraryItem {
+        let (userId, token) = await authInfo()
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/travel_abroad_itinerary_items?id=eq.\(id)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        let body: [String: Any] = [
+            "item_date": itemDate,
+            "start_minute": startMinute,
+            "end_minute": endMinute,
+            "title": title,
+            "memo": memo ?? "",
+            "updated_at": ISO8601DateFormatter().string(from: Date()),
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        let items = try JSONDecoder().decode([AbroadItineraryItem].self, from: data)
+        guard let item = items.first else { throw URLError(.badServerResponse) }
+        return item
+    }
+
+    func deleteAbroadItineraryItem(id: String) async throws {
+        let (userId, token) = await authInfo()
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/travel_abroad_itinerary_items?id=eq.\(id)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
     }
 }

@@ -51,7 +51,7 @@ struct BacklogView: View {
                                         .foregroundColor(.green)
                                         .font(.title3)
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.borderless)
                             }
                             .padding(.vertical, 4)
                         }

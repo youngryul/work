@@ -45,11 +45,17 @@ struct MainTabView: View {
                 }
                 .tag(5)
 
+            TravelItineraryView()
+                .tabItem {
+                    Label("여행", systemImage: "airplane")
+                }
+                .tag(6)
+
             SettingsView(showLogoutConfirm: $showLogoutConfirm)
                 .tabItem {
                     Label("설정", systemImage: "gearshape.fill")
                 }
-                .tag(6)
+                .tag(7)
         }
         .tint(.green)
         .confirmationDialog("로그아웃", isPresented: $showLogoutConfirm) {
