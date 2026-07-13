@@ -171,6 +171,11 @@ export const NAVIGATION_MENU_ITEMS = [
     ],
   },
   {
+    id: 'summer-clock',
+    label: '시계',
+    icon: '🕐',
+  },
+  {
     id: 'review-menu',
     label: '회고',
     icon: '📊',

@@ -126,6 +126,10 @@ export const ROLE_MENU_CONFIG_GROUPS = [
     menuIds: ['games', 'nonogram', 'sudoku'],
   },
   {
+    title: '시계',
+    menuIds: ['summer-clock'],
+  },
+  {
     title: '회고',
     menuIds: ['review-menu', 'review', 'review-2026'],
   },

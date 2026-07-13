@@ -18,6 +18,7 @@ import ReadingView from './components/reading/ReadingView.jsx'
 import TravelView from './components/travel/TravelView.jsx'
 import DomesticTravelView from './components/travel/DomesticTravelView.jsx'
 import TravelItineraryView from './components/travel/TravelItineraryView.jsx'
+import SummerClockView from './components/SummerClockView.jsx'
 import FiveYearQuestionView from './components/FiveYearQuestionView.jsx'
 import CategorySettingsModal from './components/CategorySettingsModal.jsx'
 import FoodCalorieCalculator from './components/FoodCalorieCalculator.jsx'
@@ -465,6 +466,10 @@ function AppContent() {
         <AdSenseBanner />
         </main>
       </div>
+
+      {currentView === 'summer-clock' && (
+        <SummerClockView onClose={() => setCurrentView('today')} />
+      )}
 
       {/* 알림 센터 (모든 페이지에서 표시) */}
       {canUseNotifications && (
