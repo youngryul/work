@@ -140,6 +140,22 @@ export const weightGoals = pgTable('weight_goals', {
 })
 
 /**
+ * fridge_items — 냉장고 재고 (냉장실 / 냉동고 / 실온)
+ */
+export const fridgeItems = pgTable('fridge_items', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  zone: text('zone').notNull(),
+  name: text('name').notNull(),
+  quantity: integer('quantity').notNull().default(1),
+  status: text('status').notNull().default('active'),
+  registeredAt: text('registered_at').notNull(),
+  expiresAt: text('expires_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
  * user_farm_progress — 포실이 농장 성장 진행
  */
 export const userFarmProgress = pgTable('user_farm_progress', {

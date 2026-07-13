@@ -24,6 +24,7 @@ import CategorySettingsModal from './components/CategorySettingsModal.jsx'
 import FoodCalorieCalculator from './components/FoodCalorieCalculator.jsx'
 import WeightTrackingView from './components/weight/WeightTrackingView.jsx'
 import CongratulatoryMoneyView from './components/CongratulatoryMoneyView.jsx'
+import FridgeInventoryView from './components/FridgeInventoryView.jsx'
 import AnnouncementView from './components/AnnouncementView.jsx'
 import SettingsView from './components/SettingsView.jsx'
 import AdminDashboard from './components/admin/AdminDashboard.jsx'
@@ -453,6 +454,7 @@ function AppContent() {
         {currentView === 'food-calorie' && <FoodCalorieCalculator />}
         {currentView === 'weight-tracking' && <WeightTrackingView />}
         {currentView === 'congratulatory-money' && <CongratulatoryMoneyView />}
+        {currentView === 'fridge-inventory' && <FridgeInventoryView />}
         {currentView === 'settings' && (
           <SettingsView
             currentTheme={appTheme}

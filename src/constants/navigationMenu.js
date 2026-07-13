@@ -139,6 +139,11 @@ export const NAVIGATION_MENU_ITEMS = [
     icon: '💐',
   },
   {
+    id: 'fridge-inventory',
+    label: '냉장고 관리',
+    icon: '🧊',
+  },
+  {
     id: 'announcements',
     label: '공지사항',
     icon: '📢',

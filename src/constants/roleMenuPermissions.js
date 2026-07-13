@@ -115,6 +115,7 @@ export const ROLE_MENU_CONFIG_GROUPS = [
       'food-calorie',
       'weight-tracking',
       'congratulatory-money',
+      'fridge-inventory',
     ],
   },
   {
