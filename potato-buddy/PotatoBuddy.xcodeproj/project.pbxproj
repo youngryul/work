@@ -60,6 +60,8 @@
 		FC7F1B03C1972CCA1401550E /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 301769FE9AC7E8DA1E0CB788 /* AuthService.swift */; };
 		FCE237435B2D654EEE2A4100 /* FloatingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */; };
 		FEC7106BC26FF1ED93A540ED /* ScheduleCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CC56B1102F36D279C196D42 /* ScheduleCalendarView.swift */; };
+		A8F3C1D0E2B7496A91C0D5E1 /* SummerClockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F3C1D0E2B7496A91C0D5E0 /* SummerClockView.swift */; };
+		A8F3C1D0E2B7496A91C0D5E3 /* summer.png in Resources */ = {isa = PBXBuildFile; fileRef = A8F3C1D0E2B7496A91C0D5E2 /* summer.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -92,6 +94,8 @@
 		12DF9FBB4D85C2F270AAC672 /* 모바일배경.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "모바일배경.png"; sourceTree = "<group>"; };
 		16ED2268DFB8CD43F90BC3BA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		17F2503650D67FEFAECD28EC /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A8F3C1D0E2B7496A91C0D5E0 /* SummerClockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SummerClockView.swift; sourceTree = "<group>"; };
+		A8F3C1D0E2B7496A91C0D5E2 /* summer.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = summer.png; sourceTree = "<group>"; };
 		1D826A844BE6F7D286ED09B9 /* BacklogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BacklogView.swift; sourceTree = "<group>"; };
 		301769FE9AC7E8DA1E0CB788 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		34391A214A69FA4C5B297D86 /* CharacterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterView.swift; sourceTree = "<group>"; };
@@ -194,6 +198,8 @@
 				4CC56B1102F36D279C196D42 /* ScheduleCalendarView.swift */,
 				3EBE98E4AA439E5B105C2588 /* ScheduleWidgetService.swift */,
 				17F2503650D67FEFAECD28EC /* SettingsView.swift */,
+				A8F3C1D0E2B7496A91C0D5E0 /* SummerClockView.swift */,
+				A8F3C1D0E2B7496A91C0D5E2 /* summer.png */,
 				607BDE05A4DD4BE69A4932DA /* TodayView.swift */,
 			);
 			path = PotatoBuddyiOS;
@@ -338,6 +344,7 @@
 				3FBDAC36601F0701A52E9D90 /* 앱이미지.png in Resources */,
 				2DA5A0A4C9F98B31BECE0E43 /* 포실이(투명).png in Resources */,
 				EF28384196877F786C0CED50 /* 포실이뽀모도로.png in Resources */,
+				A8F3C1D0E2B7496A91C0D5E3 /* summer.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -412,6 +419,7 @@
 				DB972F13B96FFEC35DAD6E17 /* ScheduleItem.swift in Sources */,
 				CAEC59D5B68A5480E504DBF2 /* ScheduleWidgetService.swift in Sources */,
 				EF1F6C5100CD872A2E638934 /* SettingsView.swift in Sources */,
+				A8F3C1D0E2B7496A91C0D5E1 /* SummerClockView.swift in Sources */,
 				943E1D60032F7A8DC0C5C579 /* SupabaseService.swift in Sources */,
 				46AC3A0AFBE0EE18BAD84F1B /* TaskItem.swift in Sources */,
 				E07C57782C90A202B7737328 /* TodayView.swift in Sources */,

@@ -51,11 +51,17 @@ struct MainTabView: View {
                 }
                 .tag(6)
 
+            SummerClockView()
+                .tabItem {
+                    Label("시계", systemImage: "clock.fill")
+                }
+                .tag(7)
+
             SettingsView(showLogoutConfirm: $showLogoutConfirm)
                 .tabItem {
                     Label("설정", systemImage: "gearshape.fill")
                 }
-                .tag(7)
+                .tag(8)
         }
         .tint(.green)
         .confirmationDialog("로그아웃", isPresented: $showLogoutConfirm) {
