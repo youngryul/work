@@ -10,9 +10,11 @@ const HALF_HOUR_OPTIONS = Array.from({ length: 49 }, (_, i) => {
  * @param {{
  *   isOpen: boolean,
  *   initialDate: string,
+ *   initialTitle?: string,
  *   initialStartMinute?: number,
  *   initialEndMinute?: number,
  *   editingItem?: object | null,
+ *   formHeading?: string,
  *   onClose: () => void,
  *   onSubmit: (payload: object) => Promise<void>,
  *   onDelete?: () => Promise<void>,
@@ -21,9 +23,11 @@ const HALF_HOUR_OPTIONS = Array.from({ length: 49 }, (_, i) => {
 export default function TravelItineraryItemForm({
   isOpen,
   initialDate,
+  initialTitle = '',
   initialStartMinute = 540,
   initialEndMinute = 570,
   editingItem = null,
+  formHeading,
   onClose,
   onSubmit,
   onDelete,
@@ -44,13 +48,13 @@ export default function TravelItineraryItemForm({
       setStartMinute(editingItem.startMinute)
       setEndMinute(editingItem.endMinute)
     } else {
-      setTitle('')
+      setTitle(initialTitle || '')
       setMemo('')
       setItemDate(initialDate)
       setStartMinute(initialStartMinute)
       setEndMinute(initialEndMinute)
     }
-  }, [isOpen, editingItem, initialDate, initialStartMinute, initialEndMinute])
+  }, [isOpen, editingItem, initialDate, initialTitle, initialStartMinute, initialEndMinute])
 
   const startOptions = useMemo(
     () => HALF_HOUR_OPTIONS.filter((o) => o.minute < 1440),
@@ -79,12 +83,15 @@ export default function TravelItineraryItemForm({
     }
   }
 
+  const heading =
+    formHeading || (editingItem ? '일정 수정' : '일정 추가')
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b px-5 py-4">
           <h3 className="text-lg font-bold text-gray-800 font-sans">
-            {editingItem ? '일정 수정' : '일정 추가'}
+            {heading}
           </h3>
           <button type="button" onClick={onClose} className="text-2xl text-gray-400" aria-label="닫기">
             ×

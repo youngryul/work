@@ -4,7 +4,8 @@ struct TravelItineraryItemFormView: View {
     let trip: AbroadTrip
     let selectedDate: String
     let editingItem: AbroadItineraryItem?
-    let onSaved: () -> Void
+    let movingSpareItem: AbroadSpareItem?
+    let onSaved: (_ movedItemDate: String?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var title = ""
@@ -25,6 +26,12 @@ struct TravelItineraryItemFormView: View {
 
     private var dateOptions: [String] {
         TravelItineraryTime.dateKeys(from: trip.departureAt, to: trip.returnAt)
+    }
+
+    private var navigationTitleText: String {
+        if editingItem != nil { return "일정 수정" }
+        if movingSpareItem != nil { return "예비 → 일정" }
+        return "일정 추가"
     }
 
     var body: some View {
@@ -69,14 +76,14 @@ struct TravelItineraryItemFormView: View {
                     }
                 }
             }
-            .navigationTitle(editingItem == nil ? "일정 추가" : "일정 수정")
+            .navigationTitle(navigationTitleText)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("취소") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("저장") {
+                    Button(movingSpareItem != nil ? "옮기기" : "저장") {
                         Task { await save() }
                     }
                     .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
@@ -89,6 +96,12 @@ struct TravelItineraryItemFormView: View {
                     itemDate = editingItem.itemDate
                     startMinute = editingItem.startMinute
                     endMinute = editingItem.endMinute
+                } else if let movingSpareItem {
+                    title = movingSpareItem.title
+                    memo = ""
+                    itemDate = selectedDate.isEmpty ? (dateOptions.first ?? "") : selectedDate
+                    startMinute = 540
+                    endMinute = 570
                 } else {
                     itemDate = selectedDate.isEmpty ? (dateOptions.first ?? "") : selectedDate
                     startMinute = 540
@@ -121,6 +134,18 @@ struct TravelItineraryItemFormView: View {
                     title: trimmed,
                     memo: memo
                 )
+                onSaved(nil)
+            } else if let movingSpareItem {
+                _ = try await SupabaseService.shared.createAbroadItineraryItem(
+                    tripId: trip.id,
+                    itemDate: itemDate,
+                    startMinute: startMinute,
+                    endMinute: endMinute,
+                    title: trimmed,
+                    memo: memo
+                )
+                try await SupabaseService.shared.deleteAbroadSpareItem(id: movingSpareItem.id)
+                onSaved(itemDate)
             } else {
                 _ = try await SupabaseService.shared.createAbroadItineraryItem(
                     tripId: trip.id,
@@ -130,8 +155,8 @@ struct TravelItineraryItemFormView: View {
                     title: trimmed,
                     memo: memo
                 )
+                onSaved(nil)
             }
-            onSaved()
             dismiss()
         } catch {
             errorMessage = error.localizedDescription
@@ -144,7 +169,7 @@ struct TravelItineraryItemFormView: View {
         defer { isSaving = false }
         do {
             try await SupabaseService.shared.deleteAbroadItineraryItem(id: editingItem.id)
-            onSaved()
+            onSaved(nil)
             dismiss()
         } catch {
             errorMessage = error.localizedDescription

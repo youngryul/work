@@ -44,6 +44,49 @@ struct AbroadItineraryItem: Codable, Identifiable, Hashable {
     var endLabel: String { TravelItineraryTime.minuteToLabel(endMinute) }
 }
 
+struct AbroadPackingItem: Codable, Identifiable, Hashable {
+    let id: String
+    let tripId: String
+    let title: String
+    let isChecked: Bool
+    let sortOrder: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title
+        case tripId = "trip_id"
+        case isChecked = "is_checked"
+        case sortOrder = "sort_order"
+    }
+}
+
+struct AbroadSouvenirItem: Codable, Identifiable, Hashable {
+    let id: String
+    let tripId: String
+    let title: String
+    let isChecked: Bool
+    let sortOrder: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title
+        case tripId = "trip_id"
+        case isChecked = "is_checked"
+        case sortOrder = "sort_order"
+    }
+}
+
+struct AbroadSpareItem: Codable, Identifiable, Hashable {
+    let id: String
+    let tripId: String
+    let title: String
+    let sortOrder: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title
+        case tripId = "trip_id"
+        case sortOrder = "sort_order"
+    }
+}
+
 struct TravelAbroadCountry: Identifiable, Hashable {
     let code: String
     let name: String

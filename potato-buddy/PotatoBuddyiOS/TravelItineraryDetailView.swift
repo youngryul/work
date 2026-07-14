@@ -1,8 +1,27 @@
 import SwiftUI
 
+private enum TravelDetailTab: String, CaseIterable, Identifiable {
+    case schedule
+    case packing
+    case souvenir
+    case spare
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .schedule: return "일정"
+        case .packing: return "준비물"
+        case .souvenir: return "기념품"
+        case .spare: return "예비 일정"
+        }
+    }
+}
+
 struct TravelItineraryDetailView: View {
     let trip: AbroadTrip
 
+    @State private var activeTab: TravelDetailTab = .schedule
     @State private var selectedDate: String = ""
     @State private var dateKeys: [String] = []
     @State private var items: [AbroadItineraryItem] = []
@@ -11,6 +30,7 @@ struct TravelItineraryDetailView: View {
     @State private var errorMessage = ""
     @State private var showItemForm = false
     @State private var editingItem: AbroadItineraryItem?
+    @State private var movingSpareItem: AbroadSpareItem?
     @State private var localTimeLabel = ""
     @State private var localDateLabel = ""
 
@@ -19,19 +39,38 @@ struct TravelItineraryDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            dayPicker
-            content
+            tabPicker
+            Group {
+                switch activeTab {
+                case .schedule:
+                    dayPicker
+                    scheduleContent
+                case .packing:
+                    TravelItineraryPackingListView(tripId: trip.id)
+                case .souvenir:
+                    TravelItinerarySouvenirListView(tripId: trip.id)
+                case .spare:
+                    TravelItinerarySpareListView(tripId: trip.id) { spare in
+                        editingItem = nil
+                        movingSpareItem = spare
+                        showItemForm = true
+                    }
+                }
+            }
         }
         .navigationTitle(trip.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    editingItem = nil
-                    showItemForm = true
-                } label: {
-                    Image(systemName: "plus")
-                        .foregroundColor(.cyan)
+                if activeTab == .schedule {
+                    Button {
+                        editingItem = nil
+                        movingSpareItem = nil
+                        showItemForm = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .foregroundColor(.cyan)
+                    }
                 }
             }
         }
@@ -39,10 +78,16 @@ struct TravelItineraryDetailView: View {
             TravelItineraryItemFormView(
                 trip: trip,
                 selectedDate: selectedDate.isEmpty ? dateKeys.first ?? "" : selectedDate,
-                editingItem: editingItem
-            ) {
+                editingItem: editingItem,
+                movingSpareItem: movingSpareItem
+            ) { movedItemDate in
                 showItemForm = false
                 editingItem = nil
+                movingSpareItem = nil
+                if let movedItemDate {
+                    selectedDate = movedItemDate
+                    activeTab = .schedule
+                }
                 Task { await loadItems() }
             }
         }
@@ -103,6 +148,31 @@ struct TravelItineraryDetailView: View {
         )
     }
 
+    private var tabPicker: some View {
+        HStack(spacing: 0) {
+            ForEach(TravelDetailTab.allCases) { tab in
+                Button {
+                    activeTab = tab
+                } label: {
+                    Text(tab.label)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .foregroundColor(activeTab == tab ? .cyan : .secondary)
+                        .overlay(alignment: .bottom) {
+                            Rectangle()
+                                .fill(activeTab == tab ? Color.cyan : Color.clear)
+                                .frame(height: 2)
+                        }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal)
+        .background(Color(.systemBackground))
+    }
+
     private var dayPicker: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
@@ -133,7 +203,7 @@ struct TravelItineraryDetailView: View {
     }
 
     @ViewBuilder
-    private var content: some View {
+    private var scheduleContent: some View {
         if isLoading {
             ProgressView("불러오는 중...")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -143,6 +213,7 @@ struct TravelItineraryDetailView: View {
                     .foregroundColor(.secondary)
                 Button("첫 일정 추가") {
                     editingItem = nil
+                    movingSpareItem = nil
                     showItemForm = true
                 }
                 .buttonStyle(.borderedProminent)
@@ -207,6 +278,7 @@ struct TravelItineraryDetailView: View {
                         .font(.subheadline)
                         .foregroundColor(item.memo?.isEmpty == false ? .primary : .secondary)
                     Button("수정하기") {
+                        movingSpareItem = nil
                         editingItem = item
                         showItemForm = true
                     }
