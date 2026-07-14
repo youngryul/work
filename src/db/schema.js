@@ -210,6 +210,28 @@ export const farmFieldCrops = pgTable('farm_field_crops', {
 })
 
 /**
+ * toeic_vocab_day_completions — 토익 단어 Day 완료 횟수
+ */
+export const toeicVocabDayCompletions = pgTable('toeic_vocab_day_completions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  dayNumber: integer('day_number').notNull(),
+  completionCount: integer('completion_count').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * toeic_vocab_challenge_goals — 토익 단어 챌린지 목표
+ */
+export const toeicVocabChallengeGoals = pgTable('toeic_vocab_challenge_goals', {
+  userId: uuid('user_id').primaryKey(),
+  goal: text('goal').notNull().default(''),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
  * menstrual_cycle_settings — 생리 주기 설정
  */
 export const menstrualCycleSettings = pgTable('menstrual_cycle_settings', {

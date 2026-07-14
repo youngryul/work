@@ -25,6 +25,7 @@ import FoodCalorieCalculator from './components/FoodCalorieCalculator.jsx'
 import WeightTrackingView from './components/weight/WeightTrackingView.jsx'
 import CongratulatoryMoneyView from './components/CongratulatoryMoneyView.jsx'
 import FridgeInventoryView from './components/FridgeInventoryView.jsx'
+import ToeicVocabView from './components/ToeicVocabView.jsx'
 import AnnouncementView from './components/AnnouncementView.jsx'
 import SettingsView from './components/SettingsView.jsx'
 import AdminDashboard from './components/admin/AdminDashboard.jsx'
@@ -455,6 +456,7 @@ function AppContent() {
         {currentView === 'weight-tracking' && <WeightTrackingView />}
         {currentView === 'congratulatory-money' && <CongratulatoryMoneyView />}
         {currentView === 'fridge-inventory' && <FridgeInventoryView />}
+        {currentView === 'toeic-vocab' && <ToeicVocabView />}
         {currentView === 'settings' && (
           <SettingsView
             currentTheme={appTheme}

@@ -116,6 +116,7 @@ export const ROLE_MENU_CONFIG_GROUPS = [
       'weight-tracking',
       'congratulatory-money',
       'fridge-inventory',
+      'toeic-vocab',
     ],
   },
   {

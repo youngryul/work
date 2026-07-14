@@ -144,6 +144,11 @@ export const NAVIGATION_MENU_ITEMS = [
     icon: '🧊',
   },
   {
+    id: 'toeic-vocab',
+    label: '토익 단어',
+    icon: '📗',
+  },
+  {
     id: 'announcements',
     label: '공지사항',
     icon: '📢',
