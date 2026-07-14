@@ -432,3 +432,356 @@ export function buildTripDateKeys(departureAt, returnAt) {
   }
   return dates
 }
+
+function normalizePackingItem(row) {
+  return {
+    id: row.id,
+    tripId: row.trip_id,
+    userId: row.user_id,
+    title: row.title,
+    isChecked: Boolean(row.is_checked),
+    sortOrder: row.sort_order ?? 0,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
+function normalizeSpareItem(row) {
+  return {
+    id: row.id,
+    tripId: row.trip_id,
+    userId: row.user_id,
+    title: row.title,
+    sortOrder: row.sort_order ?? 0,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
+/**
+ * 여행 준비물 목록
+ * @param {string} tripId
+ */
+export async function getAbroadPackingItems(tripId) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const { data, error } = await supabase
+    .from('travel_abroad_packing_items')
+    .select('*')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('준비물 목록 조회 오류:', error)
+    throw error
+  }
+
+  return (data || []).map(normalizePackingItem)
+}
+
+/**
+ * @param {{ tripId: string, title: string }} params
+ */
+export async function createAbroadPackingItem({ tripId, title }) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const trimmed = (title || '').trim()
+  if (!trimmed) throw new Error('준비물 이름을 입력해주세요.')
+
+  const { data, error } = await supabase
+    .from('travel_abroad_packing_items')
+    .insert([
+      {
+        trip_id: tripId,
+        user_id: userId,
+        title: trimmed,
+        is_checked: false,
+        sort_order: Date.now() % 1000000000,
+      },
+    ])
+    .select()
+    .single()
+
+  if (error) {
+    console.error('준비물 추가 오류:', error)
+    throw error
+  }
+
+  return normalizePackingItem(data)
+}
+
+/**
+ * @param {string} itemId
+ * @param {{ title?: string, isChecked?: boolean }} updates
+ */
+export async function updateAbroadPackingItem(itemId, updates) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const payload = { updated_at: new Date().toISOString() }
+  if (updates.title != null) {
+    const trimmed = updates.title.trim()
+    if (!trimmed) throw new Error('준비물 이름을 입력해주세요.')
+    payload.title = trimmed
+  }
+  if (updates.isChecked != null) {
+    payload.is_checked = Boolean(updates.isChecked)
+  }
+
+  const { data, error } = await supabase
+    .from('travel_abroad_packing_items')
+    .update(payload)
+    .eq('id', itemId)
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('준비물 수정 오류:', error)
+    throw error
+  }
+
+  return normalizePackingItem(data)
+}
+
+/**
+ * @param {string} itemId
+ */
+export async function deleteAbroadPackingItem(itemId) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const { error } = await supabase
+    .from('travel_abroad_packing_items')
+    .delete()
+    .eq('id', itemId)
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error('준비물 삭제 오류:', error)
+    throw error
+  }
+
+  return true
+}
+
+/**
+ * 여행 기념품 목록
+ * @param {string} tripId
+ */
+export async function getAbroadSouvenirItems(tripId) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const { data, error } = await supabase
+    .from('travel_abroad_souvenir_items')
+    .select('*')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('기념품 목록 조회 오류:', error)
+    throw error
+  }
+
+  return (data || []).map(normalizePackingItem)
+}
+
+/**
+ * @param {{ tripId: string, title: string }} params
+ */
+export async function createAbroadSouvenirItem({ tripId, title }) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const trimmed = (title || '').trim()
+  if (!trimmed) throw new Error('기념품 이름을 입력해주세요.')
+
+  const { data, error } = await supabase
+    .from('travel_abroad_souvenir_items')
+    .insert([
+      {
+        trip_id: tripId,
+        user_id: userId,
+        title: trimmed,
+        is_checked: false,
+        sort_order: Date.now() % 1000000000,
+      },
+    ])
+    .select()
+    .single()
+
+  if (error) {
+    console.error('기념품 추가 오류:', error)
+    throw error
+  }
+
+  return normalizePackingItem(data)
+}
+
+/**
+ * @param {string} itemId
+ * @param {{ title?: string, isChecked?: boolean }} updates
+ */
+export async function updateAbroadSouvenirItem(itemId, updates) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const payload = { updated_at: new Date().toISOString() }
+  if (updates.title != null) {
+    const trimmed = updates.title.trim()
+    if (!trimmed) throw new Error('기념품 이름을 입력해주세요.')
+    payload.title = trimmed
+  }
+  if (updates.isChecked != null) {
+    payload.is_checked = Boolean(updates.isChecked)
+  }
+
+  const { data, error } = await supabase
+    .from('travel_abroad_souvenir_items')
+    .update(payload)
+    .eq('id', itemId)
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('기념품 수정 오류:', error)
+    throw error
+  }
+
+  return normalizePackingItem(data)
+}
+
+/**
+ * @param {string} itemId
+ */
+export async function deleteAbroadSouvenirItem(itemId) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const { error } = await supabase
+    .from('travel_abroad_souvenir_items')
+    .delete()
+    .eq('id', itemId)
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error('기념품 삭제 오류:', error)
+    throw error
+  }
+
+  return true
+}
+
+/**
+ * 예비 일정 목록
+ * @param {string} tripId
+ */
+export async function getAbroadSpareItems(tripId) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const { data, error } = await supabase
+    .from('travel_abroad_spare_items')
+    .select('*')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('예비 일정 목록 조회 오류:', error)
+    throw error
+  }
+
+  return (data || []).map(normalizeSpareItem)
+}
+
+/**
+ * @param {{ tripId: string, title: string }} params
+ */
+export async function createAbroadSpareItem({ tripId, title }) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const trimmed = (title || '').trim()
+  if (!trimmed) throw new Error('예비 일정 제목을 입력해주세요.')
+
+  const { data, error } = await supabase
+    .from('travel_abroad_spare_items')
+    .insert([
+      {
+        trip_id: tripId,
+        user_id: userId,
+        title: trimmed,
+        sort_order: Date.now() % 1000000000,
+      },
+    ])
+    .select()
+    .single()
+
+  if (error) {
+    console.error('예비 일정 추가 오류:', error)
+    throw error
+  }
+
+  return normalizeSpareItem(data)
+}
+
+/**
+ * @param {string} itemId
+ * @param {{ title: string }} updates
+ */
+export async function updateAbroadSpareItem(itemId, updates) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const trimmed = (updates.title || '').trim()
+  if (!trimmed) throw new Error('예비 일정 제목을 입력해주세요.')
+
+  const { data, error } = await supabase
+    .from('travel_abroad_spare_items')
+    .update({
+      title: trimmed,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', itemId)
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('예비 일정 수정 오류:', error)
+    throw error
+  }
+
+  return normalizeSpareItem(data)
+}
+
+/**
+ * @param {string} itemId
+ */
+export async function deleteAbroadSpareItem(itemId) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const { error } = await supabase
+    .from('travel_abroad_spare_items')
+    .delete()
+    .eq('id', itemId)
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error('예비 일정 삭제 오류:', error)
+    throw error
+  }
+
+  return true
+}

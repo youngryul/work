@@ -7,6 +7,7 @@ import {
   buildTripDateKeys,
   createAbroadItineraryItem,
   deleteAbroadItineraryItem,
+  deleteAbroadSpareItem,
   getAbroadItineraryItems,
   toDateKey,
   updateAbroadItineraryItem,
@@ -14,6 +15,16 @@ import {
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
 import TravelItineraryItemForm from './TravelItineraryItemForm.jsx'
 import TravelItineraryTimeline from './TravelItineraryTimeline.jsx'
+import TravelItineraryPackingList from './TravelItineraryPackingList.jsx'
+import TravelItinerarySouvenirList from './TravelItinerarySouvenirList.jsx'
+import TravelItinerarySpareList from './TravelItinerarySpareList.jsx'
+
+const DETAIL_TABS = [
+  { id: 'schedule', label: '일정' },
+  { id: 'packing', label: '준비물' },
+  { id: 'souvenir', label: '기념품' },
+  { id: 'spare', label: '예비 일정' },
+]
 
 /**
  * @param {{ trip: object, onBack: () => void }} props
@@ -34,11 +45,13 @@ export default function TravelItineraryDetail({ trip, onBack }) {
     [trip.departureAt, trip.returnAt],
   )
 
+  const [activeTab, setActiveTab] = useState('schedule')
   const [selectedDate, setSelectedDate] = useState(() => dateKeys[0] || toDateKey(trip.departureAt))
   const [items, setItems] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [formOpen, setFormOpen] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
+  const [movingSpareItem, setMovingSpareItem] = useState(null)
   const [draftStart, setDraftStart] = useState(540)
   const [draftEnd, setDraftEnd] = useState(570)
 
@@ -84,9 +97,24 @@ export default function TravelItineraryDetail({ trip, onBack }) {
 
   const openCreate = (startMinute) => {
     setEditingItem(null)
+    setMovingSpareItem(null)
     setDraftStart(startMinute)
     setDraftEnd(Math.min(1440, startMinute + 30))
     setFormOpen(true)
+  }
+
+  const openMoveFromSpare = (spareItem) => {
+    setEditingItem(null)
+    setMovingSpareItem(spareItem)
+    setDraftStart(540)
+    setDraftEnd(570)
+    setFormOpen(true)
+  }
+
+  const closeForm = () => {
+    setFormOpen(false)
+    setEditingItem(null)
+    setMovingSpareItem(null)
   }
 
   const handleSubmit = async (payload) => {
@@ -98,6 +126,19 @@ export default function TravelItineraryDetail({ trip, onBack }) {
           tripReturnAt: trip.returnAt,
         })
         showToast('일정을 수정했습니다.', TOAST_TYPES.SUCCESS)
+      } else if (movingSpareItem) {
+        await createAbroadItineraryItem({
+          tripId: trip.id,
+          ...payload,
+          tripDepartureAt: trip.departureAt,
+          tripReturnAt: trip.returnAt,
+        })
+        await deleteAbroadSpareItem(movingSpareItem.id)
+        showToast('예비 일정을 일정으로 옮겼습니다.', TOAST_TYPES.SUCCESS)
+        closeForm()
+        setSelectedDate(payload.itemDate)
+        setActiveTab('schedule')
+        return
       } else {
         await createAbroadItineraryItem({
           tripId: trip.id,
@@ -107,8 +148,7 @@ export default function TravelItineraryDetail({ trip, onBack }) {
         })
         showToast('일정을 추가했습니다.', TOAST_TYPES.SUCCESS)
       }
-      setFormOpen(false)
-      setEditingItem(null)
+      closeForm()
       if (payload.itemDate !== selectedDate) {
         setSelectedDate(payload.itemDate)
       } else {
@@ -125,8 +165,7 @@ export default function TravelItineraryDetail({ trip, onBack }) {
     try {
       await deleteAbroadItineraryItem(editingItem.id)
       showToast('일정을 삭제했습니다.', TOAST_TYPES.SUCCESS)
-      setFormOpen(false)
-      setEditingItem(null)
+      closeForm()
       await loadItems()
     } catch (error) {
       showToast(error?.message || '삭제에 실패했습니다.', TOAST_TYPES.ERROR)
@@ -161,76 +200,103 @@ export default function TravelItineraryDetail({ trip, onBack }) {
         </div>
       </section>
 
-      <div className="flex gap-2 overflow-x-auto pb-3 mb-3">
-        {dateKeys.map((dateKey, index) => {
-          const d = new Date(`${dateKey}T00:00:00`)
-          const label = d.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric', weekday: 'short' })
-          const selected = dateKey === selectedDate
-          return (
-            <button
-              key={dateKey}
-              type="button"
-              onClick={() => setSelectedDate(dateKey)}
-              className={`shrink-0 px-3 py-2 rounded-xl text-sm font-medium border transition-colors ${
-                selected
-                  ? 'bg-sky-500 text-white border-sky-500'
-                  : 'bg-white text-gray-700 border-gray-200 hover:border-sky-300'
-              }`}
-            >
-              Day {index + 1}
-              <span className="block text-[11px] opacity-80">{label}</span>
-            </button>
-          )
-        })}
-      </div>
-
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-bold text-gray-800">
-          {selectedDate} 일정
-          <span className="ml-2 text-sm font-normal text-gray-500">{items.length}건</span>
-        </h2>
-        <button
-          type="button"
-          onClick={() => openCreate(540)}
-          className="px-3 py-1.5 rounded-lg bg-sky-500 text-white text-sm font-semibold hover:bg-sky-600"
-        >
-          + 일정 추가
-        </button>
-      </div>
-
-      {isLoading ? (
-        <p className="text-center text-gray-500 py-10">불러오는 중...</p>
-      ) : items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 py-12 text-center">
-          <p className="text-gray-500 mb-3">이 날짜에 등록된 일정이 없습니다</p>
+      <div className="flex gap-2 mb-5 border-b border-gray-200">
+        {DETAIL_TABS.map((tab) => (
           <button
+            key={tab.id}
             type="button"
-            onClick={() => openCreate(540)}
-            className="px-3 py-1.5 rounded-lg bg-sky-500 text-white text-sm font-semibold hover:bg-sky-600"
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2.5 text-sm font-semibold transition-colors ${
+              activeTab === tab.id
+                ? 'border-b-2 border-sky-500 text-sky-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
           >
-            + 첫 일정 추가
+            {tab.label}
           </button>
-        </div>
-      ) : (
-        <TravelItineraryTimeline
-          items={items}
-          onEdit={(item) => {
-            setEditingItem(item)
-            setFormOpen(true)
-          }}
-        />
+        ))}
+      </div>
+
+      {activeTab === 'schedule' && (
+        <>
+          <div className="flex gap-2 overflow-x-auto pb-3 mb-3">
+            {dateKeys.map((dateKey, index) => {
+              const d = new Date(`${dateKey}T00:00:00`)
+              const label = d.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric', weekday: 'short' })
+              const selected = dateKey === selectedDate
+              return (
+                <button
+                  key={dateKey}
+                  type="button"
+                  onClick={() => setSelectedDate(dateKey)}
+                  className={`shrink-0 px-3 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                    selected
+                      ? 'bg-sky-500 text-white border-sky-500'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-sky-300'
+                  }`}
+                >
+                  Day {index + 1}
+                  <span className="block text-[11px] opacity-80">{label}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-gray-800">
+              {selectedDate} 일정
+              <span className="ml-2 text-sm font-normal text-gray-500">{items.length}건</span>
+            </h2>
+            <button
+              type="button"
+              onClick={() => openCreate(540)}
+              className="px-3 py-1.5 rounded-lg bg-sky-500 text-white text-sm font-semibold hover:bg-sky-600"
+            >
+              + 일정 추가
+            </button>
+          </div>
+
+          {isLoading ? (
+            <p className="text-center text-gray-500 py-10">불러오는 중...</p>
+          ) : items.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 py-12 text-center">
+              <p className="text-gray-500 mb-3">이 날짜에 등록된 일정이 없습니다</p>
+              <button
+                type="button"
+                onClick={() => openCreate(540)}
+                className="px-3 py-1.5 rounded-lg bg-sky-500 text-white text-sm font-semibold hover:bg-sky-600"
+              >
+                + 첫 일정 추가
+              </button>
+            </div>
+          ) : (
+            <TravelItineraryTimeline
+              items={items}
+              onEdit={(item) => {
+                setMovingSpareItem(null)
+                setEditingItem(item)
+                setFormOpen(true)
+              }}
+            />
+          )}
+        </>
+      )}
+
+      {activeTab === 'packing' && <TravelItineraryPackingList tripId={trip.id} />}
+      {activeTab === 'souvenir' && <TravelItinerarySouvenirList tripId={trip.id} />}
+      {activeTab === 'spare' && (
+        <TravelItinerarySpareList tripId={trip.id} onMoveToSchedule={openMoveFromSpare} />
       )}
 
       <TravelItineraryItemForm
         isOpen={formOpen}
         initialDate={selectedDate}
+        initialTitle={movingSpareItem?.title || ''}
         initialStartMinute={draftStart}
         initialEndMinute={draftEnd}
         editingItem={editingItem}
-        onClose={() => {
-          setFormOpen(false)
-          setEditingItem(null)
-        }}
+        formHeading={movingSpareItem ? '예비 일정 → 일정으로' : undefined}
+        onClose={closeForm}
         onSubmit={handleSubmit}
         onDelete={editingItem ? handleDelete : undefined}
       />
