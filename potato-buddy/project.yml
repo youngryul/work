@@ -1,6 +1,7 @@
 name: PotatoBuddy
 options:
   bundleIdPrefix: com.youngryul
+  createIntermediateGroups: true
   deploymentTarget:
     macOS: "14.0"
     iOS: "17.0"

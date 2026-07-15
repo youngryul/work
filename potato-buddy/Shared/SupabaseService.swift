@@ -819,7 +819,7 @@ final class SupabaseService {
         guard isCompleted else { return 0 }
 
         let dateKey = String(format: "%04d-%02d-%02d", year, month, day)
-        let todayKey = ScheduleDateHelper.string(from: Date())
+        let todayKey = ScheduleDateHelper.dayFormatter.string(from: Date())
         let isToday = (dateKey == todayKey)
         let amount = isToday ? JellyRewardAmount.habitTrackerFirstToday : JellyRewardAmount.habitTrackerOther
         let idempotencyPrefix = isToday ? "habit_tracker" : "habit_tracker:other"

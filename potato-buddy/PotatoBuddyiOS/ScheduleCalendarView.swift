@@ -213,7 +213,7 @@ struct ScheduleCalendarView: View {
                                 .foregroundColor(.secondary)
                             Button {
                                 newTitle = ""
-                                newTag = .work
+                                newTagName = scheduleTags.first?.name ?? "업무"
                                 showAddSheet = true
                             } label: {
                                 Label("일정 추가", systemImage: "plus.circle.fill")
