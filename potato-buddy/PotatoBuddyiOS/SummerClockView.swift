@@ -42,24 +42,17 @@ struct SummerClockView: View {
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
 
-                VStack(spacing: 10) {
-                    Text(Self.dateFormatter.string(from: now))
-                        .font(.system(size: 20, weight: .medium, design: .rounded))
-                        .foregroundStyle(Color.primary.opacity(0.75))
-                        .shadow(color: .white.opacity(0.55), radius: 4, x: 0, y: 1)
-
-                    Text(Self.timeFormatter.string(from: now))
-                        .font(.system(size: clockFontSize(for: geometry.size), weight: .semibold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(Color(red: 0.12, green: 0.12, blue: 0.14))
-                        .shadow(color: .white.opacity(0.45), radius: 12, x: 0, y: 2)
-                        .shadow(color: .black.opacity(0.12), radius: 1, x: 0, y: 1)
-                        .contentTransition(.numericText())
-                        .animation(.easeInOut(duration: 0.2), value: Self.timeFormatter.string(from: now))
+                if geometry.size.width > geometry.size.height {
+                    // 가로 모드: 시계를 화면 중앙에 배치
+                    clockTexts(size: geometry.size)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    // 세로 모드: 시계를 상단에 배치
+                    clockTexts(size: geometry.size)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .padding(.top, geometry.size.height * 0.12)
+                        .padding(.horizontal, 24)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .padding(.top, geometry.size.height * 0.12)
-                .padding(.horizontal, 24)
             }
         }
         .ignoresSafeArea()
@@ -82,7 +75,31 @@ struct SummerClockView: View {
         }
     }
 
+    @ViewBuilder
+    private func clockTexts(size: CGSize) -> some View {
+        let isLandscape = size.width > size.height
+        VStack(spacing: isLandscape ? 6 : 10) {
+            Text(Self.dateFormatter.string(from: now))
+                .font(.system(size: isLandscape ? 16 : 20, weight: .medium, design: .rounded))
+                .foregroundStyle(Color.primary.opacity(0.75))
+                .shadow(color: .white.opacity(0.55), radius: 4, x: 0, y: 1)
+
+            Text(Self.timeFormatter.string(from: now))
+                .font(.system(size: clockFontSize(for: size), weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(Color(red: 0.12, green: 0.12, blue: 0.14))
+                .shadow(color: .white.opacity(0.45), radius: 12, x: 0, y: 2)
+                .shadow(color: .black.opacity(0.12), radius: 1, x: 0, y: 1)
+                .contentTransition(.numericText())
+                .animation(.easeInOut(duration: 0.2), value: Self.timeFormatter.string(from: now))
+        }
+    }
+
     private func clockFontSize(for size: CGSize) -> CGFloat {
-        min(max(size.width * 0.22, 64), 120)
+        let isLandscape = size.width > size.height
+        if isLandscape {
+            return min(max(size.height * 0.35, 60), 100)
+        }
+        return min(max(size.width * 0.22, 64), 120)
     }
 }
