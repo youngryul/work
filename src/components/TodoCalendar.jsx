@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react'
 import { getCompletedCountsByDate, getCompletedTasksByDate, restoreCompletedTaskToToday } from '../services/taskService.js'
+import {
+  formatStudyDuration,
+  formatStudyDurationShort,
+  getStudySecondsByDate,
+  getStudySecondsForDate,
+} from '../services/studyTimeService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 // 주간 업무일지만 사용하므로 일일 업무일지 생성 기능 제거
 // import { generateDailyWorkReport, saveWorkReport, getWorkReport, getWorkReportDatesByMonth } from '../services/workReportService.js'
@@ -11,6 +17,8 @@ import { showToast, TOAST_TYPES } from './Toast.jsx'
 export default function TodoCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [completedCounts, setCompletedCounts] = useState({})
+  const [studySecondsByDate, setStudySecondsByDate] = useState({})
+  const [selectedStudySeconds, setSelectedStudySeconds] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState(null)
   const [completedTasks, setCompletedTasks] = useState([])
@@ -21,15 +29,19 @@ export default function TodoCalendar() {
   // const [workReportDates, setWorkReportDates] = useState([]) // 업무일지가 있는 날짜들
 
   /**
-   * 완료 개수 로드
+   * 완료 개수 · 공부량 로드
    */
   const loadCompletedCounts = async () => {
     setIsLoading(true)
     try {
       const year = currentDate.getFullYear()
       const month = currentDate.getMonth() + 1
-      const counts = await getCompletedCountsByDate(year, month)
+      const [counts, studySeconds] = await Promise.all([
+        getCompletedCountsByDate(year, month),
+        getStudySecondsByDate(year, month).catch(() => ({})),
+      ])
       setCompletedCounts(counts)
+      setStudySecondsByDate(studySeconds)
     } catch (error) {
       console.error('완료 개수 로드 오류:', error)
     } finally {
@@ -37,21 +49,16 @@ export default function TodoCalendar() {
     }
   }
 
-  // 주간 업무일지만 사용하므로 일일 업무일지 날짜 로드 제거
-  // const loadWorkReportDates = async () => {
-  //   try {
-  //     const year = currentDate.getFullYear()
-  //     const month = currentDate.getMonth() + 1
-  //     const dates = await getWorkReportDatesByMonth(year, month)
-  //     setWorkReportDates(dates)
-  //   } catch (error) {
-  //     console.error('업무일지 날짜 로드 오류:', error)
-  //   }
-  // }
-
   useEffect(() => {
     loadCompletedCounts()
-    // loadWorkReportDates() // 주간 업무일지만 사용
+  }, [currentDate])
+
+  useEffect(() => {
+    const onRefreshStudy = () => {
+      loadCompletedCounts()
+    }
+    window.addEventListener('refreshStudyTime', onRefreshStudy)
+    return () => window.removeEventListener('refreshStudyTime', onRefreshStudy)
   }, [currentDate])
 
   /**
@@ -76,21 +83,22 @@ export default function TodoCalendar() {
   }
 
   /**
-   * 날짜 클릭 시 완료된 할 일 목록 조회
+   * 날짜 클릭 시 완료된 할 일 · 공부량 조회
    */
   const handleDateClick = async (dateString) => {
     const count = completedCounts[dateString] || 0
-    if (count === 0) return
+    const studySec = studySecondsByDate[dateString] || 0
+    if (count === 0 && studySec === 0) return
 
     setSelectedDate(dateString)
     setIsLoadingTasks(true)
-    // setWorkReport(null) // 주간 업무일지만 사용
     try {
-      const tasks = await getCompletedTasksByDate(dateString)
+      const [tasks, studySeconds] = await Promise.all([
+        count > 0 ? getCompletedTasksByDate(dateString) : Promise.resolve([]),
+        getStudySecondsForDate(dateString).catch(() => studySec),
+      ])
       setCompletedTasks(tasks)
-      // 주간 업무일지만 사용하므로 일일 업무일지 로드 제거
-      // const existingReport = await getWorkReport(dateString)
-      // setWorkReport(existingReport)
+      setSelectedStudySeconds(studySeconds)
     } catch (error) {
       console.error('완료된 할 일 로드 오류:', error)
     } finally {
@@ -104,7 +112,7 @@ export default function TodoCalendar() {
   const handleClosePopup = () => {
     setSelectedDate(null)
     setCompletedTasks([])
-    // setWorkReport(null) // 주간 업무일지만 사용
+    setSelectedStudySeconds(0)
   }
 
   /**
@@ -214,8 +222,9 @@ export default function TodoCalendar() {
     for (let day = 1; day <= daysInMonth; day++) {
       const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
       const count = completedCounts[dateString] || 0
-      // 주간 업무일지만 사용하므로 일일 업무일지 도장 표시 제거
-      // const hasWorkReport = workReportDates.includes(dateString)
+      const studySec = studySecondsByDate[dateString] || 0
+      const studyLabel = formatStudyDurationShort(studySec)
+      const hasContent = count > 0 || studySec > 0
       const isToday =
         year === new Date().getFullYear() &&
         month === new Date().getMonth() &&
@@ -224,12 +233,12 @@ export default function TodoCalendar() {
       days.push(
         <div
           key={day}
-          onClick={() => count > 0 && handleDateClick(dateString)}
+          onClick={() => hasContent && handleDateClick(dateString)}
           className={`aspect-square flex flex-col items-start justify-start p-2 rounded-lg transition-all duration-200 relative ${
             isToday
               ? 'bg-green-200 border-2 border-green-400'
               : 'bg-gray-50 hover:bg-gray-100'
-          } ${count > 0 ? 'cursor-pointer hover:shadow-md' : ''}`}
+          } ${hasContent ? 'cursor-pointer hover:shadow-md' : ''}`}
         >
           <span
             className={`text-sm font-medium ${
@@ -238,23 +247,26 @@ export default function TodoCalendar() {
           >
             {day}
           </span>
-          {count > 0 && (
-            <span
-              className={`text-lg font-bold mt-auto mx-auto ${
-                isToday ? 'text-green-600' : 'text-green-500'
-              }`}
-            >
-              {count}개
-            </span>
-          )}
-          {/* 주간 업무일지만 사용하므로 일일 업무일지 도장 표시 제거 */}
-          {/* {hasWorkReport && (
-            <div className="absolute top-1 right-1">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-md border-2 border-white">
-                <span className="text-white text-lg font-bold">✓</span>
-              </div>
-            </div>
-          )} */}
+          <div className="mt-auto w-full flex flex-col items-center gap-0.5">
+            {count > 0 && (
+              <span
+                className={`text-base font-bold leading-tight ${
+                  isToday ? 'text-green-600' : 'text-green-500'
+                }`}
+              >
+                {count}개
+              </span>
+            )}
+            {studyLabel && (
+              <span
+                className={`text-[11px] font-semibold leading-tight ${
+                  isToday ? 'text-emerald-700' : 'text-emerald-600'
+                }`}
+              >
+                📚 {studyLabel}
+              </span>
+            )}
+          </div>
         </div>
       )
     }
@@ -336,6 +348,11 @@ export default function TodoCalendar() {
                 <p className="text-xl text-gray-600 mt-1">
                   완료한 할 일 {completedTasks.length}개
                 </p>
+                {selectedStudySeconds > 0 && (
+                  <p className="text-base font-semibold text-emerald-700 mt-1">
+                    총 공부량 {formatStudyDuration(selectedStudySeconds)}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-3">
                 <button
@@ -353,8 +370,14 @@ export default function TodoCalendar() {
               {isLoadingTasks ? (
                 <div className="text-center py-8 text-gray-500">로딩 중...</div>
               ) : completedTasks.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">
-                  완료된 할 일이 없습니다.
+                <div className="text-center py-8 text-gray-500 space-y-2">
+                  {selectedStudySeconds > 0 ? (
+                    <p className="text-emerald-700 font-semibold">
+                      오늘(해당일) 총 공부량 {formatStudyDuration(selectedStudySeconds)}
+                    </p>
+                  ) : (
+                    <p className="text-gray-400">완료된 할 일이 없습니다.</p>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-3">
