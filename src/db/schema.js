@@ -156,6 +156,49 @@ export const fridgeItems = pgTable('fridge_items', {
 })
 
 /**
+ * recipe_ingredient_catalog — 레시피 재료 카탈로그 (공용 + 유저 커스텀)
+ */
+export const recipeIngredientCatalog = pgTable('recipe_ingredient_catalog', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id'),
+  name: text('name').notNull(),
+  category: text('category').notNull(),
+  emoji: text('emoji').notNull(),
+  imageUrl: text('image_url'),
+  sortOrder: integer('sort_order').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * recipes — 레시피
+ */
+export const recipes = pgTable('recipes', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  title: text('title').notNull(),
+  instructions: text('instructions').notNull(),
+  imageUrl: text('image_url'),
+  imagePrompt: text('image_prompt'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * recipe_ingredients — 레시피에 포함된 재료
+ */
+export const recipeIngredients = pgTable('recipe_ingredients', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  recipeId: uuid('recipe_id').notNull(),
+  catalogId: uuid('catalog_id'),
+  customName: text('custom_name'),
+  quantity: integer('quantity').notNull(),
+  note: text('note'),
+  sortOrder: integer('sort_order').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+/**
  * user_farm_progress — 포실이 농장 성장 진행
  */
 export const userFarmProgress = pgTable('user_farm_progress', {

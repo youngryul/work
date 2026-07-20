@@ -5,6 +5,7 @@ import {
   DEFAULT_AI_TOKEN_BALANCE,
   DEFAULT_AI_IMAGE_GENERATION_COST,
   DEFAULT_BACKLOG_ASSISTANT_COST,
+  RECIPE_IMAGE_GENERATION_TOKEN_COST,
 } from '../constants/aiTokenSettings.js'
 import { notifyAiTokensUpdated } from '../utils/aiTokenEvents.js'
 
@@ -64,6 +65,45 @@ export async function consumeTokensForImageGeneration() {
 
   const { data, error } = await supabase.rpc('consume_ai_tokens', {
     p_amount: null,
+  })
+
+  if (error) {
+    console.error('토큰 차감 실패:', error)
+    throw new Error(error.message || '토큰 차감에 실패했습니다.')
+  }
+
+  const remainingBalance = typeof data === 'number' ? data : Number(data)
+  notifyAiTokensUpdated({ balance: remainingBalance })
+  return remainingBalance
+}
+
+/**
+ * 레시피 AI 이미지 생성 가능 여부 확인 (고정 5 토큰)
+ * @returns {Promise<{balance: number, recipeImageCost: number}>}
+ */
+export async function assertSufficientTokensForRecipeImageGeneration() {
+  const info = await getMyAiTokenInfo()
+  const recipeImageCost = RECIPE_IMAGE_GENERATION_TOKEN_COST
+  if (info.balance < recipeImageCost) {
+    throw new Error(
+      `AI 이미지 생성 토큰이 부족합니다. (보유: ${info.balance}, 필요: ${recipeImageCost})`,
+    )
+  }
+  return { balance: info.balance, recipeImageCost }
+}
+
+/**
+ * 레시피 AI 이미지 생성 성공 후 토큰 차감 (5 토큰)
+ * @returns {Promise<number>} 남은 토큰
+ */
+export async function consumeTokensForRecipeImageGeneration() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  const { data, error } = await supabase.rpc('consume_ai_tokens', {
+    p_amount: RECIPE_IMAGE_GENERATION_TOKEN_COST,
   })
 
   if (error) {

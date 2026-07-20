@@ -28,6 +28,7 @@ import FoodCalorieCalculator from './components/FoodCalorieCalculator.jsx'
 import WeightTrackingView from './components/weight/WeightTrackingView.jsx'
 import CongratulatoryMoneyView from './components/CongratulatoryMoneyView.jsx'
 import FridgeInventoryView from './components/FridgeInventoryView.jsx'
+import RecipeView from './components/recipe/RecipeView.jsx'
 import ToeicVocabView from './components/ToeicVocabView.jsx'
 import AnnouncementView from './components/AnnouncementView.jsx'
 import SettingsView from './components/SettingsView.jsx'
@@ -56,6 +57,7 @@ import { markFiveYearQuestionReminderShown } from './services/fiveYearQuestionRe
 import { markWeeklyReminderShown, markMonthlyReminderShown } from './utils/summaryReminder.js'
 import { getThemeWrapperClass, APP_THEMES } from './constants/appThemes.js'
 import { useAiTokenInfo } from './hooks/useAiTokenInfo.js'
+import { RECIPE_IMAGE_GENERATION_TOKEN_COST } from './constants/aiTokenSettings.js'
 import { JELLY_UPDATED_EVENT } from './utils/jellyEvents.js'
 import { showToast, TOAST_TYPES } from './components/Toast.jsx'
 
@@ -131,13 +133,27 @@ function AppContent() {
   const [diaryCalendarKey, setDiaryCalendarKey] = useState(0)
   const [diaryOpenDate, setDiaryOpenDate] = useState(null)
   const [diaryDepositModalOpen, setDiaryDepositModalOpen] = useState(false)
-  const { balance: diaryTokenBalance, generationCost: diaryGenerationCost } = useAiTokenInfo(
-    currentView === 'diary-calendar' ? diaryCalendarKey : null,
+  const showJellyTokenBalanceBar =
+    currentView === 'diary-calendar' || currentView === 'recipes'
+  const tokenBalanceRefreshDep =
+    currentView === 'diary-calendar'
+      ? diaryCalendarKey
+      : currentView === 'recipes'
+        ? 'recipes'
+        : null
+  const { balance: headerTokenBalance, generationCost: headerGenerationCost } = useAiTokenInfo(
+    showJellyTokenBalanceBar ? tokenBalanceRefreshDep : null,
   )
 
   useEffect(() => {
-    if (currentView !== 'diary-calendar') {
+    if (!showJellyTokenBalanceBar) {
       setDiaryDepositModalOpen(false)
+      setDiaryOpenDate(null)
+    }
+  }, [showJellyTokenBalanceBar])
+
+  useEffect(() => {
+    if (currentView !== 'diary-calendar') {
       setDiaryOpenDate(null)
     }
   }, [currentView])
@@ -161,10 +177,13 @@ function AppContent() {
     }
   }, [user])
 
-  const diaryCalendarBalanceBar = (
+  const jellyTokenBalanceBar = (
     <DiaryCalendarBalanceBar
-      refreshDep={diaryCalendarKey}
+      refreshDep={tokenBalanceRefreshDep}
       onDepositClick={() => setDiaryDepositModalOpen(true)}
+      tokenMinRequired={
+        currentView === 'recipes' ? RECIPE_IMAGE_GENERATION_TOKEN_COST : undefined
+      }
     />
   )
 
@@ -377,7 +396,7 @@ function AppContent() {
             >
               ☰
             </button>
-            {currentView === 'diary-calendar' ? diaryCalendarBalanceBar : <JellyBalanceBadge inline />}
+            {showJellyTokenBalanceBar ? jellyTokenBalanceBar : <JellyBalanceBadge inline />}
           </div>
         </header>
 
@@ -390,16 +409,20 @@ function AppContent() {
         <div className="sticky top-0 z-30">
           <AnnouncementBanner />
           <div className="hidden md:flex justify-end px-4 py-2">
-            {currentView === 'diary-calendar' ? diaryCalendarBalanceBar : <JellyBalanceBadge inline />}
+            {showJellyTokenBalanceBar ? jellyTokenBalanceBar : <JellyBalanceBadge inline />}
           </div>
         </div>
 
-        {currentView === 'diary-calendar' && (
+        {showJellyTokenBalanceBar && (
           <TokenDepositRequestModal
             isOpen={diaryDepositModalOpen}
             onClose={() => setDiaryDepositModalOpen(false)}
-            tokenBalance={diaryTokenBalance}
-            generationCost={diaryGenerationCost}
+            tokenBalance={headerTokenBalance}
+            generationCost={
+              currentView === 'recipes'
+                ? RECIPE_IMAGE_GENERATION_TOKEN_COST
+                : headerGenerationCost
+            }
           />
         )}
 
@@ -459,6 +482,7 @@ function AppContent() {
         {currentView === 'weight-tracking' && <WeightTrackingView />}
         {currentView === 'congratulatory-money' && <CongratulatoryMoneyView />}
         {currentView === 'fridge-inventory' && <FridgeInventoryView />}
+        {currentView === 'recipes' && <RecipeView />}
         {currentView === 'toeic-vocab' && <ToeicVocabView />}
         {currentView === 'settings' && (
           <SettingsView

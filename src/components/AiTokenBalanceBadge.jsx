@@ -2,7 +2,7 @@ import { useAiTokenInfo } from '../hooks/useAiTokenInfo.js'
 
 /**
  * AI 토큰 보유량 (화면 오른쪽 상단, 변동 시 즉시 갱신)
- * @param {{ refreshDep?: unknown, className?: string, inline?: boolean, compact?: boolean, onBalanceClick?: () => void, onLowBalanceClick?: () => void }} props
+ * @param {{ refreshDep?: unknown, className?: string, inline?: boolean, compact?: boolean, onBalanceClick?: () => void, onLowBalanceClick?: () => void, minRequired?: number }} props
  */
 export default function AiTokenBalanceBadge({
   refreshDep,
@@ -11,12 +11,14 @@ export default function AiTokenBalanceBadge({
   compact = false,
   onBalanceClick,
   onLowBalanceClick,
+  minRequired,
 }) {
   const { balance, generationCost, isLoading } = useAiTokenInfo(refreshDep)
 
   if (isLoading || balance === null) return null
 
-  const isLow = balance < generationCost
+  const required = minRequired ?? generationCost
+  const isLow = balance < required
   const handleBalanceClick = onBalanceClick ?? onLowBalanceClick
 
   const badgeClass = `inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-sans shadow-sm transition-all ${

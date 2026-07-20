@@ -91,6 +91,84 @@ export async function generateDiaryImage(diaryContent) {
 }
 
 /**
+ * 요리 제목 → 포실이 손그림 스타일 이미지 프롬프트
+ * @param {string} title
+ * @returns {Promise<string>}
+ */
+async function buildPromptFromRecipeTitle(title) {
+  const systemPrompt = `You are an assistant that converts Korean dish titles into short English image generation prompts.
+Rules:
+- The main character is always "Posili", a cute chubby round potato character with a warm smile and tiny arms/legs, cooking or presenting the dish.
+- Style: hand-drawn crayon / colored pencil illustration, thick black outlines, soft paper texture feel, warm cozy kitchen atmosphere.
+- Focus the scene on the named dish (plating, steam, ingredients visible) with Posili nearby.
+- Keep the prompt under 120 words.
+${DIARY_IMAGE_GPT_NO_TEXT_RULES}
+- Output only the prompt, nothing else.`
+
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `Dish title: ${(title || '').substring(0, 120)}` },
+    ],
+    max_tokens: 150,
+    temperature: 0.7,
+  })
+
+  return response.choices[0].message.content.trim()
+}
+
+/**
+ * 요리 제목 기반 포실이 손그림 스타일 레시피 이미지 생성
+ * @param {string} title - 요리 제목
+ * @returns {Promise<{imageUrl: string, prompt: string}>}
+ */
+export async function generateRecipeImage(title) {
+  if (!import.meta.env.VITE_OPENAI_API_KEY) {
+    throw new Error('OpenAI API 키가 설정되지 않았습니다.')
+  }
+  if (!title?.trim()) {
+    throw new Error('요리 제목을 입력해주세요.')
+  }
+
+  try {
+    const prompt = finalizeDiaryImagePrompt(await buildPromptFromRecipeTitle(title.trim()))
+
+    const response = await openai.images.generate({
+      model: 'gpt-image-1',
+      prompt,
+      n: 1,
+      size: '1024x1024',
+      quality: 'low',
+    })
+
+    const imageData = response.data[0]
+    const imageUrl = imageData.url
+      ?? (imageData.b64_json ? `data:image/png;base64,${imageData.b64_json}` : null)
+
+    if (!imageUrl) throw new Error('이미지 생성에 실패했습니다.')
+
+    return { imageUrl, prompt }
+  } catch (error) {
+    console.error('레시피 이미지 생성 오류:', error)
+
+    const msg = error.message || ''
+
+    if (msg.includes('rate_limit') || msg.includes('Rate limit')) {
+      throw new Error('API 사용량 제한에 도달했습니다. 잠시 후 다시 시도해주세요.')
+    } else if (msg.includes('insufficient_quota') || msg.includes('quota') || msg.includes('billing')) {
+      throw new Error('OpenAI API 크레딧이 부족합니다. OpenAI 대시보드에서 결제 정보를 확인해주세요.')
+    } else if (msg.includes('invalid_api_key') || msg.includes('Invalid API key')) {
+      throw new Error('OpenAI API 키가 유효하지 않습니다.')
+    } else if (msg.includes('content_policy') || msg.includes('safety')) {
+      throw new Error('이미지 생성 정책에 맞지 않는 내용이 포함되어 있습니다.')
+    }
+
+    throw new Error(`이미지 생성 실패: ${msg || '알 수 없는 오류'}`)
+  }
+}
+
+/**
  * 프롬프트 미리보기 (디버깅용)
  */
 export async function previewPrompt(content) {

@@ -2,6 +2,7 @@ import {
   JELLY_REWARD_DIARY_WRITE,
   JELLY_REWARD_FIVE_YEAR_ANSWER,
   JELLY_REWARD_HABIT_TRACKER_FIRST_TODAY,
+  JELLY_REWARD_RECIPE_CREATE,
   JELLY_REWARD_TASK_COMPLETE,
   JELLY_REWARD_WEIGHT_GOAL_REACHED,
   JELLY_REWARD_WEIGHT_RECORD,
@@ -50,5 +51,12 @@ export const JELLY_EARNING_GUIDE = [
     label: '습관 트래커 달성',
     description: '오늘 달성 2젤리, 이전 날짜 달성 1젤리 (트래커·날짜당 1회)',
     amount: JELLY_REWARD_HABIT_TRACKER_FIRST_TODAY,
+  },
+  {
+    id: 'recipe',
+    icon: '🍳',
+    label: '레시피 등록',
+    description: '새 레시피를 처음 저장하면 젤리를 받아요. (레시피당 1회)',
+    amount: JELLY_REWARD_RECIPE_CREATE,
   },
 ]

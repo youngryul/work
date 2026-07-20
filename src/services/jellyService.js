@@ -9,6 +9,7 @@ import {
   JELLY_REWARD_HABIT_TRACKER_OTHER,
   JELLY_REWARD_REASON,
   JELLY_REWARD_TASK_COMPLETE,
+  JELLY_REWARD_RECIPE_CREATE,
   JELLY_REWARD_WEIGHT_GOAL_REACHED,
   JELLY_REWARD_WEIGHT_RECORD,
 } from '../constants/jellyRewards.js'
@@ -183,6 +184,21 @@ export async function awardJellyForHabitTrackerOther(habitTrackerId, date) {
     JELLY_REWARD_HABIT_TRACKER_OTHER,
     JELLY_REWARD_REASON.HABIT_TRACKER_FIRST_TODAY,
     `habit_tracker:other:${habitTrackerId}:${date}`,
+  )
+}
+
+/**
+ * 레시피 최초 등록 시 젤리 지급 (레시피당 1회)
+ * @param {string} recipeId
+ */
+export async function awardJellyForRecipeCreate(recipeId) {
+  const userId = await getCurrentUserId()
+  if (!userId || !recipeId) return null
+
+  return awardJelly(
+    JELLY_REWARD_RECIPE_CREATE,
+    JELLY_REWARD_REASON.RECIPE_CREATE,
+    `recipe:${recipeId}`,
   )
 }
 
