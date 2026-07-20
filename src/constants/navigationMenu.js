@@ -186,6 +186,28 @@ export const NAVIGATION_MENU_ITEMS = [
     icon: '🕐',
   },
   {
+    id: 'timers',
+    label: '타이머',
+    icon: '⏱️',
+    children: [
+      {
+        id: 'pomodoro',
+        label: '뽀모도로',
+        icon: '🍅',
+      },
+      {
+        id: 'study-timer',
+        label: '공부 타이머',
+        icon: '⏳',
+      },
+      {
+        id: 'study-time',
+        label: '공부 통계',
+        icon: '📊',
+      },
+    ],
+  },
+  {
     id: 'review-menu',
     label: '회고',
     icon: '📊',

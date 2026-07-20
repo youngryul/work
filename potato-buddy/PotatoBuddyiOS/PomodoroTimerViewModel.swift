@@ -38,6 +38,10 @@ final class PomodoroTimerViewModel: ObservableObject {
         return min(1, max(0, Double(elapsed) / Double(totalSeconds)))
     }
 
+    var elapsedSeconds: Int {
+        totalSeconds - remainingSeconds
+    }
+
     var digitalTimeText: String {
         let minutes = remainingSeconds / 60
         let seconds = remainingSeconds % 60
