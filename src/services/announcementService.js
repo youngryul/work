@@ -8,6 +8,7 @@ import { getCurrentUserId } from '../utils/authHelper.js'
 
 /**
  * 활성화된 공지사항 목록 조회 (사용자가 아직 보지 않은 것만)
+ * 상단 배너용 — 오늘(로컬) 0시 이전에 생성된 공지는 제외
  * @returns {Promise<Array>} 공지사항 목록
  */
 export async function getUnreadAnnouncements() {
@@ -17,11 +18,17 @@ export async function getUnreadAnnouncements() {
   }
 
   try {
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+    const startOfTodayIso = startOfToday.toISOString()
+
     // 활성화된 공지사항 조회 (만료되지 않은 것만, 우선순위 순으로 정렬)
+    // 오늘 이전 생성분은 최초 가입 시 배너에 쌓이지 않도록 제외
     const { data: announcements, error: announcementsError } = await supabase
       .from('announcements')
       .select('*')
       .eq('is_active', true)
+      .gte('created_at', startOfTodayIso)
       .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
       .order('priority', { ascending: false })
       .order('created_at', { ascending: false })

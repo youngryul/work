@@ -1,6 +1,13 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { supabase } from '../config/supabase.js'
-import { onAuthStateChange, signIn, signUp, signOut } from '../services/authService.js'
+import {
+  onAuthStateChange,
+  signIn,
+  signUp,
+  signOut,
+  signInWithGoogle,
+  migrateExistingData,
+} from '../services/authService.js'
 import { getUserRole } from '../services/userRoleService.js'
 import {
   syncAuthUserId,
@@ -101,12 +108,23 @@ export function AuthProvider({ children }) {
     const loadingTimeout = setTimeout(finishLoading, AUTH_LOADING_TIMEOUT_MS)
 
     // 3) 단일 auth 리스너 (콜백 내부에서 await / getSession 호출 금지)
-    const { data: { subscription } } = onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = onAuthStateChange((event, session) => {
       if (!mounted) return
       const u = session?.user ?? null
       applyAuthUser(u)
       finishLoading()
       runUserSideEffects(u)
+
+      // Google OAuth 등 외부 로그인 직후에도 기존 null user_id 데이터 이전
+      if (event === 'SIGNED_IN' && u?.id) {
+        runAfterAuthCallback(async () => {
+          try {
+            await migrateExistingData()
+          } catch {
+            // 마이그레이션 실패는 로그인 자체를 막지 않음
+          }
+        })
+      }
     })
 
     return () => {
@@ -136,6 +154,7 @@ export function AuthProvider({ children }) {
     isSuperuser: userRole === 'superuser',
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
   }
 

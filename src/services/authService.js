@@ -104,6 +104,46 @@ export async function signIn(email, password) {
 }
 
 /**
+ * Google OAuth 로그인 (Supabase Auth)
+ * 브라우저가 Google → Supabase → redirectTo 로 돌아옵니다.
+ */
+export async function signInWithGoogle() {
+  try {
+    const base = (
+      import.meta.env.VITE_APP_URL ||
+      (typeof window !== 'undefined' ? window.location.origin : '') ||
+      'https://work-sable-one.vercel.app'
+    ).replace(/\/$/, '')
+
+    const search =
+      typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search)
+        : new URLSearchParams()
+    const redirectTo =
+      search.get('redirectTo') === 'potatobuddy'
+        ? `${base}/?redirectTo=potatobuddy`
+        : `${base}/`
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'select_account',
+        },
+      },
+    })
+
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('Google 로그인 오류:', error)
+    throw error
+  }
+}
+
+/**
  * 로그아웃
  */
 export async function signOut() {
