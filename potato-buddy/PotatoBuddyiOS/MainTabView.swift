@@ -33,9 +33,9 @@ struct MainTabView: View {
                 }
                 .tag(Self.scheduleTabTag)
 
-            PomodoroView()
+            TimerHubView()
                 .tabItem {
-                    Label("뽀모도로", systemImage: "timer")
+                    Label("타이머", systemImage: "timer")
                 }
                 .tag(4)
 

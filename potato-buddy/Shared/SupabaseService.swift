@@ -1270,6 +1270,96 @@ final class SupabaseService {
         try checkResponse(data, response)
     }
 
+    // MARK: - 공부 세션
+
+    func addStudySession(seconds: Int, source: String) async throws {
+        let (userId, token) = await authInfo()
+        guard seconds > 0 else { return }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        let today = formatter.string(from: Date())
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/study_sessions")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+
+        let body: [String: Any] = [
+            "user_id":          userId,
+            "study_date":       today,
+            "duration_seconds": seconds,
+            "source":           source,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+    }
+
+    /// 최근 N개월 공부 세션 전체 조회
+    func fetchStudySessions(months: Int = 6) async throws -> [StudySessionItem] {
+        let (userId, token) = await authInfo()
+
+        let calendar = Calendar(identifier: .gregorian)
+        let now = Date()
+        guard let startDate = calendar.date(byAdding: .month, value: -(months - 1), to: now) else { return [] }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        let startStr = formatter.string(from: calendar.date(
+            from: calendar.dateComponents([.year, .month], from: startDate))!)
+        let endStr = formatter.string(from: now)
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/study_sessions")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id",    value: "eq.\(userId)"),
+            URLQueryItem(name: "study_date", value: "gte.\(startStr)"),
+            URLQueryItem(name: "study_date", value: "lte.\(endStr)"),
+            URLQueryItem(name: "select",     value: "id,study_date,duration_seconds,source"),
+            URLQueryItem(name: "order",      value: "study_date.desc"),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        return try JSONDecoder().decode([StudySessionItem].self, from: data)
+    }
+
+    /// 특정 월 공부 세션 조회 (달력용)
+    func fetchStudySessionsForMonth(year: Int, month: Int) async throws -> [StudySessionItem] {
+        let (userId, token) = await authInfo()
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        let startStr = String(format: "%04d-%02d-01", year, month)
+        let lastDay = Calendar(identifier: .gregorian).range(
+            of: .day, in: .month,
+            for: formatter.date(from: startStr)!)!.count
+        let endStr = String(format: "%04d-%02d-%02d", year, month, lastDay)
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/study_sessions")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id",    value: "eq.\(userId)"),
+            URLQueryItem(name: "study_date", value: "gte.\(startStr)"),
+            URLQueryItem(name: "study_date", value: "lte.\(endStr)"),
+            URLQueryItem(name: "select",     value: "id,study_date,duration_seconds,source"),
+            URLQueryItem(name: "order",      value: "study_date.asc"),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        return try JSONDecoder().decode([StudySessionItem].self, from: data)
+    }
+
     // MARK: - 생리 주기 설정 조회
 
     func getMenstrualSettings() async throws -> MenstrualSettings {

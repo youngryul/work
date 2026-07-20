@@ -19,6 +19,9 @@ import TravelView from './components/travel/TravelView.jsx'
 import DomesticTravelView from './components/travel/DomesticTravelView.jsx'
 import TravelItineraryView from './components/travel/TravelItineraryView.jsx'
 import SummerClockView from './components/SummerClockView.jsx'
+import PomodoroView from './components/PomodoroView.jsx'
+import StudyTimerView from './components/StudyTimerView.jsx'
+import StudyTimeView from './components/StudyTimeView.jsx'
 import FiveYearQuestionView from './components/FiveYearQuestionView.jsx'
 import CategorySettingsModal from './components/CategorySettingsModal.jsx'
 import FoodCalorieCalculator from './components/FoodCalorieCalculator.jsx'
@@ -467,12 +470,19 @@ function AppContent() {
         {currentView === 'nonogram' && <NonogramView />}
         {currentView === 'sudoku' && <SudokuView />}
         {currentView === 'admin' && <AdminDashboard />}
+        {currentView === 'study-time' && <StudyTimeView />}
         <AdSenseBanner />
         </main>
       </div>
 
       {currentView === 'summer-clock' && (
         <SummerClockView onClose={() => setCurrentView('today')} />
+      )}
+      {currentView === 'pomodoro' && (
+        <PomodoroView onClose={() => setCurrentView('today')} />
+      )}
+      {currentView === 'study-timer' && (
+        <StudyTimerView onClose={() => setCurrentView('today')} />
       )}
 
       {/* 알림 센터 (모든 페이지에서 표시) */}

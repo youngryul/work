@@ -110,6 +110,48 @@ export async function getStudySecondsByDate(year, month) {
 }
 
 /**
+ * 최근 N개월 날짜 → 총 공부 초 (일자별 통계용)
+ * @param {number} months - 최근 몇 개월 (기본 6)
+ * @returns {Promise<Array<{date: string, seconds: number, sources: Record<string,number>}>>}
+ */
+export async function getStudySessionsByRange(months = 6) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const now = new Date()
+  const start = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1)
+  const startStr = getLocalDateString(start)
+  const endStr = getLocalDateString(now)
+
+  const { data, error } = await supabase
+    .from('study_sessions')
+    .select('study_date, duration_seconds, source')
+    .eq('user_id', user.id)
+    .gte('study_date', startStr)
+    .lte('study_date', endStr)
+    .order('study_date', { ascending: false })
+
+  if (error) throw error
+
+  /** @type {Record<string, {seconds: number, sources: Record<string,number>}>} */
+  const map = {}
+  for (const row of data || []) {
+    const key = row.study_date
+    if (!map[key]) map[key] = { seconds: 0, sources: {} }
+    const secs = Number(row.duration_seconds) || 0
+    map[key].seconds += secs
+    const src = row.source || 'unknown'
+    map[key].sources[src] = (map[key].sources[src] || 0) + secs
+  }
+
+  return Object.entries(map)
+    .map(([date, val]) => ({ date, ...val }))
+    .sort((a, b) => b.date.localeCompare(a.date))
+}
+
+/**
  * 특정 날짜 총 공부 초
  * @param {string} dateString - YYYY-MM-DD
  * @returns {Promise<number>}

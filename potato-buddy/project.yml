@@ -77,6 +77,7 @@ targets:
       - path: PotatoBuddyiOS/모바일배경.png
       - path: PotatoBuddyiOS/포실이(투명).png
       - path: PotatoBuddyiOS/포실이뽀모도로.png
+      - path: PotatoBuddyiOS/타이머.png
       - path: PotatoBuddyiOS/summer.png
       - path: PotatoBuddyiOS/Assets.xcassets
     settings:
