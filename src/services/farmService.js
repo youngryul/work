@@ -282,3 +282,50 @@ export async function waterFarmCrop(cropId) {
   }
 }
 
+/**
+ * 포실이 성장 랭킹 조회 (경험치·단계 순)
+ * @param {number} [limit=50]
+ * @returns {Promise<Array<{
+ *   rank: number,
+ *   userId: string,
+ *   displayName: string,
+ *   isMe: boolean,
+ *   stage: number,
+ *   xp: number,
+ *   activeCharacter: { characterId: string, name: string, grade: string, imageUrl: string } | null
+ * }>>}
+ */
+export async function getFarmRanking(limit = 50) {
+  const userId = await getCurrentUserId()
+  if (!userId) return []
+
+  const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100)
+  const { data, error } = await supabase.rpc('get_farm_ranking', {
+    p_limit: safeLimit,
+  })
+  if (error) {
+    // PostgREST: 함수가 없거나 스키마 캐시 미반영 시 404 / PGRST202
+    if (
+      error.code === 'PGRST202' ||
+      error.code === '42883' ||
+      /404|not find|Could not find/i.test(error.message || '')
+    ) {
+      throw new Error(
+        '랭킹 기능이 DB에 없어요. supabase-farm-ranking.sql을 Supabase에서 실행해 주세요.',
+      )
+    }
+    throw error
+  }
+
+  const rows = Array.isArray(data) ? data : []
+  return rows.map((row) => ({
+    rank: Number(row.rank) || 0,
+    userId: row.userId || row.user_id || '',
+    displayName: row.displayName || row.display_name || '포실이 농부',
+    isMe: Boolean(row.isMe ?? row.is_me),
+    stage: Number(row.stage) || 1,
+    xp: Number(row.xp) || 0,
+    activeCharacter: normalizeActiveCharacter(row.activeCharacter || row.active_character),
+  }))
+}
+

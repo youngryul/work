@@ -38,10 +38,11 @@ import { useJellyBalance } from '../../hooks/useJellyBalance.js'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 import ViewPageTitle from '../ViewPageTitle.jsx'
-
-
+import FarmRankingView from './FarmRankingView.jsx'
 
 export default function FarmView() {
+
+  const [showRanking, setShowRanking] = useState(false)
 
   const [progress, setProgress] = useState({
 
@@ -69,8 +70,6 @@ export default function FarmView() {
   const [levelUpSeedGranted, setLevelUpSeedGranted] = useState(false)
 
   const { balance: jellyBalance } = useJellyBalance()
-
-
 
   const load = useCallback(async () => {
 
@@ -106,15 +105,11 @@ export default function FarmView() {
 
   }, [])
 
-
-
   useEffect(() => {
 
     load()
 
   }, [load])
-
-
 
   const stage = progress.stage
 
@@ -129,8 +124,6 @@ export default function FarmView() {
     ? 100
 
     : Math.min(100, Math.round((progress.xp / nextRequired) * 100))
-
-
 
   const feedJellyCost = progress.feedJellyCost ?? getFarmFeedJellyCost(stage, settings)
 
@@ -155,8 +148,6 @@ export default function FarmView() {
         ? '3단계로 가면 포실이를 뽑을 수 있어요 · 작물을 구입할 수 있어요.'
         : null
 
-
-
   const handleFeedMilk = async () => {
 
     if (!milkEvent || !canFeed) return
@@ -168,8 +159,6 @@ export default function FarmView() {
       return
 
     }
-
-
 
     setIsFeeding(true)
 
@@ -210,8 +199,6 @@ export default function FarmView() {
 
   }
 
-
-
   if (isLoading) {
 
     return (
@@ -226,23 +213,43 @@ export default function FarmView() {
 
   }
 
-
-
   return (
 
     <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6 font-sans">
 
-      <ViewPageTitle icon="🌾" title="포실이 농장">
+      <div className="flex flex-wrap items-start justify-between gap-3">
 
-        <p className="text-lg text-gray-600">
+        <ViewPageTitle icon="🌾" title="포실이 농장">
 
-          젤리로 포실이에게 먹이를 주며 10단계까지 성장시켜 보세요!
+          <p className="text-lg text-gray-600">
 
-        </p>
+            젤리로 포실이에게 먹이를 주며 10단계까지 성장시켜 보세요!
 
-      </ViewPageTitle>
+          </p>
 
+        </ViewPageTitle>
 
+        <button
+
+          type="button"
+
+          onClick={() => setShowRanking(true)}
+
+          className="shrink-0 rounded-full bg-amber-400 px-4 py-2 text-sm font-bold text-gray-900 shadow-sm hover:bg-amber-300"
+
+        >
+
+          랭킹
+
+        </button>
+
+      </div>
+
+      {showRanking && (
+
+        <FarmRankingView onClose={() => setShowRanking(false)} />
+
+      )}
 
       {/* 캐릭터 & 성장 */}
 
@@ -255,8 +262,6 @@ export default function FarmView() {
             {getFarmStageLabel(stage)}
 
           </span>
-
-
 
           <div className={`mx-auto ${stage === 1 ? 'farm-baby-bounce' : ''}`}>
 
@@ -287,8 +292,6 @@ export default function FarmView() {
               마이페이지에서 내 캐릭터로 설정하면 여기에 표시돼요!
             </p>
           )}
-
-
 
           {!isMaxStage && (
 
@@ -332,8 +335,6 @@ export default function FarmView() {
 
           )}
 
-
-
           {isMaxStage && (
 
             <p className="mt-4 text-sm font-semibold text-green-700">
@@ -347,8 +348,6 @@ export default function FarmView() {
         </div>
 
       </div>
-
-
 
       {/* 먹이 주기 */}
 
@@ -399,8 +398,6 @@ export default function FarmView() {
         </section>
 
       )}
-
-
 
       {/* 젤리 획득 방법 */}
 
@@ -457,8 +454,6 @@ export default function FarmView() {
         </ul>
 
       </section>
-
-
 
       {/* 단계 업 모달 */}
 
@@ -522,5 +517,4 @@ export default function FarmView() {
   )
 
 }
-
 

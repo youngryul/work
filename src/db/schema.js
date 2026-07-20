@@ -232,6 +232,18 @@ export const toeicVocabChallengeGoals = pgTable('toeic_vocab_challenge_goals', {
 })
 
 /**
+ * study_sessions — 포실이 시계 공부 세션
+ */
+export const studySessions = pgTable('study_sessions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  studyDate: text('study_date').notNull(),
+  durationSeconds: integer('duration_seconds').notNull(),
+  source: text('source').notNull().default('summer-clock'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+/**
  * menstrual_cycle_settings — 생리 주기 설정
  */
 export const menstrualCycleSettings = pgTable('menstrual_cycle_settings', {
