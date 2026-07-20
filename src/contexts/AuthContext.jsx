@@ -144,6 +144,17 @@ export function AuthProvider({ children }) {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
 
+  /** 로그아웃 후 UI 상태를 확실히 비웁니다 (세션 없음 오류 포함). */
+  const handleSignOut = useCallback(async () => {
+    try {
+      await signOut()
+    } finally {
+      applyAuthUser(null)
+      setUserRole('regular')
+      setAdsEnabled(true)
+    }
+  }, [applyAuthUser])
+
   const value = {
     user,
     loading,
@@ -155,7 +166,7 @@ export function AuthProvider({ children }) {
     signIn,
     signUp,
     signInWithGoogle,
-    signOut,
+    signOut: handleSignOut,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -144,16 +144,44 @@ export async function signInWithGoogle() {
 }
 
 /**
+ * AuthSessionMissingError 여부 (세션이 이미 없는 경우)
+ * @param {unknown} error
+ * @returns {boolean}
+ */
+function isAuthSessionMissingError(error) {
+  if (!error || typeof error !== 'object') return false
+  const name = 'name' in error ? String(error.name) : ''
+  const message = 'message' in error ? String(error.message) : ''
+  return (
+    name === 'AuthSessionMissingError' ||
+    message.includes('Auth session missing')
+  )
+}
+
+/**
  * 로그아웃
+ * 세션이 이미 만료·삭제된 경우에도 로컬 상태는 비우고 성공으로 처리합니다.
  */
 export async function signOut() {
   try {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
-    syncAuthUserId(null)
+    const { error } = await supabase.auth.signOut({ scope: 'local' })
+    if (error && !isAuthSessionMissingError(error)) {
+      throw error
+    }
   } catch (error) {
-    console.error('로그아웃 오류:', error)
-    throw error
+    if (!isAuthSessionMissingError(error)) {
+      console.error('로그아웃 오류:', error)
+      throw error
+    }
+  } finally {
+    syncAuthUserId(null)
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('sb-auth-token')
+      }
+    } catch {
+      // localStorage 접근 실패는 무시
+    }
   }
 }
 
