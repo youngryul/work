@@ -2,6 +2,8 @@ import SwiftUI
 
 struct StepCounterCardView: View {
     @ObservedObject var viewModel: StepCounterViewModel
+    var onJellyEarned: ((String) -> Void)?
+    var onClaimError: ((String) -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -72,6 +74,8 @@ struct StepCounterCardView: View {
                             .foregroundColor(.secondary)
                     }
                 }
+
+                stepMilestoneJellySection
             }
         }
         .padding(16)
@@ -83,5 +87,97 @@ struct StepCounterCardView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.green.opacity(0.2), lineWidth: 1)
         )
+    }
+
+    private var stepMilestoneJellySection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Divider()
+                .padding(.vertical, 2)
+
+            ForEach(StepCounterConstants.jellyMilestones) { milestone in
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("\(milestone.steps.formatted())보")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(
+                            viewModel.isMilestoneReached(milestone.steps) ? .primary : .secondary
+                        )
+
+                    milestoneJellyButton(milestone)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func milestoneJellyButton(_ milestone: StepJellyMilestone) -> some View {
+        let reached = viewModel.isMilestoneReached(milestone.steps)
+        let claimed = viewModel.isMilestoneClaimed(milestone.steps)
+        let isClaiming = viewModel.claimingMilestoneSteps == milestone.steps
+
+        if claimed {
+            HStack(spacing: 6) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                Text("젤리 \(milestone.jellyAmount)개 받음")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            .background(Color(.systemGray6))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        } else if reached {
+            Button {
+                Task { await claimMilestone(milestone) }
+            } label: {
+                HStack(spacing: 8) {
+                    Text("🍮")
+                    Text("젤리 +\(milestone.jellyAmount) 받기")
+                        .fontWeight(.semibold)
+                    Spacer()
+                    if isClaiming {
+                        ProgressView()
+                            .scaleEffect(0.85)
+                    } else {
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .font(.subheadline)
+                .foregroundColor(.primary)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 12)
+                .background(Color.orange.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(.plain)
+            .disabled(isClaiming)
+        } else {
+            HStack(spacing: 8) {
+                Text("🍮")
+                    .opacity(0.45)
+                Text("달성 시 젤리 +\(milestone.jellyAmount)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            .background(Color(.systemGray6))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+    }
+
+    private func claimMilestone(_ milestone: StepJellyMilestone) async {
+        do {
+            if let awarded = try await viewModel.claimJelly(forMilestoneSteps: milestone.steps), awarded > 0 {
+                onJellyEarned?("젤리 +\(awarded)을 획득했어요.")
+            }
+        } catch {
+            onClaimError?(error.localizedDescription)
+        }
     }
 }

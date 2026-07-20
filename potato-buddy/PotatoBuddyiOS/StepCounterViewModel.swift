@@ -8,10 +8,13 @@ final class StepCounterViewModel: ObservableObject {
     @Published private(set) var errorMessage = ""
     @Published private(set) var isAvailable = StepCounterService.isAvailable
     @Published private(set) var authorizationDenied = StepCounterService.isDenied
+    @Published private(set) var claimedMilestoneStepsToday: Set<Int> = []
+    @Published private(set) var claimingMilestoneSteps: Int?
 
     private var defaultsObserver: NSObjectProtocol?
 
     init() {
+        reloadClaimedMilestonesFromStorage()
         defaultsObserver = NotificationCenter.default.addObserver(
             forName: UserDefaults.didChangeNotification,
             object: nil,
@@ -80,6 +83,7 @@ final class StepCounterViewModel: ObservableObject {
         do {
             todaySteps = try await StepCounterService.fetchTodaySteps()
             authorizationDenied = StepCounterService.isDenied
+            reloadClaimedMilestonesFromStorage()
         } catch {
             errorMessage = error.localizedDescription
             authorizationDenied = StepCounterService.isDenied
@@ -88,6 +92,55 @@ final class StepCounterViewModel: ObservableObject {
 
     /// 첫 조회 시 동작·피트니스 권한 요청이 함께 진행됩니다.
     func requestAccessAndRefresh() async {
+        reloadClaimedMilestonesFromStorage()
         await refresh()
+    }
+
+    func isMilestoneReached(_ steps: Int) -> Bool {
+        todaySteps >= steps
+    }
+
+    func isMilestoneClaimed(_ steps: Int) -> Bool {
+        claimedMilestoneStepsToday.contains(steps)
+    }
+
+    /// 마일스톤 젤리 수령. 성공 시 지급된 젤리 수, 이미 수령·미달성 시 nil, 실패 시 throw.
+    func claimJelly(forMilestoneSteps steps: Int) async throws -> Int? {
+        guard isMilestoneReached(steps) else { return nil }
+        guard !isMilestoneClaimed(steps) else { return nil }
+        guard claimingMilestoneSteps == nil else { return nil }
+
+        claimingMilestoneSteps = steps
+        defer { claimingMilestoneSteps = nil }
+
+        let awarded = try await SupabaseService.shared.awardJellyForStepMilestone(milestoneSteps: steps)
+        markMilestoneClaimed(steps)
+        if awarded > 0 {
+            return awarded
+        }
+        return nil
+    }
+
+    private func todayClaimsStorageKey() -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyy-MM-dd"
+        let day = formatter.string(from: Date())
+        return StepCounterConstants.stepJellyClaimsUserDefaultsPrefix + day
+    }
+
+    private func reloadClaimedMilestonesFromStorage() {
+        let stored = UserDefaults.standard.array(forKey: todayClaimsStorageKey()) as? [Int] ?? []
+        claimedMilestoneStepsToday = Set(stored)
+    }
+
+    private func markMilestoneClaimed(_ steps: Int) {
+        claimedMilestoneStepsToday.insert(steps)
+        UserDefaults.standard.set(
+            Array(claimedMilestoneStepsToday).sorted(),
+            forKey: todayClaimsStorageKey()
+        )
     }
 }

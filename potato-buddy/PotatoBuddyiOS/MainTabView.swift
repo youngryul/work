@@ -51,17 +51,29 @@ struct MainTabView: View {
                 }
                 .tag(6)
 
+            ToeicVocabView()
+                .tabItem {
+                    Label("토익", systemImage: "book.closed.fill")
+                }
+                .tag(7)
+
+            FridgeInventoryView()
+                .tabItem {
+                    Label("냉장고", systemImage: "refrigerator.fill")
+                }
+                .tag(8)
+
             SummerClockView()
                 .tabItem {
                     Label("시계", systemImage: "clock.fill")
                 }
-                .tag(7)
+                .tag(9)
 
             SettingsView(showLogoutConfirm: $showLogoutConfirm)
                 .tabItem {
                     Label("설정", systemImage: "gearshape.fill")
                 }
-                .tag(8)
+                .tag(10)
         }
         .tint(.green)
         .confirmationDialog("로그아웃", isPresented: $showLogoutConfirm) {

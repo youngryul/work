@@ -11,4 +11,5 @@ enum JellyRewardReason {
     static let taskComplete = "task_complete"
     static let diaryWrite = "diary_write"
     static let habitTrackerFirstToday = "habit_tracker_first_today"
+    static let stepMilestone = "step_milestone"
 }

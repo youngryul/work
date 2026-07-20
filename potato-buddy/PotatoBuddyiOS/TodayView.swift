@@ -20,7 +20,16 @@ struct TodayView: View {
                 } else {
                     List {
                         Section {
-                            StepCounterCardView(viewModel: stepCounter)
+                            StepCounterCardView(
+                                viewModel: stepCounter,
+                                onJellyEarned: { message in
+                                    jellyEarnedMessage = message
+                                    Task { await jellyStore.refresh() }
+                                },
+                                onClaimError: { message in
+                                    errorMessage = message
+                                }
+                            )
                                 .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                                 .listRowBackground(Color.clear)
                                 .listRowSeparator(.hidden)

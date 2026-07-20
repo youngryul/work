@@ -166,6 +166,31 @@ final class SupabaseService {
         return jelly.awarded
     }
 
+    /// 오늘 걸음 마일스톤 젤리 수령 (마일스톤당 1일 1회)
+    func awardJellyForStepMilestone(milestoneSteps: Int) async throws -> Int {
+        guard let milestone = StepCounterConstants.jellyMilestones.first(where: { $0.steps == milestoneSteps }) else {
+            throw NSError(domain: "SupabaseService", code: -1, userInfo: [NSLocalizedDescriptionKey: "알 수 없는 걸음 마일스톤입니다."])
+        }
+
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyy-MM-dd"
+        let day = formatter.string(from: Date())
+
+        let jelly = try await awardJelly(
+            amount: milestone.jellyAmount,
+            reason: JellyRewardReason.stepMilestone,
+            idempotencyKey: "step:\(day):\(milestoneSteps)"
+        )
+
+        if jelly.alreadyAwarded {
+            return 0
+        }
+        return jelly.awarded
+    }
+
     // MARK: - 할일 추가
 
     func addTask(title: String) async throws {
@@ -434,6 +459,10 @@ final class SupabaseService {
             categories.insert(defaultCat, at: min(systemIndex + 1, categories.count))
         }
 
+        if categories.isEmpty {
+            return CategoryConstants.localFallbackList()
+        }
+
         return categories
     }
 
@@ -480,7 +509,8 @@ final class SupabaseService {
             ]
         }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        _ = try await fetch(request)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
     }
 
     // MARK: - 일정 태그 조회 (웹과 동일)
@@ -1493,6 +1523,211 @@ final class SupabaseService {
         request.httpMethod = "DELETE"
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
         request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+    }
+
+    // MARK: - 토익 단어 Day 완료 기록
+
+    private struct ToeicDayCompletionRow: Decodable {
+        let dayNumber: Int
+        let completionCount: Int
+
+        enum CodingKeys: String, CodingKey {
+            case dayNumber = "day_number"
+            case completionCount = "completion_count"
+        }
+    }
+
+    func fetchToeicDayCompletions() async throws -> [Int: Int] {
+        let (userId, token) = await authInfo()
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/toeic_vocab_day_completions")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "select", value: "day_number,completion_count"),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+
+        let rows = try JSONDecoder().decode([ToeicDayCompletionRow].self, from: data)
+        var map: [Int: Int] = [:]
+        for row in rows {
+            let count = max(0, row.completionCount)
+            if count > 0 { map[row.dayNumber] = count }
+        }
+        return map
+    }
+
+    func setToeicDayCompletion(dayNumber: Int, completionCount: Int) async throws -> Int {
+        let (userId, token) = await authInfo()
+        let count = max(0, completionCount)
+
+        if count <= 0 {
+            var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/toeic_vocab_day_completions")!
+            components.queryItems = [
+                URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+                URLQueryItem(name: "day_number", value: "eq.\(dayNumber)"),
+            ]
+            var request = URLRequest(url: components.url!)
+            request.httpMethod = "DELETE"
+            headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+            request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+            let (data, response) = try await fetch(request)
+            try checkResponse(data, response)
+            return 0
+        }
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/toeic_vocab_day_completions")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("resolution=merge-duplicates,return=representation", forHTTPHeaderField: "Prefer")
+
+        let iso = ISO8601DateFormatter().string(from: Date())
+        let body: [String: Any] = [
+            "user_id": userId,
+            "day_number": dayNumber,
+            "completion_count": count,
+            "updated_at": iso,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        let rows = try JSONDecoder().decode([ToeicDayCompletionRow].self, from: data)
+        return max(0, rows.first?.completionCount ?? count)
+    }
+
+    func incrementToeicDayCompletion(dayNumber: Int) async throws -> Int {
+        let map = try await fetchToeicDayCompletions()
+        let next = (map[dayNumber] ?? 0) + 1
+        return try await setToeicDayCompletion(dayNumber: dayNumber, completionCount: next)
+    }
+
+    func decrementToeicDayCompletion(dayNumber: Int) async throws -> Int {
+        let map = try await fetchToeicDayCompletions()
+        let next = max(0, (map[dayNumber] ?? 0) - 1)
+        return try await setToeicDayCompletion(dayNumber: dayNumber, completionCount: next)
+    }
+
+    // MARK: - 냉장고 재고
+
+    func fetchFridgeItems(zone: String, status: String) async throws -> [FridgeItem] {
+        let (userId, token) = await authInfo()
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/fridge_items")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "zone", value: "eq.\(zone)"),
+            URLQueryItem(name: "status", value: "eq.\(status)"),
+            URLQueryItem(name: "select", value: "id,zone,name,quantity,status,registered_at,expires_at"),
+            URLQueryItem(name: "order", value: "expires_at.asc.nullslast,registered_at.desc"),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        return try JSONDecoder().decode([FridgeItem].self, from: data)
+    }
+
+    func createFridgeItem(
+        zone: String,
+        name: String,
+        quantity: Int,
+        registeredAt: String,
+        expiresAt: String?,
+        status: String = FridgeItemStatus.active.rawValue
+    ) async throws -> FridgeItem {
+        let (userId, token) = await authInfo()
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/fridge_items")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        let safeQuantity = max(1, quantity)
+        var body: [String: Any] = [
+            "user_id": userId,
+            "zone": zone,
+            "name": name.trimmingCharacters(in: .whitespacesAndNewlines),
+            "quantity": safeQuantity,
+            "status": status,
+            "registered_at": registeredAt,
+        ]
+        if let expiresAt, !expiresAt.isEmpty {
+            body["expires_at"] = expiresAt
+        }
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        let items = try JSONDecoder().decode([FridgeItem].self, from: data)
+        guard let item = items.first else {
+            throw URLError(.badServerResponse)
+        }
+        return item
+    }
+
+    func updateFridgeItem(
+        id: String,
+        zone: String? = nil,
+        name: String? = nil,
+        quantity: Int? = nil,
+        status: String? = nil,
+        registeredAt: String? = nil,
+        expiresAt: String?? = nil
+    ) async throws -> FridgeItem {
+        let (userId, token) = await authInfo()
+
+        var payload: [String: Any] = [
+            "updated_at": ISO8601DateFormatter().string(from: Date()),
+        ]
+        if let zone { payload["zone"] = zone }
+        if let name { payload["name"] = name.trimmingCharacters(in: .whitespacesAndNewlines) }
+        if let quantity { payload["quantity"] = max(1, quantity) }
+        if let status { payload["status"] = status }
+        if let registeredAt { payload["registered_at"] = registeredAt }
+        if let expiresAt {
+            if let value = expiresAt, !value.isEmpty {
+                payload["expires_at"] = value
+            } else {
+                payload["expires_at"] = NSNull()
+            }
+        }
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/fridge_items?id=eq.\(id)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        let items = try JSONDecoder().decode([FridgeItem].self, from: data)
+        guard let item = items.first else {
+            throw URLError(.badServerResponse)
+        }
+        return item
+    }
+
+    func deleteFridgeItem(id: String) async throws {
+        let (userId, token) = await authInfo()
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/fridge_items?id=eq.\(id)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
 
         let (data, response) = try await fetch(request)
         try checkResponse(data, response)

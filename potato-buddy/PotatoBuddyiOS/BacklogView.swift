@@ -4,6 +4,8 @@ struct BacklogView: View {
     @State private var tasks: [TaskItem] = []
     @State private var categories: [CategoryItem] = []
     @State private var selectedCategoryName: String = CategoryConstants.fallbackDefaultName
+    @State private var isLoadingCategories = false
+    @State private var didAttemptCategoryLoad = false
     @State private var isLoading: Bool = false
     @State private var errorMessage: String = ""
     @State private var showAddSheet: Bool = false
@@ -32,17 +34,13 @@ struct BacklogView: View {
                     List {
                         ForEach(tasks) { task in
                             HStack(spacing: 12) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(task.displayTitle)
-                                        .font(.body)
-                                    if let cat = task.category, cat != "작업", !cat.isEmpty {
-                                        Text(cat)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
+                                Text(CategoryConstants.emoji(for: task.category, in: categories))
+                                    .font(.system(size: 28))
+                                    .accessibilityLabel(task.category ?? "카테고리")
 
-                                Spacer()
+                                Text(task.title)
+                                    .font(.body)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
 
                                 Button {
                                     Task { await moveToToday(task) }
@@ -68,7 +66,7 @@ struct BacklogView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         newTaskTitle = ""
-                        Task { await prepareAddSheet() }
+                        showAddSheet = true
                     } label: {
                         Image(systemName: "plus")
                             .foregroundColor(.green)
@@ -76,7 +74,9 @@ struct BacklogView: View {
                 }
             }
             .refreshable {
-                await loadTasks()
+                async let tasksLoad: Void = loadTasks()
+                async let categoriesLoad: Void = loadCategories()
+                _ = await (tasksLoad, categoriesLoad)
             }
             .sheet(isPresented: $showAddSheet) {
                 addBacklogSheet
@@ -88,7 +88,9 @@ struct BacklogView: View {
             }
         }
         .task {
-            await loadTasks()
+            async let tasksLoad: Void = loadTasks()
+            async let categoriesLoad: Void = loadCategories()
+            _ = await (tasksLoad, categoriesLoad)
         }
     }
 
@@ -100,9 +102,18 @@ struct BacklogView: View {
                 }
 
                 Section("카테고리") {
-                    if categories.isEmpty {
-                        Text("카테고리를 불러오는 중...")
+                    if isLoadingCategories || (!didAttemptCategoryLoad && categories.isEmpty) {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                            Text("카테고리를 불러오는 중...")
+                                .foregroundColor(.secondary)
+                        }
+                    } else if categories.isEmpty {
+                        Text("카테고리를 불러올 수 없어요. 다시 시도해 주세요.")
                             .foregroundColor(.secondary)
+                        Button("다시 불러오기") {
+                            Task { await loadCategories() }
+                        }
                     } else {
                         Picker("카테고리", selection: $selectedCategoryName) {
                             ForEach(categories) { category in
@@ -128,41 +139,70 @@ struct BacklogView: View {
                         newTaskTitle.trimmingCharacters(in: .whitespaces).isEmpty
                             || selectedCategoryName.isEmpty
                             || isSaving
+                            || isLoadingCategories
+                            || categories.isEmpty
                     )
                 }
+            }
+            .task {
+                await loadCategories()
+                await applyDefaultCategorySelection()
             }
         }
         .presentationDetents([.medium])
     }
 
-    private func prepareAddSheet() async {
+    @MainActor
+    private func loadCategories() async {
+        if isLoadingCategories { return }
+        isLoadingCategories = true
+        defer {
+            isLoadingCategories = false
+            didAttemptCategoryLoad = true
+        }
+
         do {
-            if categories.isEmpty {
-                categories = try await SupabaseService.shared.fetchCategories()
+            categories = try await SupabaseService.shared.fetchCategories()
+            if !categories.contains(where: { $0.name == selectedCategoryName }) {
+                await applyDefaultCategorySelection()
             }
-            let defaultName = try await SupabaseService.shared.fetchDefaultCategoryName()
-            if categories.contains(where: { $0.name == defaultName }) {
-                selectedCategoryName = defaultName
-            } else if let first = categories.first {
-                selectedCategoryName = first.name
-            }
-            showAddSheet = true
         } catch {
-            errorMessage = error.localizedDescription
+            if categories.isEmpty {
+                categories = CategoryConstants.localFallbackList()
+            }
+            if !categories.contains(where: { $0.name == selectedCategoryName }) {
+                selectedCategoryName = categories.first(where: { $0.name == CategoryConstants.fallbackDefaultName })?.name
+                    ?? categories.first?.name
+                    ?? CategoryConstants.fallbackDefaultName
+            }
         }
     }
 
+    @MainActor
+    private func applyDefaultCategorySelection() async {
+        let defaultName = (try? await SupabaseService.shared.fetchDefaultCategoryName())
+            ?? CategoryConstants.fallbackDefaultName
+        if categories.contains(where: { $0.name == defaultName }) {
+            selectedCategoryName = defaultName
+        } else if let first = categories.first {
+            selectedCategoryName = first.name
+        }
+    }
+
+    @MainActor
     private func loadTasks() async {
         isLoading = true
         errorMessage = ""
+        defer { isLoading = false }
+
         do {
             tasks = try await SupabaseService.shared.fetchBacklogTasks()
         } catch {
             errorMessage = error.localizedDescription
         }
-        isLoading = false
     }
 
+    @MainActor
     private func moveToToday(_ task: TaskItem) async {
         do {
             try await SupabaseService.shared.moveToToday(id: task.id)
@@ -172,6 +212,7 @@ struct BacklogView: View {
         }
     }
 
+    @MainActor
     private func deleteTasks(at indexSet: IndexSet) async {
         let toDelete = indexSet.map { tasks[$0] }
         do {
@@ -184,6 +225,7 @@ struct BacklogView: View {
         }
     }
 
+    @MainActor
     private func addBacklogTask() async {
         let title = newTaskTitle.trimmingCharacters(in: .whitespaces)
         guard !title.isEmpty else { return }
