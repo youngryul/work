@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import toeicVocabRaw from '../data/toeicNorangiVocab.json'
 import ToeicDayChallengeGrid from './ToeicDayChallengeGrid.jsx'
+import ToeicMyVocabTab from './ToeicMyVocabTab.jsx'
 import { printToeicDayPdf } from '../utils/toeicVocabPdf.js'
 import { regroupVocabByDaySize, WORDS_PER_DAY } from '../utils/toeicVocabDays.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
@@ -10,6 +11,7 @@ const STUDY_MODES = [
   { id: 'list', label: '전체 목록' },
   { id: 'flash', label: '플래시카드' },
   { id: 'challenge', label: '완료 기록' },
+  { id: 'my-vocab', label: '나만의 단어장' },
 ]
 
 const toeicVocab = regroupVocabByDaySize(toeicVocabRaw, WORDS_PER_DAY)
@@ -139,7 +141,7 @@ export default function ToeicVocabView() {
           ))}
         </div>
 
-        {studyMode !== 'challenge' && (
+        {studyMode !== 'challenge' && studyMode !== 'my-vocab' && (
           <>
             <p className="text-sm text-gray-600 ml-auto">
               <span className="font-semibold text-gray-800">DAY {selectedDay}</span>
@@ -164,7 +166,7 @@ export default function ToeicVocabView() {
         )}
       </div>
 
-      {studyMode !== 'challenge' && (
+      {studyMode !== 'challenge' && studyMode !== 'my-vocab' && (
         <section className="mb-5">
           <div className="flex items-center justify-between gap-2 mb-2">
             <h2 className="text-sm font-semibold text-gray-700">Day 선택</h2>
@@ -191,6 +193,8 @@ export default function ToeicVocabView() {
           </div>
         </section>
       )}
+
+      {studyMode === 'my-vocab' && <ToeicMyVocabTab />}
 
       {studyMode === 'challenge' && (
         <ToeicDayChallengeGrid
