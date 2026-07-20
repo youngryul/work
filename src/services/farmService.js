@@ -196,6 +196,9 @@ export async function getMyFarmField() {
       gridCols: 5,
       gridRows: 4,
       maxCropStage: 4,
+      canHarvest: false,
+      fieldCropCount: 0,
+      matureCropCount: 0,
     }
   }
 
@@ -210,6 +213,9 @@ export async function getMyFarmField() {
       gridCols: data?.gridCols ?? 5,
       gridRows: data?.gridRows ?? 4,
       maxCropStage: data?.maxCropStage ?? 4,
+      canHarvest: Boolean(data?.canHarvest),
+      fieldCropCount: data?.fieldCropCount ?? 0,
+      matureCropCount: data?.matureCropCount ?? 0,
     }
   } catch (error) {
     console.error('농장 밭 조회 실패:', error)
@@ -221,7 +227,119 @@ export async function getMyFarmField() {
       gridCols: 5,
       gridRows: 4,
       maxCropStage: 4,
+      canHarvest: false,
+      fieldCropCount: 0,
+      matureCropCount: 0,
     }
+  }
+}
+
+/**
+ * @param {Object|null} row
+ */
+function normalizeWarehouseItem(row) {
+  if (!row) return null
+  return {
+    cropGachaCharacterId: row.cropGachaCharacterId ?? row.crop_gacha_character_id,
+    cropName: row.cropName ?? row.crop_name ?? '작물',
+    cropImageUrl: row.cropImageUrl ?? row.crop_image_url ?? null,
+    quantity: row.quantity ?? 0,
+  }
+}
+
+/**
+ * @param {Object|null} row
+ */
+function normalizeCropRequest(row) {
+  if (!row) return null
+  return {
+    id: row.id,
+    requesterCharacterId: row.requesterCharacterId ?? row.requester_character_id,
+    requesterName: row.requesterName ?? row.requester_name ?? '포실이 친구',
+    requesterImageUrl: row.requesterImageUrl ?? row.requester_image_url ?? null,
+    cropGachaCharacterId: row.cropGachaCharacterId ?? row.crop_gacha_character_id,
+    cropName: row.cropName ?? row.crop_name ?? '작물',
+    cropImageUrl: row.cropImageUrl ?? row.crop_image_url ?? null,
+    maxQuantity: row.maxQuantity ?? row.max_quantity ?? 1,
+    warehouseQuantity: row.warehouseQuantity ?? row.warehouse_quantity ?? 0,
+  }
+}
+
+/**
+ * 창고·캐릭터 요청 상태
+ * @returns {Promise<{ warehouse: Array, activeRequest: Object|null, totalWarehouseCount: number }>}
+ */
+export async function getFarmWarehouseState() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return { warehouse: [], activeRequest: null, totalWarehouseCount: 0 }
+  }
+
+  const { data, error } = await supabase.rpc('get_farm_warehouse_state')
+  if (error) {
+    console.error('창고 상태 조회 실패:', error)
+    throw error
+  }
+
+  return {
+    warehouse: (data?.warehouse || []).map(normalizeWarehouseItem).filter(Boolean),
+    activeRequest: normalizeCropRequest(data?.activeRequest),
+    totalWarehouseCount: data?.totalWarehouseCount ?? 0,
+  }
+}
+
+/**
+ * 밭 전체 수확 (모든 작물 성숙 시)
+ * @returns {Promise<Object>}
+ */
+export async function harvestFarmField() {
+  const userId = await getCurrentUserId()
+  if (!userId) return null
+
+  const { data, error } = await supabase.rpc('harvest_farm_field')
+  if (error) {
+    console.error('수확 오류:', error)
+    throw error
+  }
+
+  return {
+    harvested: (data?.harvested || []).map(normalizeWarehouseItem).filter(Boolean),
+    harvestedCount: data?.harvestedCount ?? 0,
+    warehouse: (data?.warehouse || []).map(normalizeWarehouseItem).filter(Boolean),
+    activeRequest: normalizeCropRequest(data?.activeRequest),
+  }
+}
+
+/**
+ * 캐릭터 작물 요청 이행
+ * @param {string} requestId
+ * @param {number} giveQuantity
+ * @returns {Promise<Object>}
+ */
+export async function fulfillFarmCropRequest(requestId, giveQuantity) {
+  const userId = await getCurrentUserId()
+  if (!userId || !requestId) return null
+
+  const { data, error } = await supabase.rpc('fulfill_farm_crop_request', {
+    p_request_id: requestId,
+    p_give_quantity: giveQuantity,
+  })
+
+  if (error) {
+    console.error('작물 요청 처리 오류:', error)
+    throw error
+  }
+
+  if (data?.jellyAwarded > 0) {
+    notifyJellyUpdated({ balance: data?.jellyBalance ?? null, awarded: data.jellyAwarded })
+  }
+
+  return {
+    jellyAwarded: data?.jellyAwarded ?? 0,
+    jellyBalance: data?.jellyBalance ?? 0,
+    giveQuantity: data?.giveQuantity ?? giveQuantity,
+    warehouse: (data?.warehouse || []).map(normalizeWarehouseItem).filter(Boolean),
+    activeRequest: normalizeCropRequest(data?.activeRequest),
   }
 }
 

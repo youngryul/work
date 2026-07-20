@@ -48,3 +48,15 @@ export function getCropXpPercent(crop) {
 export function hasCropHarvestImage(crop) {
   return crop?.stage >= CROP_MAX_STAGE && Boolean(crop?.cropImageUrl)
 }
+
+/**
+ * @param {Array<{ stage: number }>} crops
+ */
+export function getFieldHarvestStats(crops) {
+  const list = crops || []
+  const total = list.length
+  const matureCrops = list.filter((c) => Number(c.stage) >= CROP_MAX_STAGE)
+  const mature = matureCrops.length
+  const allMature = total > 0 && mature === total
+  return { total, mature, allMature, matureCrops }
+}

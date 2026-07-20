@@ -253,6 +253,36 @@ export const farmFieldCrops = pgTable('farm_field_crops', {
 })
 
 /**
+ * farm_warehouse_stock — 수확 작물 창고
+ */
+export const farmWarehouseStock = pgTable(
+  'farm_warehouse_stock',
+  {
+    userId: uuid('user_id').notNull(),
+    cropGachaCharacterId: uuid('crop_gacha_character_id').notNull(),
+    quantity: integer('quantity').notNull().default(0),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.cropGachaCharacterId] }),
+  }),
+)
+
+/**
+ * farm_crop_requests — 캐릭터 작물 요청 이벤트
+ */
+export const farmCropRequests = pgTable('farm_crop_requests', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  requesterCharacterId: uuid('requester_character_id').notNull(),
+  cropGachaCharacterId: uuid('crop_gacha_character_id').notNull(),
+  maxQuantity: integer('max_quantity').notNull(),
+  status: text('status').notNull().default('pending'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  completedAt: timestamp('completed_at'),
+})
+
+/**
  * toeic_vocab_day_completions — 토익 단어 Day 완료 횟수
  */
 export const toeicVocabDayCompletions = pgTable('toeic_vocab_day_completions', {

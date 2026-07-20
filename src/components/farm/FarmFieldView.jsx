@@ -6,12 +6,25 @@ import {
   getCropStageLabel,
   getCropStageMeta,
   getCropXpPercent,
+  getFieldHarvestStats,
   hasCropHarvestImage,
 } from '../../constants/farmField.js'
+import { FARM_HARVEST_READY_MESSAGE } from '../../constants/farmHarvest.js'
 import { useJellyBalance } from '../../hooks/useJellyBalance.js'
-import { getMyFarmField, plantFarmSeed, waterFarmCrop } from '../../services/farmService.js'
+import {
+  fulfillFarmCropRequest,
+  getFarmSettingsMap,
+  getFarmWarehouseState,
+  getMyFarmField,
+  harvestFarmField,
+  plantFarmSeed,
+  waterFarmCrop,
+} from '../../services/farmService.js'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
 import ViewPageTitle from '../ViewPageTitle.jsx'
+import FarmCropRequestEvent from './FarmCropRequestEvent.jsx'
+import FarmHarvestModal from './FarmHarvestModal.jsx'
+import FarmWarehousePanel from './FarmWarehousePanel.jsx'
 
 function renderCropCellContent(crop) {
   if (hasCropHarvestImage(crop)) {
@@ -45,21 +58,56 @@ export default function FarmFieldView() {
     crops: [],
     waterXpAmount: 15,
     waterJellyCost: 10,
+    canHarvest: false,
+    fieldCropCount: 0,
+    matureCropCount: 0,
   })
+  const [warehouseState, setWarehouseState] = useState({
+    warehouse: [],
+    activeRequest: null,
+    totalWarehouseCount: 0,
+  })
+  const [farmSettings, setFarmSettings] = useState({})
   const [isLoading, setIsLoading] = useState(true)
   const [isPlanting, setIsPlanting] = useState(false)
   const [isWatering, setIsWatering] = useState(false)
+  const [isHarvesting, setIsHarvesting] = useState(false)
+  const [isFulfillingRequest, setIsFulfillingRequest] = useState(false)
+  const [showHarvestModal, setShowHarvestModal] = useState(false)
   const [plantMode, setPlantMode] = useState(false)
   const [selectedCropId, setSelectedCropId] = useState(null)
   const [cropLevelUpStage, setCropLevelUpStage] = useState(null)
 
   const { balance: jellyBalance } = useJellyBalance()
 
+  const fieldHarvestStats = useMemo(
+    () => getFieldHarvestStats(field.crops),
+    [field.crops],
+  )
+
+  /** 밭 작물 전부 완성 → 씨앗/물주기 대신 수확만 */
+  const isHarvestReady = fieldHarvestStats.allMature
+
+  /** 완성 작물 1개 이상 (부분 수확 가능) */
+  const canHarvestAnyMature = fieldHarvestStats.mature > 0
+
+  useEffect(() => {
+    if (isHarvestReady) {
+      setPlantMode(false)
+    }
+  }, [isHarvestReady])
+
   const load = useCallback(async () => {
     setIsLoading(true)
     try {
-      const data = await getMyFarmField()
+      const [data, wh, settings] = await Promise.all([
+        getMyFarmField(),
+        getFarmWarehouseState(),
+        getFarmSettingsMap(),
+      ])
       setField(data)
+      setWarehouseState(wh)
+      setFarmSettings(settings)
       setSelectedCropId((prev) => {
         if (!prev) return prev
         return data.crops.some((crop) => crop.id === prev) ? prev : null
@@ -78,14 +126,71 @@ export default function FarmFieldView() {
     [field.crops, selectedCropId],
   )
 
-  const canPlant = field.seedCount > 0 && !isPlanting
+  const canPlant = !isHarvestReady && field.seedCount > 0 && !isPlanting
   const canWater =
+    !isHarvestReady &&
     selectedCrop &&
     selectedCrop.stage < CROP_MAX_STAGE &&
     !isWatering &&
     (jellyBalance ?? 0) >= field.waterJellyCost
 
+  const harvestPreview = useMemo(
+    () =>
+      fieldHarvestStats.matureCrops.map((crop) => ({
+        cropGachaCharacterId: crop.id,
+        cropName: crop.cropName,
+        cropImageUrl: crop.cropImageUrl,
+      })),
+    [fieldHarvestStats.matureCrops],
+  )
+
+  const handleHarvest = async () => {
+    setIsHarvesting(true)
+    try {
+      const result = await harvestFarmField()
+      setWarehouseState({
+        warehouse: result?.warehouse ?? [],
+        activeRequest: result?.activeRequest ?? null,
+        totalWarehouseCount: (result?.warehouse ?? []).reduce((sum, row) => sum + row.quantity, 0),
+      })
+      setSelectedCropId(null)
+      setShowHarvestModal(false)
+      await load()
+      showToast(
+        `수확 완료! 작물 ${result?.harvestedCount ?? 0}개를 창고에 넣었어요.`,
+        TOAST_TYPES.SUCCESS,
+      )
+    } catch (error) {
+      showToast(error?.message || '수확에 실패했어요.', TOAST_TYPES.ERROR)
+    } finally {
+      setIsHarvesting(false)
+    }
+  }
+
+  const handleFulfillRequest = async (quantity) => {
+    const req = warehouseState.activeRequest
+    if (!req?.id) return
+
+    setIsFulfillingRequest(true)
+    try {
+      const result = await fulfillFarmCropRequest(req.id, quantity)
+      setWarehouseState({
+        warehouse: result?.warehouse ?? [],
+        activeRequest: result?.activeRequest ?? null,
+        totalWarehouseCount: (result?.warehouse ?? []).reduce((sum, row) => sum + row.quantity, 0),
+      })
+      if (result?.jellyAwarded > 0) {
+        showToast(`고마워요! 젤리 +${result.jellyAwarded} 🍮`, TOAST_TYPES.SUCCESS)
+      }
+    } catch (error) {
+      showToast(error?.message || '작물 전달에 실패했어요.', TOAST_TYPES.ERROR)
+    } finally {
+      setIsFulfillingRequest(false)
+    }
+  }
+
   const handleTogglePlantMode = () => {
+    if (isHarvestReady) return
     if (field.seedCount < 1) {
       showToast('씨앗이 없어요. 포실이 2단계 달성 시 씨앗을 받을 수 있어요!', TOAST_TYPES.ERROR)
       return
@@ -98,6 +203,7 @@ export default function FarmFieldView() {
     const crop = findCropAt(field.crops, row, col)
 
     if (plantMode) {
+      if (isHarvestReady) return
       if (crop) {
         showToast('이미 작물이 있는 칸이에요.', TOAST_TYPES.ERROR)
         return
@@ -152,6 +258,7 @@ export default function FarmFieldView() {
       } else if (result?.xpAwarded > 0) {
         showToast(`물을 줬어요! 성장 경험치 +${result.xpAwarded}`, TOAST_TYPES.SUCCESS)
       }
+      await load()
     } catch (error) {
       showToast(error?.message || '물주기에 실패했어요.', TOAST_TYPES.ERROR)
     } finally {
@@ -181,6 +288,20 @@ export default function FarmFieldView() {
           {isLoading ? '…' : `${field.seedCount}개`}
         </span>
       </section>
+
+      <FarmWarehousePanel
+        warehouse={warehouseState.warehouse}
+        totalCount={warehouseState.totalWarehouseCount}
+      />
+
+      <FarmCropRequestEvent
+        key={warehouseState.activeRequest?.id ?? 'none'}
+        request={warehouseState.activeRequest}
+        warehouse={warehouseState.warehouse}
+        farmSettings={farmSettings}
+        isSubmitting={isFulfillingRequest}
+        onFulfill={handleFulfillRequest}
+      />
 
       <section className="rounded-3xl border-2 border-orange-200 bg-gradient-to-b from-orange-100 via-amber-50 to-rose-50 p-4 sm:p-5 shadow-lg">
         <div className="relative w-full aspect-[5/4] max-h-[420px] mx-auto">
@@ -292,42 +413,96 @@ export default function FarmFieldView() {
         </section>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <button
-          type="button"
-          onClick={handleTogglePlantMode}
-          disabled={!canPlant && !plantMode}
-          className={[
-            'flex-1 py-3 px-4 rounded-xl font-bold text-white shadow-md transition-colors',
-            plantMode
-              ? 'bg-gray-500 hover:bg-gray-600'
-              : canPlant
-                ? 'bg-green-600 hover:bg-green-700'
-                : 'bg-gray-300 cursor-not-allowed',
-          ].join(' ')}
-        >
-          {plantMode ? '심기 취소' : '🫘 씨앗 심기'}
-        </button>
-        <button
-          type="button"
-          onClick={handleWater}
-          disabled={!canWater}
-          className={[
-            'flex-1 py-3 px-4 rounded-xl font-bold text-white shadow-md transition-colors',
-            canWater ? 'bg-sky-500 hover:bg-sky-600' : 'bg-gray-300 cursor-not-allowed',
-          ].join(' ')}
-        >
-          {isWatering
-            ? '물 주는 중…'
-            : `💧 물 주기 (젤리 ${field.waterJellyCost} · 경험치 +${field.waterXpAmount})`}
-        </button>
+      <div className="flex flex-col gap-3">
+        {isHarvestReady ? (
+          <div className="space-y-2">
+            <p className="text-center text-sm text-amber-900 font-medium">{FARM_HARVEST_READY_MESSAGE}</p>
+            <button
+              type="button"
+              onClick={() => setShowHarvestModal(true)}
+              disabled={isHarvesting}
+              className={[
+                'w-full py-3 px-4 rounded-xl font-bold text-white shadow-md transition-colors',
+                isHarvesting ? 'bg-amber-300 cursor-wait' : 'bg-amber-500 hover:bg-amber-600',
+              ].join(' ')}
+            >
+              {isHarvesting
+                ? '수확 중…'
+                : `🌾 수확하기 (작물 ${fieldHarvestStats.mature}개 → 창고)`}
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={handleTogglePlantMode}
+                disabled={!canPlant && !plantMode}
+                className={[
+                  'flex-1 py-3 px-4 rounded-xl font-bold text-white shadow-md transition-colors',
+                  plantMode
+                    ? 'bg-gray-500 hover:bg-gray-600'
+                    : canPlant
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-gray-300 cursor-not-allowed',
+                ].join(' ')}
+              >
+                {plantMode ? '심기 취소' : '🫘 씨앗 심기'}
+              </button>
+              <button
+                type="button"
+                onClick={handleWater}
+                disabled={!canWater}
+                className={[
+                  'flex-1 py-3 px-4 rounded-xl font-bold text-white shadow-md transition-colors',
+                  canWater ? 'bg-sky-500 hover:bg-sky-600' : 'bg-gray-300 cursor-not-allowed',
+                ].join(' ')}
+              >
+                {isWatering
+                  ? '물 주는 중…'
+                  : `💧 물 주기 (젤리 ${field.waterJellyCost} · 경험치 +${field.waterXpAmount})`}
+              </button>
+            </div>
+            {canHarvestAnyMature && (
+              <button
+                type="button"
+                onClick={() => setShowHarvestModal(true)}
+                disabled={isHarvesting}
+                className={[
+                  'w-full py-3 px-4 rounded-xl font-bold text-white shadow-md transition-colors',
+                  isHarvesting ? 'bg-amber-300 cursor-wait' : 'bg-amber-500 hover:bg-amber-600',
+                ].join(' ')}
+              >
+                {isHarvesting
+                  ? '수확 중…'
+                  : `🌾 완성 작물 수확 (${fieldHarvestStats.mature}개 → 창고)`}
+              </button>
+            )}
+            {fieldHarvestStats.total > 0 && !isHarvestReady && (
+              <p className="text-center text-xs text-amber-800">
+                완성 {fieldHarvestStats.mature}/{fieldHarvestStats.total} — 밭 전체가 다 자라면 씨앗·물주기 대신
+                수확만 할 수 있어요.
+              </p>
+            )}
+          </>
+        )}
       </div>
 
       <section className="rounded-2xl border border-orange-100 bg-orange-50/80 p-4 text-sm text-orange-900 space-y-1">
         <p className="font-semibold">성장 단계</p>
         <p>🫘 씨앗 → 🌱 새싹 → 🌸 꽃 → 🌽 작물 (포실이처럼 경험치를 쌓으며 성장해요)</p>
         <p>물을 줄 때마다 젤리를 쓰고 성장 경험치가 올라가요.</p>
+        <p>밭의 작물이 모두 자라면 수확해 창고에 보관하고, 친구들의 작물 요청에 응하면 젤리를 받을 수 있어요.</p>
       </section>
+
+      <FarmHarvestModal
+        open={showHarvestModal}
+        cropCount={fieldHarvestStats.mature}
+        previewCrops={harvestPreview}
+        isHarvesting={isHarvesting}
+        onConfirm={handleHarvest}
+        onClose={() => setShowHarvestModal(false)}
+      />
 
       {cropLevelUpStage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
