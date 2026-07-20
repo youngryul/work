@@ -43,7 +43,7 @@ struct ToeicVocabData: Hashable {
         return regroup(source: source, wordsPerDay: wordsPerDay)
     }
 
-    static func regroup(source: SourceFile, wordsPerDay: Int) -> ToeicVocabData {
+    private static func regroup(source: SourceFile, wordsPerDay: Int) -> ToeicVocabData {
         let allWords = source.days.flatMap(\.words)
         var days: [ToeicVocabDay] = []
         var index = 0
