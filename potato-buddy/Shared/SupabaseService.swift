@@ -1269,4 +1269,142 @@ final class SupabaseService {
         let (data, response) = try await fetch(request)
         try checkResponse(data, response)
     }
+
+    // MARK: - 생리 주기 설정 조회
+
+    func getMenstrualSettings() async throws -> MenstrualSettings {
+        let (userId, token) = await authInfo()
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/menstrual_cycle_settings")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "select", value: "cycle_length,period_length,is_enabled,onboarding_completed"),
+            URLQueryItem(name: "limit", value: "1"),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+
+        struct Row: Decodable {
+            let cycle_length: Int?
+            let period_length: Int?
+            let is_enabled: Bool?
+            let onboarding_completed: Bool?
+        }
+        if let rows = try? JSONDecoder().decode([Row].self, from: data), let row = rows.first {
+            return MenstrualSettings(
+                cycleLength: row.cycle_length ?? 28,
+                periodLength: row.period_length ?? 5,
+                isEnabled: row.is_enabled ?? true,
+                onboardingCompleted: row.onboarding_completed ?? false
+            )
+        }
+        return .defaultSettings
+    }
+
+    // MARK: - 생리 주기 설정 저장
+
+    func saveMenstrualSettings(cycleLength: Int, periodLength: Int) async throws {
+        let (userId, token) = await authInfo()
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/menstrual_cycle_settings")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("resolution=merge-duplicates,return=minimal", forHTTPHeaderField: "Prefer")
+
+        let body: [String: Any] = [
+            "user_id": userId,
+            "cycle_length": cycleLength,
+            "period_length": periodLength,
+            "onboarding_completed": true,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+    }
+
+    // MARK: - 생리 기록 조회
+
+    func getMenstrualRecords(year: Int, month: Int) async throws -> [MenstrualPeriodRecord] {
+        let (userId, token) = await authInfo()
+
+        let range = ScheduleDateHelper.monthRange(year: year, month: month)
+
+        // 해당 월에 걸치는 기록 조회 (시작일 기준 ±45일 여유)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        guard let start = formatter.date(from: range.start),
+              let expandedStart = Calendar(identifier: .gregorian).date(byAdding: .day, value: -45, to: start)
+        else { return [] }
+        let expandedStartStr = formatter.string(from: expandedStart)
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/menstrual_period_records")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "start_date", value: "gte.\(expandedStartStr)"),
+            URLQueryItem(name: "select", value: "id,start_date,end_date,notes"),
+            URLQueryItem(name: "order", value: "start_date.asc"),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        return try JSONDecoder().decode([MenstrualPeriodRecord].self, from: data)
+    }
+
+    // MARK: - 생리 시작일 기록
+
+    func recordPeriodStart(startDate: String, periodLength: Int) async throws -> MenstrualPeriodRecord {
+        let (userId, token) = await authInfo()
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        guard let start = formatter.date(from: startDate),
+              let endDate = Calendar(identifier: .gregorian).date(byAdding: .day, value: periodLength - 1, to: start)
+        else { throw URLError(.badURL) }
+        let endDateStr = formatter.string(from: endDate)
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/menstrual_period_records")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        let body: [String: Any] = [
+            "user_id": userId,
+            "start_date": startDate,
+            "end_date": endDateStr,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        let items = try JSONDecoder().decode([MenstrualPeriodRecord].self, from: data)
+        guard let item = items.first else { throw URLError(.badServerResponse) }
+        return item
+    }
+
+    // MARK: - 생리 기록 삭제
+
+    func deleteMenstrualRecord(id: String) async throws {
+        let (userId, token) = await authInfo()
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/menstrual_period_records?id=eq.\(id)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+    }
 }

@@ -42,21 +42,15 @@ struct SummerClockView: View {
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
 
-                if geometry.size.width > geometry.size.height {
-                    // 가로 모드: 시계를 화면 중앙에 배치
-                    clockTexts(size: geometry.size)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    // 세로 모드: 시계를 상단에 배치
-                    clockTexts(size: geometry.size)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                        .padding(.top, geometry.size.height * 0.12)
-                        .padding(.horizontal, 24)
-                }
+                // 가로/세로 모두 시계를 상단에 배치
+                clockTexts(size: geometry.size)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .padding(.top, geometry.size.height * 0.12)
+                    .padding(.horizontal, 24)
             }
         }
         .ignoresSafeArea()
-        .statusBarHidden(true)
+        .statusBar(hidden: true)
         .onReceive(timer) { value in
             now = value
         }
@@ -81,16 +75,15 @@ struct SummerClockView: View {
         VStack(spacing: isLandscape ? 6 : 10) {
             Text(Self.dateFormatter.string(from: now))
                 .font(.system(size: isLandscape ? 16 : 20, weight: .medium, design: .rounded))
-                .foregroundStyle(Color.primary.opacity(0.75))
+                .foregroundColor(Color.primary.opacity(0.75))
                 .shadow(color: .white.opacity(0.55), radius: 4, x: 0, y: 1)
 
             Text(Self.timeFormatter.string(from: now))
                 .font(.system(size: clockFontSize(for: size), weight: .semibold, design: .rounded))
                 .monospacedDigit()
-                .foregroundStyle(Color(red: 0.12, green: 0.12, blue: 0.14))
+                .foregroundColor(Color(red: 0.12, green: 0.12, blue: 0.14))
                 .shadow(color: .white.opacity(0.45), radius: 12, x: 0, y: 2)
                 .shadow(color: .black.opacity(0.12), radius: 1, x: 0, y: 1)
-                .contentTransition(.numericText())
                 .animation(.easeInOut(duration: 0.2), value: Self.timeFormatter.string(from: now))
         }
     }
