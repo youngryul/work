@@ -3,32 +3,27 @@ import { FARM_DEFAULT_IMAGES, getFarmDisplayImage } from '../../constants/farm.j
 import { getFarmRanking } from '../../services/farmService.js'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
-const PODIUM_STYLES = [
-  {
-    // 1등 — 가운데
-    order: 'order-2',
+/** @type {Record<1|2|3, { card: string, crown: string, badge: string, crownLabel: string }>} */
+const PODIUM_BY_RANK = {
+  1: {
     card: 'bg-[#d8ecff] pt-8 pb-5 min-h-[220px]',
     crown: 'text-amber-400',
     badge: 'bg-orange-400 text-white',
     crownLabel: '1',
   },
-  {
-    // 2등 — 왼쪽
-    order: 'order-1',
+  2: {
     card: 'bg-[#e8e8ec] pt-6 pb-4 min-h-[190px] mt-6',
     crown: 'text-slate-300',
     badge: 'bg-slate-500 text-white',
     crownLabel: '2',
   },
-  {
-    // 3등 — 오른쪽
-    order: 'order-3',
+  3: {
     card: 'bg-[#f8d7e2] pt-6 pb-4 min-h-[175px] mt-10',
     crown: 'text-amber-700',
     badge: 'bg-amber-700 text-white',
     crownLabel: '3',
   },
-]
+}
 
 /**
  * @param {{ stage: number, activeCharacter: object | null }} entry
@@ -38,7 +33,58 @@ function getRankImage(entry) {
 }
 
 /**
- * 포실이 성장 랭킹 (Top3 포디움 + 목록)
+ * @param {{ entry: object | null, rank: 1|2|3 }} props
+ */
+function PodiumSlot({ entry, rank }) {
+  const style = PODIUM_BY_RANK[rank]
+
+  if (!entry) {
+    return <div className="min-h-[120px]" aria-hidden />
+  }
+
+  const imageUrl = getRankImage(entry) || FARM_DEFAULT_IMAGES[1]
+
+  return (
+    <div className="relative flex flex-col items-stretch">
+      <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-center z-10 pointer-events-none">
+        <span className={`text-2xl ${style.crown}`} aria-hidden="true">
+          👑
+        </span>
+        <span className="block text-xs font-bold text-white -mt-1">{style.crownLabel}</span>
+      </div>
+      <div
+        className={`rounded-2xl px-2 ${style.card} text-center shadow-lg flex-1 ${
+          entry.isMe ? 'ring-2 ring-yellow-300' : ''
+        }`}
+      >
+        <img
+          src={imageUrl}
+          alt=""
+          className="mx-auto w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow"
+          draggable={false}
+          onError={(e) => {
+            e.currentTarget.onerror = null
+            e.currentTarget.src = FARM_DEFAULT_IMAGES[1]
+          }}
+        />
+        <p className="mt-2 text-[11px] sm:text-xs font-semibold text-gray-800 truncate px-1">
+          {entry.isMe ? '나' : entry.displayName}
+        </p>
+        <p className="mt-1 text-sm sm:text-base font-extrabold text-rose-500 tabular-nums">
+          +{(Number(entry.xp) || 0).toLocaleString()} XP
+        </p>
+        <span
+          className={`inline-block mt-2 px-2 py-0.5 rounded-full text-[10px] font-bold ${style.badge}`}
+        >
+          {entry.stage}단계
+        </span>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * 포실이 성장 랭킹 (Top3 포디움: 2위 | 1위 | 3위 + 4위부터 목록)
  */
 export default function FarmRankingView({ onClose }) {
   const [entries, setEntries] = useState([])
@@ -68,18 +114,11 @@ export default function FarmRankingView({ onClose }) {
     }
   }, [])
 
-  const top3 = entries.slice(0, 3)
-  const rest = entries.slice(3)
-  const podiumOrdered = [
-    top3[1] || null,
-    top3[0] || null,
-    top3[2] || null,
-  ]
-  const podiumStyleByRank = {
-    1: PODIUM_STYLES[0],
-    2: PODIUM_STYLES[1],
-    3: PODIUM_STYLES[2],
-  }
+  const sorted = [...entries].sort((a, b) => (a.rank || 0) - (b.rank || 0))
+  const first = sorted.find((e) => e.rank === 1) ?? sorted[0] ?? null
+  const second = sorted.find((e) => e.rank === 2) ?? sorted[1] ?? null
+  const third = sorted.find((e) => e.rank === 3) ?? sorted[2] ?? null
+  const rest = sorted.filter((e) => (e.rank || 0) >= 4)
 
   return (
     <div className="fixed inset-0 z-[180] bg-[#12141a] text-white overflow-y-auto font-sans">
@@ -105,97 +144,56 @@ export default function FarmRankingView({ onClose }) {
         ) : (
           <>
             <div className="grid grid-cols-3 gap-2 items-end mb-8">
-              {podiumOrdered.map((entry, idx) => {
-                if (!entry) {
-                  return <div key={`empty-${idx}`} />
-                }
-                const style = podiumStyleByRank[entry.rank] || PODIUM_STYLES[0]
-                const imageUrl = getRankImage(entry) || FARM_DEFAULT_IMAGES[1]
-                return (
-                  <div key={entry.userId || entry.rank} className={`${style.order} relative`}>
-                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-center z-10">
-                      <span className={`text-2xl ${style.crown}`} aria-hidden="true">
-                        👑
-                      </span>
-                      <span className="block text-xs font-bold text-white -mt-1">
-                        {style.crownLabel}
-                      </span>
-                    </div>
+              <PodiumSlot entry={second} rank={2} />
+              <PodiumSlot entry={first} rank={1} />
+              <PodiumSlot entry={third} rank={3} />
+            </div>
+
+            {rest.length > 0 ? (
+              <div className="space-y-2">
+                {rest.map((entry) => {
+                  const imageUrl = getRankImage(entry) || FARM_DEFAULT_IMAGES[1]
+                  return (
                     <div
-                      className={`rounded-2xl px-2 ${style.card} text-center shadow-lg ${
-                        entry.isMe ? 'ring-2 ring-yellow-300' : ''
+                      key={entry.userId || entry.rank}
+                      className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 ${
+                        entry.isMe ? 'bg-yellow-500/15 ring-1 ring-yellow-400/40' : 'bg-white/5'
                       }`}
                     >
+                      <div className="w-10 text-center shrink-0">
+                        <p className="text-xl font-bold tabular-nums leading-none">{entry.rank}</p>
+                        <span className="inline-block mt-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-white/10 text-white/70">
+                          {entry.stage}단계
+                        </span>
+                      </div>
                       <img
                         src={imageUrl}
                         alt=""
-                        className="mx-auto w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow"
+                        className="w-11 h-11 rounded-full object-contain bg-white/10 p-0.5 shrink-0"
                         draggable={false}
                         onError={(e) => {
                           e.currentTarget.onerror = null
                           e.currentTarget.src = FARM_DEFAULT_IMAGES[1]
                         }}
                       />
-                      <p className="mt-2 text-[11px] sm:text-xs font-semibold text-gray-800 truncate px-1">
-                        {entry.isMe ? '나' : entry.displayName}
-                      </p>
-                      <p className="mt-1 text-sm sm:text-base font-extrabold text-rose-500 tabular-nums">
-                        +{entry.xp.toLocaleString()} XP
-                      </p>
-                      <span
-                        className={`inline-block mt-2 px-2 py-0.5 rounded-full text-[10px] font-bold ${style.badge}`}
-                      >
-                        {entry.stage}단계
-                      </span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            <div className="space-y-2">
-              {rest.map((entry) => {
-                const imageUrl = getRankImage(entry) || FARM_DEFAULT_IMAGES[1]
-                return (
-                  <div
-                    key={entry.userId || entry.rank}
-                    className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 ${
-                      entry.isMe ? 'bg-yellow-500/15 ring-1 ring-yellow-400/40' : 'bg-white/5'
-                    }`}
-                  >
-                    <div className="w-10 text-center shrink-0">
-                      <p className="text-xl font-bold tabular-nums leading-none">{entry.rank}</p>
-                      <span className="inline-block mt-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-white/10 text-white/70">
-                        {entry.stage}단계
-                      </span>
-                    </div>
-                    <img
-                      src={imageUrl}
-                      alt=""
-                      className="w-11 h-11 rounded-full object-contain bg-white/10 p-0.5 shrink-0"
-                      draggable={false}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null
-                        e.currentTarget.src = FARM_DEFAULT_IMAGES[1]
-                      }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold truncate">
-                        {entry.isMe ? '나' : entry.displayName}
-                      </p>
-                      {entry.activeCharacter?.name && (
-                        <p className="text-[11px] text-white/50 truncate">
-                          {entry.activeCharacter.name}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold truncate">
+                          {entry.isMe ? '나' : entry.displayName}
                         </p>
-                      )}
+                        {entry.activeCharacter?.name && (
+                          <p className="text-[11px] text-white/50 truncate">
+                            {entry.activeCharacter.name}
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-sm font-bold text-rose-400 tabular-nums shrink-0">
+                        +{(Number(entry.xp) || 0).toLocaleString()} XP
+                      </p>
                     </div>
-                    <p className="text-sm font-bold text-rose-400 tabular-nums shrink-0">
-                      +{entry.xp.toLocaleString()} XP
-                    </p>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            ) : null}
 
             <p className="mt-6 text-center text-[11px] text-white/40">
               정렬: 성장 단계 → 현재 단계 XP (높은 순)

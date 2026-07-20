@@ -34,10 +34,10 @@ function normalizeFarmXpEvent(row) {
 function normalizeActiveCharacter(data) {
   if (!data) return null
   return {
-    characterId: data.characterId,
-    name: data.name,
-    grade: data.grade,
-    imageUrl: data.imageUrl,
+    characterId: data.characterId ?? data.character_id ?? null,
+    name: data.name ?? null,
+    grade: data.grade ?? null,
+    imageUrl: data.imageUrl ?? data.image_url ?? null,
   }
 }
 
@@ -304,6 +304,7 @@ export async function getFarmRanking(limit = 50) {
     p_limit: safeLimit,
   })
   if (error) {
+    console.error('get_farm_ranking 오류:', error)
     // PostgREST: 함수가 없거나 스키마 캐시 미반영 시 404 / PGRST202
     if (
       error.code === 'PGRST202' ||
@@ -314,10 +315,25 @@ export async function getFarmRanking(limit = 50) {
         '랭킹 기능이 DB에 없어요. supabase-farm-ranking.sql을 Supabase에서 실행해 주세요.',
       )
     }
-    throw error
+    const msg = error.message || error.details || ''
+    if (/active_character_id|does not exist/i.test(msg)) {
+      throw new Error(
+        '랭킹 DB 설정이 완료되지 않았어요. supabase-farm-ranking.sql을 Supabase에서 실행해 주세요.',
+      )
+    }
+    throw new Error(msg || '랭킹을 불러오지 못했습니다.')
   }
 
-  const rows = Array.isArray(data) ? data : []
+  let parsed = data
+  if (typeof data === 'string') {
+    try {
+      parsed = JSON.parse(data)
+    } catch {
+      parsed = []
+    }
+  }
+
+  const rows = Array.isArray(parsed) ? parsed : []
   return rows.map((row) => ({
     rank: Number(row.rank) || 0,
     userId: row.userId || row.user_id || '',

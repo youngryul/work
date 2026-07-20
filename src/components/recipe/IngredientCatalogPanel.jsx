@@ -223,7 +223,7 @@ export default function IngredientCatalogPanel({ onClose, onChanged }) {
                 {isAdmin ? (
                   <>
                     <label className="text-xs text-amber-700 font-medium cursor-pointer hover:underline">
-                      이미지
+                      {item.image_url ? '수정' : '이미지'}
                       <input
                         type="file"
                         accept="image/*"
