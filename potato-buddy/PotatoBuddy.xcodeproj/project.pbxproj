@@ -21,9 +21,11 @@
 		1B20A10E1FD42DE2DAD38071 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FFB9D50D2473DC4EA80FC2 /* Config.swift */; };
 		1DCDF7FD4411937AE13138F7 /* TravelItineraryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57C79908BA24A75EEB51BD6D /* TravelItineraryDetailView.swift */; };
 		25A4B1BB115DB0FBD55370C6 /* StepCounterConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FFBB4172FF64DBCCA30AD3C /* StepCounterConstants.swift */; };
+		25CC9222A71738597DE27F1F /* ToeicVocabData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD7E5050DED68E0DBBC2FF6 /* ToeicVocabData.swift */; };
 		265F477B90F3B1AA9D051A19 /* iPadClockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C51632D4FE1AE1587ACF991 /* iPadClockView.swift */; };
 		2877771ED542DFFAAAB533DC /* ScheduleTagItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0635FCBC596282AB2A46EA /* ScheduleTagItem.swift */; };
 		2DA5A0A4C9F98B31BECE0E43 /* 포실이(투명).png in Resources */ = {isa = PBXBuildFile; fileRef = 6BEEDF33B6BA4C250F262C91 /* 포실이(투명).png */; };
+		2E3FB359F9065D1F5299CAE2 /* ToeicVocabData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD7E5050DED68E0DBBC2FF6 /* ToeicVocabData.swift */; };
 		2E495F3BAC7718EAB6E0FB4C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DA69A7AC454A59D4370CA0AA /* Assets.xcassets */; };
 		2EAB13F7247ADE757A0F9C26 /* JellyBalanceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 584E41A27919963F981D3E60 /* JellyBalanceStore.swift */; };
 		310E2FEAB88A3E62E14EC700 /* HabitTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F13D6503838960444F2CA0B6 /* HabitTrackerView.swift */; };
@@ -44,18 +46,22 @@
 		51DF8B94BE030B25BDFABE60 /* 모바일배경.png in Resources */ = {isa = PBXBuildFile; fileRef = 12DF9FBB4D85C2F270AAC672 /* 모바일배경.png */; };
 		52949332A075AC22A6D74643 /* DownwardBubbleShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D55F9D7FCCE9503B15B63A5 /* DownwardBubbleShape.swift */; };
 		53051C295875E02B85336103 /* TodoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DD29BCF03B4DCC1F72234C3 /* TodoViewModel.swift */; };
+		5E2CF481D03A08360436215A /* FridgeInventoryConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4717E3CA4063BD8A41F8C7F /* FridgeInventoryConstants.swift */; };
 		64C40FAC4244CB7FA87E505E /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 541FF1C427BD52922B298737 /* Notifications.swift */; };
 		65B79A32DCAC8B3893E13EA8 /* 타이머.png in Resources */ = {isa = PBXBuildFile; fileRef = 8B40DEFAD718CADC17E20AEA /* 타이머.png */; };
 		65C848E7EB8E555C266527FB /* StudyTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12EDE4D2B4BB5A8A8CCF1EAA /* StudyTimeView.swift */; };
 		674E1DDC6C3A3C05E535859C /* WidgetScheduleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB8B7BD1BEADE12B74909D2C /* WidgetScheduleStore.swift */; };
 		680B1FB46FFFBEB496161FC8 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CB4229136599A8BA65F44C /* MainTabView.swift */; };
+		6852538528FE21F5E7A86BC3 /* FridgeItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758A8A2B777A70B6D61AC077 /* FridgeItem.swift */; };
 		6903FAAFADF91E26AED656F6 /* 포실이(투명).png in Resources */ = {isa = PBXBuildFile; fileRef = 7C66F6E22CD38ED9563C49F4 /* 포실이(투명).png */; };
 		69E6B81F2C9230C1DCA47B37 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */; };
 		6B1E60F44EA898EC371A4B4E /* OverlayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC4808FE02D6272C60A42FA /* OverlayRootView.swift */; };
+		6D8CC351F2E0987C6866ABF7 /* ToeicVocabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DFAFDD1DF4B7C785A8DEDD0 /* ToeicVocabView.swift */; };
 		7479E36C2B26F8A607D4A14B /* StudySessionItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A85FD45DEA3E16AA58CB2CD /* StudySessionItem.swift */; };
 		7AC55FC3AE10ADE27CEEFDC4 /* JellyBalanceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 584E41A27919963F981D3E60 /* JellyBalanceStore.swift */; };
 		7E18E6B2DE7080B7F6B76D0C /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B02DFAC49D9D4482ECF09A64 /* LoginView.swift */; };
 		85D97A5267B17E36E96E3EDF /* TravelItineraryCreateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 190A1D03682FC74D860AEC01 /* TravelItineraryCreateView.swift */; };
+		87F5F42390E27F17BE4D0D76 /* FridgeInventoryConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4717E3CA4063BD8A41F8C7F /* FridgeInventoryConstants.swift */; };
 		8F3CE139D3BD95A22AF354BB /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FFB9D50D2473DC4EA80FC2 /* Config.swift */; };
 		92F16E8E33B86336DBB3B45E /* WidgetScheduleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB8B7BD1BEADE12B74909D2C /* WidgetScheduleStore.swift */; };
 		943E1D60032F7A8DC0C5C579 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */; };
@@ -63,6 +69,8 @@
 		95DAAF8BAF3088F722036F91 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70E0F19BC75F1A6C397BBE1C /* ContentView.swift */; };
 		9614CADE3D87EF9BA758FAF4 /* 물 주는 포실이.gif in Resources */ = {isa = PBXBuildFile; fileRef = A116B7DBFAC47A89BE9EA8BE /* 물 주는 포실이.gif */; };
 		97576556E3490B072A46AEEB /* JellyBalanceBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AC0637A6BBD34447E7A0DA2 /* JellyBalanceBadgeView.swift */; };
+		9C324EE423B2AC665B1411E9 /* FridgeItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758A8A2B777A70B6D61AC077 /* FridgeItem.swift */; };
+		9DBC5A2E37B85AFB8C809749 /* ToeicCompletionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8BAEABB166C05237A1FE98 /* ToeicCompletionViewModel.swift */; };
 		9E24F2E0DE2AA6234D734E69 /* TravelItineraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB1A57CF4290277D1DB7841A /* TravelItineraryView.swift */; };
 		A4D32CEED0B186968C3C889E /* ScheduleItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC32AEBCA73A2947E5767A41 /* ScheduleItem.swift */; };
 		A64122DBEB6634B70B142AAC /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 852B8983CE9BC8617F83ECBD /* LoginView.swift */; };
@@ -73,6 +81,7 @@
 		BA4544E70322E98D72C0085C /* StudyTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2C960A0BB71FE702BB1C176 /* StudyTimerView.swift */; };
 		BF72152F5A83BBC8013D7216 /* 포실이 앱 아이콘.png in Resources */ = {isa = PBXBuildFile; fileRef = 87A559DEF644037CCB12B963 /* 포실이 앱 아이콘.png */; };
 		C4F4462F705B6C84836B0ECF /* HabitTrackerItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F85A90516C48B9FF889E29A8 /* HabitTrackerItem.swift */; };
+		C7DA1A5E0956088C9F6BCB02 /* FridgeInventoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE1632EAD25D05BCCBDEC155 /* FridgeInventoryView.swift */; };
 		CAEC59D5B68A5480E504DBF2 /* ScheduleWidgetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EBE98E4AA439E5B105C2588 /* ScheduleWidgetService.swift */; };
 		D05ACB77F8057E8AD16BD17C /* summer.png in Resources */ = {isa = PBXBuildFile; fileRef = 7D291EEF7D06F10884474480 /* summer.png */; };
 		D159B7C3FCC77C25D462E9FE /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 301769FE9AC7E8DA1E0CB788 /* AuthService.swift */; };
@@ -88,6 +97,7 @@
 		E55319BA3F5F13380251C8DB /* CharacterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34391A214A69FA4C5B297D86 /* CharacterView.swift */; };
 		E6235A9B21BDDCE08A3F6B79 /* MenstrualItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E22CB2A26C939DAFA03960 /* MenstrualItem.swift */; };
 		E912479265FEF7F1D9EB383C /* PotatoBuddyiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1135FADE4C8DF6A8508C291E /* PotatoBuddyiOSApp.swift */; };
+		E9CA1E113D2AD0B6B3B6CA8F /* ToeicDayChallengeGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39F8EA4F2D73DF0A5CDC097 /* ToeicDayChallengeGridView.swift */; };
 		EA765BB6DF73662C9FAE9A61 /* StepCounterConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FFBB4172FF64DBCCA30AD3C /* StepCounterConstants.swift */; };
 		EF1F6C5100CD872A2E638934 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17F2503650D67FEFAECD28EC /* SettingsView.swift */; };
 		EF28384196877F786C0CED50 /* 포실이뽀모도로.png in Resources */ = {isa = PBXBuildFile; fileRef = 7707A38521008641F0613304 /* 포실이뽀모도로.png */; };
@@ -125,6 +135,7 @@
 /* Begin PBXFileReference section */
 		0987064D68A1DF4DD6756AF6 /* CategoryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryItem.swift; sourceTree = "<group>"; };
 		0C51632D4FE1AE1587ACF991 /* iPadClockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iPadClockView.swift; sourceTree = "<group>"; };
+		0DFAFDD1DF4B7C785A8DEDD0 /* ToeicVocabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToeicVocabView.swift; sourceTree = "<group>"; };
 		0FD17E57252F9B177B544AD9 /* PotatoBuddyiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PotatoBuddyiOS.entitlements; sourceTree = "<group>"; };
 		1135FADE4C8DF6A8508C291E /* PotatoBuddyiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotatoBuddyiOSApp.swift; sourceTree = "<group>"; };
 		12DF9FBB4D85C2F270AAC672 /* 모바일배경.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "모바일배경.png"; sourceTree = "<group>"; };
@@ -135,6 +146,7 @@
 		190A1D03682FC74D860AEC01 /* TravelItineraryCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelItineraryCreateView.swift; sourceTree = "<group>"; };
 		1D826A844BE6F7D286ED09B9 /* BacklogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BacklogView.swift; sourceTree = "<group>"; };
 		1F38DC95AC1E797AF29D0752 /* TravelItineraryPackingListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelItineraryPackingListView.swift; sourceTree = "<group>"; };
+		1F8BAEABB166C05237A1FE98 /* ToeicCompletionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToeicCompletionViewModel.swift; sourceTree = "<group>"; };
 		1FFBB4172FF64DBCCA30AD3C /* StepCounterConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCounterConstants.swift; sourceTree = "<group>"; };
 		29331826BBBDC0B4BAFFEB9D /* JellyRewardConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyRewardConstants.swift; sourceTree = "<group>"; };
 		2F9CBD6CBC5C19AAA3059AE2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -144,6 +156,7 @@
 		3EBE98E4AA439E5B105C2588 /* ScheduleWidgetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleWidgetService.swift; sourceTree = "<group>"; };
 		3FFB3866A23995C2BD9656D2 /* StudyTimerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyTimerViewModel.swift; sourceTree = "<group>"; };
 		47CB4229136599A8BA65F44C /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		4BD7E5050DED68E0DBBC2FF6 /* ToeicVocabData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToeicVocabData.swift; sourceTree = "<group>"; };
 		4CC56B1102F36D279C196D42 /* ScheduleCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleCalendarView.swift; sourceTree = "<group>"; };
 		4D55F9D7FCCE9503B15B63A5 /* DownwardBubbleShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownwardBubbleShape.swift; sourceTree = "<group>"; };
 		4F1661D7992556DAFA92CAD5 /* StepCounterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCounterViewModel.swift; sourceTree = "<group>"; };
@@ -162,6 +175,7 @@
 		6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingWindow.swift; sourceTree = "<group>"; };
 		6EC4808FE02D6272C60A42FA /* OverlayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayRootView.swift; sourceTree = "<group>"; };
 		70E0F19BC75F1A6C397BBE1C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		758A8A2B777A70B6D61AC077 /* FridgeItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FridgeItem.swift; sourceTree = "<group>"; };
 		7707A38521008641F0613304 /* 포실이뽀모도로.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이뽀모도로.png"; sourceTree = "<group>"; };
 		7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseService.swift; sourceTree = "<group>"; };
 		7C66F6E22CD38ED9563C49F4 /* 포실이(투명).png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이(투명).png"; sourceTree = "<group>"; };
@@ -180,6 +194,7 @@
 		9AC0637A6BBD34447E7A0DA2 /* JellyBalanceBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyBalanceBadgeView.swift; sourceTree = "<group>"; };
 		A116B7DBFAC47A89BE9EA8BE /* 물 주는 포실이.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = "물 주는 포실이.gif"; sourceTree = "<group>"; };
 		A1BFEA26E9E32B8E425C9D4F /* PotatoClockApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotatoClockApp.swift; sourceTree = "<group>"; };
+		A39F8EA4F2D73DF0A5CDC097 /* ToeicDayChallengeGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToeicDayChallengeGridView.swift; sourceTree = "<group>"; };
 		A3AC895187BF5EB8BF855D3C /* PotatoBuddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PotatoBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AB0635FCBC596282AB2A46EA /* ScheduleTagItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleTagItem.swift; sourceTree = "<group>"; };
 		ABB608B81557591785536A64 /* PotatoBuddyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotatoBuddyApp.swift; sourceTree = "<group>"; };
@@ -199,10 +214,12 @@
 		DB8B7BD1BEADE12B74909D2C /* WidgetScheduleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetScheduleStore.swift; sourceTree = "<group>"; };
 		DC39AB8BC8BEB8056A67FDB4 /* PotatoBuddyiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PotatoBuddyiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DDDA9374BFB496DC310B133F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		E4717E3CA4063BD8A41F8C7F /* FridgeInventoryConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FridgeInventoryConstants.swift; sourceTree = "<group>"; };
 		E52D20FD884239995BBDC00C /* DiaryListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryListView.swift; sourceTree = "<group>"; };
 		E7916200BAF477DE717FF740 /* HabitTrackerFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitTrackerFormView.swift; sourceTree = "<group>"; };
 		F13D6503838960444F2CA0B6 /* HabitTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitTrackerView.swift; sourceTree = "<group>"; };
 		F85A90516C48B9FF889E29A8 /* HabitTrackerItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitTrackerItem.swift; sourceTree = "<group>"; };
+		FE1632EAD25D05BCCBDEC155 /* FridgeInventoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FridgeInventoryView.swift; sourceTree = "<group>"; };
 		FE439661AA11BAB52C599244 /* TravelItinerarySouvenirListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelItinerarySouvenirListView.swift; sourceTree = "<group>"; };
 		FE7618036880053779773CE5 /* ChatBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBubbleView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -215,6 +232,8 @@
 				0987064D68A1DF4DD6756AF6 /* CategoryItem.swift */,
 				68FFB9D50D2473DC4EA80FC2 /* Config.swift */,
 				D2C694A851AB63F042A05AC1 /* DiaryItem.swift */,
+				E4717E3CA4063BD8A41F8C7F /* FridgeInventoryConstants.swift */,
+				758A8A2B777A70B6D61AC077 /* FridgeItem.swift */,
 				F85A90516C48B9FF889E29A8 /* HabitTrackerItem.swift */,
 				584E41A27919963F981D3E60 /* JellyBalanceStore.swift */,
 				29331826BBBDC0B4BAFFEB9D /* JellyRewardConstants.swift */,
@@ -226,6 +245,7 @@
 				8A85FD45DEA3E16AA58CB2CD /* StudySessionItem.swift */,
 				7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */,
 				AE031E1DC9B579555F16B096 /* TaskItem.swift */,
+				4BD7E5050DED68E0DBBC2FF6 /* ToeicVocabData.swift */,
 				D39AAC1A8BF6E487B9ED6FEE /* TravelAbroadModels.swift */,
 				DB8B7BD1BEADE12B74909D2C /* WidgetScheduleStore.swift */,
 			);
@@ -257,6 +277,7 @@
 				70E0F19BC75F1A6C397BBE1C /* ContentView.swift */,
 				E52D20FD884239995BBDC00C /* DiaryListView.swift */,
 				547F99007C6FCE58B7F29335 /* DiaryWriteView.swift */,
+				FE1632EAD25D05BCCBDEC155 /* FridgeInventoryView.swift */,
 				9AA6CB30D85668CDA815DE41 /* HabitTrackerCardView.swift */,
 				E7916200BAF477DE717FF740 /* HabitTrackerFormView.swift */,
 				F13D6503838960444F2CA0B6 /* HabitTrackerView.swift */,
@@ -281,6 +302,9 @@
 				CF0CA9CF9A6A323934F91997 /* SummerClockView.swift */,
 				5BB2F61DEE70BBB4A496E152 /* TimerHubView.swift */,
 				607BDE05A4DD4BE69A4932DA /* TodayView.swift */,
+				1F8BAEABB166C05237A1FE98 /* ToeicCompletionViewModel.swift */,
+				A39F8EA4F2D73DF0A5CDC097 /* ToeicDayChallengeGridView.swift */,
+				0DFAFDD1DF4B7C785A8DEDD0 /* ToeicVocabView.swift */,
 				190A1D03682FC74D860AEC01 /* TravelItineraryCreateView.swift */,
 				57C79908BA24A75EEB51BD6D /* TravelItineraryDetailView.swift */,
 				AFE1FABD7B22059A21BA9A3A /* TravelItineraryItemFormView.swift */,
@@ -491,6 +515,8 @@
 				3C139AFE68DCE619848DCB71 /* DiaryItem.swift in Sources */,
 				52949332A075AC22A6D74643 /* DownwardBubbleShape.swift in Sources */,
 				FCE237435B2D654EEE2A4100 /* FloatingWindow.swift in Sources */,
+				87F5F42390E27F17BE4D0D76 /* FridgeInventoryConstants.swift in Sources */,
+				9C324EE423B2AC665B1411E9 /* FridgeItem.swift in Sources */,
 				C4F4462F705B6C84836B0ECF /* HabitTrackerItem.swift in Sources */,
 				2EAB13F7247ADE757A0F9C26 /* JellyBalanceStore.swift in Sources */,
 				02602D5243B4A5E3095C4BD5 /* JellyRewardConstants.swift in Sources */,
@@ -506,6 +532,7 @@
 				69E6B81F2C9230C1DCA47B37 /* SupabaseService.swift in Sources */,
 				ACC434D4F3C6CB14E9B5D645 /* TaskItem.swift in Sources */,
 				53051C295875E02B85336103 /* TodoViewModel.swift in Sources */,
+				2E3FB359F9065D1F5299CAE2 /* ToeicVocabData.swift in Sources */,
 				12F916C186FF332AAC22A3C0 /* TravelAbroadModels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -540,6 +567,9 @@
 				A7125755B5C6272EF6489109 /* DiaryItem.swift in Sources */,
 				46548972895E7944B033EF46 /* DiaryListView.swift in Sources */,
 				395ED4F51127F437671E11B5 /* DiaryWriteView.swift in Sources */,
+				5E2CF481D03A08360436215A /* FridgeInventoryConstants.swift in Sources */,
+				C7DA1A5E0956088C9F6BCB02 /* FridgeInventoryView.swift in Sources */,
+				6852538528FE21F5E7A86BC3 /* FridgeItem.swift in Sources */,
 				01882407C87EE8CD8545AD3A /* HabitTrackerCardView.swift in Sources */,
 				108351B7AC1351E3A723006B /* HabitTrackerFormView.swift in Sources */,
 				D8B31DB54794DFAA42FE92A2 /* HabitTrackerItem.swift in Sources */,
@@ -572,6 +602,10 @@
 				46AC3A0AFBE0EE18BAD84F1B /* TaskItem.swift in Sources */,
 				39B7E96394D42F33CF7764AD /* TimerHubView.swift in Sources */,
 				E07C57782C90A202B7737328 /* TodayView.swift in Sources */,
+				9DBC5A2E37B85AFB8C809749 /* ToeicCompletionViewModel.swift in Sources */,
+				E9CA1E113D2AD0B6B3B6CA8F /* ToeicDayChallengeGridView.swift in Sources */,
+				25CC9222A71738597DE27F1F /* ToeicVocabData.swift in Sources */,
+				6D8CC351F2E0987C6866ABF7 /* ToeicVocabView.swift in Sources */,
 				B2355B02ED5E4EFCA3497E19 /* TravelAbroadModels.swift in Sources */,
 				85D97A5267B17E36E96E3EDF /* TravelItineraryCreateView.swift in Sources */,
 				1DCDF7FD4411937AE13138F7 /* TravelItineraryDetailView.swift in Sources */,
