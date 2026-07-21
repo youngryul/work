@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createTask } from '../services/taskService.js'
 import { SYSTEM_CATEGORY_DAILY } from '../constants/categories.js'
-import { markDiaryReminderShown } from '../services/diaryReminderService.js'
 import { markSummaryReminderShown } from '../services/summaryReminderService.js'
-import { markFiveYearQuestionReminderShown } from '../services/fiveYearQuestionReminderService.js'
 import { markBacklogStaleReminderShown } from '../services/backlogStaleReminderService.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
@@ -12,10 +10,8 @@ import { showToast, TOAST_TYPES } from './Toast.jsx'
  * 알림 타입 정의
  */
 export const NOTIFICATION_TYPES = {
-  DIARY: 'diary',
   WEEKLY_SUMMARY: 'weekly_summary',
   MONTHLY_SUMMARY: 'monthly_summary',
-  FIVE_YEAR_QUESTION: 'five_year_question',
   PURCHASE_REQUEST: 'purchase_request',
   BACKLOG_STALE: 'backlog_stale',
 }
@@ -25,21 +21,14 @@ export const NOTIFICATION_TYPES = {
  * 오른쪽 하단에 알림 버튼과 알림 목록을 표시
  */
 export default function NotificationCenter({
-  diaryReminder,
   weeklySummaryReminder,
   monthlySummaryReminder,
-  fiveYearQuestionReminder,
   purchaseRequestReminder,
   backlogStaleReminder,
-  onDiaryReminderClose,
   onWeeklySummaryGenerate,
   onMonthlySummaryGenerate,
-  onDiaryWritten,
-  onShowDiaryForm,
   onWeeklySummaryClose,
   onMonthlySummaryClose,
-  onFiveYearQuestionAnswer,
-  onFiveYearQuestionClose,
   onPurchaseRequestOpen,
   onPurchaseRequestClose,
   onBacklogStaleOpen,
@@ -52,18 +41,14 @@ export default function NotificationCenter({
   // 알림 개수 계산
   useEffect(() => {
     let count = 0
-    if (diaryReminder?.isOpen) count++
     if (weeklySummaryReminder?.isOpen) count++
     if (monthlySummaryReminder?.isOpen) count++
-    if (fiveYearQuestionReminder?.isOpen) count++
     if (purchaseRequestReminder?.isOpen) count++
     if (backlogStaleReminder?.isOpen) count++
     setUnreadCount(count)
   }, [
-    diaryReminder?.isOpen,
     weeklySummaryReminder?.isOpen,
     monthlySummaryReminder?.isOpen,
-    fiveYearQuestionReminder?.isOpen,
     purchaseRequestReminder?.isOpen,
     backlogStaleReminder?.isOpen,
   ])
@@ -150,95 +135,6 @@ export default function NotificationCenter({
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100">
-                  {/* 일기 리마인더 알림 */}
-                  {diaryReminder?.isOpen && (
-                    <div className="p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-800 font-sans mb-1">
-                            어제 일기를 작성하세요
-                          </p>
-                          <p className="text-xs text-gray-600 font-sans mb-3">
-                            {diaryReminder.yesterdayDate && 
-                              new Date(diaryReminder.yesterdayDate + 'T00:00:00').toLocaleDateString('ko-KR', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                weekday: 'short'
-                              })
-                            }의 일기를 작성해주세요.
-                          </p>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={async () => {
-                                // 리마인더 표시 기록
-                                try {
-                                  await markDiaryReminderShown()
-                                } catch (error) {
-                                  console.error('리마인더 기록 실패:', error)
-                                }
-                                // 알림 닫기
-                                if (onDiaryReminderClose) {
-                                  onDiaryReminderClose()
-                                }
-                                // 일기 작성 폼 표시
-                                if (onShowDiaryForm) {
-                                  onShowDiaryForm(true)
-                                }
-                                handleClose()
-                              }}
-                              className="px-3 py-1.5 bg-green-400 text-white text-xs rounded-lg hover:bg-green-500 transition-colors font-sans"
-                            >
-                              지금 작성하기
-                            </button>
-                            <button
-                              onClick={async () => {
-                                try {
-                                  const yesterdayDate = diaryReminder.yesterdayDate
-                                  if (yesterdayDate) {
-                                    const date = new Date(yesterdayDate + 'T00:00:00')
-                                    const formattedDate = date.toLocaleDateString('ko-KR', {
-                                      year: 'numeric',
-                                      month: 'long',
-                                      day: 'numeric',
-                                      weekday: 'short'
-                                    })
-                                    await createTask(`${formattedDate} 일기 작성`, SYSTEM_CATEGORY_DAILY, true)
-                                  }
-                                  // 리마인더 표시 기록 (에러가 발생해도 계속 진행)
-                                  try {
-                                    await markDiaryReminderShown(user?.id)
-                                  } catch (error) {
-                                    console.error('리마인더 기록 실패:', error)
-                                    // 에러가 발생해도 계속 진행 (로컬 상태는 업데이트)
-                                  }
-                                  // 로컬 상태 즉시 업데이트 (알림 닫기)
-                                  if (onDiaryReminderClose) {
-                                    onDiaryReminderClose()
-                                  }
-                                  handleClose()
-                                  // 오늘 할일 화면 새로고침
-                                  window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
-                                  // 알림 상태 새로고침
-                                  setTimeout(() => {
-                                    window.dispatchEvent(new CustomEvent('refreshNotifications'))
-                                  }, 500)
-                                } catch (error) {
-                                  console.error('할 일 추가 실패:', error)
-                                  showToast('할 일 추가에 실패했습니다.', TOAST_TYPES.ERROR)
-                                }
-                              }}
-                              className="px-3 py-1.5 border border-gray-300 text-gray-700 text-xs rounded-lg hover:bg-gray-50 transition-colors font-sans"
-                            >
-                              나중에
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {/* 주간 요약 알림 */}
                   {weeklySummaryReminder?.isOpen && (
                     <div className="p-4 hover:bg-gray-50 transition-colors">
@@ -352,90 +248,6 @@ export default function NotificationCenter({
                                   await markSummaryReminderShown('monthly')
                                   if (onMonthlySummaryClose) {
                                     onMonthlySummaryClose()
-                                  }
-                                  handleClose()
-                                  // 오늘 할일 화면 새로고침
-                                  window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
-                                  // 알림 상태 새로고침
-                                  setTimeout(() => {
-                                    window.dispatchEvent(new CustomEvent('refreshNotifications'))
-                                  }, 500)
-                                } catch (error) {
-                                  console.error('할 일 추가 실패:', error)
-                                  showToast('할 일 추가에 실패했습니다.', TOAST_TYPES.ERROR)
-                                }
-                              }}
-                              className="px-3 py-1.5 border border-gray-300 text-gray-700 text-xs rounded-lg hover:bg-gray-50 transition-colors font-sans"
-                            >
-                              나중에
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 5년 질문 일기 알림 */}
-                  {fiveYearQuestionReminder?.isOpen && fiveYearQuestionReminder?.question && (
-                    <div className="p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-800 font-sans mb-1">
-                            오늘의 질문에 답하세요
-                          </p>
-                          <p className="text-xs text-gray-600 font-sans mb-2">
-                            {fiveYearQuestionReminder.todayDate && 
-                              new Date(fiveYearQuestionReminder.todayDate + 'T00:00:00').toLocaleDateString('ko-KR', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                weekday: 'short'
-                              })
-                            }의 질문입니다.
-                          </p>
-                          <div className="bg-green-50 border-l-4 border-green-400 p-3 rounded mb-3">
-                            <p className="text-xs text-gray-800 font-medium font-sans">
-                              {fiveYearQuestionReminder.question.question_text}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={async () => {
-                                // 리마인더 표시 기록
-                                try {
-                                  await markFiveYearQuestionReminderShown()
-                                } catch (error) {
-                                  console.error('리마인더 기록 실패:', error)
-                                }
-                                // 알림 닫기
-                                if (onFiveYearQuestionClose) {
-                                  onFiveYearQuestionClose()
-                                }
-                                // 5년 질문 페이지로 이동
-                                if (onFiveYearQuestionAnswer) {
-                                  onFiveYearQuestionAnswer()
-                                }
-                                handleClose()
-                              }}
-                              className="px-3 py-1.5 bg-green-400 text-white text-xs rounded-lg hover:bg-green-500 transition-colors font-sans"
-                            >
-                              지금 답하기
-                            </button>
-                            <button
-                              onClick={async () => {
-                                try {
-                                  await createTask('오늘의 5년 질문 답변하기', SYSTEM_CATEGORY_DAILY, true)
-                                  // 리마인더 표시 기록 (에러가 발생해도 계속 진행)
-                                  try {
-                                    await markFiveYearQuestionReminderShown(user?.id)
-                                  } catch (error) {
-                                    console.error('리마인더 기록 실패:', error)
-                                    // 에러가 발생해도 계속 진행 (로컬 상태는 업데이트)
-                                  }
-                                  // 로컬 상태 즉시 업데이트 (알림 닫기)
-                                  if (onFiveYearQuestionClose) {
-                                    onFiveYearQuestionClose()
                                   }
                                   handleClose()
                                   // 오늘 할일 화면 새로고침

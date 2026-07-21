@@ -32,6 +32,11 @@ export const NAVIGATION_MENU_ITEMS = [
     iconSrc: MENU_ICON_PATHS.backlog,
   },
   {
+    id: 'routines',
+    label: '루틴',
+    icon: '🔁',
+  },
+  {
     id: 'todo-calendar',
     label: '할 일 달력',
     iconSrc: MENU_ICON_PATHS.todoCalendar,

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { getTodayTasks, resetTodayTasks, moveToBacklog, updateTaskPriorities, moveScheduledTasksToToday } from '../services/taskService.js'
+import { applyDailyRoutinesToToday } from '../services/routineService.js'
 import TaskItem from './TaskItem.jsx'
 import { getWeekStart, getWeekEnd } from '../services/workReportService.js'
 import { getWeeksWithWorkReports, getWeeksWithDiaries } from '../services/workReportService.js'
@@ -96,6 +97,7 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
       await checkAndResetIfNeeded()
       // 예약된 날짜가 오늘인 항목들을 오늘 할일로 자동 이동
       await moveScheduledTasksToToday()
+      await applyDailyRoutinesToToday()
       // 그 다음 오늘 할 일 로드
       const todayTasks = await getTodayTasks()
       setTasks(todayTasks)
@@ -130,6 +132,7 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
         try {
           await checkAndResetIfNeeded()
           await moveScheduledTasksToToday()
+          await applyDailyRoutinesToToday()
           await loadTasks()
           showToast('새로운 하루가 시작되었습니다! 오늘 할일이 업데이트되었습니다.', TOAST_TYPES.INFO)
           

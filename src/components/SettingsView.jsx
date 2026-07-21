@@ -11,10 +11,8 @@ export default function SettingsView({ currentTheme = 'posily', onThemeChange })
   const { isAdmin, isSuperuser } = useAuth()
   const canUseNotifications = isAdmin || isSuperuser
   const [settings, setSettings] = useState({
-    diaryEnabled: true,
     weeklySummaryEnabled: true,
     monthlySummaryEnabled: true,
-    fiveYearQuestionEnabled: true,
   })
   const [activeTab, setActiveTab] = useState(canUseNotifications ? 'notification' : 'theme')
   const [isLoading, setIsLoading] = useState(true)
@@ -103,24 +101,6 @@ export default function SettingsView({ currentTheme = 'posily', onThemeChange })
           <h2 className="text-2xl font-bold text-gray-800 mb-6">알림 설정</h2>
 
           <div className="space-y-4">
-          {/* 일기 알림 */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-800 mb-1">일기 알림</h3>
-              <p className="text-sm text-gray-600">어제 일기를 작성하라는 알림을 받습니다</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.diaryEnabled}
-                onChange={() => handleToggle('diaryEnabled')}
-                disabled={isSaving}
-                className="sr-only peer"
-              />
-              <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
-          </div>
-
           {/* 주간 요약 알림 */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div className="flex-1">
@@ -150,24 +130,6 @@ export default function SettingsView({ currentTheme = 'posily', onThemeChange })
                 type="checkbox"
                 checked={settings.monthlySummaryEnabled}
                 onChange={() => handleToggle('monthlySummaryEnabled')}
-                disabled={isSaving}
-                className="sr-only peer"
-              />
-              <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
-          </div>
-
-          {/* 5년 질문 알림 */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-800 mb-1">5년 질문 알림</h3>
-              <p className="text-sm text-gray-600">오늘의 5년 질문에 답하라는 알림을 받습니다</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.fiveYearQuestionEnabled}
-                onChange={() => handleToggle('fiveYearQuestionEnabled')}
                 disabled={isSaving}
                 className="sr-only peer"
               />

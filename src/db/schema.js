@@ -342,6 +342,20 @@ export const menstrualPeriodRecords = pgTable('menstrual_period_records', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
+/**
+ * daily_routines — 매일 오늘 할일로 자동 추가되는 루틴
+ */
+export const dailyRoutines = pgTable('daily_routines', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  title: text('title').notNull(),
+  category: text('category').notNull().default('작업'),
+  isEnabled: boolean('is_enabled').default(true).notNull(),
+  lastAppliedDate: text('last_applied_date'),
+  createdAt: bigint('created_at', { mode: 'number' }).notNull(),
+  sortOrder: integer('sort_order').default(0).notNull(),
+})
+
 export const diaries = pgTable('diaries', {
   id: uuid('id').defaultRandom().primaryKey(),
   date: text('date').notNull().unique(), // YYYY-MM-DD 형식

@@ -41,10 +41,10 @@ import FarmView from './components/farm/FarmView.jsx'
 import FarmFieldView from './components/farm/FarmFieldView.jsx'
 import ShopView from './components/shop/ShopView.jsx'
 import MyPageView from './components/gacha/MyPageView.jsx'
+import RoutineView from './components/RoutineView.jsx'
 import NavigationSidebar from './components/NavigationSidebar.jsx'
 import NotificationCenter from './components/NotificationCenter.jsx'
 import AnnouncementBanner from './components/AnnouncementBanner.jsx'
-import DiaryReminderModal from './components/DiaryReminderModal.jsx'
 import ToastContainer from './components/Toast.jsx'
 import JellyBalanceBadge from './components/JellyBalanceBadge.jsx'
 import DiaryCalendarBalanceBar from './components/DiaryCalendarBalanceBar.jsx'
@@ -52,10 +52,9 @@ import TokenDepositRequestModal from './components/TokenDepositRequestModal.jsx'
 import ExcelThemeHeader from './components/ExcelThemeHeader.jsx'
 import AdSenseBanner from './components/AdSenseBanner.jsx'
 import { useNotifications } from './hooks/useNotifications.js'
-import { markDiaryReminderShown } from './services/diaryReminderService.js'
-import { markFiveYearQuestionReminderShown } from './services/fiveYearQuestionReminderService.js'
 import { markWeeklyReminderShown, markMonthlyReminderShown } from './utils/summaryReminder.js'
 import { markBacklogStaleReminderShown } from './services/backlogStaleReminderService.js'
+import { applyDailyRoutinesToToday } from './services/routineService.js'
 import { getThemeWrapperClass, APP_THEMES } from './constants/appThemes.js'
 import { useAiTokenInfo } from './hooks/useAiTokenInfo.js'
 import { RECIPE_IMAGE_GENERATION_TOKEN_COST } from './constants/aiTokenSettings.js'
@@ -215,21 +214,16 @@ function AppContent() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // 데스크톱 사이드바 접힘 상태
   const [review2026Tab, setReview2026Tab] = useState(null) // 2026 회고록 탭 상태
   const [review2026Params, setReview2026Params] = useState(null) // 2026 회고록 파라미터
-  const [showDiaryForm, setShowDiaryForm] = useState(false) // 일기 작성 폼 표시 여부
   const [showCategorySettingsModal, setShowCategorySettingsModal] = useState(false) // 카테고리 설정 모달 표시 여부
   
   // 알림 상태 관리
   const {
-    diaryReminder,
     weeklySummaryReminder,
     monthlySummaryReminder,
-    fiveYearQuestionReminder,
     purchaseRequestReminder,
     backlogStaleReminder,
-    setDiaryReminder,
     setWeeklySummaryReminder,
     setMonthlySummaryReminder,
-    setFiveYearQuestionReminder,
     setPurchaseRequestReminder,
     setBacklogStaleReminder,
     refreshNotifications,
@@ -291,42 +285,26 @@ function AppContent() {
     window.openCategorySettings = () => setShowCategorySettingsModal(true)
     
     // 알림 테스트 함수 설정
-    window.showTestNotification = (type = 'diary') => {
-      const today = new Date()
-      const todayDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-      const yesterday = new Date(today)
-      yesterday.setDate(yesterday.getDate() - 1)
-      const yesterdayDateString = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
-      
+    window.showTestNotification = (type = 'weekly') => {
       switch (type) {
-        case 'diary':
-          setDiaryReminder({ isOpen: true, yesterdayDate: yesterdayDateString })
-          break
         case 'weekly':
-          setWeeklySummaryReminder({ 
-            isOpen: true, 
+          setWeeklySummaryReminder({
+            isOpen: true,
             period: '2024년 1월 1주차',
             weekStart: '2024-01-01',
-            weekEnd: '2024-01-07'
+            weekEnd: '2024-01-07',
           })
           break
         case 'monthly':
-          setMonthlySummaryReminder({ 
-            isOpen: true, 
+          setMonthlySummaryReminder({
+            isOpen: true,
             period: '2024년 1월',
             year: 2024,
-            month: 1
-          })
-          break
-        case 'five-year':
-          setFiveYearQuestionReminder({ 
-            isOpen: true, 
-            todayDate: todayDateString,
-            question: { question_text: '테스트 질문: 오늘 하루를 한 단어로 표현한다면?' }
+            month: 1,
           })
           break
         default:
-          console.log('사용 가능한 타입: diary, weekly, monthly, five-year')
+          console.log('사용 가능한 타입: weekly, monthly')
       }
     }
     
@@ -345,7 +323,20 @@ function AppContent() {
       delete window.setReview2026Params
       delete window.showTestNotification
     }
-  }, [setDiaryReminder, setWeeklySummaryReminder, setMonthlySummaryReminder, setFiveYearQuestionReminder, refreshNotifications])
+  }, [setWeeklySummaryReminder, setMonthlySummaryReminder, refreshNotifications])
+
+  useEffect(() => {
+    if (!user?.id || loading) return
+    applyDailyRoutinesToToday()
+      .then((count) => {
+        if (count > 0) {
+          window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
+        }
+      })
+      .catch((error) => {
+        console.error('루틴 자동 반영 오류:', error)
+      })
+  }, [user?.id, loading])
 
   // 로딩 중
   if (loading) {
@@ -433,6 +424,7 @@ function AppContent() {
         <main className="py-8">
         {currentView === 'today' && <TodayView appTheme={appTheme} />}
         {currentView === 'backlog' && <BacklogView />}
+        {currentView === 'routines' && <RoutineView />}
         {currentView === 'todo-calendar' && <TodoCalendarView />}
         {currentView === 'schedule-calendar' && <ScheduleCalendarView />}
         {currentView === 'diary-calendar' && (
@@ -515,25 +507,10 @@ function AppContent() {
       {/* 알림 센터 (모든 페이지에서 표시) */}
       {canUseNotifications && (
       <NotificationCenter
-        diaryReminder={diaryReminder}
         weeklySummaryReminder={weeklySummaryReminder}
         monthlySummaryReminder={monthlySummaryReminder}
-        fiveYearQuestionReminder={fiveYearQuestionReminder}
         purchaseRequestReminder={purchaseRequestReminder}
         backlogStaleReminder={backlogStaleReminder}
-        onDiaryReminderClose={async () => {
-          setDiaryReminder({ isOpen: false, yesterdayDate: null })
-          // 리마인더가 닫혔을 때도 DB에 기록 (나중에 버튼 클릭 시)
-          try {
-            await markDiaryReminderShown(user?.id)
-          } catch (error) {
-            console.error('리마인더 기록 실패:', error)
-          }
-          // 알림 상태 새로고침
-          setTimeout(() => {
-            refreshNotifications()
-          }, 500)
-        }}
         onWeeklySummaryGenerate={async () => {
           // 2026 회고록 페이지로 이동하고 주간 탭 열기
           window.dispatchEvent(new CustomEvent('navigateToReview2026', { 
@@ -576,11 +553,6 @@ function AppContent() {
             refreshNotifications()
           }, 500)
         }}
-        onDiaryWritten={() => {
-          // 일기 작성 완료 시 알림 상태 새로고침
-          refreshNotifications()
-        }}
-        onShowDiaryForm={setShowDiaryForm}
         onWeeklySummaryClose={async () => {
           // 나중에 버튼 클릭 시에도 DB에 기록
           try {
@@ -602,33 +574,6 @@ function AppContent() {
             console.error('리마인더 기록 실패:', error)
           }
           setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
-          // 알림 상태 새로고침
-          setTimeout(() => {
-            refreshNotifications()
-          }, 500)
-        }}
-        onFiveYearQuestionAnswer={async () => {
-          // 5년 질문 페이지로 이동
-          setCurrentView('five-year-questions')
-          // 리마인더 표시 기록 (NotificationCenter에서도 호출하지만, 확실하게 하기 위해)
-          try {
-            await markFiveYearQuestionReminderShown(user?.id)
-          } catch (error) {
-            console.error('리마인더 기록 실패:', error)
-          }
-          // 알림 상태 새로고침
-          setTimeout(() => {
-            refreshNotifications()
-          }, 500)
-        }}
-        onFiveYearQuestionClose={async () => {
-          setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
-          // 리마인더가 닫혔을 때도 DB에 기록
-          try {
-            await markFiveYearQuestionReminderShown(user?.id)
-          } catch (error) {
-            console.error('리마인더 기록 실패:', error)
-          }
           // 알림 상태 새로고침
           setTimeout(() => {
             refreshNotifications()
@@ -668,23 +613,6 @@ function AppContent() {
           }, 500)
         }}
       />
-      )}
-
-      {/* 일기 작성 모달 (알림 센터에서 열 때만 표시) */}
-      {canUseNotifications && showDiaryForm && diaryReminder.yesterdayDate && (
-        <DiaryReminderModal
-          yesterdayDate={diaryReminder.yesterdayDate}
-          isOpen={true}
-          onClose={() => {
-            setShowDiaryForm(false)
-            setDiaryReminder({ isOpen: false, yesterdayDate: null })
-            refreshNotifications()
-          }}
-          onWriteDiary={() => {
-            setShowDiaryForm(false)
-            refreshNotifications()
-          }}
-        />
       )}
 
       {/* 카테고리 설정 모달 */}

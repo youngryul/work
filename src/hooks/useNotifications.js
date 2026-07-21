@@ -1,17 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
-import { getDiaryByDate } from '../services/diaryService.js'
-import { hasDiaryReminderToday } from '../services/diaryReminderService.js'
 import { hasSummaryReminderToday } from '../services/summaryReminderService.js'
-import { hasFiveYearQuestionReminderToday } from '../services/fiveYearQuestionReminderService.js'
-import { getQuestionAndAnswersByDate } from '../services/fiveYearQuestionService.js'
 import { getNotificationSettings } from '../services/notificationSettingsService.js'
 import { getPendingTokenPurchaseRequestCount } from '../services/aiTokenPurchaseService.js'
-import { 
-  shouldShowWeeklyReminder, 
-  shouldShowMonthlyReminder, 
-  getLastWeekInfo, 
-  getLastMonthInfo 
+import {
+  shouldShowWeeklyReminder,
+  shouldShowMonthlyReminder,
+  getLastWeekInfo,
+  getLastMonthInfo,
 } from '../utils/summaryReminder.js'
 import {
   fetchBacklogStaleReminderPayload,
@@ -19,40 +15,22 @@ import {
 } from '../services/backlogStaleReminderService.js'
 
 /**
- * 어제 날짜를 YYYY-MM-DD 형식으로 반환
- */
-const getYesterdayDateString = () => {
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  const year = yesterday.getFullYear()
-  const month = String(yesterday.getMonth() + 1).padStart(2, '0')
-  const day = String(yesterday.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-/**
  * 알림 상태를 관리하는 커스텀 훅
  */
 export function useNotifications() {
   const { user, userRole } = useAuth()
   const canUseNotifications = userRole === 'admin' || userRole === 'superuser'
-  const [diaryReminder, setDiaryReminder] = useState({ isOpen: false, yesterdayDate: null })
-  const [weeklySummaryReminder, setWeeklySummaryReminder] = useState({ 
-    isOpen: false, 
+  const [weeklySummaryReminder, setWeeklySummaryReminder] = useState({
+    isOpen: false,
     period: '',
     weekStart: null,
     weekEnd: null,
   })
-  const [monthlySummaryReminder, setMonthlySummaryReminder] = useState({ 
-    isOpen: false, 
+  const [monthlySummaryReminder, setMonthlySummaryReminder] = useState({
+    isOpen: false,
     period: '',
     year: null,
     month: null,
-  })
-  const [fiveYearQuestionReminder, setFiveYearQuestionReminder] = useState({ 
-    isOpen: false, 
-    todayDate: null,
-    question: null,
   })
   const [purchaseRequestReminder, setPurchaseRequestReminder] = useState({
     isOpen: false,
@@ -65,16 +43,10 @@ export function useNotifications() {
   })
   const [isLoading, setIsLoading] = useState(true)
 
-  /**
-   * 알림 상태 확인 및 업데이트
-   */
   const checkNotifications = useCallback(async () => {
-    // 관리자/슈퍼유저가 아니면 알림 기능 비활성화
     if (!user || !canUseNotifications) {
-      setDiaryReminder({ isOpen: false, yesterdayDate: null })
       setWeeklySummaryReminder({ isOpen: false, period: '', weekStart: null, weekEnd: null })
       setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
-      setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
       setPurchaseRequestReminder({ isOpen: false, count: 0 })
       setBacklogStaleReminder({ isOpen: false, tasks: [], message: '' })
       setIsLoading(false)
@@ -83,36 +55,19 @@ export function useNotifications() {
 
     setIsLoading(true)
     try {
-      // 사용자 ID가 없으면 알림 확인하지 않음
       if (!user?.id) {
         setIsLoading(false)
         return
       }
 
-      // 알림 설정 조회
       const notificationSettings = await getNotificationSettings()
 
-      // 일기 리마인더 확인 (설정이 켜져 있을 때만)
-      if (notificationSettings.diaryEnabled) {
-        const alreadyShownDiary = await hasDiaryReminderToday(user.id)
-        if (!alreadyShownDiary) {
-          const yesterday = getYesterdayDateString()
-          const diary = await getDiaryByDate(yesterday)
-          if (!diary) {
-            setDiaryReminder({ isOpen: true, yesterdayDate: yesterday })
-          }
-        }
-      } else {
-        setDiaryReminder({ isOpen: false, yesterdayDate: null })
-      }
-
-      // 주간 요약 리마인더 확인 (설정이 켜져 있을 때만)
       if (notificationSettings.weeklySummaryEnabled) {
         const alreadyShownWeekly = await hasSummaryReminderToday('weekly', user.id)
-        if (!alreadyShownWeekly && await shouldShowWeeklyReminder()) {
+        if (!alreadyShownWeekly && (await shouldShowWeeklyReminder())) {
           const lastWeek = getLastWeekInfo()
-          setWeeklySummaryReminder({ 
-            isOpen: true, 
+          setWeeklySummaryReminder({
+            isOpen: true,
             period: lastWeek.period,
             weekStart: lastWeek.weekStart,
             weekEnd: lastWeek.weekEnd,
@@ -122,13 +77,12 @@ export function useNotifications() {
         setWeeklySummaryReminder({ isOpen: false, period: '', weekStart: null, weekEnd: null })
       }
 
-      // 월간 요약 리마인더 확인 (설정이 켜져 있을 때만)
       if (notificationSettings.monthlySummaryEnabled) {
         const alreadyShownMonthly = await hasSummaryReminderToday('monthly', user.id)
-        if (!alreadyShownMonthly && await shouldShowMonthlyReminder()) {
+        if (!alreadyShownMonthly && (await shouldShowMonthlyReminder())) {
           const lastMonth = getLastMonthInfo()
-          setMonthlySummaryReminder({ 
-            isOpen: true, 
+          setMonthlySummaryReminder({
+            isOpen: true,
             period: lastMonth.period,
             year: lastMonth.year,
             month: lastMonth.month,
@@ -138,31 +92,6 @@ export function useNotifications() {
         setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
       }
 
-      // 5년 질문 일기 리마인더 확인 (설정이 켜져 있을 때만)
-      if (notificationSettings.fiveYearQuestionEnabled) {
-        const alreadyShownFiveYear = await hasFiveYearQuestionReminderToday(user.id)
-        if (!alreadyShownFiveYear) {
-          const today = new Date()
-          const todayDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-          const { question, answers } = await getQuestionAndAnswersByDate(today)
-          // 오늘 질문에 대한 올해 답변이 없으면 리마인더 표시
-          if (question) {
-            const currentYear = today.getFullYear()
-            const hasAnswerForToday = answers.some(answer => answer.year === currentYear)
-            if (!hasAnswerForToday) {
-              setFiveYearQuestionReminder({ 
-                isOpen: true, 
-                todayDate: todayDateString,
-                question: question,
-              })
-            }
-          }
-        }
-      } else {
-        setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
-      }
-
-      // 2주 이상 지난 백로그 할일 알림 (매일 1회)
       const alreadyShownBacklogStale = await hasBacklogStaleReminderToday(user.id)
       if (!alreadyShownBacklogStale) {
         const { tasks, message } = await fetchBacklogStaleReminderPayload()
@@ -175,7 +104,6 @@ export function useNotifications() {
         setBacklogStaleReminder({ isOpen: false, tasks: [], message: '' })
       }
 
-      // 충전 신청 알림 (관리자만)
       if (userRole === 'admin') {
         const pendingPurchaseCount = await getPendingTokenPurchaseRequestCount()
         setPurchaseRequestReminder({
@@ -192,44 +120,31 @@ export function useNotifications() {
     }
   }, [user, canUseNotifications, userRole])
 
-  // 사용자가 변경될 때만 알림 확인 (재로그인 시 중복 확인 방지)
   useEffect(() => {
-    // 사용자가 없으면 알림 상태 초기화
     if (!user || !canUseNotifications) {
-      setDiaryReminder({ isOpen: false, yesterdayDate: null })
       setWeeklySummaryReminder({ isOpen: false, period: '', weekStart: null, weekEnd: null })
       setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
-      setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
       setPurchaseRequestReminder({ isOpen: false, count: 0 })
       setBacklogStaleReminder({ isOpen: false, tasks: [], message: '' })
       setIsLoading(false)
       return
     }
 
-    // 사용자가 있으면 알림 확인
     checkNotifications()
-    
-    // 5분마다 알림 상태 확인
     const interval = setInterval(checkNotifications, 5 * 60 * 1000)
-    
     return () => clearInterval(interval)
-  }, [user?.id, canUseNotifications, checkNotifications]) // 사용자 상태/권한 변경 시 실행
+  }, [user?.id, canUseNotifications, checkNotifications])
 
   return {
-    diaryReminder,
     weeklySummaryReminder,
     monthlySummaryReminder,
-    fiveYearQuestionReminder,
     purchaseRequestReminder,
     backlogStaleReminder,
     isLoading,
-    setDiaryReminder,
     setWeeklySummaryReminder,
     setMonthlySummaryReminder,
-    setFiveYearQuestionReminder,
     setPurchaseRequestReminder,
     setBacklogStaleReminder,
     refreshNotifications: checkNotifications,
   }
 }
-

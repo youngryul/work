@@ -7,8 +7,9 @@ import { SYSTEM_CATEGORY_DAILY } from '../constants/categories.js'
  * @param {Object} props
  * @param {string} props.selectedCategory - 현재 선택된 카테고리
  * @param {Function} props.onChange - 카테고리 변경 콜백
+ * @param {boolean} [props.allowDailyCategory] - true면 일상 카테고리 선택 허용 (루틴 등)
  */
-export default function CategorySelector({ selectedCategory, onChange }) {
+export default function CategorySelector({ selectedCategory, onChange, allowDailyCategory = false }) {
   const [categories, setCategories] = useState([])
 
   useEffect(() => {
@@ -40,8 +41,11 @@ export default function CategorySelector({ selectedCategory, onChange }) {
     <select
       value={selectedCategory || ''}
       onChange={(e) => {
-        // 일상 카테고리는 변경 불가
-        if (e.target.value === SYSTEM_CATEGORY_DAILY && selectedCategory !== SYSTEM_CATEGORY_DAILY) {
+        if (
+          !allowDailyCategory &&
+          e.target.value === SYSTEM_CATEGORY_DAILY &&
+          selectedCategory !== SYSTEM_CATEGORY_DAILY
+        ) {
           return
         }
         onChange(e.target.value)
@@ -56,7 +60,11 @@ export default function CategorySelector({ selectedCategory, onChange }) {
           <option 
             key={category.name} 
             value={category.name}
-            disabled={category.name === SYSTEM_CATEGORY_DAILY && selectedCategory !== SYSTEM_CATEGORY_DAILY}
+            disabled={
+              !allowDailyCategory &&
+              category.name === SYSTEM_CATEGORY_DAILY &&
+              selectedCategory !== SYSTEM_CATEGORY_DAILY
+            }
           >
             {category.emoji} {category.name}
           </option>
