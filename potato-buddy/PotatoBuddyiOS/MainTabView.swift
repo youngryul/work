@@ -70,11 +70,12 @@ struct MainTabView: View {
                 }
                 .tag(8)
 
-            SummerClockView()
+            SummerClockView(onBack: { selectedTab = 0 })
                 .tabItem {
                     Label("시계", systemImage: "clock.fill")
                 }
                 .tag(9)
+                .toolbar(.hidden, for: .tabBar)
 
             SettingsView(showLogoutConfirm: $showLogoutConfirm)
                 .tabItem {
