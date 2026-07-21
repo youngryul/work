@@ -13,6 +13,10 @@ import {
   getLastWeekInfo, 
   getLastMonthInfo 
 } from '../utils/summaryReminder.js'
+import {
+  fetchBacklogStaleReminderPayload,
+  hasBacklogStaleReminderToday,
+} from '../services/backlogStaleReminderService.js'
 
 /**
  * 어제 날짜를 YYYY-MM-DD 형식으로 반환
@@ -54,6 +58,11 @@ export function useNotifications() {
     isOpen: false,
     count: 0,
   })
+  const [backlogStaleReminder, setBacklogStaleReminder] = useState({
+    isOpen: false,
+    tasks: [],
+    message: '',
+  })
   const [isLoading, setIsLoading] = useState(true)
 
   /**
@@ -67,6 +76,7 @@ export function useNotifications() {
       setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
       setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
       setPurchaseRequestReminder({ isOpen: false, count: 0 })
+      setBacklogStaleReminder({ isOpen: false, tasks: [], message: '' })
       setIsLoading(false)
       return
     }
@@ -152,6 +162,19 @@ export function useNotifications() {
         setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
       }
 
+      // 2주 이상 지난 백로그 할일 알림 (매일 1회)
+      const alreadyShownBacklogStale = await hasBacklogStaleReminderToday(user.id)
+      if (!alreadyShownBacklogStale) {
+        const { tasks, message } = await fetchBacklogStaleReminderPayload()
+        if (tasks.length > 0) {
+          setBacklogStaleReminder({ isOpen: true, tasks, message })
+        } else {
+          setBacklogStaleReminder({ isOpen: false, tasks: [], message: '' })
+        }
+      } else {
+        setBacklogStaleReminder({ isOpen: false, tasks: [], message: '' })
+      }
+
       // 충전 신청 알림 (관리자만)
       if (userRole === 'admin') {
         const pendingPurchaseCount = await getPendingTokenPurchaseRequestCount()
@@ -167,7 +190,7 @@ export function useNotifications() {
     } finally {
       setIsLoading(false)
     }
-  }, [user, canUseNotifications])
+  }, [user, canUseNotifications, userRole])
 
   // 사용자가 변경될 때만 알림 확인 (재로그인 시 중복 확인 방지)
   useEffect(() => {
@@ -178,6 +201,7 @@ export function useNotifications() {
       setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
       setFiveYearQuestionReminder({ isOpen: false, todayDate: null, question: null })
       setPurchaseRequestReminder({ isOpen: false, count: 0 })
+      setBacklogStaleReminder({ isOpen: false, tasks: [], message: '' })
       setIsLoading(false)
       return
     }
@@ -197,12 +221,14 @@ export function useNotifications() {
     monthlySummaryReminder,
     fiveYearQuestionReminder,
     purchaseRequestReminder,
+    backlogStaleReminder,
     isLoading,
     setDiaryReminder,
     setWeeklySummaryReminder,
     setMonthlySummaryReminder,
     setFiveYearQuestionReminder,
     setPurchaseRequestReminder,
+    setBacklogStaleReminder,
     refreshNotifications: checkNotifications,
   }
 }

@@ -129,7 +129,7 @@ final class SupabaseService {
             URLQueryItem(name: "istoday",   value: "eq.true"),
             URLQueryItem(name: "completed", value: "eq.false"),
             URLQueryItem(name: "user_id",   value: "eq.\(userId)"),
-            URLQueryItem(name: "select",    value: "id,title,category,priority"),
+            URLQueryItem(name: "select",    value: "id,title,category,priority,createdat"),
             URLQueryItem(name: "order",     value: "priority.asc,movedtotodayat.asc,createdat.asc"),
         ]
 
@@ -225,7 +225,7 @@ final class SupabaseService {
             URLQueryItem(name: "istoday",   value: "eq.false"),
             URLQueryItem(name: "completed", value: "eq.false"),
             URLQueryItem(name: "user_id",   value: "eq.\(userId)"),
-            URLQueryItem(name: "select",    value: "id,title,category,priority"),
+            URLQueryItem(name: "select",    value: "id,title,category,priority,createdat"),
             URLQueryItem(name: "order",     value: "priority.asc,createdat.asc"),
         ]
 

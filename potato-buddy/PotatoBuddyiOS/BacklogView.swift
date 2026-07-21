@@ -38,9 +38,22 @@ struct BacklogView: View {
                                     .font(.system(size: 28))
                                     .accessibilityLabel(task.category ?? "카테고리")
 
-                                Text(task.title)
-                                    .font(.body)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(task.title)
+                                        .font(.body)
+                                        .foregroundColor(.primary)
+
+                                    if task.isStaleTwoWeeks {
+                                        Text("2주 이상 지남")
+                                            .font(.caption2)
+                                            .foregroundColor(.primary.opacity(0.75))
+                                    } else if task.isStaleOneWeek {
+                                        Text("1주 이상 지남")
+                                            .font(.caption2)
+                                            .foregroundColor(.red.opacity(0.8))
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
 
                                 Button {
                                     Task { await moveToToday(task) }
@@ -52,6 +65,7 @@ struct BacklogView: View {
                                 .buttonStyle(.borderless)
                             }
                             .padding(.vertical, 4)
+                            .listRowBackground(backlogRowBackground(for: task))
                         }
                         .onDelete { indexSet in
                             Task { await deleteTasks(at: indexSet) }
@@ -150,6 +164,16 @@ struct BacklogView: View {
             }
         }
         .presentationDetents([.medium])
+    }
+
+    private func backlogRowBackground(for task: TaskItem) -> Color {
+        if task.isStaleTwoWeeks {
+            return Color.red.opacity(0.55)
+        }
+        if task.isStaleOneWeek {
+            return Color.red.opacity(0.22)
+        }
+        return Color(.secondarySystemGroupedBackground)
     }
 
     @MainActor

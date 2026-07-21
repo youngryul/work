@@ -55,6 +55,7 @@ import { useNotifications } from './hooks/useNotifications.js'
 import { markDiaryReminderShown } from './services/diaryReminderService.js'
 import { markFiveYearQuestionReminderShown } from './services/fiveYearQuestionReminderService.js'
 import { markWeeklyReminderShown, markMonthlyReminderShown } from './utils/summaryReminder.js'
+import { markBacklogStaleReminderShown } from './services/backlogStaleReminderService.js'
 import { getThemeWrapperClass, APP_THEMES } from './constants/appThemes.js'
 import { useAiTokenInfo } from './hooks/useAiTokenInfo.js'
 import { RECIPE_IMAGE_GENERATION_TOKEN_COST } from './constants/aiTokenSettings.js'
@@ -224,11 +225,13 @@ function AppContent() {
     monthlySummaryReminder,
     fiveYearQuestionReminder,
     purchaseRequestReminder,
+    backlogStaleReminder,
     setDiaryReminder,
     setWeeklySummaryReminder,
     setMonthlySummaryReminder,
     setFiveYearQuestionReminder,
     setPurchaseRequestReminder,
+    setBacklogStaleReminder,
     refreshNotifications,
   } = useNotifications()
 
@@ -517,6 +520,7 @@ function AppContent() {
         monthlySummaryReminder={monthlySummaryReminder}
         fiveYearQuestionReminder={fiveYearQuestionReminder}
         purchaseRequestReminder={purchaseRequestReminder}
+        backlogStaleReminder={backlogStaleReminder}
         onDiaryReminderClose={async () => {
           setDiaryReminder({ isOpen: false, yesterdayDate: null })
           // 리마인더가 닫혔을 때도 DB에 기록 (나중에 버튼 클릭 시)
@@ -636,6 +640,29 @@ function AppContent() {
         }}
         onPurchaseRequestClose={() => {
           setPurchaseRequestReminder({ isOpen: false, count: 0 })
+          setTimeout(() => {
+            refreshNotifications()
+          }, 500)
+        }}
+        onBacklogStaleOpen={async () => {
+          try {
+            await markBacklogStaleReminderShown(user?.id)
+          } catch (error) {
+            console.error('리마인더 기록 실패:', error)
+          }
+          setBacklogStaleReminder({ isOpen: false, tasks: [], message: '' })
+          setCurrentView('backlog')
+          setTimeout(() => {
+            refreshNotifications()
+          }, 500)
+        }}
+        onBacklogStaleClose={async () => {
+          try {
+            await markBacklogStaleReminderShown(user?.id)
+          } catch (error) {
+            console.error('리마인더 기록 실패:', error)
+          }
+          setBacklogStaleReminder({ isOpen: false, tasks: [], message: '' })
           setTimeout(() => {
             refreshNotifications()
           }, 500)

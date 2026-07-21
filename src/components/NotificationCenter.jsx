@@ -4,6 +4,7 @@ import { SYSTEM_CATEGORY_DAILY } from '../constants/categories.js'
 import { markDiaryReminderShown } from '../services/diaryReminderService.js'
 import { markSummaryReminderShown } from '../services/summaryReminderService.js'
 import { markFiveYearQuestionReminderShown } from '../services/fiveYearQuestionReminderService.js'
+import { markBacklogStaleReminderShown } from '../services/backlogStaleReminderService.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
@@ -16,6 +17,7 @@ export const NOTIFICATION_TYPES = {
   MONTHLY_SUMMARY: 'monthly_summary',
   FIVE_YEAR_QUESTION: 'five_year_question',
   PURCHASE_REQUEST: 'purchase_request',
+  BACKLOG_STALE: 'backlog_stale',
 }
 
 /**
@@ -28,6 +30,7 @@ export default function NotificationCenter({
   monthlySummaryReminder,
   fiveYearQuestionReminder,
   purchaseRequestReminder,
+  backlogStaleReminder,
   onDiaryReminderClose,
   onWeeklySummaryGenerate,
   onMonthlySummaryGenerate,
@@ -39,6 +42,8 @@ export default function NotificationCenter({
   onFiveYearQuestionClose,
   onPurchaseRequestOpen,
   onPurchaseRequestClose,
+  onBacklogStaleOpen,
+  onBacklogStaleClose,
 }) {
   const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
@@ -52,6 +57,7 @@ export default function NotificationCenter({
     if (monthlySummaryReminder?.isOpen) count++
     if (fiveYearQuestionReminder?.isOpen) count++
     if (purchaseRequestReminder?.isOpen) count++
+    if (backlogStaleReminder?.isOpen) count++
     setUnreadCount(count)
   }, [
     diaryReminder?.isOpen,
@@ -59,6 +65,7 @@ export default function NotificationCenter({
     monthlySummaryReminder?.isOpen,
     fiveYearQuestionReminder?.isOpen,
     purchaseRequestReminder?.isOpen,
+    backlogStaleReminder?.isOpen,
   ])
 
   // 알림 목록 토글
@@ -445,6 +452,58 @@ export default function NotificationCenter({
                               className="px-3 py-1.5 border border-gray-300 text-gray-700 text-xs rounded-lg hover:bg-gray-50 transition-colors font-sans"
                             >
                               나중에
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 2주 이상 지난 백로그 할일 알림 */}
+                  {backlogStaleReminder?.isOpen && (
+                    <div className="p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-red-400 rounded-full mt-2 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 font-sans mb-1">
+                            오래된 백로그 할일이 있습니다
+                          </p>
+                          <p className="text-xs text-gray-600 font-sans mb-3">
+                            {backlogStaleReminder.message ||
+                              '2주 이상 지난 할일이 있습니다.'}
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await markBacklogStaleReminderShown(user?.id)
+                                } catch (error) {
+                                  console.error('리마인더 기록 실패:', error)
+                                }
+                                if (onBacklogStaleOpen) {
+                                  onBacklogStaleOpen()
+                                }
+                                handleClose()
+                              }}
+                              className="px-3 py-1.5 bg-red-400 text-white text-xs rounded-lg hover:bg-red-500 transition-colors font-sans"
+                            >
+                              백로그 보기
+                            </button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await markBacklogStaleReminderShown(user?.id)
+                                } catch (error) {
+                                  console.error('리마인더 기록 실패:', error)
+                                }
+                                if (onBacklogStaleClose) {
+                                  onBacklogStaleClose()
+                                }
+                                handleClose()
+                              }}
+                              className="px-3 py-1.5 border border-gray-300 text-gray-700 text-xs rounded-lg hover:bg-gray-50 transition-colors font-sans"
+                            >
+                              확인
                             </button>
                           </div>
                         </div>

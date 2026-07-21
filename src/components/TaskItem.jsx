@@ -5,6 +5,16 @@ import { SYSTEM_CATEGORY_DAILY } from '../constants/categories.js'
 import CategorySelector from './CategorySelector.jsx'
 import { uploadImage } from '../services/imageService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
+import {
+  BACKLOG_STALE_TWO_WEEKS_CHECKBOX_CLASS,
+  BACKLOG_STALE_TWO_WEEKS_CLASS,
+  BACKLOG_STALE_WEEK_CHECKBOX_CLASS,
+  BACKLOG_STALE_WEEK_CLASS,
+} from '../constants/backlogStale.js'
+import {
+  isBacklogStaleOneWeek,
+  isBacklogStaleTwoWeeks,
+} from '../utils/backlogStale.js'
 
 /** 완료 시 표시하는 포실이 이미지 (오늘 할 일·백로그 공통) */
 const POSILY_COMPLETE_IMAGE_SRC = '/images/포실이.png'
@@ -308,17 +318,10 @@ export default function TaskItem({
   }, [])
 
   /**
-   * 생성된 지 일주일이 지났는지 확인
+   * 백로그 할일 경과 기간에 따른 강조 (1주 / 2주+)
    */
-  const isOlderThanWeek = () => {
-    const createdAt = task.createdAt || task.createdat
-    if (!createdAt) return false
-    
-    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000 // 7일 전
-    return createdAt < oneWeekAgo
-  }
-
-  const isOld = isOlderThanWeek()
+  const isStaleTwoWeeks = isBacklog && isBacklogStaleTwoWeeks(task)
+  const isStaleOneWeek = isBacklog && !isStaleTwoWeeks && isBacklogStaleOneWeek(task)
 
   return (
     <div
@@ -327,14 +330,18 @@ export default function TaskItem({
           ? 'task-leaving'
           : localCompleted
           ? 'bg-green-100 overflow-visible'
-          : isOld
-          ? 'bg-red-200 shadow-sm hover:shadow-md'
+          : isStaleTwoWeeks
+          ? BACKLOG_STALE_TWO_WEEKS_CLASS
+          : isStaleOneWeek
+          ? BACKLOG_STALE_WEEK_CLASS
           : 'bg-white shadow-sm hover:shadow-md hover:bg-green-50'
       }`}
     >
       <div className="flex items-center gap-3">
       {/* 드래그 핸들 */}
-      <div className="flex-shrink-0 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing">
+      <div className={`flex-shrink-0 cursor-grab active:cursor-grabbing ${
+        isStaleTwoWeeks ? 'text-gray-700' : 'text-gray-400 hover:text-gray-600'
+      }`}>
         <svg
           width="20"
           height="20"
@@ -355,8 +362,10 @@ export default function TaskItem({
         className={`flex-shrink-0 w-8 h-8 rounded-full border-2 transition-all duration-200 ${
           localCompleted
             ? 'border-transparent bg-transparent overflow-visible relative z-10'
-            : isOld
-            ? 'border-red-400 hover:border-red-500 overflow-hidden'
+            : isStaleTwoWeeks
+            ? BACKLOG_STALE_TWO_WEEKS_CHECKBOX_CLASS
+            : isStaleOneWeek
+            ? BACKLOG_STALE_WEEK_CHECKBOX_CLASS
             : 'border-gray-300 hover:border-green-500 overflow-hidden'
         }`}
         aria-label={localCompleted ? '완료 취소' : '완료'}
@@ -406,7 +415,11 @@ export default function TaskItem({
         <span
           onClick={handleStartEdit}
           className={`flex-1 text-base cursor-pointer font-sans relative inline-block min-w-0 ${
-            localCompleted ? 'text-gray-600' : 'text-gray-800'
+            localCompleted
+              ? 'text-gray-600'
+              : isStaleTwoWeeks
+              ? 'text-gray-900'
+              : 'text-gray-800'
           }`}
         >
           {task.title}
