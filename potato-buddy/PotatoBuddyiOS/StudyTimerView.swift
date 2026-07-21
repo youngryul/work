@@ -3,9 +3,17 @@ import SwiftUI
 /// 포실이 공부 타이머 — 스톱워치 방식 (경과 시간 측정)
 struct StudyTimerView: View {
     @StateObject private var viewModel = StudyTimerViewModel()
+    @ObservedObject private var bgm = TimerBgmPlayer.shared
 
     var body: some View {
         VStack(spacing: 0) {
+            HStack {
+                Spacer()
+                TimerBgmToggleButton()
+                    .padding(.trailing, 16)
+                    .padding(.top, 10)
+            }
+
             Spacer()
 
             timeDisplay
@@ -27,6 +35,9 @@ struct StudyTimerView: View {
                     .animation(.easeInOut(duration: 0.3), value: viewModel.state == .running)
                 : nil
         )
+        .onDisappear {
+            bgm.stopAndTurnOff()
+        }
     }
 
     // MARK: - 배경 이미지

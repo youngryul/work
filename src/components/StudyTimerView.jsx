@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
+import TimerBgmToggle from './TimerBgmToggle.jsx'
+import { useTimerBgm } from '../hooks/useTimerBgm.js'
 import { addStudySession, formatStudyDuration } from '../services/studyTimeService.js'
 
 function formatElapsed(totalSeconds) {
@@ -20,6 +22,7 @@ export default function StudyTimerView({ onClose }) {
   const startTimeRef = useRef(null) // 타이머 시작 시각 (ms)
   const baseSecondsRef = useRef(0)  // 일시정지 전까지 누적 초
   const intervalRef = useRef(null)
+  const { enabled: bgmEnabled, toggle: toggleBgm } = useTimerBgm()
 
   useEffect(() => {
     if (isRunning) {
@@ -94,12 +97,12 @@ export default function StudyTimerView({ onClose }) {
         <button
           type="button"
           onClick={onClose}
-          className="rounded-full bg-white/70 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm backdrop-blur-md hover:bg-white/90 transition"
+          className="rounded-full bg-white/70 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm backdrop-blur-md hover:bg-white/90 transition shrink-0"
         >
           ← 나가기
         </button>
         <h1 className="text-base font-semibold text-gray-700">공부 타이머</h1>
-        <div className="w-20" />
+        <TimerBgmToggle enabled={bgmEnabled} onToggle={toggleBgm} className="shrink-0" />
       </div>
 
       {/* 포실이 이미지 */}
@@ -130,6 +133,9 @@ export default function StudyTimerView({ onClose }) {
           {formatElapsed(elapsedSeconds)}
         </p>
         <p className="mt-1 text-sm text-gray-500">{statusText}</p>
+        <div className="mt-3 flex justify-center">
+          <TimerBgmToggle enabled={bgmEnabled} onToggle={toggleBgm} />
+        </div>
       </div>
 
       {/* 컨트롤 버튼 */}

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
+import TimerBgmToggle from './TimerBgmToggle.jsx'
+import { useTimerBgm } from '../hooks/useTimerBgm.js'
 import { addStudySession, formatStudyDuration } from '../services/studyTimeService.js'
 
 const DURATIONS = [15, 25, 35, 50]
@@ -62,6 +64,7 @@ export default function PomodoroView({ onClose }) {
   const imgContainerRef = useRef(null)
   const intervalRef = useRef(null)
   const endTimeRef = useRef(null) // Date.now() + ms
+  const { enabled: bgmEnabled, toggle: toggleBgm } = useTimerBgm()
 
   // 이미지 컨테이너 크기 측정
   useEffect(() => {
@@ -177,12 +180,12 @@ export default function PomodoroView({ onClose }) {
         <button
           type="button"
           onClick={onClose}
-          className="rounded-full bg-white/70 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm backdrop-blur-md hover:bg-white/90 transition"
+          className="rounded-full bg-white/70 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm backdrop-blur-md hover:bg-white/90 transition shrink-0"
         >
           ← 나가기
         </button>
         <h1 className="text-base font-semibold text-gray-700">뽀모도로</h1>
-        <div className="w-20" />
+        <TimerBgmToggle enabled={bgmEnabled} onToggle={toggleBgm} className="shrink-0" />
       </div>
 
       {/* 포실이 이미지 + 마스크 */}

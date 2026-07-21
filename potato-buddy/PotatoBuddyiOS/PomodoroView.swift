@@ -27,6 +27,7 @@ private struct ClockwiseWhiteFillShape: Shape {
 
 struct PomodoroView: View {
     @StateObject private var viewModel = PomodoroTimerViewModel()
+    @ObservedObject private var bgm = TimerBgmPlayer.shared
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var isSaving = false
@@ -77,11 +78,19 @@ struct PomodoroView: View {
             }
             .navigationTitle("뽀모도로")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    TimerBgmToggleButton()
+                }
+            }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 viewModel.syncWhenAppBecomesActive()
             }
+        }
+        .onDisappear {
+            bgm.stopAndTurnOff()
         }
     }
 

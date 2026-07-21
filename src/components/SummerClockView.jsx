@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
+import TimerBgmToggle from './TimerBgmToggle.jsx'
+import { useTimerBgm } from '../hooks/useTimerBgm.js'
 import {
   addStudySession,
   formatStudyDuration,
@@ -38,6 +40,7 @@ function SummerClockView({ onClose }) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [isSaving, setIsSaving] = useState(false)
   const intervalRef = useRef(null)
+  const { enabled: bgmEnabled, toggle: toggleBgm } = useTimerBgm()
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), 1000)
@@ -198,7 +201,10 @@ function SummerClockView({ onClose }) {
 
         {isTimerVisible && (
           <div className="mt-8 sm:mt-10 w-full max-w-md rounded-3xl bg-white/50 px-5 py-5 shadow-lg backdrop-blur-md border border-white/60 animate-[fadeIn_0.2s_ease-out]">
-            <p className="text-sm font-semibold text-gray-700 mb-2">공부 타이머</p>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-gray-700">공부 타이머</p>
+              <TimerBgmToggle enabled={bgmEnabled} onToggle={toggleBgm} />
+            </div>
             <p className="text-4xl sm:text-5xl font-bold tabular-nums text-emerald-800 tracking-tight">
               {formatTimer(elapsedSeconds)}
             </p>
