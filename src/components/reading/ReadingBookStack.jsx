@@ -4,6 +4,8 @@ const BOOK_BLOCK_HEIGHT_PX = 52
 const BOOK_DROP_DURATION_MS = 550
 const BOOK_DROP_STAGGER_MS = 320
 const MAX_VISIBLE_STACK = 12
+const BOOK_GIF_SRC = '/images/book.gif'
+const BOOK_GIF_HEIGHT_PX = 96
 
 /**
  * 완료일 기준 오름차순 정렬 (아래가 먼저 읽은 책)
@@ -24,7 +26,7 @@ function sortCompletedBooks(books) {
 }
 
 /**
- * 완독한 책을 포실이 탑처럼 위에서 떨어져 쌓는 애니메이션
+ * 완독한 책을 book.gif 위에 쌓는 독서 탑
  * @param {{ books: Array }} props
  */
 export default function ReadingBookStack({ books }) {
@@ -49,7 +51,8 @@ export default function ReadingBookStack({ books }) {
 
   const visibleBooks = completedBooks.slice(-MAX_VISIBLE_STACK)
   const hiddenCount = Math.max(0, completedBooks.length - MAX_VISIBLE_STACK)
-  const stackHeight = Math.min(completedBooks.length, MAX_VISIBLE_STACK) * BOOK_BLOCK_HEIGHT_PX
+  const stackHeight =
+    Math.min(completedBooks.length, MAX_VISIBLE_STACK) * BOOK_BLOCK_HEIGHT_PX + BOOK_GIF_HEIGHT_PX
 
   return (
     <div className="mt-8">
@@ -66,14 +69,14 @@ export default function ReadingBookStack({ books }) {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-sky-200/40 to-transparent" />
 
         {completedBooks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center min-h-[320px] text-center">
+          <div className="flex flex-col items-center justify-end min-h-[320px] text-center pb-2">
+            <p className="text-lg text-gray-600 font-sans mb-1">아직 완독한 책이 없어요</p>
+            <p className="text-sm text-gray-400 font-sans mb-4">책을 다 읽고 완료 버튼을 눌러보세요!</p>
             <img
-              src="/images/포실이.png"
-              alt="포실이"
-              className="w-24 h-24 object-contain mb-4 opacity-80"
+              src={BOOK_GIF_SRC}
+              alt="포실이 독서"
+              className="w-28 h-28 object-contain drop-shadow-lg"
             />
-            <p className="text-lg text-gray-600 font-sans">아직 완독한 책이 없어요</p>
-            <p className="text-sm text-gray-400 font-sans mt-1">책을 다 읽고 완료 버튼을 눌러보세요!</p>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-end min-h-[360px]">
@@ -83,10 +86,19 @@ export default function ReadingBookStack({ books }) {
               </p>
             )}
 
+            {/* flex-col-reverse: DOM 첫 요소(GIF)가 시각적 맨 아래 */}
             <div
               className="relative flex flex-col-reverse items-center w-full max-w-xs"
-              style={{ minHeight: `${stackHeight + 88}px` }}
+              style={{ minHeight: `${stackHeight + 24}px` }}
             >
+              <div className="reading-book-stack-base flex flex-col items-center pt-1 pb-1">
+                <img
+                  src={BOOK_GIF_SRC}
+                  alt="포실이 독서"
+                  className="w-24 h-24 object-contain drop-shadow-lg"
+                />
+              </div>
+
               {visibleBooks.map((book, index) => {
                 const globalIndex = completedBooks.length - visibleBooks.length + index
                 const isVisible = globalIndex < animatedCount
@@ -123,17 +135,6 @@ export default function ReadingBookStack({ books }) {
                   </div>
                 )
               })}
-
-              {animatedCount >= completedBooks.length && (
-                <div className="reading-book-stack-posily mb-2 flex flex-col items-center">
-                  <img
-                    src="/images/포실이.png"
-                    alt="포실이"
-                    className="w-16 h-16 object-contain drop-shadow-lg"
-                  />
-                  <span className="text-xs font-bold text-amber-800 mt-1 font-sans">탑 정상!</span>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -151,10 +152,6 @@ export default function ReadingBookStack({ books }) {
           animation: reading-book-drop ${BOOK_DROP_DURATION_MS}ms cubic-bezier(0.34, 1.2, 0.64, 1) both;
         }
 
-        .reading-book-stack-posily {
-          animation: reading-posily-land 500ms cubic-bezier(0.34, 1.3, 0.64, 1) both;
-        }
-
         @keyframes reading-book-drop {
           0% {
             opacity: 0;
@@ -169,20 +166,6 @@ export default function ReadingBookStack({ books }) {
           100% {
             opacity: 1;
             transform: translateY(0) scale(1) rotate(0deg);
-          }
-        }
-
-        @keyframes reading-posily-land {
-          0% {
-            opacity: 0;
-            transform: translateY(-80px) scale(0.6);
-          }
-          60% {
-            transform: translateY(8px) scale(1.08);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
           }
         }
       `}</style>
