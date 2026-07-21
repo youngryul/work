@@ -1533,6 +1533,40 @@ final class SupabaseService {
 
     // MARK: - 토익 단어 Day 완료 기록
 
+    // MARK: - 토익 단어 카탈로그
+
+    func fetchToeicVocabCatalog() async throws -> [ToeicVocabCatalogRow] {
+        let (_, token) = await authInfo()
+        let pageSize = 1000
+        var offset = 0
+        var all: [ToeicVocabCatalogRow] = []
+
+        while true {
+            var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/toeic_vocab_catalog")!
+            components.queryItems = [
+                URLQueryItem(name: "select", value: "sort_order,en,ko"),
+                URLQueryItem(name: "order", value: "sort_order.asc"),
+                URLQueryItem(name: "offset", value: "\(offset)"),
+                URLQueryItem(name: "limit", value: "\(pageSize)"),
+            ]
+
+            var request = URLRequest(url: components.url!)
+            headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+            let (data, response) = try await fetch(request)
+            try checkResponse(data, response)
+
+            let chunk = try JSONDecoder().decode([ToeicVocabCatalogRow].self, from: data)
+            all.append(contentsOf: chunk)
+            if chunk.count < pageSize { break }
+            offset += pageSize
+        }
+
+        return all
+    }
+
+    // MARK: - 토익 Day 완료
+
     private struct ToeicDayCompletionRow: Decodable {
         let dayNumber: Int
         let completionCount: Int

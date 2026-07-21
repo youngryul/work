@@ -4,17 +4,20 @@ import ToeicDayChallengeGrid from './ToeicDayChallengeGrid.jsx'
 import ToeicMyVocabTab from './ToeicMyVocabTab.jsx'
 import { printToeicDayPdf } from '../utils/toeicVocabPdf.js'
 import { regroupVocabByDaySize, WORDS_PER_DAY } from '../utils/toeicVocabDays.js'
+import { getToeicVocabCatalog } from '../services/toeicVocabCatalogService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 const STORAGE_KEY_DAY = 'toeic-norangi-selected-day-v30'
+const fallbackToeicVocab = regroupVocabByDaySize(
+  toeicVocabRaw,
+  WORDS_PER_DAY,
+)
 const STUDY_MODES = [
   { id: 'list', label: '전체 목록' },
   { id: 'flash', label: '플래시카드' },
   { id: 'challenge', label: '완료 기록' },
   { id: 'my-vocab', label: '나만의 단어장' },
 ]
-
-const toeicVocab = regroupVocabByDaySize(toeicVocabRaw, WORDS_PER_DAY)
 
 /**
  * @param {Array<{ id: number, en: string, ko: string }>} words
@@ -33,10 +36,14 @@ function shuffleWords(words) {
  * 토익 노랭이 단어 학습 (Day별 목록 · 플래시카드 · PDF 인쇄)
  */
 export default function ToeicVocabView() {
+  const [toeicVocab, setToeicVocab] = useState(fallbackToeicVocab)
+  const [isCatalogLoading, setIsCatalogLoading] = useState(true)
   const days = toeicVocab.days
   const [selectedDay, setSelectedDay] = useState(() => {
     const saved = Number(localStorage.getItem(STORAGE_KEY_DAY))
-    if (Number.isFinite(saved) && saved >= 1 && saved <= days.length) return saved
+    if (Number.isFinite(saved) && saved >= 1 && saved <= fallbackToeicVocab.days.length) {
+      return saved
+    }
     return 1
   })
   const [studyMode, setStudyMode] = useState('list')
@@ -50,6 +57,41 @@ export default function ToeicVocabView() {
     [days, selectedDay],
   )
   const words = dayData?.words ?? []
+
+  useEffect(() => {
+    let cancelled = false
+    setIsCatalogLoading(true)
+    getToeicVocabCatalog()
+      .then((data) => {
+        if (cancelled) return
+        if (data?.wordCount > 0) {
+          setToeicVocab(data)
+          setSelectedDay((prev) => {
+            if (prev >= 1 && prev <= data.dayCount) return prev
+            const saved = Number(localStorage.getItem(STORAGE_KEY_DAY))
+            if (Number.isFinite(saved) && saved >= 1 && saved <= data.dayCount) {
+              return saved
+            }
+            return 1
+          })
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error('토익 카탈로그 로드 오류:', error)
+          showToast(
+            error.message || '단어장을 불러오지 못했습니다. 임시 데이터를 표시합니다.',
+            TOAST_TYPES.ERROR,
+          )
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsCatalogLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_DAY, String(selectedDay))
@@ -120,9 +162,14 @@ export default function ToeicVocabView() {
         <p className="mt-1 text-sm text-gray-500">
           노랭이 단어모음 · 총 {toeicVocab.wordCount.toLocaleString()}단어 · DAY당{' '}
           {WORDS_PER_DAY}개 · DAY 1–{toeicVocab.dayCount}
+          {isCatalogLoading ? ' · 불러오는 중…' : ''}
         </p>
       </header>
 
+      {isCatalogLoading && toeicVocab.wordCount === 0 ? (
+        <p className="text-center text-sm text-gray-500 py-16">단어장 불러오는 중...</p>
+      ) : (
+        <>
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <div className="inline-flex rounded-lg border border-sky-200 bg-white p-0.5">
           {STUDY_MODES.map((mode) => (
@@ -305,6 +352,8 @@ export default function ToeicVocabView() {
             />
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   )

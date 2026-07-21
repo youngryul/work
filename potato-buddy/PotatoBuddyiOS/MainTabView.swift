@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MainTabView: View {
     static let scheduleTabTag = 3
+    static let stepsTabTag = 11
 
     @Binding var selectedTab: Int
     @ObservedObject private var auth = AuthService.shared
@@ -44,6 +45,12 @@ struct MainTabView: View {
                     Label("습관", systemImage: "chart.bar.fill")
                 }
                 .tag(5)
+
+            StepCounterView()
+                .tabItem {
+                    Label("걸음", systemImage: "figure.walk")
+                }
+                .tag(Self.stepsTabTag)
 
             TravelItineraryView()
                 .tabItem {

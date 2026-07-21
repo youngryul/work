@@ -2,7 +2,6 @@ import SwiftUI
 
 struct TodayView: View {
     @EnvironmentObject private var jellyStore: JellyBalanceStore
-    @StateObject private var stepCounter = StepCounterViewModel()
     @Environment(\.scenePhase) private var scenePhase
     @State private var tasks: [TaskItem] = []
     @State private var isLoading: Bool = false
@@ -19,22 +18,6 @@ struct TodayView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     List {
-                        Section {
-                            StepCounterCardView(
-                                viewModel: stepCounter,
-                                onJellyEarned: { message in
-                                    jellyEarnedMessage = message
-                                    Task { await jellyStore.refresh() }
-                                },
-                                onClaimError: { message in
-                                    errorMessage = message
-                                }
-                            )
-                                .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-                                .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
-                        }
-
                         if tasks.isEmpty {
                             Section {
                                 VStack(spacing: 16) {
@@ -102,9 +85,7 @@ struct TodayView: View {
                 }
             }
             .refreshable {
-                async let tasksLoad: Void = loadTasks()
-                async let stepsLoad: Void = stepCounter.refresh()
-                _ = await (tasksLoad, stepsLoad)
+                await loadTasks()
             }
             .alert("할일 추가", isPresented: $showAddAlert) {
                 TextField("할일 제목", text: $newTaskTitle)
@@ -130,16 +111,12 @@ struct TodayView: View {
         }
         .task {
             async let tasksLoad: Void = loadTasks()
-            async let stepsLoad: Void = stepCounter.requestAccessAndRefresh()
             async let jellyLoad: Void = jellyStore.refresh()
-            _ = await (tasksLoad, stepsLoad, jellyLoad)
+            _ = await (tasksLoad, jellyLoad)
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                Task {
-                    await stepCounter.refresh()
-                    await jellyStore.refresh()
-                }
+                Task { await jellyStore.refresh() }
             }
         }
     }

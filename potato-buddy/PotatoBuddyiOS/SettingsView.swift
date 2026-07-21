@@ -38,7 +38,7 @@ struct SettingsView: View {
                             Text("일일 목표: \(effectiveDailyGoal.formatted())보")
                         }
 
-                        Text("오늘 탭에서 오늘 걸음 수와 목표 달성률을 확인할 수 있어요.")
+                        Text("걸음 탭에서 오늘 걸음 수와 마일스톤 젤리를 확인할 수 있어요.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     } else {

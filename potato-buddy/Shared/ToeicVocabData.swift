@@ -6,19 +6,26 @@ struct ToeicVocabWord: Codable, Identifiable, Hashable {
     let ko: String
 }
 
-struct ToeicVocabDay: Identifiable, Hashable {
+struct ToeicVocabDay: Codable, Identifiable, Hashable {
     var id: Int { day }
     let day: Int
     let words: [ToeicVocabWord]
 }
 
-struct ToeicVocabData: Hashable {
+struct ToeicVocabData: Codable, Hashable {
     let source: String?
     let dayCount: Int
     let wordCount: Int
     let days: [ToeicVocabDay]
 
     static let wordsPerDay = 30
+
+    static let empty = ToeicVocabData(
+        source: nil,
+        dayCount: 0,
+        wordCount: 0,
+        days: []
+    )
 
     private struct SourceFile: Decodable {
         let source: String?
@@ -38,8 +45,22 @@ struct ToeicVocabData: Hashable {
             let data = try? Data(contentsOf: url),
             let source = try? JSONDecoder().decode(SourceFile.self, from: data)
         else {
-            return ToeicVocabData(source: nil, dayCount: 0, wordCount: 0, days: [])
+            return .empty
         }
+        return regroup(source: source, wordsPerDay: wordsPerDay)
+    }
+
+    static func fromCatalogRows(_ rows: [ToeicVocabCatalogRow]) -> ToeicVocabData {
+        let sorted = rows.sorted { $0.sortOrder < $1.sortOrder }
+        let words = sorted.enumerated().map { index, row in
+            ToeicVocabWord(id: index + 1, en: row.en, ko: row.ko)
+        }
+        let source = SourceFile(
+            source: "토익 노랭이 단어모음",
+            dayCount: nil,
+            wordCount: nil,
+            days: [SourceFile.SourceDay(day: 1, words: words)]
+        )
         return regroup(source: source, wordsPerDay: wordsPerDay)
     }
 
@@ -66,9 +87,22 @@ struct ToeicVocabData: Hashable {
     }
 }
 
+struct ToeicVocabCatalogRow: Decodable {
+    let sortOrder: Int
+    let en: String
+    let ko: String
+
+    enum CodingKeys: String, CodingKey {
+        case sortOrder = "sort_order"
+        case en
+        case ko
+    }
+}
+
 enum ToeicVocabLocalStore {
     private static let completionsKey = "toeic-norangi-day-completions-v1"
     private static let selectedDayKey = "toeic-norangi-selected-day-v30"
+    private static let catalogCacheKey = "toeic-norangi-catalog-cache-v1"
 
     static func loadCompletions() -> [Int: Int] {
         guard
@@ -101,13 +135,20 @@ enum ToeicVocabLocalStore {
     static func saveSelectedDay(_ day: Int) {
         UserDefaults.standard.set(day, forKey: selectedDayKey)
     }
-}
 
-final class ToeicVocabRepository {
-    static let shared = ToeicVocabRepository()
-    let data: ToeicVocabData
+    static func loadCatalogCache() -> ToeicVocabData? {
+        guard
+            let data = UserDefaults.standard.data(forKey: catalogCacheKey),
+            let decoded = try? JSONDecoder().decode(ToeicVocabData.self, from: data),
+            decoded.wordCount > 0
+        else { return nil }
+        return decoded
+    }
 
-    private init() {
-        data = ToeicVocabData.load()
+    static func saveCatalogCache(_ data: ToeicVocabData) {
+        guard data.wordCount > 0,
+              let encoded = try? JSONEncoder().encode(data)
+        else { return }
+        UserDefaults.standard.set(encoded, forKey: catalogCacheKey)
     }
 }

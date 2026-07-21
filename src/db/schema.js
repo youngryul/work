@@ -305,6 +305,16 @@ export const toeicVocabChallengeGoals = pgTable('toeic_vocab_challenge_goals', {
 })
 
 /**
+ * toeic_vocab_catalog — 토익 노랭이 단어 카탈로그 (공통)
+ */
+export const toeicVocabCatalog = pgTable('toeic_vocab_catalog', {
+  sortOrder: integer('sort_order').primaryKey(),
+  en: text('en').notNull(),
+  ko: text('ko').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+/**
  * toeic_my_vocab_words — 나만의 단어장
  */
 export const toeicMyVocabWords = pgTable('toeic_my_vocab_words', {

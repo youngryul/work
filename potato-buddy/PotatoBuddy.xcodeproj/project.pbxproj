@@ -13,6 +13,7 @@
 		0D648CC2344F8F6DE1B44C6D /* ChatBubbleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE7618036880053779773CE5 /* ChatBubbleView.swift */; };
 		108351B7AC1351E3A723006B /* HabitTrackerFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7916200BAF477DE717FF740 /* HabitTrackerFormView.swift */; };
 		122F05E24517F4876E1111C5 /* StepCounterCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687C3B2D7029A9D36927DA24 /* StepCounterCardView.swift */; };
+		B7C8D9E0F1A2B3C4D5E6F708 /* StepCounterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6B5C4D3E2F1A0B9C8D7E6F5 /* StepCounterView.swift */; };
 		12F916C186FF332AAC22A3C0 /* TravelAbroadModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39AAC1A8BF6E487B9ED6FEE /* TravelAbroadModels.swift */; };
 		185BD51875CC63C284691670 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 541FF1C427BD52922B298737 /* Notifications.swift */; };
 		18CF778C82C44422015D13EA /* PotatoClockApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1BFEA26E9E32B8E425C9D4F /* PotatoClockApp.swift */; };
@@ -71,6 +72,7 @@
 		97576556E3490B072A46AEEB /* JellyBalanceBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AC0637A6BBD34447E7A0DA2 /* JellyBalanceBadgeView.swift */; };
 		9C324EE423B2AC665B1411E9 /* FridgeItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758A8A2B777A70B6D61AC077 /* FridgeItem.swift */; };
 		9DBC5A2E37B85AFB8C809749 /* ToeicCompletionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8BAEABB166C05237A1FE98 /* ToeicCompletionViewModel.swift */; };
+		F3A2B1C0D9E8F7A601234567 /* ToeicVocabViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1D2C3B4A5968778695A4B3C /* ToeicVocabViewModel.swift */; };
 		9E24F2E0DE2AA6234D734E69 /* TravelItineraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB1A57CF4290277D1DB7841A /* TravelItineraryView.swift */; };
 		A4D32CEED0B186968C3C889E /* ScheduleItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC32AEBCA73A2947E5767A41 /* ScheduleItem.swift */; };
 		A64122DBEB6634B70B142AAC /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 852B8983CE9BC8617F83ECBD /* LoginView.swift */; };
@@ -147,6 +149,7 @@
 		1D826A844BE6F7D286ED09B9 /* BacklogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BacklogView.swift; sourceTree = "<group>"; };
 		1F38DC95AC1E797AF29D0752 /* TravelItineraryPackingListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelItineraryPackingListView.swift; sourceTree = "<group>"; };
 		1F8BAEABB166C05237A1FE98 /* ToeicCompletionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToeicCompletionViewModel.swift; sourceTree = "<group>"; };
+		E1D2C3B4A5968778695A4B3C /* ToeicVocabViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToeicVocabViewModel.swift; sourceTree = "<group>"; };
 		1FFBB4172FF64DBCCA30AD3C /* StepCounterConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCounterConstants.swift; sourceTree = "<group>"; };
 		29331826BBBDC0B4BAFFEB9D /* JellyRewardConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyRewardConstants.swift; sourceTree = "<group>"; };
 		2F9CBD6CBC5C19AAA3059AE2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -170,6 +173,7 @@
 		6320DB8612B044B1392DDE75 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		63553EC69C58CF3D81F60ECF /* StepCounterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCounterService.swift; sourceTree = "<group>"; };
 		687C3B2D7029A9D36927DA24 /* StepCounterCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCounterCardView.swift; sourceTree = "<group>"; };
+		A6B5C4D3E2F1A0B9C8D7E6F5 /* StepCounterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCounterView.swift; sourceTree = "<group>"; };
 		68FFB9D50D2473DC4EA80FC2 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		6BEEDF33B6BA4C250F262C91 /* 포실이(투명).png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이(투명).png"; sourceTree = "<group>"; };
 		6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingWindow.swift; sourceTree = "<group>"; };
@@ -293,6 +297,7 @@
 				3EBE98E4AA439E5B105C2588 /* ScheduleWidgetService.swift */,
 				17F2503650D67FEFAECD28EC /* SettingsView.swift */,
 				687C3B2D7029A9D36927DA24 /* StepCounterCardView.swift */,
+				A6B5C4D3E2F1A0B9C8D7E6F5 /* StepCounterView.swift */,
 				63553EC69C58CF3D81F60ECF /* StepCounterService.swift */,
 				4F1661D7992556DAFA92CAD5 /* StepCounterViewModel.swift */,
 				C2C960A0BB71FE702BB1C176 /* StudyTimerView.swift */,
@@ -303,6 +308,7 @@
 				5BB2F61DEE70BBB4A496E152 /* TimerHubView.swift */,
 				607BDE05A4DD4BE69A4932DA /* TodayView.swift */,
 				1F8BAEABB166C05237A1FE98 /* ToeicCompletionViewModel.swift */,
+				E1D2C3B4A5968778695A4B3C /* ToeicVocabViewModel.swift */,
 				A39F8EA4F2D73DF0A5CDC097 /* ToeicDayChallengeGridView.swift */,
 				0DFAFDD1DF4B7C785A8DEDD0 /* ToeicVocabView.swift */,
 				190A1D03682FC74D860AEC01 /* TravelItineraryCreateView.swift */,
@@ -590,6 +596,7 @@
 				CAEC59D5B68A5480E504DBF2 /* ScheduleWidgetService.swift in Sources */,
 				EF1F6C5100CD872A2E638934 /* SettingsView.swift in Sources */,
 				122F05E24517F4876E1111C5 /* StepCounterCardView.swift in Sources */,
+				B7C8D9E0F1A2B3C4D5E6F708 /* StepCounterView.swift in Sources */,
 				EA765BB6DF73662C9FAE9A61 /* StepCounterConstants.swift in Sources */,
 				4D3D770D12A3298198028228 /* StepCounterService.swift in Sources */,
 				ADAF4EF35257B5552AEC2BCC /* StepCounterViewModel.swift in Sources */,
@@ -603,6 +610,7 @@
 				39B7E96394D42F33CF7764AD /* TimerHubView.swift in Sources */,
 				E07C57782C90A202B7737328 /* TodayView.swift in Sources */,
 				9DBC5A2E37B85AFB8C809749 /* ToeicCompletionViewModel.swift in Sources */,
+				F3A2B1C0D9E8F7A601234567 /* ToeicVocabViewModel.swift in Sources */,
 				E9CA1E113D2AD0B6B3B6CA8F /* ToeicDayChallengeGridView.swift in Sources */,
 				25CC9222A71738597DE27F1F /* ToeicVocabData.swift in Sources */,
 				6D8CC351F2E0987C6866ABF7 /* ToeicVocabView.swift in Sources */,

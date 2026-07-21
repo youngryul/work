@@ -17,9 +17,10 @@ private enum ToeicStudyMode: String, CaseIterable, Identifiable {
 }
 
 struct ToeicVocabView: View {
-    private let vocab = ToeicVocabRepository.shared.data
-
+    @StateObject private var vocabModel = ToeicVocabViewModel()
     @StateObject private var completionModel = ToeicCompletionViewModel()
+    private var vocab: ToeicVocabData { vocabModel.vocab }
+
     @State private var studyMode: ToeicStudyMode = .list
     @State private var selectedDay: Int = 1
     @State private var flashIndex = 0
@@ -71,12 +72,31 @@ struct ToeicVocabView: View {
             }
             .navigationTitle("토익 단어")
             .navigationBarTitleDisplayMode(.large)
+            .overlay {
+                if vocabModel.isLoading && vocab.wordCount == 0 {
+                    ProgressView("단어장 불러오는 중...")
+                        .padding()
+                        .background(.ultraThinMaterial)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
             .task {
                 if selectedDay == 1 {
                     selectedDay = ToeicVocabLocalStore.loadSelectedDay(maxDay: max(vocab.dayCount, 1))
                 }
                 resetFlashOrder()
+                await vocabModel.load()
+                if selectedDay == 1, vocab.dayCount > 0 {
+                    selectedDay = ToeicVocabLocalStore.loadSelectedDay(maxDay: vocab.dayCount)
+                }
                 await completionModel.load()
+            }
+            .onChange(of: vocabModel.vocab.dayCount) { _, count in
+                guard count > 0 else { return }
+                if selectedDay < 1 || selectedDay > count {
+                    selectedDay = ToeicVocabLocalStore.loadSelectedDay(maxDay: count)
+                }
+                resetFlashOrder()
             }
             .onChange(of: selectedDay) { _, newValue in
                 ToeicVocabLocalStore.saveSelectedDay(newValue)
@@ -90,9 +110,14 @@ struct ToeicVocabView: View {
             Text("노랭이 단어모음 · 총 \(vocab.wordCount.formatted())단어")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
-            Text("DAY당 \(ToeicVocabData.wordsPerDay)개 · DAY 1–\(vocab.dayCount)")
+            Text("DAY당 \(ToeicVocabData.wordsPerDay)개 · DAY 1–\(max(vocab.dayCount, 0))")
                 .font(.caption)
                 .foregroundColor(.secondary)
+            if let err = vocabModel.errorMessage, vocab.wordCount == 0 {
+                Text(err)
+                    .font(.caption)
+                    .foregroundColor(.red)
+            }
         }
     }
 
