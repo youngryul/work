@@ -3,6 +3,8 @@ import { showToast, TOAST_TYPES } from './Toast.jsx'
 import TimerBgmToggle from './TimerBgmToggle.jsx'
 import { useTimerBgm } from '../hooks/useTimerBgm.js'
 import { addStudySession, formatStudyDuration } from '../services/studyTimeService.js'
+import StudyTimerCategoryPicker from './StudyTimerCategoryPicker.jsx'
+import { DEFAULT_STUDY_TIMER_CATEGORY } from '../constants/studyTimerCategories.js'
 
 const DURATIONS = [15, 25, 35, 50]
 
@@ -60,6 +62,7 @@ export default function PomodoroView({ onClose }) {
   // 'idle' | 'running' | 'paused' | 'finished'
   const [state, setState] = useState('idle')
   const [isSaving, setIsSaving] = useState(false)
+  const [category, setCategory] = useState(DEFAULT_STUDY_TIMER_CATEGORY)
   const [imgSize, setImgSize] = useState(280)
   const imgContainerRef = useRef(null)
   const intervalRef = useRef(null)
@@ -152,8 +155,9 @@ export default function PomodoroView({ onClose }) {
     if (secs <= 0 || isSaving) return
     setIsSaving(true)
     try {
-      await addStudySession(secs, { source: 'pomodoro' })
+      await addStudySession(secs, { source: 'pomodoro', category })
       showToast(`${formatStudyDuration(secs)} 기록 완료!`, TOAST_TYPES.SUCCESS)
+      window.dispatchEvent(new CustomEvent('refreshStudyTime'))
       setState('idle')
       setRemainingSeconds(selectedMinutes * 60)
     } catch (err) {
@@ -215,6 +219,12 @@ export default function PomodoroView({ onClose }) {
           {formatCountdown(remainingSeconds)}
         </p>
         <p className="mt-1 text-sm text-gray-500">{statusText}</p>
+        <StudyTimerCategoryPicker
+          value={category}
+          onChange={setCategory}
+          disabled={state === 'running' || state === 'paused'}
+          className="mt-4 px-2"
+        />
       </div>
 
       {/* 시간 선택 */}

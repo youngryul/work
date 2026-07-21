@@ -6,6 +6,8 @@ import {
   addStudySession,
   formatStudyDuration,
 } from '../services/studyTimeService.js'
+import StudyTimerCategoryPicker from './StudyTimerCategoryPicker.jsx'
+import { DEFAULT_STUDY_TIMER_CATEGORY } from '../constants/studyTimerCategories.js'
 
 const WEEKDAY_KO = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
 
@@ -39,6 +41,7 @@ function SummerClockView({ onClose }) {
   const [isTimerRunning, setIsTimerRunning] = useState(false)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [isSaving, setIsSaving] = useState(false)
+  const [category, setCategory] = useState(DEFAULT_STUDY_TIMER_CATEGORY)
   const intervalRef = useRef(null)
   const { enabled: bgmEnabled, toggle: toggleBgm } = useTimerBgm()
 
@@ -126,7 +129,7 @@ function SummerClockView({ onClose }) {
     setIsTimerRunning(false)
     setIsSaving(true)
     try {
-      await addStudySession(elapsedSeconds, { source: 'summer-clock' })
+      await addStudySession(elapsedSeconds, { source: 'summer-clock', category })
       showToast(
         `오늘 공부 ${formatStudyDuration(elapsedSeconds)} 기록했어요`,
         TOAST_TYPES.SUCCESS,
@@ -208,6 +211,12 @@ function SummerClockView({ onClose }) {
             <p className="text-4xl sm:text-5xl font-bold tabular-nums text-emerald-800 tracking-tight">
               {formatTimer(elapsedSeconds)}
             </p>
+            <StudyTimerCategoryPicker
+              value={category}
+              onChange={setCategory}
+              disabled={isTimerRunning}
+              className="mt-3"
+            />
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
               <button
                 type="button"

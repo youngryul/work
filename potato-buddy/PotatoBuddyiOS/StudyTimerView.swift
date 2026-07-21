@@ -72,6 +72,11 @@ struct StudyTimerView: View {
                 .font(.subheadline.weight(.medium))
                 .foregroundColor(.white.opacity(0.9))
                 .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 1)
+
+            StudyTimerCategoryPicker(
+                selection: $viewModel.selectedCategory,
+                disabled: viewModel.state == .running
+            )
         }
         .padding(.vertical, 22)
         .padding(.horizontal, 28)

@@ -1302,7 +1302,7 @@ final class SupabaseService {
 
     // MARK: - 공부 세션
 
-    func addStudySession(seconds: Int, source: String) async throws {
+    func addStudySession(seconds: Int, source: String, category: String = StudyTimerCategory.study.rawValue) async throws {
         let (userId, token) = await authInfo()
         guard seconds > 0 else { return }
 
@@ -1310,6 +1310,8 @@ final class SupabaseService {
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.locale = Locale(identifier: "en_US_POSIX")
         let today = formatter.string(from: Date())
+
+        let safeCategory = StudyTimerCategory.normalize(category).rawValue
 
         let url = URL(string: "\(Config.supabaseURL)/rest/v1/study_sessions")!
         var request = URLRequest(url: url)
@@ -1322,6 +1324,7 @@ final class SupabaseService {
             "study_date":       today,
             "duration_seconds": seconds,
             "source":           source,
+            "category":         safeCategory,
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         let (data, response) = try await fetch(request)
@@ -1348,7 +1351,7 @@ final class SupabaseService {
             URLQueryItem(name: "user_id",    value: "eq.\(userId)"),
             URLQueryItem(name: "study_date", value: "gte.\(startStr)"),
             URLQueryItem(name: "study_date", value: "lte.\(endStr)"),
-            URLQueryItem(name: "select",     value: "id,study_date,duration_seconds,source"),
+            URLQueryItem(name: "select",     value: "id,study_date,duration_seconds,source,category"),
             URLQueryItem(name: "order",      value: "study_date.desc"),
         ]
 
@@ -1378,7 +1381,7 @@ final class SupabaseService {
             URLQueryItem(name: "user_id",    value: "eq.\(userId)"),
             URLQueryItem(name: "study_date", value: "gte.\(startStr)"),
             URLQueryItem(name: "study_date", value: "lte.\(endStr)"),
-            URLQueryItem(name: "select",     value: "id,study_date,duration_seconds,source"),
+            URLQueryItem(name: "select",     value: "id,study_date,duration_seconds,source,category"),
             URLQueryItem(name: "order",      value: "study_date.asc"),
         ]
 

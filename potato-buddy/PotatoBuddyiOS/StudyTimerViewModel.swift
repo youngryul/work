@@ -14,6 +14,7 @@ final class StudyTimerViewModel: ObservableObject {
     @Published var saveError: String?
     @Published var isSaving: Bool = false
     @Published var savedMessage: String?
+    @Published var selectedCategory: StudyTimerCategory = .study
 
     private var startDate: Date?
     private var baseSeconds: Int = 0
@@ -62,7 +63,11 @@ final class StudyTimerViewModel: ObservableObject {
         isSaving = true
         saveError = nil
         do {
-            try await SupabaseService.shared.addStudySession(seconds: secs, source: "study-timer")
+            try await SupabaseService.shared.addStudySession(
+                seconds: secs,
+                source: "study-timer",
+                category: selectedCategory.rawValue
+            )
             savedMessage = "\(formatStudyDuration(secs)) 기록 완료!"
             reset()
         } catch {

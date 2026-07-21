@@ -33,6 +33,7 @@ struct PomodoroView: View {
     @State private var isSaving = false
     @State private var saveMessage: String?
     @State private var saveError: String?
+    @State private var selectedCategory: StudyTimerCategory = .study
 
     private let imageName = "포실이뽀모도로"
 
@@ -56,6 +57,12 @@ struct PomodoroView: View {
 
                 durationPicker
                     .padding(.horizontal, 20)
+
+                StudyTimerCategoryPicker(
+                    selection: $selectedCategory,
+                    disabled: viewModel.state == .running || viewModel.state == .paused
+                )
+                .padding(.horizontal, 12)
 
                 controlButtons
                     .padding(.horizontal, 20)
@@ -242,7 +249,11 @@ struct PomodoroView: View {
         saveMessage = nil
         saveError = nil
         do {
-            try await SupabaseService.shared.addStudySession(seconds: secs, source: "pomodoro")
+            try await SupabaseService.shared.addStudySession(
+                seconds: secs,
+                source: "pomodoro",
+                category: selectedCategory.rawValue
+            )
             saveMessage = "\(formatStudyDuration(secs)) 기록 완료! 🎉"
             viewModel.reset()
         } catch {

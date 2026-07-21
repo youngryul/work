@@ -12,8 +12,8 @@ struct ScheduleWidgetProvider: TimelineProvider {
         ScheduleWidgetEntry(
             date: Date(),
             snapshot: WidgetScheduleSnapshot(
-                dateString: WidgetScheduleDateFormatter.todayString(),
-                dateLabel: "6월 9일 (월)",
+                dateString: "2026-06-12",
+                dateLabel: "6월 12일 (목)",
                 items: [
                     WidgetScheduleEntryItem(id: "1", title: "팀 미팅", tag: "업무"),
                     WidgetScheduleEntryItem(id: "2", title: "운동", tag: "개인"),
@@ -58,16 +58,20 @@ struct ScheduleWidgetView: View {
         WidgetScheduleDateFormatter.string(from: entry.date)
     }
 
-    /// 스냅샷이 오늘인지 (다가오는 일정이면 false)
+    private var todayLabel: String {
+        WidgetScheduleDateFormatter.label(for: entryDateString)
+    }
+
+    /// 스냅샷이 위젯 기준 '오늘'과 같은 날인지
     private var isShowingToday: Bool {
         let snapshotDate = entry.snapshot.dateString
         if snapshotDate.isEmpty { return true }
         return snapshotDate == entryDateString
     }
 
-    private var displayLabel: String {
+    private var upcomingDateLabel: String {
         if entry.snapshot.dateString.isEmpty {
-            return WidgetScheduleDateFormatter.label(for: entryDateString)
+            return ""
         }
         if !entry.snapshot.dateLabel.isEmpty {
             return entry.snapshot.dateLabel
@@ -77,7 +81,6 @@ struct ScheduleWidgetView: View {
 
     private var displayItems: [WidgetScheduleEntryItem] {
         let snapshotDate = entry.snapshot.dateString
-        // 위젯 기준일이 스냅샷 날짜를 지난 경우(자정 이후 등)는 숨김
         if !snapshotDate.isEmpty, snapshotDate < entryDateString {
             return []
         }
@@ -85,47 +88,87 @@ struct ScheduleWidgetView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(displayLabel)
-                .font(isShowingToday
-                      ? .system(.headline, design: .rounded)
-                      : .system(.caption, design: .rounded))
-                .fontWeight(isShowingToday ? .bold : .semibold)
-                .foregroundStyle(isShowingToday ? .primary : .secondary)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(todayLabel)
+                .font(.system(.title3, design: .rounded))
+                .fontWeight(.bold)
+                .foregroundStyle(.primary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.75)
 
-            if displayItems.isEmpty {
-                Spacer(minLength: 0)
-                Text("일정 없음")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            if isShowingToday {
+                todayScheduleContent
             } else {
-                VStack(alignment: .leading, spacing: 5) {
-                    ForEach(displayItems.prefix(4)) { item in
-                        HStack(spacing: 6) {
-                            Circle()
-                                .fill(tagColor(for: item.tag))
-                                .frame(width: 6, height: 6)
-                            Text(item.title)
-                                .font(.caption)
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-                        }
-                    }
+                Text("오늘 일정 없음")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
 
-                    if displayItems.count > 4 {
-                        Text("+\(displayItems.count - 4)개 더")
+                if !upcomingDateLabel.isEmpty {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("다가오는 일정")
                             .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                        Text(upcomingDateLabel)
+                            .font(.caption)
+                            .fontWeight(.semibold)
                             .foregroundStyle(.secondary)
-                    }
-                }
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
 
-                Spacer(minLength: 0)
+                        scheduleItemsList(displayItems)
+                    }
+                } else {
+                    Spacer(minLength: 0)
+                    Text("일정 없음")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(12)
+    }
+
+    @ViewBuilder
+    private var todayScheduleContent: some View {
+        if displayItems.isEmpty {
+            Spacer(minLength: 0)
+            Text("일정 없음")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } else {
+            scheduleItemsList(displayItems)
+            Spacer(minLength: 0)
+        }
+    }
+
+    @ViewBuilder
+    private func scheduleItemsList(_ items: [WidgetScheduleEntryItem]) -> some View {
+        if items.isEmpty {
+            Text("일정 없음")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        } else {
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(items.prefix(4)) { item in
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(tagColor(for: item.tag))
+                            .frame(width: 6, height: 6)
+                        Text(item.title)
+                            .font(.caption)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                    }
+                }
+
+                if items.count > 4 {
+                    Text("+\(items.count - 4)개 더")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
     }
 
     private func tagColor(for tag: String) -> Color {

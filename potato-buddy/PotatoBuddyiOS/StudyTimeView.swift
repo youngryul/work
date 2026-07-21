@@ -9,6 +9,7 @@ struct StudyTimeView: View {
     @State private var calYear  = Calendar.current.component(.year,  from: Date())
     @State private var calMonth = Calendar.current.component(.month, from: Date())
     @State private var monthSessions: [StudySessionItem] = []
+    @State private var categoryTotals: [StudyTimerCategory: Int] = emptyCategoryTotals()
 
     var body: some View {
         NavigationView {
@@ -29,6 +30,9 @@ struct StudyTimeView: View {
                     }
                     .padding(.horizontal)
                     .padding(.top, 4)
+
+                    categoryBreakdownCard
+                        .padding(.horizontal)
 
                     if let err = errorMessage {
                         Text(err)
@@ -80,10 +84,13 @@ struct StudyTimeView: View {
                     // 이번 달 합계
                     let monthTotal = monthSessions.reduce(0) { $0 + $1.durationSeconds }
                     if monthTotal > 0 {
-                        Text("\(calMonth)월 합계: \(formatStudyDuration(monthTotal))")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .padding(.bottom, 8)
+                        VStack(spacing: 6) {
+                            Text("\(calMonth)월 합계: \(formatStudyDuration(monthTotal))")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            monthCategoryRows
+                        }
+                        .padding(.bottom, 8)
                     }
                 }
                 .padding(.bottom, 20)
@@ -96,6 +103,52 @@ struct StudyTimeView: View {
         .onChange(of: calMonth) { _, _ in Task { await loadMonthData() } }
     }
 
+    private var categoryBreakdownCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("카테고리별 (최근 6개월)")
+                .font(.caption.weight(.semibold))
+                .foregroundColor(.secondary)
+            ForEach(StudyTimerCategory.allCases) { cat in
+                HStack {
+                    Text("\(cat.emoji) \(cat.label)")
+                        .font(.subheadline)
+                    Spacer()
+                    Text(isLoading ? "..." : formatStudyDuration(categoryTotals[cat] ?? 0))
+                        .font(.subheadline.bold())
+                        .foregroundColor(.green)
+                }
+            }
+        }
+        .padding(14)
+        .background(Color(.secondarySystemBackground).opacity(0.5))
+        .cornerRadius(16)
+    }
+
+    private var monthCategoryTotals: [StudyTimerCategory: Int] {
+        var totals = emptyCategoryTotals()
+        for item in monthSessions {
+            addSeconds(item.durationSeconds, category: item.normalizedCategory, to: &totals)
+        }
+        return totals
+    }
+
+    private var monthCategoryRows: some View {
+        HStack(spacing: 8) {
+            ForEach(StudyTimerCategory.allCases) { cat in
+                let secs = monthCategoryTotals[cat] ?? 0
+                if secs > 0 {
+                    Text("\(cat.emoji) \(formatStudyDurationShort(secs))")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundColor(.green)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.green.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+            }
+        }
+    }
+
     // MARK: - 데이터 로드
 
     private func loadData() async {
@@ -105,12 +158,15 @@ struct StudyTimeView: View {
             let items = try await SupabaseService.shared.fetchStudySessions(months: 6)
             var dateSet = Set<String>()
             var total = 0
+            var cats = emptyCategoryTotals()
             for item in items {
                 total += item.durationSeconds
                 dateSet.insert(item.studyDate)
+                addSeconds(item.durationSeconds, category: item.normalizedCategory, to: &cats)
             }
             totalSeconds = total
             totalDays = dateSet.count
+            categoryTotals = cats
         } catch {
             errorMessage = error.localizedDescription
         }

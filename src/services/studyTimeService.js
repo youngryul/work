@@ -1,4 +1,10 @@
 import { supabase } from '../config/supabase.js'
+import {
+  addStudySecondsToCategoryTotals,
+  emptyStudyCategoryTotals,
+  normalizeStudyCategory,
+  DEFAULT_STUDY_TIMER_CATEGORY,
+} from '../constants/studyTimerCategories.js'
 
 /**
  * 오늘 날짜 YYYY-MM-DD (로컬)
@@ -45,7 +51,7 @@ export function formatStudyDurationShort(totalSeconds) {
 /**
  * 공부 세션 추가
  * @param {number} durationSeconds
- * @param {{ studyDate?: string, source?: string }} [options]
+ * @param {{ studyDate?: string, source?: string, category?: string }} [options]
  * @returns {Promise<object>}
  */
 export async function addStudySession(durationSeconds, options = {}) {
@@ -59,6 +65,9 @@ export async function addStudySession(durationSeconds, options = {}) {
 
   const studyDate = options.studyDate || getLocalDateString()
   const source = options.source || 'summer-clock'
+  const category = normalizeStudyCategory(
+    options.category || DEFAULT_STUDY_TIMER_CATEGORY,
+  )
 
   const { data, error } = await supabase
     .from('study_sessions')
@@ -67,6 +76,7 @@ export async function addStudySession(durationSeconds, options = {}) {
       study_date: studyDate,
       duration_seconds: seconds,
       source,
+      category,
     })
     .select('*')
     .single()
@@ -112,7 +122,7 @@ export async function getStudySecondsByDate(year, month) {
 /**
  * 최근 N개월 날짜 → 총 공부 초 (일자별 통계용)
  * @param {number} months - 최근 몇 개월 (기본 6)
- * @returns {Promise<Array<{date: string, seconds: number, sources: Record<string,number>}>>}
+ * @returns {Promise<Array<{date: string, seconds: number, sources: Record<string,number>, categories: Record<string,number>}>>}
  */
 export async function getStudySessionsByRange(months = 6) {
   const {
@@ -127,7 +137,7 @@ export async function getStudySessionsByRange(months = 6) {
 
   const { data, error } = await supabase
     .from('study_sessions')
-    .select('study_date, duration_seconds, source')
+    .select('study_date, duration_seconds, source, category')
     .eq('user_id', user.id)
     .gte('study_date', startStr)
     .lte('study_date', endStr)
@@ -135,15 +145,22 @@ export async function getStudySessionsByRange(months = 6) {
 
   if (error) throw error
 
-  /** @type {Record<string, {seconds: number, sources: Record<string,number>}>} */
+  /** @type {Record<string, {seconds: number, sources: Record<string,number>, categories: Record<string,number>}>} */
   const map = {}
   for (const row of data || []) {
     const key = row.study_date
-    if (!map[key]) map[key] = { seconds: 0, sources: {} }
+    if (!map[key]) {
+      map[key] = {
+        seconds: 0,
+        sources: {},
+        categories: emptyStudyCategoryTotals(),
+      }
+    }
     const secs = Number(row.duration_seconds) || 0
     map[key].seconds += secs
     const src = row.source || 'unknown'
     map[key].sources[src] = (map[key].sources[src] || 0) + secs
+    addStudySecondsToCategoryTotals(map[key].categories, row.category, secs)
   }
 
   return Object.entries(map)
@@ -152,25 +169,42 @@ export async function getStudySessionsByRange(months = 6) {
 }
 
 /**
- * 특정 날짜 총 공부 초
+ * 특정 날짜 총 타이머 초
  * @param {string} dateString - YYYY-MM-DD
  * @returns {Promise<number>}
  */
 export async function getStudySecondsForDate(dateString) {
+  const breakdown = await getStudyBreakdownForDate(dateString)
+  return breakdown.totalSeconds
+}
+
+/**
+ * 특정 날짜 총·카테고리별 타이머 초
+ * @param {string} dateString - YYYY-MM-DD
+ * @returns {Promise<{ totalSeconds: number, byCategory: Record<string, number> }>}
+ */
+export async function getStudyBreakdownForDate(dateString) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return 0
+  if (!user) {
+    return { totalSeconds: 0, byCategory: emptyStudyCategoryTotals() }
+  }
 
   const { data, error } = await supabase
     .from('study_sessions')
-    .select('duration_seconds')
+    .select('duration_seconds, category')
     .eq('user_id', user.id)
     .eq('study_date', dateString)
 
   if (error) throw error
-  return (data || []).reduce(
-    (sum, row) => sum + (Number(row.duration_seconds) || 0),
-    0,
-  )
+
+  const byCategory = emptyStudyCategoryTotals()
+  let totalSeconds = 0
+  for (const row of data || []) {
+    const secs = Number(row.duration_seconds) || 0
+    totalSeconds += secs
+    addStudySecondsToCategoryTotals(byCategory, row.category, secs)
+  }
+  return { totalSeconds, byCategory }
 }

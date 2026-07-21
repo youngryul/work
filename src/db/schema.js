@@ -326,6 +326,7 @@ export const studySessions = pgTable('study_sessions', {
   studyDate: text('study_date').notNull(),
   durationSeconds: integer('duration_seconds').notNull(),
   source: text('source').notNull().default('summer-clock'),
+  category: text('category').notNull().default('study'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

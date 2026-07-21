@@ -3,6 +3,8 @@ import { showToast, TOAST_TYPES } from './Toast.jsx'
 import TimerBgmToggle from './TimerBgmToggle.jsx'
 import { useTimerBgm } from '../hooks/useTimerBgm.js'
 import { addStudySession, formatStudyDuration } from '../services/studyTimeService.js'
+import StudyTimerCategoryPicker from './StudyTimerCategoryPicker.jsx'
+import { DEFAULT_STUDY_TIMER_CATEGORY } from '../constants/studyTimerCategories.js'
 
 function formatElapsed(totalSeconds) {
   const sec = Math.max(0, totalSeconds)
@@ -19,6 +21,7 @@ export default function StudyTimerView({ onClose }) {
   const [isRunning, setIsRunning] = useState(false)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [isSaving, setIsSaving] = useState(false)
+  const [category, setCategory] = useState(DEFAULT_STUDY_TIMER_CATEGORY)
   const startTimeRef = useRef(null) // 타이머 시작 시각 (ms)
   const baseSecondsRef = useRef(0)  // 일시정지 전까지 누적 초
   const intervalRef = useRef(null)
@@ -71,8 +74,9 @@ export default function StudyTimerView({ onClose }) {
     const secs = elapsedSeconds
     setIsSaving(true)
     try {
-      await addStudySession(secs, { source: 'study-timer' })
+      await addStudySession(secs, { source: 'study-timer', category })
       showToast(`${formatStudyDuration(secs)} 기록 완료!`, TOAST_TYPES.SUCCESS)
+      window.dispatchEvent(new CustomEvent('refreshStudyTime'))
       handleReset()
     } catch (err) {
       showToast(err.message || '저장 실패', TOAST_TYPES.ERROR)
@@ -133,6 +137,12 @@ export default function StudyTimerView({ onClose }) {
           {formatElapsed(elapsedSeconds)}
         </p>
         <p className="mt-1 text-sm text-gray-500">{statusText}</p>
+        <StudyTimerCategoryPicker
+          value={category}
+          onChange={setCategory}
+          disabled={isRunning}
+          className="mt-4"
+        />
         <div className="mt-3 flex justify-center">
           <TimerBgmToggle enabled={bgmEnabled} onToggle={toggleBgm} />
         </div>

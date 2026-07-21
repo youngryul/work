@@ -4,6 +4,12 @@ import {
   getStudySecondsByDate,
   formatStudyDuration,
 } from '../services/studyTimeService.js'
+import {
+  STUDY_TIMER_CATEGORIES,
+  emptyStudyCategoryTotals,
+  getStudyCategoryEmoji,
+  getStudyCategoryLabel,
+} from '../constants/studyTimerCategories.js'
 import ViewPageTitle from './ViewPageTitle.jsx'
 
 const SOURCE_LABELS = {
@@ -135,6 +141,13 @@ export default function StudyTimeView() {
   // 전체 합계
   const totalSeconds = sessions.reduce((sum, s) => sum + s.seconds, 0)
   const maxDay = sessions.reduce((m, s) => Math.max(m, s.seconds), 0)
+  const categoryTotals = sessions.reduce((acc, s) => {
+    const cats = s.categories || {}
+    for (const cat of STUDY_TIMER_CATEGORIES) {
+      acc[cat.id] = (acc[cat.id] || 0) + (cats[cat.id] || 0)
+    }
+    return acc
+  }, emptyStudyCategoryTotals())
 
   const prevMonth = () => {
     if (calMonth === 1) {
@@ -172,6 +185,22 @@ export default function StudyTimeView() {
           <p className="text-xl font-bold text-amber-800">
             {loading ? '...' : `${sessions.length}일`}
           </p>
+        </div>
+      </div>
+
+      <div className="mt-3 bg-white rounded-2xl p-4 shadow-sm">
+        <p className="text-xs font-semibold text-gray-500 mb-2">카테고리별 (최근 6개월)</p>
+        <div className="space-y-2">
+          {STUDY_TIMER_CATEGORIES.map((cat) => (
+            <div key={cat.id} className="flex items-center justify-between text-sm">
+              <span className="text-gray-700">
+                {cat.emoji} {cat.label}
+              </span>
+              <span className="font-semibold text-emerald-700">
+                {loading ? '...' : formatStudyDuration(categoryTotals[cat.id] || 0)}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -219,6 +248,24 @@ export default function StudyTimeView() {
               <div className="flex items-center gap-2">
                 <DayBar seconds={s.seconds} maxSeconds={Math.max(maxDay, 3600)} />
               </div>
+              {s.categories && (
+                <div className="flex flex-wrap gap-2 mt-0.5">
+                  {STUDY_TIMER_CATEGORIES.map((cat) => {
+                    const secs = s.categories[cat.id] || 0
+                    if (secs <= 0) return null
+                    return (
+                      <span
+                        key={cat.id}
+                        className="text-xs bg-emerald-50 rounded-full px-2 py-0.5 text-emerald-800"
+                      >
+                        {getStudyCategoryEmoji(cat.id)}{' '}
+                        {getStudyCategoryLabel(cat.id)}{' '}
+                        {formatStudyDuration(secs)}
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
               {/* 소스별 breakdown */}
               {Object.keys(s.sources).length > 1 && (
                 <div className="flex flex-wrap gap-2 mt-0.5">

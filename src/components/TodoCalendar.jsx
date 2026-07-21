@@ -4,8 +4,13 @@ import {
   formatStudyDuration,
   formatStudyDurationShort,
   getStudySecondsByDate,
-  getStudySecondsForDate,
+  getStudyBreakdownForDate,
 } from '../services/studyTimeService.js'
+import {
+  STUDY_TIMER_CATEGORIES,
+  getStudyCategoryEmoji,
+  getStudyCategoryLabel,
+} from '../constants/studyTimerCategories.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 // 주간 업무일지만 사용하므로 일일 업무일지 생성 기능 제거
 // import { generateDailyWorkReport, saveWorkReport, getWorkReport, getWorkReportDatesByMonth } from '../services/workReportService.js'
@@ -19,6 +24,7 @@ export default function TodoCalendar() {
   const [completedCounts, setCompletedCounts] = useState({})
   const [studySecondsByDate, setStudySecondsByDate] = useState({})
   const [selectedStudySeconds, setSelectedStudySeconds] = useState(0)
+  const [selectedStudyByCategory, setSelectedStudyByCategory] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState(null)
   const [completedTasks, setCompletedTasks] = useState([])
@@ -93,12 +99,16 @@ export default function TodoCalendar() {
     setSelectedDate(dateString)
     setIsLoadingTasks(true)
     try {
-      const [tasks, studySeconds] = await Promise.all([
+      const [tasks, studyBreakdown] = await Promise.all([
         count > 0 ? getCompletedTasksByDate(dateString) : Promise.resolve([]),
-        getStudySecondsForDate(dateString).catch(() => studySec),
+        getStudyBreakdownForDate(dateString).catch(() => ({
+          totalSeconds: studySec,
+          byCategory: {},
+        })),
       ])
       setCompletedTasks(tasks)
-      setSelectedStudySeconds(studySeconds)
+      setSelectedStudySeconds(studyBreakdown.totalSeconds)
+      setSelectedStudyByCategory(studyBreakdown.byCategory)
     } catch (error) {
       console.error('완료된 할 일 로드 오류:', error)
     } finally {
@@ -113,6 +123,7 @@ export default function TodoCalendar() {
     setSelectedDate(null)
     setCompletedTasks([])
     setSelectedStudySeconds(0)
+    setSelectedStudyByCategory(null)
   }
 
   /**
@@ -349,9 +360,29 @@ export default function TodoCalendar() {
                   완료한 할 일 {completedTasks.length}개
                 </p>
                 {selectedStudySeconds > 0 && (
-                  <p className="text-base font-semibold text-emerald-700 mt-1">
-                    총 공부량 {formatStudyDuration(selectedStudySeconds)}
-                  </p>
+                  <div className="mt-2 space-y-1">
+                    <p className="text-base font-semibold text-emerald-700">
+                      총 타이머 {formatStudyDuration(selectedStudySeconds)}
+                    </p>
+                    {selectedStudyByCategory && (
+                      <div className="flex flex-wrap gap-2">
+                        {STUDY_TIMER_CATEGORIES.map((cat) => {
+                          const secs = selectedStudyByCategory[cat.id] || 0
+                          if (secs <= 0) return null
+                          return (
+                            <span
+                              key={cat.id}
+                              className="text-sm text-emerald-800 bg-emerald-50 rounded-full px-2.5 py-0.5"
+                            >
+                              {getStudyCategoryEmoji(cat.id)}{' '}
+                              {getStudyCategoryLabel(cat.id)}{' '}
+                              {formatStudyDuration(secs)}
+                            </span>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
               <div className="flex items-center gap-3">
@@ -372,9 +403,26 @@ export default function TodoCalendar() {
               ) : completedTasks.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 space-y-2">
                   {selectedStudySeconds > 0 ? (
-                    <p className="text-emerald-700 font-semibold">
-                      오늘(해당일) 총 공부량 {formatStudyDuration(selectedStudySeconds)}
-                    </p>
+                    <div className="space-y-2">
+                      <p className="text-emerald-700 font-semibold">
+                        총 타이머 {formatStudyDuration(selectedStudySeconds)}
+                      </p>
+                      {selectedStudyByCategory && (
+                        <ul className="text-sm text-emerald-800 space-y-1">
+                          {STUDY_TIMER_CATEGORIES.map((cat) => {
+                            const secs = selectedStudyByCategory[cat.id] || 0
+                            if (secs <= 0) return null
+                            return (
+                              <li key={cat.id}>
+                                {getStudyCategoryEmoji(cat.id)}{' '}
+                                {getStudyCategoryLabel(cat.id)}:{' '}
+                                {formatStudyDuration(secs)}
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      )}
+                    </div>
                   ) : (
                     <p className="text-gray-400">완료된 할 일이 없습니다.</p>
                   )}
