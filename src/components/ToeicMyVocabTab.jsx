@@ -1,21 +1,32 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
+import { useAuth } from '../contexts/AuthContext.jsx'
+import {
+  createMyVocabWord,
+  deleteMyVocabWord,
+  getMyVocabWords,
+  importMyVocabWords,
+  updateMyVocabWordChecks,
+} from '../services/toeicMyVocabService.js'
 
-const STORAGE_KEY = 'toeic-my-vocab-v1'
+const LEGACY_STORAGE_KEY = 'toeic-my-vocab-v1'
 
-/** @returns {Array<{id:string, en:string, ko:string, checks:number}>} */
-function loadWords() {
+/** @returns {Array<{en:string, ko:string, checks:number}>} */
+function loadLegacyWordsFromLocalStorage() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]')
+    const raw = JSON.parse(localStorage.getItem(LEGACY_STORAGE_KEY) ?? '[]')
+    if (!Array.isArray(raw)) return []
+    return raw
+      .filter((w) => w?.en?.trim() && w?.ko?.trim())
+      .map((w) => ({
+        en: String(w.en).trim(),
+        ko: String(w.ko).trim(),
+        checks: Math.min(3, Math.max(0, Number(w.checks) || 0)),
+      }))
   } catch {
     return []
   }
 }
-
-function saveWords(words) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(words))
-}
-
 function escapeHtml(text) {
   return String(text ?? '')
     .replace(/&/g, '&amp;')
@@ -33,8 +44,10 @@ function sproutSvg() {
   </svg>`
 }
 
-/** 인쇄: checks < 3인 단어만 출력 */
-async function printMyVocab(words) {
+/** 인쇄: checks < 3인 단어만 출력
+ * @param {'en' | 'ko' | 'both'} mode
+ */
+async function printMyVocab(words, mode = 'both') {
   const printWords = words.filter((w) => w.checks < 3)
   if (printWords.length === 0) {
     showToast('인쇄할 단어가 없습니다 (모두 3회 체크 완료)', TOAST_TYPES.INFO)
@@ -83,10 +96,14 @@ async function printMyVocab(words) {
       const rows = pageWords
         .map((word, i) => {
           const num = pageIndex * WORDS_PER_PAGE + i + 1
+          const en =
+            word && mode !== 'ko' ? escapeHtml(word.en) : ''
+          const ko =
+            word && mode !== 'en' ? escapeHtml(word.ko) : ''
           return `<tr>
             <td class="col-no">${word ? num : ''}</td>
-            <td class="col-en">${word ? escapeHtml(word.en) : ''}</td>
-            <td class="col-ko">${word ? escapeHtml(word.ko) : ''}</td>
+            <td class="col-en">${en}</td>
+            <td class="col-ko">${ko}</td>
           </tr>`
         })
         .join('')
@@ -120,8 +137,10 @@ async function printMyVocab(words) {
     })
     .join('')
 
+  const modeSuffix =
+    mode === 'en' ? ' (영어)' : mode === 'ko' ? ' (한글)' : ''
   const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"/>
-<title>나만의 포실이 단어장</title>
+<title>나만의 포실이 단어장${escapeHtml(modeSuffix)}</title>
 <style>
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;background:#fff;font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
@@ -195,50 +214,113 @@ function CheckDots({ checks, onToggle }) {
  * 나만의 단어장 탭
  */
 export default function ToeicMyVocabTab() {
-  const [words, setWords] = useState(loadWords)
+  const { user } = useAuth()
+  const [words, setWords] = useState([])
   const [newEn, setNewEn] = useState('')
   const [newKo, setNewKo] = useState('')
   const [isPrinting, setIsPrinting] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isAdding, setIsAdding] = useState(false)
 
-  const persist = useCallback((next) => {
-    setWords(next)
-    saveWords(next)
-  }, [])
+  const loadWordsFromServer = useCallback(async () => {
+    if (!user?.id) {
+      setWords([])
+      setIsLoading(false)
+      return
+    }
 
-  const handleAdd = () => {
+    setIsLoading(true)
+    try {
+      let list = await getMyVocabWords()
+      if (list.length === 0) {
+        const legacy = loadLegacyWordsFromLocalStorage()
+        if (legacy.length > 0) {
+          await importMyVocabWords(legacy)
+          localStorage.removeItem(LEGACY_STORAGE_KEY)
+          list = await getMyVocabWords()
+          showToast('이 기기에 저장된 단어장을 계정에 연동했습니다.', TOAST_TYPES.SUCCESS)
+        }
+      }
+      setWords(list)
+    } catch (error) {
+      console.error('나만의 단어장 로드 오류:', error)
+      showToast(error.message || '단어장을 불러오지 못했습니다.', TOAST_TYPES.ERROR)
+      setWords([])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user?.id])
+
+  useEffect(() => {
+    loadWordsFromServer()
+  }, [loadWordsFromServer])
+
+  const handleAdd = async () => {
     const en = newEn.trim()
     const ko = newKo.trim()
     if (!en || !ko) {
       showToast('영어와 한글을 모두 입력해주세요', TOAST_TYPES.ERROR)
       return
     }
-    const next = [
-      ...words,
-      { id: `${Date.now()}-${Math.random()}`, en, ko, checks: 0 },
-    ]
-    persist(next)
-    setNewEn('')
-    setNewKo('')
+    setIsAdding(true)
+    try {
+      const created = await createMyVocabWord({ en, ko })
+      setWords((prev) => [...prev, created])
+      setNewEn('')
+      setNewKo('')
+    } catch (error) {
+      showToast(error.message || '단어 추가에 실패했습니다.', TOAST_TYPES.ERROR)
+    } finally {
+      setIsAdding(false)
+    }
   }
 
-  const handleDelete = (id) => {
-    persist(words.filter((w) => w.id !== id))
+  const handleDelete = async (id) => {
+    const prev = words
+    setWords((w) => w.filter((item) => item.id !== id))
+    try {
+      await deleteMyVocabWord(id)
+    } catch (error) {
+      setWords(prev)
+      showToast(error.message || '삭제에 실패했습니다.', TOAST_TYPES.ERROR)
+    }
   }
 
   /** n번째 원 클릭: checks가 n이면 n-1로, 아니면 n으로 */
-  const handleToggleCheck = (id, n) => {
-    persist(
-      words.map((w) =>
-        w.id === id ? { ...w, checks: w.checks === n ? n - 1 : n } : w,
-      ),
+  const handleToggleCheck = async (id, n) => {
+    const target = words.find((w) => w.id === id)
+    if (!target) return
+    const nextChecks = target.checks === n ? n - 1 : n
+    const prev = words
+    setWords((w) =>
+      w.map((item) => (item.id === id ? { ...item, checks: nextChecks } : item)),
     )
+    try {
+      const updated = await updateMyVocabWordChecks(id, nextChecks)
+      setWords((w) => w.map((item) => (item.id === id ? updated : item)))
+    } catch (error) {
+      setWords(prev)
+      showToast(error.message || '체크 저장에 실패했습니다.', TOAST_TYPES.ERROR)
+    }
   }
 
-  const handlePrint = async () => {
+  const printableCount = words.filter((w) => w.checks < 3).length
+  const sortedWords = [
+    ...words.filter((w) => w.checks < 3),
+    ...words.filter((w) => w.checks >= 3),
+  ]
+
+  const handlePrint = async (mode = 'both') => {
     setIsPrinting(true)
     try {
-      await printMyVocab(sortedWords)
-      showToast('나만의 단어장 — 인쇄 창에서 PDF로 저장하세요', TOAST_TYPES.INFO)
+      await printMyVocab(sortedWords, mode)
+      const message =
+        mode === 'en'
+          ? '나만의 단어장(영어) — 인쇄 창에서 PDF로 저장하세요'
+          : mode === 'ko'
+            ? '나만의 단어장(한글) — 인쇄 창에서 PDF로 저장하세요'
+            : '나만의 단어장 — 인쇄 창에서 PDF로 저장하세요'
+      showToast(message, TOAST_TYPES.INFO)
     } catch {
       showToast('인쇄를 열 수 없습니다', TOAST_TYPES.ERROR)
     } finally {
@@ -246,14 +328,12 @@ export default function ToeicMyVocabTab() {
     }
   }
 
-  // checks < 3 먼저, checks === 3은 맨 뒤 (삽입 순서 유지)
-  const sortedWords = [
-    ...words.filter((w) => w.checks < 3),
-    ...words.filter((w) => w.checks >= 3),
-  ]
-
   return (
     <div className="space-y-4">
+      {isLoading ? (
+        <p className="text-center text-sm text-gray-500 py-10">단어장 불러오는 중...</p>
+      ) : (
+        <>
       {/* 상단 바 */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-gray-500">
@@ -264,14 +344,32 @@ export default function ToeicMyVocabTab() {
             </span>
           )}
         </p>
-        <button
-          type="button"
-          onClick={handlePrint}
-          disabled={isPrinting || words.filter((w) => w.checks < 3).length === 0}
-          className="px-3 py-1.5 text-sm font-medium rounded-lg border border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 disabled:opacity-40"
-        >
-          {isPrinting ? '준비 중...' : '🖨️ 단어장 인쇄'}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => handlePrint('both')}
+            disabled={isPrinting || printableCount === 0}
+            className="px-3 py-1.5 text-sm font-medium rounded-lg border border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 disabled:opacity-40"
+          >
+            {isPrinting ? '준비 중...' : '🖨️ 전체'}
+          </button>
+          <button
+            type="button"
+            onClick={() => handlePrint('en')}
+            disabled={isPrinting || printableCount === 0}
+            className="px-3 py-1.5 text-sm font-medium rounded-lg border border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 disabled:opacity-40"
+          >
+            영어만
+          </button>
+          <button
+            type="button"
+            onClick={() => handlePrint('ko')}
+            disabled={isPrinting || printableCount === 0}
+            className="px-3 py-1.5 text-sm font-medium rounded-lg border border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 disabled:opacity-40"
+          >
+            한글만
+          </button>
+        </div>
       </div>
 
       {/* 추가 폼 */}
@@ -295,9 +393,10 @@ export default function ToeicMyVocabTab() {
         <button
           type="button"
           onClick={handleAdd}
-          className="px-4 py-2 text-sm font-semibold rounded-lg bg-sky-600 text-white hover:bg-sky-700"
+          disabled={isAdding}
+          className="px-4 py-2 text-sm font-semibold rounded-lg bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-50"
         >
-          + 추가
+          {isAdding ? '추가 중...' : '+ 추가'}
         </button>
       </div>
 
@@ -359,6 +458,8 @@ export default function ToeicMyVocabTab() {
             </table>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   )

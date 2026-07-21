@@ -305,6 +305,19 @@ export const toeicVocabChallengeGoals = pgTable('toeic_vocab_challenge_goals', {
 })
 
 /**
+ * toeic_my_vocab_words — 나만의 단어장
+ */
+export const toeicMyVocabWords = pgTable('toeic_my_vocab_words', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  en: text('en').notNull(),
+  ko: text('ko').notNull(),
+  checks: integer('checks').default(0).notNull(),
+  sortOrder: integer('sort_order').default(0).notNull(),
+  createdAt: bigint('created_at', { mode: 'number' }).notNull(),
+})
+
+/**
  * study_sessions — 포실이 시계 공부 세션
  */
 export const studySessions = pgTable('study_sessions', {
