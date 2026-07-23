@@ -120,10 +120,10 @@ export async function createDailyRoutine(payload) {
   if (routine.isEnabled) {
     const today = getTodayDateString()
     try {
-      const created = await claimAndCreateRoutineTask(userId, routine, today)
+      const created = await ensureRoutineTaskForToday(userId, routine, today)
       if (created) {
         routine.lastAppliedDate = today
-        window.dispatchEvent?.(new CustomEvent('refreshTodayTasks'))
+        window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
       }
     } catch (applyError) {
       console.error('루틴 오늘 할일 즉시 반영 오류:', applyError)
@@ -187,55 +187,67 @@ export async function deleteDailyRoutine(id) {
 let applyDailyRoutinesInFlight = null
 
 /**
- * 오늘 미반영 루틴을 선점(claim)한 뒤 할일 생성.
- * last_applied_date를 먼저 갱신해 동시 호출·다중 탭에서도 하루 1회만 생성.
+ * 오늘 할일에 같은 제목 루틴이 있는지 확인
+ * @param {string} userId
+ * @param {string} title
+ * @returns {Promise<boolean>}
+ */
+async function hasTodayTaskWithTitle(userId, title) {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('istoday', true)
+    .eq('title', title)
+    .limit(1)
+
+  if (error) {
+    console.error('루틴 오늘 할일 중복 확인 오류:', error)
+    return false
+  }
+  return (data || []).length > 0
+}
+
+/**
+ * 루틴 1건 → 오늘 할일 1개 (제목 기준 하루 1회)
+ * last_applied_date만 있고 할일이 없는 경우에도 복구 생성
  * @param {string} userId
  * @param {{ id: string, title: string, category: string, lastAppliedDate?: string | null }} routine
  * @param {string} today YYYY-MM-DD
- * @returns {Promise<boolean>} 이번 호출에서 할일을 만들었으면 true
+ * @returns {Promise<boolean>} 이번 호출에서 할일을 새로 만들었으면 true
  */
-async function claimAndCreateRoutineTask(userId, routine, today) {
-  const previousDate = routine.lastAppliedDate ?? null
+async function ensureRoutineTaskForToday(userId, routine, today) {
+  const title = buildRoutineTodayTaskTitle(routine.title, today)
+  if (!title) return false
 
-  // NULL이거나 오늘이 아닌 행만 갱신 → 선점 성공 시에만 select 반환
-  const { data: claimed, error: claimError } = await supabase
+  const alreadyExists = await hasTodayTaskWithTitle(userId, title)
+  if (alreadyExists) {
+    if (routine.lastAppliedDate !== today) {
+      await supabase
+        .from('daily_routines')
+        .update({ last_applied_date: today })
+        .eq('id', routine.id)
+        .eq('user_id', userId)
+    }
+    return false
+  }
+
+  await createTask(title, routine.category, true)
+
+  const { error } = await supabase
     .from('daily_routines')
     .update({ last_applied_date: today })
     .eq('id', routine.id)
     .eq('user_id', userId)
-    .or(`last_applied_date.is.null,last_applied_date.neq.${today}`)
-    .select('id')
 
-  if (claimError) {
-    console.error('루틴 선점 오류:', claimError)
-    return false
+  if (error) {
+    console.error('루틴 last_applied_date 갱신 오류:', error)
   }
-  if (!claimed || claimed.length === 0) {
-    return false
-  }
-
-  try {
-    await createTask(
-      buildRoutineTodayTaskTitle(routine.title, today),
-      routine.category,
-      true,
-    )
-    return true
-  } catch (error) {
-    console.error('루틴 할일 생성 오류:', routine.id, error)
-    // 생성 실패 시 선점 되돌리기 (같은 날 재시도 가능)
-    await supabase
-      .from('daily_routines')
-      .update({ last_applied_date: previousDate })
-      .eq('id', routine.id)
-      .eq('user_id', userId)
-      .eq('last_applied_date', today)
-    return false
-  }
+  return true
 }
 
 /**
- * 활성 루틴을 오늘 할일로 반영 (하루 1회)
+ * 활성 루틴을 오늘 할일로 반영 (루틴당 하루 1개)
  * @returns {Promise<number>} 오늘 새로 추가된 할 일 개수
  */
 export async function applyDailyRoutinesToToday() {
@@ -256,15 +268,17 @@ export async function applyDailyRoutinesToToday() {
       return 0
     }
 
-    const pending = routines.filter(
-      (routine) => routine.isEnabled && routine.lastAppliedDate !== today,
-    )
-    if (pending.length === 0) return 0
+    const enabled = routines.filter((routine) => routine.isEnabled)
+    if (enabled.length === 0) return 0
 
     let createdCount = 0
-    for (const routine of pending) {
-      const created = await claimAndCreateRoutineTask(userId, routine, today)
-      if (created) createdCount += 1
+    for (const routine of enabled) {
+      try {
+        const created = await ensureRoutineTaskForToday(userId, routine, today)
+        if (created) createdCount += 1
+      } catch (error) {
+        console.error('루틴 할일 생성 오류:', routine.id, error)
+      }
     }
 
     return createdCount
