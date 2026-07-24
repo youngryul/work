@@ -56,8 +56,6 @@ export async function getActiveGachaCharacters() {
 
     .eq('is_active', true)
 
-    .eq('is_crop', false)
-
     .order('grade', { ascending: true })
 
     .order('name', { ascending: true })
@@ -154,7 +152,7 @@ export async function createGachaCharacter(params) {
 
       image_url: params.imageUrl,
 
-      drop_weight: params.dropWeight ?? 100,
+      drop_weight: 100,
 
       is_active: params.isActive !== false,
       is_crop: Boolean(params.isCrop),

@@ -1,13 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 
 import {
-
   GACHA_GRADES,
-
-  GACHA_GRADE_DEFAULT_DROP_WEIGHT,
-
+  GACHA_GRADE_DRAW_WEIGHT,
   getGachaGradeMeta,
-
 } from '../../constants/gachaGrades.js'
 
 import {
@@ -29,19 +25,12 @@ import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 
 const EMPTY_FORM = {
-
   name: '',
-
   grade: 'common',
-
-  dropWeight: GACHA_GRADE_DEFAULT_DROP_WEIGHT.common,
-
   isActive: true,
   isCrop: false,
   imageUrl: '',
-
   imagePreview: '',
-
 }
 
 
@@ -106,17 +95,10 @@ export default function GachaCharacterManagement() {
 
 
   const handleGradeChange = (grade) => {
-
     setForm((prev) => ({
-
       ...prev,
-
       grade,
-
-      dropWeight: GACHA_GRADE_DEFAULT_DROP_WEIGHT[grade] ?? 100,
-
     }))
-
   }
 
 
@@ -168,27 +150,16 @@ export default function GachaCharacterManagement() {
 
 
   const openEdit = (char) => {
-
     setEditingId(char.id)
-
     setForm({
-
       name: char.name,
-
       grade: char.grade,
-
-      dropWeight: char.dropWeight,
-
       isActive: char.isActive,
       isCrop: char.isCrop ?? false,
       imageUrl: char.imageUrl,
-
       imagePreview: char.imageUrl,
-
     })
-
     setShowForm(true)
-
   }
 
 
@@ -220,15 +191,9 @@ export default function GachaCharacterManagement() {
     try {
 
       const payload = {
-
         name: form.name,
-
         grade: form.grade,
-
         imageUrl: form.imageUrl,
-
-        dropWeight: Number(form.dropWeight) || 100,
-
         isActive: form.isActive,
         isCrop: form.isCrop,
       }
@@ -289,16 +254,6 @@ export default function GachaCharacterManagement() {
     }
   }
 
-  const handleDropWeightBlur = async (char, rawValue) => {
-    const next = Number(rawValue)
-    if (!Number.isFinite(next) || next < 1) {
-      showToast('가중치는 1 이상이어야 합니다.', TOAST_TYPES.ERROR)
-      return
-    }
-    if (next === char.dropWeight) return
-    await handleInlineUpdate(char, { dropWeight: next })
-  }
-
   const handleDelete = async (id) => {
 
     if (!confirm('이 포실이를 삭제하시겠습니까?')) return
@@ -341,7 +296,7 @@ export default function GachaCharacterManagement() {
 
         <p className="text-sm text-gray-600">
 
-          포실이 이름·등급·이미지를 등록하면 가챠 뽑기 풀에 반영됩니다.
+          포실이 이름·등급·이미지를 등록하면 가챠 뽑기 풀에 반영됩니다. 확률은 등급 비율만 사용합니다.
 
         </p>
 
@@ -429,7 +384,7 @@ export default function GachaCharacterManagement() {
 
                 >
 
-                  {g.label}
+                  {g.label} {GACHA_GRADE_DRAW_WEIGHT[g.id]}%
 
                 </button>
 
@@ -437,33 +392,14 @@ export default function GachaCharacterManagement() {
 
             </div>
 
-          </div>
-
-
-
-          <label className="block">
-
-            <span className="text-sm font-medium text-gray-700">드롭 가중치</span>
-
-            <input
-
-              type="number"
-
-              min={1}
-
-              value={form.dropWeight}
-
-              onChange={(e) => setForm((p) => ({ ...p, dropWeight: e.target.value }))}
-
-              className="mt-1 w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg"
-
-            />
-
+          
             <p className="text-xs text-gray-500 mt-1">
-              숫자가 클수록 더 자주 나옵니다. 등급 기본 비율은 일반 32% · 레어 28% · 에픽 25% · 레전드 15%예요.
-            </p>
+              뽑기는 등급 비율만으로 결정되고, 같은 등급 안에서는 균등하게 나옵니다.
+            </p></div>
 
-          </label>
+
+
+          
 
 
 
@@ -531,7 +467,7 @@ export default function GachaCharacterManagement() {
               checked={form.isCrop}
               onChange={(e) => setForm((p) => ({ ...p, isCrop: e.target.checked }))}
             />
-            <span className="text-sm text-gray-700">작물 (농장 4단계에서 랜덤 표시, 가챠 뽑기 제외)</span>
+            <span className="text-sm text-gray-700">작물 (농장 4단계에서 랜덤 표시, 가챠 뽑기에도 포함)</span>
           </label>
 
           <label className="flex items-center gap-2">
@@ -619,15 +555,10 @@ export default function GachaCharacterManagement() {
                 <tr>
 
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">이미지</th>
-
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">이름</th>
-
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">등급</th>
-
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">가중치</th>
                   <th className="text-center px-4 py-3 font-semibold text-gray-700">작물</th>
                   <th className="text-center px-4 py-3 font-semibold text-gray-700">활성</th>
-
                   <th className="text-left px-4 py-3 font-semibold text-gray-700">관리</th>
 
                 </tr>
@@ -661,29 +592,9 @@ export default function GachaCharacterManagement() {
                       <td className="px-4 py-3 font-medium text-gray-800">{char.name}</td>
 
                       <td className="px-4 py-3">
-
                         <span className={`px-2 py-0.5 rounded text-xs font-semibold border ${gradeMeta.colorClass}`}>
-
                           {gradeMeta.label}
-
                         </span>
-
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <input
-                          type="number"
-                          min={1}
-                          defaultValue={char.dropWeight}
-                          key={`weight-${char.id}-${char.dropWeight}`}
-                          disabled={inlineSavingId === char.id}
-                          onBlur={(e) => handleDropWeightBlur(char, e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') e.currentTarget.blur()
-                          }}
-                          className="w-20 px-2 py-1 border border-gray-300 rounded-md text-gray-800 focus:border-pink-400 focus:outline-none focus:ring-1 focus:ring-pink-300 disabled:opacity-50"
-                          aria-label={`${char.name} 드롭 가중치`}
-                        />
                       </td>
 
                       <td className="px-4 py-3 text-center">

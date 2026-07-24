@@ -17,22 +17,14 @@ export const GACHA_GRADES = [
 export const GACHA_GRADE_MAP = Object.fromEntries(GACHA_GRADES.map((g) => [g.id, g]))
 
 /**
- * 등급별 뽑기 승수 (draw_gacha_character SQL과 동일해야 함)
- * 캐릭터 수가 같다면 대략 일반 32% / 레어 28% / 에픽 25% / 레전드 15%
+ * 등급별 뽑기 비율 (draw_gacha_character SQL과 동일)
+ * 캐릭터 개별 가중치 없이, 등급만 뽑은 뒤 같은 등급 안에서 균등 선택
  */
 export const GACHA_GRADE_DRAW_WEIGHT = {
   common: 32,
   rare: 28,
   epic: 25,
   legendary: 15,
-}
-
-/** 캐릭터 등록 시 등급별 기본 drop_weight (등급 승수와 이중 페널티 방지용으로 동일) */
-export const GACHA_GRADE_DEFAULT_DROP_WEIGHT = {
-  common: 100,
-  rare: 100,
-  epic: 100,
-  legendary: 100,
 }
 
 /**

@@ -180,7 +180,7 @@ export default function GachaView() {
           ))}
         </div>
         <p className="mt-2 text-[11px] text-gray-400 text-center max-w-sm">
-          등급 비율은 캐릭터 수·개별 가중치에 따라 조금 달라질 수 있어요.
+          등급만으로 뽑히고, 같은 등급 안에서는 균등하게 나와요.
         </p>
 
         {poolSize === 0 && (
