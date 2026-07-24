@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { GACHA_PULL_JELLY_COST_DEFAULT, GACHA_UNLOCK_FARM_STAGE } from '../../constants/gacha.js'
-import { getGachaGradeMeta, GACHA_CAPSULE_IMAGES } from '../../constants/gachaGrades.js'
+import { getGachaGradeMeta, GACHA_CAPSULE_IMAGES, GACHA_GRADES, GACHA_GRADE_DRAW_WEIGHT } from '../../constants/gachaGrades.js'
 import { useJellyBalance } from '../../hooks/useJellyBalance.js'
 import { getMyFarmProgress } from '../../services/farmService.js'
 import { getActiveGachaCharacters } from '../../services/gachaCharacterService.js'
@@ -167,6 +167,20 @@ export default function GachaView() {
 
         <p className="mt-4 text-sm text-gray-500">
           뽑기 가능 포실이: <strong className="text-gray-700">{poolSize}종</strong>
+        </p>
+
+        <div className="mt-3 flex flex-wrap justify-center gap-2 text-xs">
+          {GACHA_GRADES.map((grade) => (
+            <span
+              key={grade.id}
+              className={`px-2.5 py-1 rounded-full border font-medium ${grade.colorClass}`}
+            >
+              {grade.label} {GACHA_GRADE_DRAW_WEIGHT[grade.id]}%
+            </span>
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] text-gray-400 text-center max-w-sm">
+          등급 비율은 캐릭터 수·개별 가중치에 따라 조금 달라질 수 있어요.
         </p>
 
         {poolSize === 0 && (

@@ -459,7 +459,9 @@ export default function GachaCharacterManagement() {
 
             />
 
-            <p className="text-xs text-gray-500 mt-1">숫자가 클수록 더 자주 나옵니다 (등급별 기본 확률도 적용)</p>
+            <p className="text-xs text-gray-500 mt-1">
+              숫자가 클수록 더 자주 나옵니다. 등급 기본 비율은 일반 32% · 레어 28% · 에픽 25% · 레전드 15%예요.
+            </p>
 
           </label>
 
