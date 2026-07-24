@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
+  NAVIGATION_MENU_GROUPS,
+  NAVIGATION_FOOTER_ITEMS,
   NAVIGATION_MENU_ITEMS,
   EXTERNAL_LINKS,
 } from '../constants/navigationMenu.js'
@@ -10,28 +12,19 @@ import { getMyFarmProgress } from '../services/farmService.js'
 import MenuIcon from './MenuIcon.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
-// 역할별 메인 메뉴 제한은 DB 설정(role_menu_permissions) 사용
-
 /**
  * 사이드바 네비게이션 컴포넌트
- * @param {string} currentView - 현재 선택된 뷰
- * @param {Function} onViewChange - 뷰 변경 핸들러
- * @param {boolean} isOpen - 사이드바 열림 상태 (모바일)
- * @param {Function} onClose - 사이드바 닫기 핸들러 (모바일)
- * @param {boolean} collapsed - 사이드바 접힘 상태 (데스크톱)
- * @param {Function} onToggleCollapse - 사이드바 접기/펼치기 토글 핸들러
  */
-export default function NavigationSidebar({ 
-  currentView, 
-  onViewChange, 
-  isOpen = false, 
+export default function NavigationSidebar({
+  currentView,
+  onViewChange,
+  isOpen = false,
   onClose,
   collapsed = false,
-  onToggleCollapse
+  onToggleCollapse,
 }) {
   const { signOut, user, isAdmin: isAdminUser, userRole } = useAuth()
   const [expandedMenus, setExpandedMenus] = useState(new Set())
-  const [isFarmUnlocked, setIsFarmUnlocked] = useState(false)
   const [farmStage, setFarmStage] = useState(1)
   const { permissions: menuPermissions } = useRoleMenuPermissions(userRole)
 
@@ -41,24 +34,18 @@ export default function NavigationSidebar({
   const showAdminMenu = Boolean(menuPermissions?.showAdminMenu && isAdminUser)
   const showExternalLinks = allowedExternalLinkIds.size > 0
 
-  /**
-   * 하위 메뉴가 있는 메뉴의 펼침/접힘 상태 관리
-   */
   useEffect(() => {
     const loadFarmProgress = async () => {
       if (!user) {
-        setIsFarmUnlocked(false)
         setFarmStage(1)
         return
       }
 
       try {
         const progress = await getMyFarmProgress()
-        setIsFarmUnlocked(Boolean(progress?.farmUnlocked))
         setFarmStage(Number(progress?.stage || 1))
       } catch (error) {
         console.error('농장 해금 상태 조회 실패:', error)
-        setIsFarmUnlocked(false)
         setFarmStage(1)
       }
     }
@@ -67,53 +54,42 @@ export default function NavigationSidebar({
   }, [user, currentView])
 
   useEffect(() => {
-    // 현재 뷰가 하위 메뉴에 속하는지 확인하고 상위 메뉴를 펼침
     const menuWithChildren = NAVIGATION_MENU_ITEMS.find(
-      item => item.children && item.children.some(child => child.id === currentView)
+      (item) => item.children && item.children.some((child) => child.id === currentView),
     )
     if (menuWithChildren) {
       setExpandedMenus(new Set([menuWithChildren.id]))
     }
   }, [currentView])
 
-  /**
-   * 메뉴 클릭 핸들러
-   */
+  const isItemVisible = (item) => {
+    if (item.id === 'farm') return true
+    if (item.id === 'farm-field') return farmStage >= 2
+    if (item.id === 'gacha') return farmStage >= 3
+    return isMainMenuItemAllowed(item.id, allowedMenuIds, item)
+  }
+
   const handleMenuClick = (viewId, hasChildren = false) => {
-    // 하위 메뉴가 있는 경우 펼침/접힘 토글
     if (hasChildren) {
-      const newExpanded = new Set(expandedMenus)
-      if (newExpanded.has(viewId)) {
-        newExpanded.delete(viewId)
-      } else {
-        newExpanded.add(viewId)
-      }
-      setExpandedMenus(newExpanded)
+      const next = new Set(expandedMenus)
+      if (next.has(viewId)) next.delete(viewId)
+      else next.add(viewId)
+      setExpandedMenus(next)
       return
     }
 
-    // 카테고리 설정은 모달로 열기
     if (viewId === 'category-settings') {
       if (window.openCategorySettings) {
         window.openCategorySettings()
       }
-      // 모바일에서 메뉴 클릭 시 사이드바 닫기
-      if (window.innerWidth < 768 && onClose) {
-        onClose()
-      }
+      if (window.innerWidth < 768 && onClose) onClose()
       return
     }
-    
+
     onViewChange(viewId)
-    // 모바일에서 메뉴 클릭 시 사이드바 닫기
-    if (window.innerWidth < 768 && onClose) {
-      onClose()
-    }
+    if (window.innerWidth < 768 && onClose) onClose()
   }
 
-  /**
-   * 로그아웃 핸들러
-   */
   const handleSignOut = async () => {
     try {
       await signOut()
@@ -123,9 +99,67 @@ export default function NavigationSidebar({
     }
   }
 
+  const menuButtonClass = (isActive) => `
+    w-full rounded-md transition-all duration-150 text-left
+    flex items-center gap-2 min-w-0
+    ${collapsed ? 'md:justify-center md:gap-0 md:px-1 md:py-1.5' : 'px-2.5 py-1.5'}
+    ${
+      isActive
+        ? 'bg-green-500 text-white shadow-sm'
+        : 'text-gray-600 hover:bg-green-50'
+    }
+  `
+
+  const renderMenuItem = (item) => {
+    const hasChildren = item.children && item.children.length > 0
+    const isExpanded = expandedMenus.has(item.id)
+    const isActive =
+      currentView === item.id ||
+      (hasChildren && item.children.some((child) => child.id === currentView))
+
+    return (
+      <div key={item.id} className="space-y-0.5">
+        <button
+          type="button"
+          onClick={() => handleMenuClick(item.id, hasChildren)}
+          className={menuButtonClass(isActive)}
+          title={collapsed ? item.label : ''}
+        >
+          <MenuIcon icon={item.icon} label={item.label} compact={collapsed} />
+          {!collapsed && (
+            <>
+              <span className="text-sm font-medium flex-1 truncate">{item.label}</span>
+              {hasChildren && (
+                <span className={`text-[10px] transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
+                  ▶
+                </span>
+              )}
+            </>
+          )}
+        </button>
+        {hasChildren && !collapsed && isExpanded && (
+          <div className="ml-3 space-y-0.5 border-l border-gray-200 pl-2">
+            {item.children
+              .filter((child) => allowedMenuIds.has(child.id))
+              .map((child) => (
+                <button
+                  key={child.id}
+                  type="button"
+                  onClick={() => handleMenuClick(child.id)}
+                  className={menuButtonClass(currentView === child.id)}
+                >
+                  <MenuIcon icon={child.icon} label={child.label} size="sm" />
+                  <span className="text-xs font-medium truncate">{child.label}</span>
+                </button>
+              ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <>
-      {/* 모바일 오버레이 */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
@@ -133,36 +167,34 @@ export default function NavigationSidebar({
         />
       )}
 
-      {/* 사이드바 */}
       <aside
         className={`
           fixed left-0 top-0 h-full bg-white/95 backdrop-blur-sm shadow-lg z-50
           transition-all duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0
-          ${collapsed ? 'md:w-20' : 'md:w-64'}
+          ${collapsed ? 'md:w-14' : 'md:w-52'}
         `}
       >
         <div className="flex flex-col h-full">
-          {/* 헤더 */}
-          <div className={`border-b border-gray-200 ${collapsed ? 'md:p-2 p-6' : 'p-6'}`}>
+          <div className={`border-b border-gray-200 ${collapsed ? 'md:p-2 p-4' : 'px-3 py-3'}`}>
             <div className="flex items-center justify-between">
               {!collapsed && (
-                <h1 className="text-2xl font-bold text-gray-800">메뉴</h1>
+                <h1 className="text-base font-bold text-gray-800">메뉴</h1>
               )}
-              <div className="flex items-center gap-2">
-                {/* 데스크톱 토글 버튼 */}
+              <div className="flex items-center gap-1">
                 <button
+                  type="button"
                   onClick={onToggleCollapse}
-                  className="hidden md:block text-gray-500 hover:text-gray-700 text-xl p-1 rounded hover:bg-gray-100"
+                  className="hidden md:block text-gray-500 hover:text-gray-700 text-sm p-1 rounded hover:bg-gray-100"
                   title={collapsed ? '메뉴 펼치기' : '메뉴 접기'}
                 >
                   {collapsed ? '→' : '←'}
                 </button>
-                {/* 모바일 닫기 버튼 */}
                 <button
+                  type="button"
                   onClick={onClose}
-                  className="md:hidden text-gray-500 hover:text-gray-700 text-2xl"
+                  className="md:hidden text-gray-500 hover:text-gray-700 text-xl"
                 >
                   ×
                 </button>
@@ -170,204 +202,130 @@ export default function NavigationSidebar({
             </div>
           </div>
 
-          {/* 메뉴 목록 */}
-          <nav className={`flex-1 overflow-y-auto overflow-x-visible ${collapsed ? 'md:p-2 p-4' : 'p-4'}`}>
-            <div className="space-y-2">
-              {NAVIGATION_MENU_ITEMS.filter(
-                (item) => {
-                  if (item.id === 'announcements' || item.id === 'my-page' || item.id === 'settings') {
-                    return false
-                  }
+          <nav className={`flex-1 overflow-y-auto overflow-x-visible ${collapsed ? 'md:p-1.5 p-3' : 'p-2'}`}>
+            <div className="space-y-3">
+              {NAVIGATION_MENU_GROUPS.map((group) => {
+                const visibleItems = group.items.filter(isItemVisible)
+                if (visibleItems.length === 0) return null
 
-                  // 포실이 성장은 1단계부터 항상 노출
-                  if (item.id === 'farm') {
-                    return true
-                  }
-
-                  // 농장 메뉴는 2단계부터 노출 (권한 DB 설정과 무관)
-                  if (item.id === 'farm-field') {
-                    return farmStage >= 2
-                  }
-
-                  // 뽑기 가챠는 3단계부터 노출 (권한 DB 설정과 무관)
-                  if (item.id === 'gacha') {
-                    return farmStage >= 3
-                  }
-
-                  return isMainMenuItemAllowed(item.id, allowedMenuIds, item)
-                }
-              ).map((item) => {
-                const hasChildren = item.children && item.children.length > 0
-                const isExpanded = expandedMenus.has(item.id)
-                const isActive = currentView === item.id || (hasChildren && item.children.some(child => child.id === currentView))
-                
                 return (
-                  <div key={item.id} className="space-y-1">
-                    <button
-                      onClick={() => handleMenuClick(item.id, hasChildren)}
-                      className={`
-                        w-full rounded-lg transition-all duration-200 text-left
-                        flex items-center gap-3 min-w-0
-                        ${collapsed ? 'md:justify-center md:gap-0 md:px-1.5 md:py-2.5' : 'px-4 py-3'}
-                        ${
-                          isActive
-                            ? 'bg-green-500 text-white shadow-md'
-                            : 'text-gray-600 hover:bg-green-50'
-                        }
-                      `}
-                      title={collapsed ? item.label : ''}
-                    >
-                      <MenuIcon iconSrc={item.iconSrc} icon={item.icon} label={item.label} compact={collapsed} />
-                      {!collapsed && (
-                        <>
-                          <span className="text-lg font-medium flex-1">{item.label}</span>
-                          {hasChildren && (
-                            <span className={`text-sm transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
-                              ▶
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </button>
-                    {/* 하위 메뉴 */}
-                    {hasChildren && !collapsed && isExpanded && (
-                      <div className="ml-4 space-y-1">
-                        {item.children
-                          .filter((child) => allowedMenuIds.has(child.id))
-                          .map((child) => (
-                          <button
-                            key={child.id}
-                            onClick={() => handleMenuClick(child.id)}
-                            className={`
-                              w-full rounded-lg transition-all duration-200 text-left
-                              flex items-center gap-3 px-4 py-2
-                              ${
-                                currentView === child.id
-                                  ? 'bg-green-500 text-white shadow-md'
-                                  : 'text-gray-600 hover:bg-green-50'
-                              }
-                            `}
-                          >
-                            <MenuIcon iconSrc={child.iconSrc} icon={child.icon} label={child.label} size="sm" />
-                            <span className="text-base font-medium">{child.label}</span>
-                          </button>
-                        ))}
+                  <div key={group.id}>
+                    {!collapsed && (
+                      <div className="flex items-center gap-1.5 px-2 mb-1">
+                        <span className="text-xs leading-none" aria-hidden="true">
+                          {group.icon}
+                        </span>
+                        <span className="text-[11px] font-semibold text-gray-400 tracking-wide">
+                          {group.label}
+                        </span>
                       </div>
                     )}
+                    {collapsed && (
+                      <div className="hidden md:flex justify-center mb-1" title={group.label}>
+                        <span className="text-sm leading-none opacity-70">{group.icon}</span>
+                      </div>
+                    )}
+                    <div className="space-y-0.5">{visibleItems.map(renderMenuItem)}</div>
                   </div>
                 )
               })}
             </div>
 
-            {/* 외부 링크 (admin·superuser만 표시) */}
             {showExternalLinks && (
               <>
-                <div className={`border-t border-gray-200 ${collapsed ? 'my-4' : 'my-6'}`} />
-                <div className="space-y-2">
-                  {EXTERNAL_LINKS.filter((link) => allowedExternalLinkIds.has(link.id)).map((link) => (
-                    <a
-                      key={link.id}
-                      href={link.href}
-                      target={link.target}
-                      rel="noopener noreferrer"
-                      className={`
-                        w-full rounded-lg transition-all duration-200 text-left
-                        flex items-center gap-3 min-w-0
-                        ${collapsed ? 'md:justify-center md:gap-0 md:px-1.5 md:py-2.5' : 'px-4 py-3'}
-                        text-gray-600 hover:bg-purple-100 hover:text-purple-600
-                      `}
-                      title={collapsed ? link.label : ''}
-                    >
-                      <MenuIcon iconSrc={link.iconSrc} icon={link.icon} label={link.label} compact={collapsed} />
-                      {!collapsed && (
-                        <span className="text-lg font-medium">{link.label}</span>
-                      )}
-                    </a>
-                  ))}
+                <div className={`border-t border-gray-200 ${collapsed ? 'my-2' : 'my-3'}`} />
+                {!collapsed && (
+                  <div className="px-2 mb-1 text-[11px] font-semibold text-gray-400">외부</div>
+                )}
+                <div className="space-y-0.5">
+                  {EXTERNAL_LINKS.filter((link) => allowedExternalLinkIds.has(link.id)).map(
+                    (link) => (
+                      <a
+                        key={link.id}
+                        href={link.href}
+                        target={link.target}
+                        rel="noopener noreferrer"
+                        className={`
+                          w-full rounded-md transition-all duration-150 text-left
+                          flex items-center gap-2 min-w-0
+                          ${collapsed ? 'md:justify-center md:gap-0 md:px-1 md:py-1.5' : 'px-2.5 py-1.5'}
+                          text-gray-600 hover:bg-purple-100 hover:text-purple-600
+                        `}
+                        title={collapsed ? link.label : ''}
+                      >
+                        <MenuIcon icon={link.icon} label={link.label} compact={collapsed} />
+                        {!collapsed && (
+                          <span className="text-sm font-medium truncate">{link.label}</span>
+                        )}
+                      </a>
+                    ),
+                  )}
                 </div>
               </>
             )}
 
-            {/* 구분선 */}
-            <div className={`border-t border-gray-200 ${collapsed ? 'my-4' : 'my-6'}`} />
+            <div className={`border-t border-gray-200 ${collapsed ? 'my-2' : 'my-3'}`} />
 
-            {/* 사용자 정보 및 로그아웃 */}
-            <div className="space-y-2">
+            <div className="space-y-0.5">
               {!collapsed && user && (
-                <div className="px-4 py-2 text-sm text-gray-500 font-sans">
+                <div className="px-2 py-1 text-[11px] text-gray-400 font-sans truncate">
                   {user.email}
                 </div>
               )}
 
-              {/* 공지사항·마이페이지·설정 (전체 역할 표시) */}
-              <div className="space-y-2">
-                {NAVIGATION_MENU_ITEMS.filter((item) =>
+              {NAVIGATION_FOOTER_ITEMS.filter(
+                (item) =>
                   allowedFooterMenuIds.has(item.id) &&
-                  (item.id === 'announcements' || item.id === 'my-page' || item.id === 'settings') &&
-                  (item.id !== 'my-page' || farmStage >= 3)
-                ).map((item) => (
-                    <button
-                        key={item.id}
-                        onClick={() => handleMenuClick(item.id)}
-                        className={`
-                    w-full rounded-lg transition-all duration-200 text-left
-                    flex items-center gap-3
-                    ${collapsed ? 'md:justify-center md:gap-0 md:px-1.5 md:py-2.5' : 'px-4 py-3'}
-                    ${
-                            currentView === item.id
-                                ? 'bg-green-500 text-white shadow-md'
-                                : 'text-gray-600 hover:bg-green-50'
-                        }
-                  `}
-                        title={collapsed ? item.label : ''}
-                    >
-                      <MenuIcon iconSrc={item.iconSrc} icon={item.icon} label={item.label} compact={collapsed} />
-                      {!collapsed && (
-                          <span className="text-lg font-medium">{item.label}</span>
-                      )}
-                    </button>
-                ))}
-              </div>
+                  (item.id !== 'my-page' || farmStage >= 3),
+              ).map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleMenuClick(item.id)}
+                  className={menuButtonClass(currentView === item.id)}
+                  title={collapsed ? item.label : ''}
+                >
+                  <MenuIcon icon={item.icon} label={item.label} compact={collapsed} />
+                  {!collapsed && (
+                    <span className="text-sm font-medium truncate">{item.label}</span>
+                  )}
+                </button>
+              ))}
 
-              {/* 관리자 메뉴 */}
               {showAdminMenu && (
-                <div className="space-y-2">
-                  <button
-                    onClick={() => handleMenuClick('admin')}
-                    className={`
-                      w-full rounded-lg transition-all duration-200 text-left
-                      flex items-center gap-3
-                      ${collapsed ? 'md:justify-center md:gap-0 md:px-1.5 md:py-2.5' : 'px-4 py-3'}
-                      ${
-                        currentView === 'admin'
-                          ? 'bg-blue-500 text-white shadow-md'
-                          : 'text-blue-600 hover:bg-blue-50'
-                      }
-                    `}
-                    title={collapsed ? '관리자' : ''}
-                  >
-                    <span className="text-xl flex-shrink-0">🔐</span>
-                    {!collapsed && (
-                      <span className="text-lg font-medium">관리자</span>
-                    )}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleMenuClick('admin')}
+                  className={`
+                    w-full rounded-md transition-all duration-150 text-left
+                    flex items-center gap-2
+                    ${collapsed ? 'md:justify-center md:gap-0 md:px-1 md:py-1.5' : 'px-2.5 py-1.5'}
+                    ${
+                      currentView === 'admin'
+                        ? 'bg-blue-500 text-white shadow-sm'
+                        : 'text-blue-600 hover:bg-blue-50'
+                    }
+                  `}
+                  title={collapsed ? '관리자' : ''}
+                >
+                  <span className="text-base flex-shrink-0 leading-none">🔐</span>
+                  {!collapsed && <span className="text-sm font-medium">관리자</span>}
+                </button>
               )}
 
               <button
-                  onClick={handleSignOut}
-                  className={`
-                  w-full rounded-lg transition-all duration-200 text-left
-                  flex items-center gap-3
-                  ${collapsed ? 'md:justify-center md:gap-0 md:px-1.5 md:py-2.5' : 'px-4 py-3'}
+                type="button"
+                onClick={handleSignOut}
+                className={`
+                  w-full rounded-md transition-all duration-150 text-left
+                  flex items-center gap-2
+                  ${collapsed ? 'md:justify-center md:gap-0 md:px-1 md:py-1.5' : 'px-2.5 py-1.5'}
                   text-red-600 hover:bg-red-50 hover:text-red-700
                 `}
-                  title={collapsed ? '로그아웃' : ''}
+                title={collapsed ? '로그아웃' : ''}
               >
-                <span className="text-xl">🚪</span>
-                {!collapsed && (
-                    <span className="text-lg font-medium">로그아웃</span>
-                )}
+                <span className="text-base leading-none">🚪</span>
+                {!collapsed && <span className="text-sm font-medium">로그아웃</span>}
               </button>
             </div>
           </nav>
@@ -376,4 +334,3 @@ export default function NavigationSidebar({
     </>
   )
 }
-

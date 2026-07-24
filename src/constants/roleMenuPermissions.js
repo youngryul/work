@@ -101,11 +101,23 @@ export const DEFAULT_ROLE_MENU_PERMISSIONS = {
  */
 export const ROLE_MENU_CONFIG_GROUPS = [
   {
-    title: '할 일·일기',
-    menuIds: ['today', 'backlog', 'routines', 'todo-calendar', 'diary-calendar', 'gacha', 'farm', 'farm-field', 'shop', 'stocks', 'schedule-calendar'],
+    title: '일상',
+    menuIds: [
+      'today',
+      'backlog',
+      'routines',
+      'todo-calendar',
+      'diary-calendar',
+      'schedule-calendar',
+      'timers',
+      'pomodoro',
+      'study-timer',
+      'study-time',
+      'summer-clock',
+    ],
   },
   {
-    title: '기록·목표',
+    title: '기록',
     menuIds: [
       'records',
       'goals',
@@ -119,23 +131,19 @@ export const ROLE_MENU_CONFIG_GROUPS = [
       'fridge-inventory',
       'recipes',
       'toeic-vocab',
+      'stocks',
+      'travel-menu',
+      'travel',
+      'domestic-travel',
+      'travel-itinerary',
+      'review-menu',
+      'review',
+      'review-2026',
     ],
   },
   {
-    title: '여행',
-    menuIds: ['travel-menu', 'travel', 'domestic-travel', 'travel-itinerary'],
-  },
-  {
-    title: '게임',
-    menuIds: ['games', 'nonogram', 'sudoku'],
-  },
-  {
-    title: '시계',
-    menuIds: ['summer-clock'],
-  },
-  {
-    title: '회고',
-    menuIds: ['review-menu', 'review', 'review-2026'],
+    title: '포실이',
+    menuIds: ['farm', 'farm-field', 'gacha', 'shop', 'games', 'nonogram', 'sudoku'],
   },
   {
     title: '하단 메뉴',

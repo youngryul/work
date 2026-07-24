@@ -370,7 +370,7 @@ function AppContent() {
       />
 
       {/* 메인 컨텐츠 영역 */}
-      <div className={`min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
+      <div className={`min-h-screen transition-all duration-300 ${sidebarCollapsed ? 'md:ml-14' : 'md:ml-52'}`}>
         {/* 모바일 헤더 (햄버거 메뉴) */}
         <header
           className={`md:hidden sticky top-0 z-50 ${
