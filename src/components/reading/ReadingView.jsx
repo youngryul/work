@@ -5,6 +5,7 @@ import BookSearch from './BookSearch.jsx'
 import ReadingRecordForm from './ReadingRecordForm.jsx'
 import ReadingBookStack from './ReadingBookStack.jsx'
 import OneLineInsightModal from './OneLineInsightModal.jsx'
+import CompletedReadingNotesModal from './CompletedReadingNotesModal.jsx'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
@@ -35,79 +36,10 @@ export default function ReadingView() {
   const [monthlyStats, setMonthlyStats] = useState(null)
   const [showInsightModal, setShowInsightModal] = useState(false)
   const [bookToComplete, setBookToComplete] = useState(null)
+  const [notesBook, setNotesBook] = useState(null)
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth() + 1
-
-  /**
-   * 독서 시간 포맷팅 (1분 미만이면 초 단위로 표시)
-   */
-  const formatReadingTime = (record) => {
-    if (!record.readingMinutes && !record.startTime) {
-      return null
-    }
-
-    // 시작/종료 시간이 있으면 정확한 초 단위 계산
-    if (record.startTime && record.endTime) {
-      const start = new Date(record.startTime)
-      const end = new Date(record.endTime)
-      const diffMs = end.getTime() - start.getTime()
-      const totalSeconds = Math.floor(diffMs / 1000)
-      
-      if (totalSeconds < 60) {
-        return `${totalSeconds}초`
-      } else {
-        const minutes = Math.floor(totalSeconds / 60)
-        const seconds = totalSeconds % 60
-        if (seconds > 0) {
-          return `${minutes}분 ${seconds}초`
-        } else {
-          return `${minutes}분`
-        }
-      }
-    }
-
-    // readingMinutes만 있는 경우
-    if (record.readingMinutes !== null && record.readingMinutes !== undefined) {
-      if (record.readingMinutes < 1) {
-        // 1분 미만이면 초로 변환 (대략적인 값)
-        const seconds = Math.round(record.readingMinutes * 60)
-        return `${seconds}초`
-      } else {
-        return `${record.readingMinutes}분`
-      }
-    }
-
-    return null
-  }
-
-  /**
-   * 총 독서 시간 포맷팅
-   */
-  const formatTotalReadingTime = (records) => {
-    const totalSeconds = records.reduce((sum, record) => {
-      if (record.startTime && record.endTime) {
-        const start = new Date(record.startTime)
-        const end = new Date(record.endTime)
-        return sum + Math.floor((end.getTime() - start.getTime()) / 1000)
-      } else if (record.readingMinutes) {
-        return sum + (record.readingMinutes * 60)
-      }
-      return sum
-    }, 0)
-
-    if (totalSeconds < 60) {
-      return `${totalSeconds}초`
-    } else {
-      const minutes = Math.floor(totalSeconds / 60)
-      const seconds = totalSeconds % 60
-      if (seconds > 0) {
-        return `${minutes}분 ${seconds}초`
-      } else {
-        return `${minutes}분`
-      }
-    }
-  }
 
   /**
    * 책 목록 로드
@@ -214,10 +146,14 @@ export default function ReadingView() {
     if (!bookToComplete) return
 
     try {
-      await updateBookCompletion(bookToComplete.id, true, oneLineInsight)
+      const completedBook = await updateBookCompletion(bookToComplete.id, true, oneLineInsight)
       await loadBooks()
+      if (selectedBook?.id === completedBook.id) {
+        setSelectedBook(completedBook)
+      }
       setShowInsightModal(false)
       setBookToComplete(null)
+      setNotesBook(completedBook)
       showToast('책이 완료 처리되었습니다.', TOAST_TYPES.SUCCESS)
     } catch (error) {
       console.error('책 완료 처리 오류:', error)
@@ -283,13 +219,7 @@ export default function ReadingView() {
 
       {/* 월별 통계 */}
       {monthlyStats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
-            <div className="text-4xl font-bold text-blue-600 mb-2">
-              {monthlyStats.totalHours}시간
-            </div>
-            <div className="text-xl text-gray-700">총 독서 시간</div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <div className="bg-purple-50 rounded-lg p-6 border border-purple-200">
             <div className="text-4xl font-bold text-purple-600 mb-2">
               {monthlyStats.totalBooks}권
@@ -372,6 +302,18 @@ export default function ReadingView() {
                           <span className="font-semibold">💡 한줄 인사이트:</span> {book.oneLineInsight}
                         </div>
                       )}
+                      {book.isCompleted && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setNotesBook(book)
+                          }}
+                          className="mt-2 px-3 py-1.5 text-sm rounded-lg border border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+                        >
+                          그동안 쓴 내용 보기
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -382,17 +324,18 @@ export default function ReadingView() {
 
         {/* 독서 기록 */}
         <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 gap-3">
             <h2 className="text-3xl font-bold text-gray-800">
               독서 기록 {selectedBook && `- ${selectedBook.title}`}
             </h2>
-            {readingRecords.length > 0 && (
-              <div className="text-right">
-                <div className="text-sm text-gray-600">총 독서 시간</div>
-                <div className="text-2xl font-bold text-blue-600">
-                  {formatTotalReadingTime(readingRecords)}
-                </div>
-              </div>
+            {selectedBook?.isCompleted && (
+              <button
+                type="button"
+                onClick={() => setNotesBook(selectedBook)}
+                className="shrink-0 px-3 py-1.5 text-sm rounded-lg border border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+              >
+                그동안 쓴 내용
+              </button>
             )}
           </div>
           {!selectedBook ? (
@@ -420,9 +363,6 @@ export default function ReadingView() {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-lg font-bold text-gray-800">{record.readingDate}</span>
-                      {formatReadingTime(record) && (
-                        <span className="text-2xl font-bold text-blue-600">{formatReadingTime(record)}</span>
-                      )}
                     </div>
                     {record.pagesRead && (
                       <p className="text-gray-600 text-sm mb-1">{record.pagesRead}페이지 읽음</p>
@@ -563,35 +503,10 @@ export default function ReadingView() {
                   <p className="text-lg font-bold text-gray-800">{selectedRecord.readingDate}</p>
                 </div>
                 
-                {formatReadingTime(selectedRecord) && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">독서 시간</label>
-                    <p className="text-2xl font-bold text-blue-600">{formatReadingTime(selectedRecord)}</p>
-                  </div>
-                )}
-                
                 {selectedRecord.pagesRead && (
                   <div>
                     <label className="text-sm font-medium text-gray-600">읽은 페이지</label>
                     <p className="text-lg font-bold text-gray-800">{selectedRecord.pagesRead}페이지</p>
-                  </div>
-                )}
-                
-                {selectedRecord.startTime && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">시작 시간</label>
-                    <p className="text-lg text-gray-800">
-                      {new Date(selectedRecord.startTime).toLocaleString('ko-KR')}
-                    </p>
-                  </div>
-                )}
-                
-                {selectedRecord.endTime && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">종료 시간</label>
-                    <p className="text-lg text-gray-800">
-                      {new Date(selectedRecord.endTime).toLocaleString('ko-KR')}
-                    </p>
                   </div>
                 )}
                 
@@ -615,6 +530,14 @@ export default function ReadingView() {
           book={bookToComplete}
           onSave={handleSaveInsight}
           onCancel={handleCancelInsight}
+        />
+      )}
+
+      {/* 완료 책 — 독서 메모 전체 합쳐 보기 */}
+      {notesBook && (
+        <CompletedReadingNotesModal
+          book={notesBook}
+          onClose={() => setNotesBook(null)}
         />
       )}
     </div>
