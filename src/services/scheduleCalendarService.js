@@ -1,8 +1,24 @@
 import { supabase } from '../config/supabase.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
+import {
+  DEFAULT_SCHEDULE_REPEAT_TYPE,
+  expandScheduleForRange,
+  getScheduleSeriesId,
+  normalizeScheduleMonthlyRule,
+  normalizeScheduleRepeatEndType,
+  normalizeScheduleRepeatType,
+  normalizeScheduleWeekdays,
+} from '../utils/scheduleRepeat.js'
 
 /** 연속 일정 최대 일수 */
 export const MAX_SCHEDULE_RANGE_DAYS = 366
+
+export {
+  SCHEDULE_REPEAT_TYPES,
+  describeScheduleRepeat,
+  getScheduleRepeatLabel,
+  getScheduleSeriesId,
+} from '../utils/scheduleRepeat.js'
 
 export const DEFAULT_SCHEDULE_TAGS = [
   { name: '업무', color: 'bg-blue-100 text-blue-700 border-blue-200' },
@@ -49,6 +65,13 @@ function assertValidScheduleRange(startDate, endDate) {
 function normalizeSchedule(row) {
   const scheduleDate = row.schedule_date
   const endDate = row.end_date || scheduleDate
+  const repeatType = normalizeScheduleRepeatType(row.repeat_type)
+  let repeatEndType = normalizeScheduleRepeatEndType(row.repeat_end_type)
+  // 구 데이터: end_type 없고 until만 있으면 until로 간주
+  if (!row.repeat_end_type && row.repeat_until) {
+    repeatEndType = 'until'
+  }
+
   return {
     id: row.id,
     userId: row.user_id,
@@ -56,6 +79,18 @@ function normalizeSchedule(row) {
     endDate,
     title: row.title,
     tag: row.tag,
+    repeatType,
+    repeatInterval: Math.max(1, Number(row.repeat_interval) || 1),
+    repeatWeekdays: normalizeScheduleWeekdays(row.repeat_weekdays),
+    repeatMonthlyRule: normalizeScheduleMonthlyRule(row.repeat_monthly_rule),
+    repeatMonthDay: Number(row.repeat_month_day) || null,
+    repeatNth: Number(row.repeat_nth) || null,
+    repeatWeekday: Number.isFinite(Number(row.repeat_weekday))
+      ? Number(row.repeat_weekday)
+      : null,
+    repeatEndType,
+    repeatCount: Number(row.repeat_count) || null,
+    repeatUntil: row.repeat_until || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -78,7 +113,7 @@ function normalizeTag(row) {
 }
 
 /**
- * 특정 월의 일정 목록을 조회합니다.
+ * 특정 월의 일정 목록을 조회합니다. (반복 일정은 해당 월 발생분으로 펼침)
  * @param {number} year
  * @param {number} month - 1~12
  * @returns {Promise<Array>}
@@ -91,6 +126,65 @@ export async function getSchedulesByMonth(year, month) {
   const lastDate = new Date(year, month, 0).getDate()
   const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDate).padStart(2, '0')}`
 
+  const [plainResult, recurringResult] = await Promise.all([
+    supabase
+      .from('schedule_calendar_events')
+      .select('*')
+      .eq('user_id', userId)
+      .or('repeat_type.is.null,repeat_type.eq.none')
+      .lte('schedule_date', endDate)
+      .or(`end_date.gte.${startDate},and(end_date.is.null,schedule_date.gte.${startDate})`)
+      .order('schedule_date', { ascending: true })
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('schedule_calendar_events')
+      .select('*')
+      .eq('user_id', userId)
+      .in('repeat_type', ['weekly', 'monthly', 'yearly'])
+      .lte('schedule_date', endDate)
+      .or(`repeat_until.is.null,repeat_until.gte.${startDate}`)
+      .order('schedule_date', { ascending: true })
+      .order('created_at', { ascending: true }),
+  ])
+
+  if (plainResult.error) {
+    // 구 DB(repeat_type 없음) 폴백
+    if (plainResult.error.code === '42703' || /repeat_type/i.test(plainResult.error.message || '')) {
+      return getSchedulesByMonthLegacy(userId, startDate, endDate)
+    }
+    console.error('일정 조회 오류:', plainResult.error)
+    throw plainResult.error
+  }
+  if (recurringResult.error) {
+    console.error('반복 일정 조회 오류:', recurringResult.error)
+    throw recurringResult.error
+  }
+
+  const masters = [
+    ...(plainResult.data || []).map(normalizeSchedule),
+    ...(recurringResult.data || []).map(normalizeSchedule),
+  ]
+
+  const expanded = masters.flatMap((schedule) =>
+    expandScheduleForRange(schedule, startDate, endDate),
+  )
+
+  expanded.sort((a, b) => {
+    if (a.scheduleDate !== b.scheduleDate) {
+      return a.scheduleDate.localeCompare(b.scheduleDate)
+    }
+    return String(a.title || '').localeCompare(String(b.title || ''))
+  })
+
+  return expanded
+}
+
+/**
+ * @param {string} userId
+ * @param {string} startDate
+ * @param {string} endDate
+ */
+async function getSchedulesByMonthLegacy(userId, startDate, endDate) {
   const { data, error } = await supabase
     .from('schedule_calendar_events')
     .select('*')
@@ -105,7 +199,11 @@ export async function getSchedulesByMonth(year, month) {
     throw error
   }
 
-  return (data || []).map(normalizeSchedule)
+  return (data || []).map((row) => ({
+    ...normalizeSchedule({ ...row, repeat_type: 'none' }),
+    seriesId: row.id,
+    isOccurrence: false,
+  }))
 }
 
 /**
@@ -152,7 +250,7 @@ export async function getOrCreateScheduleTagsForCurrentUser() {
 
 /**
  * 일정을 등록합니다. endDate가 없거나 시작일과 같으면 단일 일정입니다.
- * @param {{scheduleDate: string, endDate?: string, title: string, tag: string}} params
+ * @param {object} params
  * @returns {Promise<Object>}
  */
 export async function createSchedule(params) {
@@ -170,19 +268,110 @@ export async function createSchedule(params) {
   const endDate = (params.endDate || scheduleDate).trim()
   assertValidScheduleRange(scheduleDate, endDate)
 
+  const repeatType = normalizeScheduleRepeatType(params.repeatType)
+  const repeatInterval = Math.max(1, Number(params.repeatInterval) || 1)
+  const repeatEndType =
+    repeatType === DEFAULT_SCHEDULE_REPEAT_TYPE
+      ? 'never'
+      : normalizeScheduleRepeatEndType(params.repeatEndType)
+
+  let repeatUntil = (params.repeatUntil || '').trim() || null
+  let repeatCount = Number(params.repeatCount) || null
+  const repeatWeekdays = normalizeScheduleWeekdays(params.repeatWeekdays)
+  const repeatMonthlyRule = normalizeScheduleMonthlyRule(params.repeatMonthlyRule)
+  const repeatMonthDay = Number(params.repeatMonthDay) || null
+  const repeatNth = Number(params.repeatNth) || null
+  const repeatWeekday = Number.isFinite(Number(params.repeatWeekday))
+    ? Number(params.repeatWeekday)
+    : null
+
+  if (repeatType !== DEFAULT_SCHEDULE_REPEAT_TYPE) {
+    if (repeatType === 'weekly' && repeatWeekdays.length === 0) {
+      throw new Error('반복할 요일을 하나 이상 선택해주세요.')
+    }
+    if (repeatEndType === 'until') {
+      if (!repeatUntil) {
+        throw new Error('반복 종료일을 선택해주세요.')
+      }
+      if (repeatUntil < scheduleDate) {
+        throw new Error('반복 종료일은 시작일보다 빠를 수 없습니다.')
+      }
+    } else if (repeatEndType === 'count') {
+      if (!repeatCount || repeatCount < 1) {
+        throw new Error('반복 횟수를 입력해주세요.')
+      }
+      repeatUntil = null
+    } else {
+      repeatUntil = null
+      repeatCount = null
+    }
+  } else {
+    repeatUntil = null
+    repeatCount = null
+  }
+
+  const insertRow = {
+    user_id: userId,
+    schedule_date: scheduleDate,
+    end_date: endDate,
+    title,
+    tag: (params.tag || '기타').trim() || '기타',
+    repeat_type: repeatType,
+    repeat_interval: repeatInterval,
+    repeat_weekdays:
+      repeatType === 'weekly' ? repeatWeekdays.join(',') : null,
+    repeat_monthly_rule: repeatType === 'monthly' ? repeatMonthlyRule : 'day',
+    repeat_month_day:
+      repeatType === 'monthly' && repeatMonthlyRule === 'day'
+        ? repeatMonthDay || Number(scheduleDate.slice(8, 10))
+        : null,
+    repeat_nth:
+      repeatType === 'monthly' && repeatMonthlyRule === 'nth_weekday'
+        ? repeatNth || 1
+        : null,
+    repeat_weekday:
+      repeatType === 'weekly'
+        ? null
+        : repeatType === 'monthly' &&
+            (repeatMonthlyRule === 'nth_weekday' ||
+              repeatMonthlyRule === 'last_weekday')
+          ? repeatWeekday
+          : null,
+    repeat_end_type: repeatType === 'none' ? 'never' : repeatEndType,
+    repeat_count: repeatEndType === 'count' ? repeatCount : null,
+    repeat_until: repeatEndType === 'until' ? repeatUntil : null,
+  }
+
   const { data, error } = await supabase
     .from('schedule_calendar_events')
-    .insert([{
-      user_id: userId,
-      schedule_date: scheduleDate,
-      end_date: endDate,
-      title,
-      tag: (params.tag || '기타').trim() || '기타',
-    }])
+    .insert([insertRow])
     .select()
     .single()
 
   if (error) {
+    if (error.code === '42703' || /repeat_/i.test(error.message || '')) {
+      const { data: legacyData, error: legacyError } = await supabase
+        .from('schedule_calendar_events')
+        .insert([{
+          user_id: userId,
+          schedule_date: scheduleDate,
+          end_date: endDate,
+          title,
+          tag: insertRow.tag,
+        }])
+        .select()
+        .single()
+      if (legacyError) {
+        console.error('일정 등록 오류:', legacyError)
+        throw legacyError
+      }
+      if (repeatType !== 'none') {
+        throw new Error(
+          '반복 일정 컬럼이 없습니다. supabase-schedule-repeat.sql 을 먼저 실행해주세요.',
+        )
+      }
+      return normalizeSchedule({ ...legacyData, repeat_type: 'none' })
+    }
     console.error('일정 등록 오류:', error)
     throw error
   }
@@ -191,8 +380,8 @@ export async function createSchedule(params) {
 }
 
 /**
- * 일정을 삭제합니다.
- * @param {string} scheduleId
+ * 일정을 삭제합니다. (반복 일정이면 시리즈 전체 삭제)
+ * @param {string} scheduleId 발생 ID 또는 마스터 ID
  * @returns {Promise<void>}
  */
 export async function deleteSchedule(scheduleId) {
@@ -201,10 +390,15 @@ export async function deleteSchedule(scheduleId) {
     throw new Error('로그인이 필요합니다.')
   }
 
+  const seriesId = getScheduleSeriesId(scheduleId)
+  if (!seriesId) {
+    throw new Error('삭제할 일정을 확인해주세요.')
+  }
+
   const { error } = await supabase
     .from('schedule_calendar_events')
     .delete()
-    .eq('id', scheduleId)
+    .eq('id', seriesId)
     .eq('user_id', userId)
 
   if (error) {
@@ -224,7 +418,7 @@ export async function updateScheduleDate(params) {
     throw new Error('로그인이 필요합니다.')
   }
 
-  const scheduleId = (params.scheduleId || '').trim()
+  const scheduleId = getScheduleSeriesId(params.scheduleId)
   const scheduleDate = (params.scheduleDate || '').trim()
   const endDate = (params.endDate || scheduleDate).trim()
   if (!scheduleId || !scheduleDate) {

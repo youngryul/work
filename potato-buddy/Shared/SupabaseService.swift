@@ -562,6 +562,48 @@ final class SupabaseService {
         let range = ScheduleDateHelper.monthRange(year: year, month: month)
         guard !range.start.isEmpty, !range.end.isEmpty else { return [] }
 
+        do {
+            var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/schedule_calendar_events")!
+            components.queryItems = [
+                URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+                URLQueryItem(name: "schedule_date", value: "lte.\(range.end)"),
+                URLQueryItem(name: "select", value: "id,schedule_date,end_date,title,tag,repeat_type,repeat_interval,repeat_weekdays,repeat_monthly_rule,repeat_month_day,repeat_nth,repeat_weekday,repeat_end_type,repeat_count,repeat_until"),
+                URLQueryItem(name: "order", value: "schedule_date.asc,created_at.asc"),
+            ]
+            var request = URLRequest(url: components.url!)
+            headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+            let (data, response) = try await fetch(request)
+            try checkResponse(data, response)
+            let masters = try JSONDecoder().decode([ScheduleItem].self, from: data)
+            let relevant = masters.filter { item in
+                if item.isRecurring {
+                    if item.resolvedRepeatEndType == .until,
+                       let until = item.repeatUntil,
+                       !until.isEmpty {
+                        return until >= range.start
+                    }
+                    return true
+                }
+                return item.resolvedEndDate >= range.start
+            }
+            return relevant
+                .flatMap { ScheduleDateHelper.expand($0, rangeStart: range.start, rangeEnd: range.end) }
+                .sorted {
+                    if $0.scheduleDate != $1.scheduleDate {
+                        return $0.scheduleDate < $1.scheduleDate
+                    }
+                    return $0.title < $1.title
+                }
+        } catch {
+            return try await fetchSchedulesLegacy(userId: userId, token: token, range: range)
+        }
+    }
+
+    private func fetchSchedulesLegacy(
+        userId: String,
+        token: String,
+        range: (start: String, end: String)
+    ) async throws -> [ScheduleItem] {
         var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/schedule_calendar_events")!
         components.queryItems = [
             URLQueryItem(name: "user_id", value: "eq.\(userId)"),
@@ -588,7 +630,17 @@ final class SupabaseService {
         scheduleDate: String,
         endDate: String,
         title: String,
-        tag: String
+        tag: String,
+        repeatType: String = ScheduleRepeatType.none.rawValue,
+        repeatInterval: Int = 1,
+        repeatWeekdays: [Int] = [],
+        repeatMonthlyRule: String = ScheduleMonthlyRule.day.rawValue,
+        repeatMonthDay: Int? = nil,
+        repeatNth: Int? = nil,
+        repeatWeekday: Int? = nil,
+        repeatEndType: String = ScheduleRepeatEndType.never.rawValue,
+        repeatCount: Int? = nil,
+        repeatUntil: String? = nil
     ) async throws -> ScheduleItem {
         let (userId, token) = await authInfo()
 
@@ -598,13 +650,61 @@ final class SupabaseService {
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
         request.addValue("return=representation", forHTTPHeaderField: "Prefer")
 
-        let body: [String: Any] = [
+        let safeRepeat = ScheduleRepeatType.normalize(repeatType).rawValue
+        let safeEndType: String = {
+            if safeRepeat == ScheduleRepeatType.none.rawValue {
+                return ScheduleRepeatEndType.never.rawValue
+            }
+            return ScheduleRepeatEndType.normalize(repeatEndType).rawValue
+        }()
+
+        var body: [String: Any] = [
             "user_id": userId,
             "schedule_date": scheduleDate,
             "end_date": endDate,
             "title": title,
             "tag": tag,
+            "repeat_type": safeRepeat,
+            "repeat_interval": max(1, repeatInterval),
+            "repeat_end_type": safeEndType,
+            "repeat_monthly_rule": ScheduleMonthlyRule.normalize(repeatMonthlyRule).rawValue,
         ]
+
+        if safeRepeat == ScheduleRepeatType.weekly.rawValue {
+            let days = repeatWeekdays.sorted()
+            body["repeat_weekdays"] = days.map(String.init).joined(separator: ",")
+        }
+
+        if safeRepeat == ScheduleRepeatType.monthly.rawValue {
+            let rule = ScheduleMonthlyRule.normalize(repeatMonthlyRule)
+            body["repeat_monthly_rule"] = rule.rawValue
+            if rule == .day {
+                body["repeat_month_day"] = repeatMonthDay
+                    ?? Int(scheduleDate.split(separator: "-").last.map(String.init) ?? "1")
+                    ?? 1
+            }
+            if rule == .nthWeekday {
+                body["repeat_nth"] = repeatNth ?? 1
+                body["repeat_weekday"] = repeatWeekday ?? 1
+            }
+            if rule == .lastWeekday {
+                body["repeat_weekday"] = repeatWeekday ?? 1
+            }
+        }
+
+        if safeRepeat != ScheduleRepeatType.none.rawValue {
+            if safeEndType == ScheduleRepeatEndType.until.rawValue,
+               let until = repeatUntil,
+               !until.isEmpty {
+                body["repeat_until"] = until
+            }
+            if safeEndType == ScheduleRepeatEndType.count.rawValue,
+               let count = repeatCount,
+               count > 0 {
+                body["repeat_count"] = count
+            }
+        }
+
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await fetch(request)
@@ -620,8 +720,14 @@ final class SupabaseService {
 
     func deleteSchedule(id: String) async throws {
         let (userId, token) = await authInfo()
+        let masterId: String = {
+            if let range = id.range(of: "__") {
+                return String(id[..<range.lowerBound])
+            }
+            return id
+        }()
 
-        let url = URL(string: "\(Config.supabaseURL)/rest/v1/schedule_calendar_events?id=eq.\(id)&user_id=eq.\(userId)")!
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/schedule_calendar_events?id=eq.\(masterId)&user_id=eq.\(userId)")!
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }

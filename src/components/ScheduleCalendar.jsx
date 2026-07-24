@@ -3,6 +3,7 @@ import {
   createSchedule,
   createScheduleTag,
   deleteSchedule,
+  describeScheduleRepeat,
   getOrCreateScheduleTagsForCurrentUser,
   getSchedulesByMonth,
   MAX_SCHEDULE_RANGE_DAYS,
@@ -10,6 +11,8 @@ import {
   replaceScheduleTagForUser,
   updateScheduleDate,
 } from '../services/scheduleCalendarService.js'
+import { buildDefaultRepeatFormState } from '../utils/scheduleRepeat.js'
+import ScheduleRepeatEditor from './schedule/ScheduleRepeatEditor.jsx'
 import {
   getMenstrualCycleSettings,
   getPeriodRecordsInRange,
@@ -99,6 +102,9 @@ export default function ScheduleCalendar() {
   const [addScheduleDate, setAddScheduleDate] = useState(getTodayDateString)
   const [addScheduleEndDate, setAddScheduleEndDate] = useState(getTodayDateString)
   const [isRangeSchedule, setIsRangeSchedule] = useState(false)
+  const [repeatForm, setRepeatForm] = useState(() =>
+    buildDefaultRepeatFormState(getTodayDateString()),
+  )
   const [newTitle, setNewTitle] = useState('')
   const [tagSettings, setTagSettings] = useState([])
   const [newTag, setNewTag] = useState('기타')
@@ -258,6 +264,16 @@ export default function ScheduleCalendar() {
     setAddScheduleDate(dateString)
     setSelectedDate(dateString)
     setAddScheduleEndDate((prev) => (prev < dateString ? dateString : prev))
+    setRepeatForm((prev) => {
+      if (
+        prev.repeatEndType === 'until' &&
+        prev.repeatUntil &&
+        prev.repeatUntil < dateString
+      ) {
+        return { ...prev, repeatUntil: dateString }
+      }
+      return prev
+    })
   }
 
   const formatSchedulePeriod = (schedule) => {
@@ -282,6 +298,32 @@ export default function ScheduleCalendar() {
       showToast('종료일은 시작일보다 빠를 수 없습니다.', TOAST_TYPES.ERROR)
       return
     }
+    if (repeatForm.repeatType !== 'none') {
+      if (repeatForm.repeatType === 'weekly') {
+        const days = repeatForm.repeatWeekdays || []
+        if (days.length === 0) {
+          showToast('반복할 요일을 선택해주세요.', TOAST_TYPES.ERROR)
+          return
+        }
+      }
+      if (repeatForm.repeatEndType === 'until') {
+        if (!repeatForm.repeatUntil) {
+          showToast('반복 종료일을 선택해주세요.', TOAST_TYPES.ERROR)
+          return
+        }
+        if (repeatForm.repeatUntil < addScheduleDate) {
+          showToast('반복 종료일은 시작일보다 빠를 수 없습니다.', TOAST_TYPES.ERROR)
+          return
+        }
+      }
+      if (
+        repeatForm.repeatEndType === 'count' &&
+        (!repeatForm.repeatCount || repeatForm.repeatCount < 1)
+      ) {
+        showToast('반복 횟수를 입력해주세요.', TOAST_TYPES.ERROR)
+        return
+      }
+    }
     const rangeDays = enumerateDateRange(addScheduleDate, endDate).length
     if (rangeDays > MAX_SCHEDULE_RANGE_DAYS) {
       showToast(`연속 일정은 최대 ${MAX_SCHEDULE_RANGE_DAYS}일까지 등록할 수 있습니다.`, TOAST_TYPES.ERROR)
@@ -295,8 +337,10 @@ export default function ScheduleCalendar() {
         endDate,
         title: newTitle,
         tag: newTag,
+        ...repeatForm,
       })
       setNewTitle('')
+      setRepeatForm(buildDefaultRepeatFormState(addScheduleDate))
       selectScheduleDate(addScheduleDate)
 
       const targetMonth = new Date(`${addScheduleDate}T00:00:00`)
@@ -306,8 +350,13 @@ export default function ScheduleCalendar() {
 
       await loadSchedules()
       const isRange = endDate !== addScheduleDate
+      const isRepeat = repeatForm.repeatType !== 'none'
       showToast(
-        isRange ? '연속 일정이 추가되었습니다.' : '일정이 추가되었습니다.',
+        isRepeat
+          ? `${describeScheduleRepeat({ ...repeatForm, scheduleDate: addScheduleDate })} 일정이 추가되었습니다.`
+          : isRange
+            ? '연속 일정이 추가되었습니다.'
+            : '일정이 추가되었습니다.',
         TOAST_TYPES.SUCCESS,
       )
     } catch (error) {
@@ -318,12 +367,22 @@ export default function ScheduleCalendar() {
     }
   }
 
-  const handleDeleteSchedule = async (scheduleId) => {
-    setDeletingId(scheduleId)
+  const handleDeleteSchedule = async (schedule) => {
+    const isRepeat = (schedule.repeatType || 'none') !== 'none'
+    if (
+      isRepeat &&
+      !window.confirm('반복 일정 전체가 삭제됩니다. 계속할까요?')
+    ) {
+      return
+    }
+    setDeletingId(schedule.id)
     try {
-      await deleteSchedule(scheduleId)
+      await deleteSchedule(schedule.id)
       await loadSchedules()
-      showToast('일정을 삭제했습니다.', TOAST_TYPES.SUCCESS)
+      showToast(
+        isRepeat ? '반복 일정을 삭제했습니다.' : '일정을 삭제했습니다.',
+        TOAST_TYPES.SUCCESS,
+      )
     } catch (error) {
       console.error('일정 삭제 실패:', error)
       showToast('일정 삭제에 실패했습니다.', TOAST_TYPES.ERROR)
@@ -667,6 +726,25 @@ export default function ScheduleCalendar() {
               <p className="text-xs text-gray-400 mt-1">최대 {MAX_SCHEDULE_RANGE_DAYS}일</p>
             </div>
           )}
+          <ScheduleRepeatEditor
+            value={repeatForm}
+            onChange={setRepeatForm}
+            startDate={addScheduleDate}
+            onStartDateChange={(ymd) => {
+              selectScheduleDate(ymd)
+              setRepeatForm((prev) => {
+                if (
+                  prev.repeatEndType === 'until' &&
+                  prev.repeatUntil &&
+                  prev.repeatUntil < ymd
+                ) {
+                  return { ...prev, repeatUntil: ymd }
+                }
+                return prev
+              })
+            }}
+            formatDate={formatSelectedDate}
+          />
         </div>
 
         <div className="space-y-2 mb-4">
@@ -714,10 +792,15 @@ export default function ScheduleCalendar() {
                   {isMultiDaySchedule(item) && (
                     <p className="text-xs text-gray-500 mt-1">{formatSchedulePeriod(item)}</p>
                   )}
+                  {(item.repeatType || 'none') !== 'none' && (
+                    <p className="text-xs text-indigo-600 mt-1">
+                      {describeScheduleRepeat(item)}
+                    </p>
+                  )}
                 </div>
                 <button
                   type="button"
-                  onClick={() => handleDeleteSchedule(item.id)}
+                  onClick={() => handleDeleteSchedule(item)}
                   disabled={deletingId === item.id}
                   className="text-xs px-2 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
                 >
@@ -770,7 +853,7 @@ export default function ScheduleCalendar() {
                     </button>
                   </div>
                 </div>
-              ) : (
+              ) : (item.repeatType || 'none') === 'none' ? (
                 <button
                   type="button"
                   onClick={() => handleStartEditScheduleDate(item)}
@@ -778,6 +861,8 @@ export default function ScheduleCalendar() {
                 >
                   기간 변경
                 </button>
+              ) : (
+                <p className="mt-2 text-xs text-gray-400">반복 일정 삭제는 시리즈 전체에 적용됩니다.</p>
               )}
             </div>
           ))}
