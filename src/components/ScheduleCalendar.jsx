@@ -544,7 +544,7 @@ export default function ScheduleCalendar() {
     const cells = []
 
     for (let i = 0; i < startWeekday; i++) {
-      cells.push(<div key={`empty-${i}`} className="aspect-square rounded-xl bg-transparent" />)
+      cells.push(<div key={`empty-${i}`} className="aspect-square rounded-xl bg-white" />)
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
@@ -614,8 +614,8 @@ export default function ScheduleCalendar() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <section className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      <section className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm p-5 self-start">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-800">
             {year}년 {month}월
@@ -660,7 +660,7 @@ export default function ScheduleCalendar() {
         )}
       </section>
 
-      <aside className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+      <aside className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 self-start">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-bold text-gray-800">일정 추가</h3>
           <button
