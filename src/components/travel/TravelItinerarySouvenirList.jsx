@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   createAbroadSouvenirItem,
   deleteAbroadSouvenirItem,
@@ -8,7 +8,15 @@ import {
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 /**
- * 여행별 기념품 체크리스트
+ * @param {File | null | undefined} file
+ * @returns {boolean}
+ */
+function isImageFile(file) {
+  return Boolean(file?.type?.startsWith('image/'))
+}
+
+/**
+ * 여행별 기념품 체크리스트 (항목별 사진 첨부)
  * @param {{ tripId: string }} props
  */
 export default function TravelItinerarySouvenirList({ tripId }) {
@@ -18,6 +26,9 @@ export default function TravelItinerarySouvenirList({ tripId }) {
   const [editingId, setEditingId] = useState(null)
   const [editingTitle, setEditingTitle] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const [uploadingItemId, setUploadingItemId] = useState(null)
+  const [focusedItemId, setFocusedItemId] = useState(null)
+  const itemFileInputRefs = useRef({})
 
   const loadItems = useCallback(async () => {
     setIsLoading(true)
@@ -35,13 +46,58 @@ export default function TravelItinerarySouvenirList({ tripId }) {
     loadItems()
   }, [loadItems])
 
+  const attachImageToItem = async (itemId, file) => {
+    if (!isImageFile(file) || uploadingItemId) return
+
+    setUploadingItemId(itemId)
+    try {
+      const updated = await updateAbroadSouvenirItem(itemId, { imageFile: file })
+      setItems((prev) => prev.map((row) => (row.id === itemId ? updated : row)))
+      showToast('사진을 첨부했습니다.', TOAST_TYPES.SUCCESS)
+    } catch (error) {
+      showToast(error?.message || '사진 첨부에 실패했습니다.', TOAST_TYPES.ERROR)
+    } finally {
+      setUploadingItemId(null)
+      const input = itemFileInputRefs.current[itemId]
+      if (input) input.value = ''
+    }
+  }
+
+  const handlePasteImage = (event) => {
+    if (!focusedItemId) return
+    const files = Array.from(event.clipboardData?.files || [])
+    const image = files.find((file) => isImageFile(file))
+    if (!image) return
+    event.preventDefault()
+    attachImageToItem(focusedItemId, image)
+  }
+
+  const clearItemImage = async (item) => {
+    if (!item.imageUrl || uploadingItemId) return
+    if (!window.confirm(`「${item.title}」사진만 삭제할까요?`)) return
+
+    setUploadingItemId(item.id)
+    try {
+      const updated = await updateAbroadSouvenirItem(item.id, { clearImage: true })
+      setItems((prev) => prev.map((row) => (row.id === item.id ? updated : row)))
+      showToast('사진을 삭제했습니다.', TOAST_TYPES.SUCCESS)
+    } catch (error) {
+      showToast(error?.message || '사진 삭제에 실패했습니다.', TOAST_TYPES.ERROR)
+    } finally {
+      setUploadingItemId(null)
+    }
+  }
+
   const handleAdd = async (event) => {
     event.preventDefault()
     if (!draftTitle.trim() || isSaving) return
 
     setIsSaving(true)
     try {
-      const created = await createAbroadSouvenirItem({ tripId, title: draftTitle })
+      const created = await createAbroadSouvenirItem({
+        tripId,
+        title: draftTitle,
+      })
       setItems((prev) => [...prev, created])
       setDraftTitle('')
       showToast('기념품을 추가했습니다.', TOAST_TYPES.SUCCESS)
@@ -70,6 +126,7 @@ export default function TravelItinerarySouvenirList({ tripId }) {
   const startEdit = (item) => {
     setEditingId(item.id)
     setEditingTitle(item.title)
+    setFocusedItemId(item.id)
   }
 
   const saveEdit = async () => {
@@ -108,7 +165,7 @@ export default function TravelItinerarySouvenirList({ tripId }) {
   const checkedCount = items.filter((item) => item.isChecked).length
 
   return (
-    <div>
+    <div onPaste={handlePasteImage}>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-bold text-gray-800">
           기념품
@@ -123,6 +180,7 @@ export default function TravelItinerarySouvenirList({ tripId }) {
           type="text"
           value={draftTitle}
           onChange={(e) => setDraftTitle(e.target.value)}
+          onFocus={() => setFocusedItemId(null)}
           placeholder="예: 키홀더, 과자, 디퓨저..."
           className="flex-1 px-3 py-2 border-2 border-amber-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300 text-sm"
         />
@@ -143,65 +201,146 @@ export default function TravelItinerarySouvenirList({ tripId }) {
         </div>
       ) : (
         <ul className="space-y-2">
-          {items.map((item) => (
-            <li
-              key={item.id}
-              className="flex items-center gap-3 rounded-xl border border-amber-100 bg-white px-3 py-2.5"
-            >
-              <input
-                type="checkbox"
-                checked={item.isChecked}
-                onChange={() => handleToggle(item)}
-                className="w-4 h-4 accent-amber-500"
-                aria-label={`${item.title} 체크`}
-              />
-              {editingId === item.id ? (
-                <input
-                  type="text"
-                  value={editingTitle}
-                  onChange={(e) => setEditingTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      saveEdit()
-                    }
-                    if (e.key === 'Escape') {
-                      setEditingId(null)
-                    }
-                  }}
-                  className="flex-1 px-2 py-1 border border-amber-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
-                  autoFocus
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => startEdit(item)}
-                  className={`flex-1 text-left text-sm font-medium ${
-                    item.isChecked ? 'text-gray-400 line-through' : 'text-gray-800'
-                  }`}
-                >
-                  {item.title}
-                </button>
-              )}
-              {editingId === item.id ? (
-                <button
-                  type="button"
-                  onClick={saveEdit}
-                  className="text-xs px-2 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100"
-                >
-                  저장
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handleDelete(item)}
-                  className="text-xs px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100"
-                >
-                  삭제
-                </button>
-              )}
-            </li>
-          ))}
+          {items.map((item) => {
+            const isUploading = uploadingItemId === item.id
+            return (
+              <li
+                key={item.id}
+                className="rounded-xl border border-amber-100 bg-white px-3 py-2.5"
+                onFocusCapture={() => setFocusedItemId(item.id)}
+                onClick={() => setFocusedItemId(item.id)}
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={item.isChecked}
+                    onChange={() => handleToggle(item)}
+                    className="mt-1 w-4 h-4 accent-amber-500"
+                    aria-label={`${item.title} 체크`}
+                  />
+
+                  {item.imageUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => itemFileInputRefs.current[item.id]?.click()}
+                      className="shrink-0"
+                      title="사진 변경"
+                      disabled={isUploading}
+                    >
+                      <img
+                        src={item.imageUrl}
+                        alt={`${item.title} 사진`}
+                        className="w-16 h-16 rounded-lg object-cover border border-amber-200"
+                      />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => itemFileInputRefs.current[item.id]?.click()}
+                      disabled={isUploading}
+                      className="shrink-0 w-16 h-16 rounded-lg border border-dashed border-amber-200 bg-amber-50 text-[11px] leading-tight text-amber-700 hover:bg-amber-100 disabled:opacity-50"
+                    >
+                      {isUploading ? (
+                        '업로드…'
+                      ) : (
+                        <>
+                          사진
+                          <br />
+                          첨부
+                        </>
+                      )}
+                    </button>
+                  )}
+
+                  <div className="flex-1 min-w-0">
+                    {editingId === item.id ? (
+                      <input
+                        type="text"
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            saveEdit()
+                          }
+                          if (e.key === 'Escape') {
+                            setEditingId(null)
+                          }
+                        }}
+                        className="w-full px-2 py-1 border border-amber-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                        autoFocus
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => startEdit(item)}
+                        className={`w-full text-left text-sm font-medium ${
+                          item.isChecked ? 'text-gray-400 line-through' : 'text-gray-800'
+                        }`}
+                      >
+                        {item.title}
+                      </button>
+                    )}
+
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      <input
+                        ref={(el) => {
+                          itemFileInputRefs.current[item.id] = el
+                        }}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) attachImageToItem(item.id, file)
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => itemFileInputRefs.current[item.id]?.click()}
+                        disabled={isUploading}
+                        className="text-xs px-2 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-50"
+                      >
+                        {item.imageUrl ? '사진 변경' : '사진 첨부'}
+                      </button>
+                      {item.imageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => clearItemImage(item)}
+                          disabled={isUploading}
+                          className="text-xs px-2 py-1 rounded bg-gray-50 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                        >
+                          사진 삭제
+                        </button>
+                      )}
+                      {editingId === item.id ? (
+                        <button
+                          type="button"
+                          onClick={saveEdit}
+                          className="text-xs px-2 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100"
+                        >
+                          저장
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(item)}
+                          className="text-xs px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100"
+                        >
+                          삭제
+                        </button>
+                      )}
+                    </div>
+                    {focusedItemId === item.id && (
+                      <p className="mt-1 text-[11px] text-gray-400">
+                        이 항목을 선택한 뒤 Ctrl+V로 사진 붙여넣기 가능
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>

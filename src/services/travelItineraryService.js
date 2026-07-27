@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
+import { uploadImage } from './imageService.js'
 
 /**
  * @param {Object} row
@@ -439,6 +440,7 @@ function normalizePackingItem(row) {
     tripId: row.trip_id,
     userId: row.user_id,
     title: row.title,
+    imageUrl: row.image_url ?? row.imageUrl ?? null,
     isChecked: Boolean(row.is_checked),
     sortOrder: row.sort_order ?? 0,
     createdAt: row.created_at,
@@ -594,14 +596,15 @@ export async function getAbroadSouvenirItems(tripId) {
 }
 
 /**
- * @param {{ tripId: string, title: string }} params
+ * @param {{ tripId: string, title: string, imageFile?: File | null }} params
  */
-export async function createAbroadSouvenirItem({ tripId, title }) {
+export async function createAbroadSouvenirItem({ tripId, title, imageFile = null }) {
   const userId = await getCurrentUserId()
   if (!userId) throw new Error('로그인이 필요합니다.')
 
   const trimmed = (title || '').trim()
   if (!trimmed) throw new Error('기념품 이름을 입력해주세요.')
+  const imageUrl = imageFile ? await uploadImage(imageFile, 'travel-souvenirs') : null
 
   const { data, error } = await supabase
     .from('travel_abroad_souvenir_items')
@@ -610,6 +613,7 @@ export async function createAbroadSouvenirItem({ tripId, title }) {
         trip_id: tripId,
         user_id: userId,
         title: trimmed,
+        image_url: imageUrl,
         is_checked: false,
         sort_order: Date.now() % 1000000000,
       },
@@ -627,7 +631,7 @@ export async function createAbroadSouvenirItem({ tripId, title }) {
 
 /**
  * @param {string} itemId
- * @param {{ title?: string, isChecked?: boolean }} updates
+ * @param {{ title?: string, isChecked?: boolean, imageFile?: File | null, clearImage?: boolean }} updates
  */
 export async function updateAbroadSouvenirItem(itemId, updates) {
   const userId = await getCurrentUserId()
@@ -641,6 +645,11 @@ export async function updateAbroadSouvenirItem(itemId, updates) {
   }
   if (updates.isChecked != null) {
     payload.is_checked = Boolean(updates.isChecked)
+  }
+  if (updates.imageFile) {
+    payload.image_url = await uploadImage(updates.imageFile, 'travel-souvenirs')
+  } else if (updates.clearImage) {
+    payload.image_url = null
   }
 
   const { data, error } = await supabase
