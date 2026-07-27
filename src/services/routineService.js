@@ -187,30 +187,29 @@ export async function deleteDailyRoutine(id) {
 let applyDailyRoutinesInFlight = null
 
 /**
- * 오늘 할일에 같은 제목 루틴이 있는지 확인
+ * 오늘 날짜 제목의 할일이 오늘/백로그 어디에든 있는지 확인
  * @param {string} userId
  * @param {string} title
  * @returns {Promise<boolean>}
  */
-async function hasTodayTaskWithTitle(userId, title) {
+async function hasTaskWithTitleAnywhere(userId, title) {
   const { data, error } = await supabase
     .from('tasks')
     .select('id')
     .eq('user_id', userId)
-    .eq('istoday', true)
     .eq('title', title)
     .limit(1)
 
   if (error) {
-    console.error('루틴 오늘 할일 중복 확인 오류:', error)
+    console.error('루틴 할일 중복 확인 오류:', error)
     return false
   }
   return (data || []).length > 0
 }
 
 /**
- * 루틴 1건 → 오늘 할일 1개 (제목 기준 하루 1회)
- * last_applied_date만 있고 할일이 없는 경우에도 복구 생성
+ * 루틴 1건 → 오늘 할일 1개 (하루 1회)
+ * last_applied_date가 오늘이면 백로그로 옮겨도 재생성하지 않음
  * @param {string} userId
  * @param {{ id: string, title: string, category: string, lastAppliedDate?: string | null }} routine
  * @param {string} today YYYY-MM-DD
@@ -220,15 +219,19 @@ async function ensureRoutineTaskForToday(userId, routine, today) {
   const title = buildRoutineTodayTaskTitle(routine.title, today)
   if (!title) return false
 
-  const alreadyExists = await hasTodayTaskWithTitle(userId, title)
+  // DB 플래그: 오늘 이미 생성된 루틴은 다시 만들지 않음
+  if (routine.lastAppliedDate === today) {
+    return false
+  }
+
+  // 플래그가 비었더라도 같은 제목 할일이 있으면(오늘·백로그) 재생성하지 않고 플래그만 맞춤
+  const alreadyExists = await hasTaskWithTitleAnywhere(userId, title)
   if (alreadyExists) {
-    if (routine.lastAppliedDate !== today) {
-      await supabase
-        .from('daily_routines')
-        .update({ last_applied_date: today })
-        .eq('id', routine.id)
-        .eq('user_id', userId)
-    }
+    await supabase
+      .from('daily_routines')
+      .update({ last_applied_date: today })
+      .eq('id', routine.id)
+      .eq('user_id', userId)
     return false
   }
 
