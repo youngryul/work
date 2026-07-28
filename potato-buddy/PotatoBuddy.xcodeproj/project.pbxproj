@@ -34,6 +34,8 @@
 		39B7E96394D42F33CF7764AD /* TimerHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BB2F61DEE70BBB4A496E152 /* TimerHubView.swift */; };
 		3C139AFE68DCE619848DCB71 /* DiaryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C694A851AB63F042A05AC1 /* DiaryItem.swift */; };
 		3EC67E34991A9E1E85726F5E /* BacklogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D826A844BE6F7D286ED09B9 /* BacklogView.swift */; };
+		A11C0FFEEB0A4D11B0A4D001 /* CorkBoardBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C0FFEEB0A4D11B0A4D002 /* CorkBoardBackground.swift */; };
+		A11C0FFEEB0A4D11B0A4D003 /* CorkBoardTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C0FFEEB0A4D11B0A4D004 /* CorkBoardTheme.swift */; };
 		3FBDAC36601F0701A52E9D90 /* 앱이미지.png in Resources */ = {isa = PBXBuildFile; fileRef = 9A049AA85E6EC1B1FD764A2E /* 앱이미지.png */; };
 		45F8E451826FCC1F2C488AE8 /* CategoryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0987064D68A1DF4DD6756AF6 /* CategoryItem.swift */; };
 		46548972895E7944B033EF46 /* DiaryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52D20FD884239995BBDC00C /* DiaryListView.swift */; };
@@ -153,6 +155,8 @@
 		17F3B6A1E66F1B5F9751D237 /* TravelItinerarySpareListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelItinerarySpareListView.swift; sourceTree = "<group>"; };
 		190A1D03682FC74D860AEC01 /* TravelItineraryCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelItineraryCreateView.swift; sourceTree = "<group>"; };
 		1D826A844BE6F7D286ED09B9 /* BacklogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BacklogView.swift; sourceTree = "<group>"; };
+		A11C0FFEEB0A4D11B0A4D002 /* CorkBoardBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorkBoardBackground.swift; sourceTree = "<group>"; };
+		A11C0FFEEB0A4D11B0A4D004 /* CorkBoardTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorkBoardTheme.swift; sourceTree = "<group>"; };
 		1F38DC95AC1E797AF29D0752 /* TravelItineraryPackingListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelItineraryPackingListView.swift; sourceTree = "<group>"; };
 		1F8BAEABB166C05237A1FE98 /* ToeicCompletionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToeicCompletionViewModel.swift; sourceTree = "<group>"; };
 		1FFBB4172FF64DBCCA30AD3C /* StepCounterConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCounterConstants.swift; sourceTree = "<group>"; };
@@ -292,6 +296,8 @@
 				6BEEDF33B6BA4C250F262C91 /* 포실이(투명).png */,
 				DA69A7AC454A59D4370CA0AA /* Assets.xcassets */,
 				1D826A844BE6F7D286ED09B9 /* BacklogView.swift */,
+				A11C0FFEEB0A4D11B0A4D002 /* CorkBoardBackground.swift */,
+				A11C0FFEEB0A4D11B0A4D004 /* CorkBoardTheme.swift */,
 				70E0F19BC75F1A6C397BBE1C /* ContentView.swift */,
 				E52D20FD884239995BBDC00C /* DiaryListView.swift */,
 				547F99007C6FCE58B7F29335 /* DiaryWriteView.swift */,
@@ -588,6 +594,8 @@
 			files = (
 				D159B7C3FCC77C25D462E9FE /* AuthService.swift in Sources */,
 				3EC67E34991A9E1E85726F5E /* BacklogView.swift in Sources */,
+				A11C0FFEEB0A4D11B0A4D001 /* CorkBoardBackground.swift in Sources */,
+				A11C0FFEEB0A4D11B0A4D003 /* CorkBoardTheme.swift in Sources */,
 				45F8E451826FCC1F2C488AE8 /* CategoryItem.swift in Sources */,
 				1B20A10E1FD42DE2DAD38071 /* Config.swift in Sources */,
 				95DAAF8BAF3088F722036F91 /* ContentView.swift in Sources */,

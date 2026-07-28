@@ -10,83 +10,99 @@ struct TodayView: View {
     @State private var showAddAlert: Bool = false
     @State private var newTaskTitle: String = ""
 
+    private var dateSubtitle: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "M월 d일 EEEE"
+        return formatter.string(from: Date())
+    }
+
     var body: some View {
         NavigationView {
-            Group {
-                if isLoading && tasks.isEmpty {
-                    ProgressView("불러오는 중...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List {
-                        if tasks.isEmpty {
-                            Section {
-                                VStack(spacing: 16) {
-                                    Text("🥔")
-                                        .font(.system(size: 60))
-                                    Text("오늘 할일이 없어요!")
-                                        .font(.title3)
-                                        .foregroundColor(.secondary)
-                                    Text("백로그에서 오늘로 이동하거나\n+ 버튼으로 추가해보세요")
-                                        .font(.footnote)
-                                        .foregroundColor(.secondary)
-                                        .multilineTextAlignment(.center)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 24)
-                                .listRowBackground(Color.clear)
-                            }
-                        } else {
-                            Section {
-                                ForEach(tasks) { task in
-                                    HStack(spacing: 12) {
-                                        Button {
-                                            Task { await complete(task) }
-                                        } label: {
-                                            Image(systemName: "circle")
-                                                .foregroundColor(.green)
-                                                .font(.title3)
-                                        }
-                                        .buttonStyle(.plain)
+            ZStack {
+                CorkBoardBackground()
 
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(task.displayTitle)
-                                                .font(.body)
-                                            if let cat = task.category, cat != "작업", !cat.isEmpty {
-                                                Text(cat)
-                                                    .font(.caption)
-                                                    .foregroundColor(.secondary)
-                                            }
-                                        }
+                Group {
+                    if isLoading && tasks.isEmpty {
+                        ProgressView("불러오는 중...")
+                            .padding(16)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.9)))
+                    } else {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 16) {
+                                CorkBoardHeader(
+                                    title: "오늘 보드",
+                                    subtitle: "\(dateSubtitle) · \(tasks.count)개"
+                                )
 
-                                        Spacer()
+                                if tasks.isEmpty {
+                                    CorkBoardEmptyState(
+                                        message: "오늘 할일이 없어요!",
+                                        hint: "백로그에서 오늘로 이동하거나\n+ 버튼으로 추가해보세요"
+                                    )
+                                    .frame(maxWidth: .infinity)
+                                } else {
+                                    LazyVStack(spacing: 18) {
+                                        ForEach(Array(tasks.enumerated()), id: \.element.id) { index, task in
+                                            BoardStickyNoteCard(
+                                                id: task.id,
+                                                title: task.title,
+                                                caption: task.category.flatMap { cat in
+                                                    (cat != "작업" && !cat.isEmpty) ? cat : nil
+                                                },
+                                                captionColor: CorkBoardTheme.accentBlue.opacity(0.85),
+                                                primarySystemImage: "checkmark.circle.fill",
+                                                primaryTint: CorkBoardTheme.posilyGreen,
+                                                onPrimary: {
+                                                    Task { await complete(task) }
+                                                },
+                                                accessory: {
+                                                    Text(pinEmoji(for: index))
+                                                        .font(.system(size: 22))
+                                                }
+                                            )
+                                            .padding(.horizontal, CGFloat(10 + (index % 3) * 4))
+                                        }
                                     }
-                                    .padding(.vertical, 4)
+                                    .padding(.top, 4)
                                 }
+
+                                motivationBanner
+                                    .padding(.top, 8)
+                                    .padding(.bottom, 28)
                             }
+                            .padding(.bottom, 20)
+                        }
+                        .refreshable {
+                            await loadTasks()
                         }
                     }
-                    .listStyle(.insetGrouped)
                 }
             }
-            .navigationTitle("오늘 할일")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     JellyBalanceBadgeView()
+                }
+                ToolbarItem(placement: .principal) {
+                    Text("오늘 할일")
+                        .font(.headline)
+                        .foregroundColor(CorkBoardTheme.woodFrame)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         newTaskTitle = ""
                         showAddAlert = true
                     } label: {
-                        Image(systemName: "plus")
-                            .foregroundColor(.green)
+                        Image(systemName: "plus.circle.fill")
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(CorkBoardTheme.accentYellow, CorkBoardTheme.accentBlue)
+                            .font(.title3)
                     }
                 }
             }
-            .refreshable {
-                await loadTasks()
-            }
+            .toolbarBackground(CorkBoardTheme.corkBase.opacity(0.92), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .alert("할일 추가", isPresented: $showAddAlert) {
                 TextField("할일 제목", text: $newTaskTitle)
                 Button("추가") {
@@ -119,6 +135,26 @@ struct TodayView: View {
                 Task { await jellyStore.refresh() }
             }
         }
+    }
+
+    private var motivationBanner: some View {
+        Text("오늘도 포실이와 함께, 천천히 해봐요")
+            .font(.system(size: 12, weight: .bold, design: .rounded))
+            .foregroundColor(.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(CorkBoardTheme.accentBlue)
+                    .shadow(color: .black.opacity(0.2), radius: 3, y: 2)
+            )
+            .padding(.horizontal, 24)
+            .rotationEffect(.degrees(-1))
+    }
+
+    private func pinEmoji(for index: Int) -> String {
+        ["⭐️", "🌿", "☀️", "💙", "📎"][index % 5]
     }
 
     private func loadTasks() async {

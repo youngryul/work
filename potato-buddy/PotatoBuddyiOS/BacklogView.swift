@@ -14,84 +14,100 @@ struct BacklogView: View {
 
     var body: some View {
         NavigationView {
-            Group {
-                if isLoading && tasks.isEmpty {
-                    ProgressView("불러오는 중...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if tasks.isEmpty {
-                    VStack(spacing: 16) {
-                        Text("🥔")
-                            .font(.system(size: 60))
-                        Text("백로그가 비어있어요!")
-                            .font(.title3)
-                            .foregroundColor(.secondary)
-                        Text("+ 버튼으로 할일을 추가해보세요")
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List {
-                        ForEach(tasks) { task in
-                            HStack(spacing: 12) {
-                                Text(CategoryConstants.emoji(for: task.category, in: categories))
-                                    .font(.system(size: 28))
-                                    .accessibilityLabel(task.category ?? "카테고리")
+            ZStack {
+                CorkBoardBackground()
 
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(task.title)
-                                        .font(.body)
-                                        .foregroundColor(.primary)
+                Group {
+                    if isLoading && tasks.isEmpty {
+                        ProgressView("불러오는 중...")
+                            .padding(16)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.9)))
+                    } else {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 16) {
+                                CorkBoardHeader(
+                                    title: "백로그 보드",
+                                    subtitle: tasks.isEmpty ? "쌓아두고 천천히" : "\(tasks.count)개의 메모"
+                                )
 
-                                    if task.isStaleTwoWeeks {
-                                        Text("2주 이상 지남")
-                                            .font(.caption2)
-                                            .foregroundColor(.primary.opacity(0.75))
-                                    } else if task.isStaleOneWeek {
-                                        Text("1주 이상 지남")
-                                            .font(.caption2)
-                                            .foregroundColor(.red.opacity(0.8))
+                                if tasks.isEmpty {
+                                    CorkBoardEmptyState(
+                                        message: "백로그가 비어있어요!",
+                                        hint: "+ 버튼으로 할일을 추가해보세요"
+                                    )
+                                    .frame(maxWidth: .infinity)
+                                } else {
+                                    LazyVStack(spacing: 18) {
+                                        ForEach(Array(tasks.enumerated()), id: \.element.id) { index, task in
+                                            BoardStickyNoteCard(
+                                                id: task.id,
+                                                title: task.title,
+                                                caption: backlogCaption(for: task),
+                                                captionColor: backlogCaptionColor(for: task),
+                                                noteColor: backlogNoteColor(for: task),
+                                                primarySystemImage: "arrow.up.circle.fill",
+                                                primaryTint: CorkBoardTheme.posilyGreen,
+                                                onPrimary: {
+                                                    Task { await moveToToday(task) }
+                                                },
+                                                accessory: {
+                                                    Text(CategoryConstants.emoji(for: task.category, in: categories))
+                                                        .font(.system(size: 26))
+                                                }
+                                            )
+                                            .padding(.horizontal, CGFloat(8 + (index % 3) * 5))
+                                            .contextMenu {
+                                                Button(role: .destructive) {
+                                                    Task { await deleteTask(task) }
+                                                } label: {
+                                                    Label("삭제", systemImage: "trash")
+                                                }
+                                            }
+                                        }
                                     }
+                                    .padding(.top, 4)
                                 }
-                                .frame(maxWidth: .infinity, alignment: .leading)
 
-                                Button {
-                                    Task { await moveToToday(task) }
-                                } label: {
-                                    Image(systemName: "arrow.up.circle.fill")
-                                        .foregroundColor(.green)
-                                        .font(.title3)
-                                }
-                                .buttonStyle(.borderless)
+                                Text("오래 묵은 메모는 살짝 붉게 보여요")
+                                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Capsule().fill(CorkBoardTheme.accentBlue.opacity(0.9)))
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.top, 8)
+                                    .padding(.bottom, 28)
                             }
-                            .padding(.vertical, 4)
-                            .listRowBackground(backlogRowBackground(for: task))
                         }
-                        .onDelete { indexSet in
-                            Task { await deleteTasks(at: indexSet) }
+                        .refreshable {
+                            async let tasksLoad: Void = loadTasks()
+                            async let categoriesLoad: Void = loadCategories()
+                            _ = await (tasksLoad, categoriesLoad)
                         }
                     }
-                    .listStyle(.insetGrouped)
                 }
             }
-            .navigationTitle("백로그")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("백로그")
+                        .font(.headline)
+                        .foregroundColor(CorkBoardTheme.woodFrame)
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         newTaskTitle = ""
                         showAddSheet = true
                     } label: {
-                        Image(systemName: "plus")
-                            .foregroundColor(.green)
+                        Image(systemName: "plus.circle.fill")
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(CorkBoardTheme.accentYellow, CorkBoardTheme.accentBlue)
+                            .font(.title3)
                     }
                 }
             }
-            .refreshable {
-                async let tasksLoad: Void = loadTasks()
-                async let categoriesLoad: Void = loadCategories()
-                _ = await (tasksLoad, categoriesLoad)
-            }
+            .toolbarBackground(CorkBoardTheme.corkBase.opacity(0.92), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .sheet(isPresented: $showAddSheet) {
                 addBacklogSheet
             }
@@ -106,6 +122,39 @@ struct BacklogView: View {
             async let categoriesLoad: Void = loadCategories()
             _ = await (tasksLoad, categoriesLoad)
         }
+    }
+
+    private func backlogCaption(for task: TaskItem) -> String? {
+        var parts: [String] = []
+        if let cat = task.category, !cat.isEmpty {
+            parts.append(cat)
+        }
+        if task.isStaleTwoWeeks {
+            parts.append("2주 이상")
+        } else if task.isStaleOneWeek {
+            parts.append("1주 이상")
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    private func backlogCaptionColor(for task: TaskItem) -> Color {
+        if task.isStaleTwoWeeks {
+            return Color.red.opacity(0.9)
+        }
+        if task.isStaleOneWeek {
+            return Color.red.opacity(0.7)
+        }
+        return CorkBoardTheme.accentBlue.opacity(0.85)
+    }
+
+    private func backlogNoteColor(for task: TaskItem) -> Color? {
+        if task.isStaleTwoWeeks {
+            return Color(red: 1.0, green: 0.72, blue: 0.72)
+        }
+        if task.isStaleOneWeek {
+            return Color(red: 1.0, green: 0.86, blue: 0.82)
+        }
+        return nil
     }
 
     private var addBacklogSheet: some View {
@@ -164,16 +213,6 @@ struct BacklogView: View {
             }
         }
         .presentationDetents([.medium])
-    }
-
-    private func backlogRowBackground(for task: TaskItem) -> Color {
-        if task.isStaleTwoWeeks {
-            return Color.red.opacity(0.55)
-        }
-        if task.isStaleOneWeek {
-            return Color.red.opacity(0.22)
-        }
-        return Color(.secondarySystemGroupedBackground)
     }
 
     @MainActor
@@ -237,13 +276,10 @@ struct BacklogView: View {
     }
 
     @MainActor
-    private func deleteTasks(at indexSet: IndexSet) async {
-        let toDelete = indexSet.map { tasks[$0] }
+    private func deleteTask(_ task: TaskItem) async {
         do {
-            for task in toDelete {
-                try await SupabaseService.shared.deleteTask(id: task.id)
-            }
-            tasks.remove(atOffsets: indexSet)
+            try await SupabaseService.shared.deleteTask(id: task.id)
+            tasks.removeAll { $0.id == task.id }
         } catch {
             errorMessage = error.localizedDescription
         }
