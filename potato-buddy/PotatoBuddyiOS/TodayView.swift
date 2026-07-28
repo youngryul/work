@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct TodayView: View {
-    private static let completeDelayNanoseconds: UInt64 = 3_000_000_000
+    private static let completeDelayNanoseconds: UInt64 = 1_000_000_000
 
     @EnvironmentObject private var jellyStore: JellyBalanceStore
     @Environment(\.scenePhase) private var scenePhase
