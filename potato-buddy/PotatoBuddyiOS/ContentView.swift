@@ -31,6 +31,7 @@ struct ContentView: View {
             Task {
                 await ScheduleWidgetService.refreshTodayWidget()
                 await jellyStore.refresh()
+                await NotificationService.shared.refreshIfEnabled()
             }
         }
         .task {

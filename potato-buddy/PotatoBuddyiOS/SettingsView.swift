@@ -1,10 +1,13 @@
 import SwiftUI
+import UserNotifications
 
 struct SettingsView: View {
     @EnvironmentObject private var jellyStore: JellyBalanceStore
     @ObservedObject private var auth = AuthService.shared
     @Binding var showLogoutConfirm: Bool
     @AppStorage(StepCounterConstants.dailyGoalUserDefaultsKey) private var dailyStepGoal: Int = StepCounterConstants.defaultDailyGoal
+    @AppStorage(NotificationService.enabledKey) private var notificationsEnabled: Bool = false
+    @State private var showNotificationDeniedAlert = false
 
     private var effectiveDailyGoal: Int {
         dailyStepGoal > 0 ? dailyStepGoal : StepCounterConstants.defaultDailyGoal
@@ -64,6 +67,38 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Toggle(isOn: $notificationsEnabled) {
+                        Label("앱 알림", systemImage: "bell.fill")
+                    }
+                    .onChange(of: notificationsEnabled) { _, enabled in
+                        Task {
+                            if enabled {
+                                let granted = await NotificationService.shared.requestPermission()
+                                if granted {
+                                    await NotificationService.shared.refreshIfEnabled()
+                                } else {
+                                    notificationsEnabled = false
+                                    showNotificationDeniedAlert = true
+                                }
+                            } else {
+                                NotificationService.shared.cancelAll()
+                            }
+                        }
+                    }
+
+                    if notificationsEnabled {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("• 걷기 젤리 알림: 매일 오후 8시")
+                            Text("• 오늘 할 일 알림: 매일 오후 12시·7시")
+                        }
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    }
+                } header: {
+                    Text("알림")
+                }
+
+                Section {
                     Button(role: .destructive) {
                         showLogoutConfirm = true
                     } label: {
@@ -79,6 +114,16 @@ struct SettingsView: View {
         }
         .task {
             await jellyStore.refresh()
+        }
+        .alert("알림 권한 필요", isPresented: $showNotificationDeniedAlert) {
+            Button("설정 열기") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            Button("취소", role: .cancel) {}
+        } message: {
+            Text("알림을 받으려면 설정 > 포실이에서 알림을 허용해주세요.")
         }
     }
 }

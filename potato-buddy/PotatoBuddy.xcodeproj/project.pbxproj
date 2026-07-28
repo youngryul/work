@@ -76,6 +76,7 @@
 		9E24F2E0DE2AA6234D734E69 /* TravelItineraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB1A57CF4290277D1DB7841A /* TravelItineraryView.swift */; };
 		A4D32CEED0B186968C3C889E /* ScheduleItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC32AEBCA73A2947E5767A41 /* ScheduleItem.swift */; };
 		A64122DBEB6634B70B142AAC /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 852B8983CE9BC8617F83ECBD /* LoginView.swift */; };
+		A6C7CFA6D930F60C3C785E5A /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 434DB61D040AE9486CAC803B /* NotificationService.swift */; };
 		A7125755B5C6272EF6489109 /* DiaryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C694A851AB63F042A05AC1 /* DiaryItem.swift */; };
 		A7E60D15A9CB5C360BB50E1E /* StepCounterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF2A2BFD80385E3AF3C284FD /* StepCounterView.swift */; };
 		ACC434D4F3C6CB14E9B5D645 /* TaskItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE031E1DC9B579555F16B096 /* TaskItem.swift */; };
@@ -161,6 +162,7 @@
 		3BC655F7C1D4A87A0BB3AF6E /* TimerBgmToggleButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerBgmToggleButton.swift; sourceTree = "<group>"; };
 		3EBE98E4AA439E5B105C2588 /* ScheduleWidgetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleWidgetService.swift; sourceTree = "<group>"; };
 		3FFB3866A23995C2BD9656D2 /* StudyTimerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyTimerViewModel.swift; sourceTree = "<group>"; };
+		434DB61D040AE9486CAC803B /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		439537DF9ABB255DAA32B99B /* ToeicVocabViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToeicVocabViewModel.swift; sourceTree = "<group>"; };
 		47CB4229136599A8BA65F44C /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		4BD7E5050DED68E0DBBC2FF6 /* ToeicVocabData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToeicVocabData.swift; sourceTree = "<group>"; };
@@ -189,7 +191,7 @@
 		7D291EEF7D06F10884474480 /* summer.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = summer.png; sourceTree = "<group>"; };
 		852B8983CE9BC8617F83ECBD /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		87A559DEF644037CCB12B963 /* 포실이 앱 아이콘.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이 앱 아이콘.png"; sourceTree = "<group>"; };
-		889C69E5F1B69047ABAD788A /* PotatoClock.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PotatoClock.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		889C69E5F1B69047ABAD788A /* PotatoClock.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PotatoClock.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		898FE1884CC98AC208FBAA6E /* PomodoroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroView.swift; sourceTree = "<group>"; };
 		8A85FD45DEA3E16AA58CB2CD /* StudySessionItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudySessionItem.swift; sourceTree = "<group>"; };
 		8B40DEFAD718CADC17E20AEA /* 타이머.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "타이머.png"; sourceTree = "<group>"; };
@@ -295,6 +297,7 @@
 				9AC0637A6BBD34447E7A0DA2 /* JellyBalanceBadgeView.swift */,
 				852B8983CE9BC8617F83ECBD /* LoginView.swift */,
 				47CB4229136599A8BA65F44C /* MainTabView.swift */,
+				434DB61D040AE9486CAC803B /* NotificationService.swift */,
 				BAED64335E137E7C0A4F7265 /* PomodoroTimerViewModel.swift */,
 				898FE1884CC98AC208FBAA6E /* PomodoroView.swift */,
 				0FD17E57252F9B177B544AD9 /* PotatoBuddyiOS.entitlements */,
@@ -596,6 +599,7 @@
 				A64122DBEB6634B70B142AAC /* LoginView.swift in Sources */,
 				680B1FB46FFFBEB496161FC8 /* MainTabView.swift in Sources */,
 				E6235A9B21BDDCE08A3F6B79 /* MenstrualItem.swift in Sources */,
+				A6C7CFA6D930F60C3C785E5A /* NotificationService.swift in Sources */,
 				185BD51875CC63C284691670 /* Notifications.swift in Sources */,
 				DE251144FA08275BFCC4D540 /* PomodoroTimerViewModel.swift in Sources */,
 				95A8B2A66477B99708E3829B /* PomodoroView.swift in Sources */,
@@ -763,7 +767,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 98UVS55F5Y;
 				INFOPLIST_FILE = PotatoClock/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -781,7 +784,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 98UVS55F5Y;
 				INFOPLIST_FILE = PotatoClock/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
