@@ -35,6 +35,18 @@ enum StudyTimerCategory: String, CaseIterable, Identifiable {
         }
     }
 
+    /// 마이그레이션/번들 차이를 흡수하기 위한 후보 파일명 (확장자 제외)
+    var timerBackgroundImageCandidates: [String] {
+        switch self {
+        case .book:
+            return ["timer-book", "타이머책"]
+        case .study:
+            return ["timer-study", "타이머"]
+        case .exercise:
+            return ["timer-exercise", "타이머운동"]
+        }
+    }
+
     /// 뽀모도로 배경 이미지 에셋 이름 (공부는 포실이 이미지, 책·운동은 테마 이미지)
     var pomodoroBackgroundImageName: String {
         switch self {
