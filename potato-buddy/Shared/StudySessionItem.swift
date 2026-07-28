@@ -26,6 +26,15 @@ enum StudyTimerCategory: String, CaseIterable, Identifiable {
         }
     }
 
+    /// 타이머 전체 배경 이미지 에셋 이름
+    var timerBackgroundImageName: String {
+        switch self {
+        case .book:     return "타이머책"
+        case .study:    return "타이머"
+        case .exercise: return "타이머운동"
+        }
+    }
+
     static func normalize(_ raw: String?) -> StudyTimerCategory {
         guard let raw, let cat = StudyTimerCategory(rawValue: raw) else {
             return .study

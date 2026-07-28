@@ -44,7 +44,9 @@ struct StudyTimerView: View {
 
     private var backgroundImage: some View {
         Group {
-            if let uiImage = UIImage(named: "타이머") {
+            if let uiImage = UIImage(named: viewModel.selectedCategory.timerBackgroundImageName)
+                ?? UIImage(named: "타이머")
+            {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFill()
@@ -52,6 +54,7 @@ struct StudyTimerView: View {
                 Color(red: 245/255, green: 237/255, blue: 224/255)
             }
         }
+        .animation(.easeInOut(duration: 0.25), value: viewModel.selectedCategory)
     }
 
     // MARK: - 시간 표시

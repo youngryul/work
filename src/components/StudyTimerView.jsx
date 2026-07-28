@@ -6,6 +6,16 @@ import { addStudySession, formatStudyDuration } from '../services/studyTimeServi
 import StudyTimerCategoryPicker from './StudyTimerCategoryPicker.jsx'
 import { DEFAULT_STUDY_TIMER_CATEGORY } from '../constants/studyTimerCategories.js'
 
+const TIMER_IMAGE_BY_CATEGORY = {
+  book: `/images/${encodeURIComponent('타이머책.png')}`,
+  study: `/images/${encodeURIComponent('타이머공부.png')}`,
+  exercise: `/images/${encodeURIComponent('타이머운동.png')}`,
+}
+
+function getTimerBackgroundSrc(category) {
+  return TIMER_IMAGE_BY_CATEGORY[category] || TIMER_IMAGE_BY_CATEGORY.study
+}
+
 function formatElapsed(totalSeconds) {
   const sec = Math.max(0, totalSeconds)
   const hours = Math.floor(sec / 3600)
@@ -15,15 +25,15 @@ function formatElapsed(totalSeconds) {
 }
 
 /**
- * 포실이 공부 타이머 (스톱워치 방식 — 경과 시간 측정)
+ * 포실이 타이머 (스톱워치) — 타이머 이미지를 전체 배경으로 사용
  */
 export default function StudyTimerView({ onClose }) {
   const [isRunning, setIsRunning] = useState(false)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [isSaving, setIsSaving] = useState(false)
   const [category, setCategory] = useState(DEFAULT_STUDY_TIMER_CATEGORY)
-  const startTimeRef = useRef(null) // 타이머 시작 시각 (ms)
-  const baseSecondsRef = useRef(0)  // 일시정지 전까지 누적 초
+  const startTimeRef = useRef(null)
+  const baseSecondsRef = useRef(0)
   const intervalRef = useRef(null)
   const { enabled: bgmEnabled, toggle: toggleBgm } = useTimerBgm()
 
@@ -31,7 +41,8 @@ export default function StudyTimerView({ onClose }) {
     if (isRunning) {
       startTimeRef.current = Date.now()
       intervalRef.current = window.setInterval(() => {
-        const elapsed = baseSecondsRef.current + Math.floor((Date.now() - startTimeRef.current) / 1000)
+        const elapsed =
+          baseSecondsRef.current + Math.floor((Date.now() - startTimeRef.current) / 1000)
         setElapsedSeconds(elapsed)
       }, 200)
     } else {
@@ -39,7 +50,6 @@ export default function StudyTimerView({ onClose }) {
         window.clearInterval(intervalRef.current)
         intervalRef.current = null
       }
-      // 일시정지 시점의 경과 시간 저장
       if (startTimeRef.current !== null) {
         baseSecondsRef.current += Math.floor((Date.now() - startTimeRef.current) / 1000)
         startTimeRef.current = null
@@ -88,103 +98,95 @@ export default function StudyTimerView({ onClose }) {
   const statusText = isRunning
     ? '포실이와 함께 집중 중...'
     : elapsedSeconds > 0
-    ? '일시정지됨'
-    : '시작 버튼을 눌러보세요'
+      ? '일시정지됨'
+      : '시작 버튼을 눌러보세요'
+
+  const backgroundSrc = getTimerBackgroundSrc(category)
 
   return (
-    <div
-      className="fixed inset-0 z-[200] overflow-y-auto flex flex-col items-center"
-      style={{ background: '#f5ede0' }}
-    >
-      {/* 상단 바 */}
-      <div className="w-full flex items-center justify-between px-4 pt-4 pb-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-full bg-white/70 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm backdrop-blur-md hover:bg-white/90 transition shrink-0"
-        >
-          ← 나가기
-        </button>
-        <h1 className="text-base font-semibold text-gray-700">공부 타이머</h1>
-        <TimerBgmToggle enabled={bgmEnabled} onToggle={toggleBgm} className="shrink-0" />
-      </div>
+    <div className="fixed inset-0 z-[200] overflow-hidden bg-[#f0e6d8]">
+      <img
+        key={backgroundSrc}
+        src={backgroundSrc}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover object-center select-none pointer-events-none"
+        draggable={false}
+      />
 
-      {/* 포실이 이미지 */}
-      <div className="mt-4 px-6 w-full max-w-xs">
-        <div
-          className="relative mx-auto rounded-2xl overflow-hidden shadow-lg"
-          style={{ width: '100%', aspectRatio: '1/1', maxWidth: 300 }}
-        >
-          <img
-            src="/images/타이머.png"
-            alt="포실이 타이머"
-            className="w-full h-full object-cover select-none"
-            draggable={false}
-          />
-          {/* 실행 중이 아닐 때 살짝 어두운 오버레이 */}
-          {!isRunning && (
-            <div className="absolute inset-0 bg-white/40 transition-opacity duration-500" />
-          )}
-        </div>
-      </div>
+      {!isRunning && (
+        <div className="absolute inset-0 bg-white/30 transition-opacity duration-300 pointer-events-none" />
+      )}
 
-      {/* 경과 시간 */}
-      <div className="mt-6 text-center">
-        <p
-          className="font-semibold tabular-nums tracking-tight text-gray-800"
-          style={{ fontSize: 'clamp(3rem, 15vw, 5rem)' }}
-        >
-          {formatElapsed(elapsedSeconds)}
-        </p>
-        <p className="mt-1 text-sm text-gray-500">{statusText}</p>
-        <StudyTimerCategoryPicker
-          value={category}
-          onChange={setCategory}
-          disabled={isRunning}
-          className="mt-4"
-        />
-        <div className="mt-3 flex justify-center">
-          <TimerBgmToggle enabled={bgmEnabled} onToggle={toggleBgm} />
-        </div>
-      </div>
-
-      {/* 컨트롤 버튼 */}
-      <div className="mt-5 flex gap-3 px-6 w-full max-w-sm">
-        <button
-          type="button"
-          onClick={handleReset}
-          className="flex-1 rounded-xl bg-white/70 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-white transition"
-        >
-          초기화
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setIsRunning((v) => !v)}
-          className={`flex-1 rounded-xl py-3 text-sm font-semibold text-white shadow-sm transition ${
-            isRunning
-              ? 'bg-amber-500 hover:bg-amber-600'
-              : 'bg-green-600 hover:bg-green-700'
-          }`}
-        >
-          {isRunning ? '일시정지' : elapsedSeconds > 0 ? '재개' : '시작'}
-        </button>
-
-        {elapsedSeconds > 0 && !isRunning && (
+      <div className="relative z-[1] flex h-full flex-col">
+        <div className="flex items-center justify-between gap-3 px-4 pt-4">
           <button
             type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className="flex-1 rounded-xl bg-sky-600 py-3 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 transition disabled:opacity-60"
+            onClick={onClose}
+            className="rounded-full bg-white/70 px-4 py-2 text-sm font-medium text-gray-800 shadow-sm backdrop-blur-md transition hover:bg-white/90"
           >
-            {isSaving ? '저장 중...' : '완료'}
+            ← 나가기
           </button>
-        )}
-      </div>
+          <TimerBgmToggle enabled={bgmEnabled} onToggle={toggleBgm} className="shrink-0" />
+        </div>
 
-      <p className="mt-3 text-xs text-gray-400 text-center px-6">
-        완료 후 기록 저장하면 공부 통계에 쌓여요
-      </p>
+        <div className="flex flex-1 flex-col items-center justify-center px-5 py-4">
+          <div className="w-full max-w-md rounded-2xl bg-white/55 px-6 py-6 text-center shadow-lg backdrop-blur-md">
+            <p
+              className="font-bold tabular-nums tracking-tight text-gray-900"
+              style={{ fontSize: 'clamp(2.5rem, 12vw, 3.75rem)' }}
+            >
+              {formatElapsed(elapsedSeconds)}
+            </p>
+            <p className="mt-2 text-sm font-medium text-gray-700">{statusText}</p>
+            <StudyTimerCategoryPicker
+              value={category}
+              onChange={setCategory}
+              disabled={isRunning}
+              className="mt-4"
+            />
+          </div>
+        </div>
+
+        <div className="px-4 pb-6">
+          <div className="mx-auto w-full max-w-md rounded-2xl bg-white/70 px-4 py-4 shadow-lg backdrop-blur-md">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleReset}
+                className="flex-1 rounded-xl bg-white/90 py-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-white"
+              >
+                초기화
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsRunning((v) => !v)}
+                className={`flex-1 rounded-xl py-3 text-sm font-semibold text-white shadow-sm transition ${
+                  isRunning
+                    ? 'bg-amber-500 hover:bg-amber-600'
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                {isRunning ? '일시정지' : elapsedSeconds > 0 ? '재개' : '시작'}
+              </button>
+
+              {elapsedSeconds > 0 && !isRunning && (
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="flex-1 rounded-xl bg-sky-600 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-60"
+                >
+                  {isSaving ? '저장 중...' : '완료'}
+                </button>
+              )}
+            </div>
+            <p className="mt-3 text-center text-xs text-gray-500">
+              완료 후 기록 저장하면 할 일 달력에 쌓여요
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

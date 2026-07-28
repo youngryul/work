@@ -7,6 +7,14 @@ import StudyTimerCategoryPicker from './StudyTimerCategoryPicker.jsx'
 import { DEFAULT_STUDY_TIMER_CATEGORY } from '../constants/studyTimerCategories.js'
 
 const DURATIONS = [15, 25, 35, 50]
+const MIN_POMODORO_MINUTES = 1
+const MAX_POMODORO_MINUTES = 180
+
+function clampPomodoroMinutes(value) {
+  const n = Math.floor(Number(value))
+  if (!Number.isFinite(n)) return 25
+  return Math.min(MAX_POMODORO_MINUTES, Math.max(MIN_POMODORO_MINUTES, n))
+}
 
 function formatCountdown(totalSeconds) {
   const sec = Math.max(0, totalSeconds)
@@ -58,6 +66,7 @@ function ClockwiseMask({ progress, size }) {
  */
 export default function PomodoroView({ onClose }) {
   const [selectedMinutes, setSelectedMinutes] = useState(25)
+  const [minutesInput, setMinutesInput] = useState('25')
   const [remainingSeconds, setRemainingSeconds] = useState(25 * 60)
   // 'idle' | 'running' | 'paused' | 'finished'
   const [state, setState] = useState('idle')
@@ -68,6 +77,8 @@ export default function PomodoroView({ onClose }) {
   const intervalRef = useRef(null)
   const endTimeRef = useRef(null) // Date.now() + ms
   const { enabled: bgmEnabled, toggle: toggleBgm } = useTimerBgm()
+
+  const canChangeDuration = state === 'idle' || state === 'finished'
 
   // 이미지 컨테이너 크기 측정
   useEffect(() => {
@@ -122,18 +133,47 @@ export default function PomodoroView({ onClose }) {
   const progress = totalSeconds > 0 ? elapsedSeconds / totalSeconds : 0
 
   const handleSelectDuration = (min) => {
-    if (state === 'idle' || state === 'finished') {
-      setSelectedMinutes(min)
-      setRemainingSeconds(min * 60)
-      setState('idle')
+    if (!canChangeDuration) return
+    const next = clampPomodoroMinutes(min)
+    setSelectedMinutes(next)
+    setMinutesInput(String(next))
+    setRemainingSeconds(next * 60)
+    setState('idle')
+  }
+
+  const handleMinutesInputChange = (event) => {
+    if (!canChangeDuration) return
+    const raw = event.target.value.replace(/\D/g, '')
+    setMinutesInput(raw)
+    if (raw === '') return
+    const parsed = Number.parseInt(raw, 10)
+    if (!Number.isFinite(parsed) || parsed < MIN_POMODORO_MINUTES) return
+    const next = clampPomodoroMinutes(parsed)
+    setSelectedMinutes(next)
+    setRemainingSeconds(next * 60)
+    setState('idle')
+  }
+
+  const handleMinutesInputBlur = () => {
+    if (!canChangeDuration) {
+      setMinutesInput(String(selectedMinutes))
+      return
     }
+    const next = clampPomodoroMinutes(minutesInput === '' ? selectedMinutes : minutesInput)
+    setSelectedMinutes(next)
+    setMinutesInput(String(next))
+    setRemainingSeconds(next * 60)
+    setState('idle')
   }
 
   const handleStart = () => {
     if (state === 'paused') {
       endTimeRef.current = Date.now() + remainingSeconds * 1000
     } else {
-      const secs = selectedMinutes * 60
+      const mins = clampPomodoroMinutes(selectedMinutes)
+      setSelectedMinutes(mins)
+      setMinutesInput(String(mins))
+      const secs = mins * 60
       setRemainingSeconds(secs)
       endTimeRef.current = Date.now() + secs * 1000
     }
@@ -200,8 +240,8 @@ export default function PomodoroView({ onClose }) {
           style={{ width: '100%', aspectRatio: '1/1', maxWidth: 300 }}
         >
           <img
-            src="/images/타이머.png"
-            alt="포실이 타이머"
+            src={`/images/${encodeURIComponent('포실이뽀모도로.png')}`}
+            alt="포실이 뽀모도로"
             className="w-full h-full object-cover select-none"
             draggable={false}
           />
@@ -228,26 +268,45 @@ export default function PomodoroView({ onClose }) {
       </div>
 
       {/* 시간 선택 */}
-      <div className="mt-5 flex gap-2 px-6">
-        {DURATIONS.map((min) => {
-          const isSelected = selectedMinutes === min
-          const disabled = state === 'running' || state === 'paused'
-          return (
-            <button
-              key={min}
-              type="button"
-              onClick={() => handleSelectDuration(min)}
-              disabled={disabled}
-              className={`flex-1 rounded-xl py-2 text-sm font-semibold transition ${
-                isSelected
-                  ? 'bg-green-600 text-white shadow'
-                  : 'bg-white/70 text-gray-700 hover:bg-white'
-              } disabled:opacity-50`}
-            >
-              {min}분
-            </button>
-          )
-        })}
+      <div className="mt-5 flex flex-col gap-3 px-6 w-full max-w-sm">
+        <div className="flex gap-2">
+          {DURATIONS.map((min) => {
+            const isSelected = selectedMinutes === min
+            return (
+              <button
+                key={min}
+                type="button"
+                onClick={() => handleSelectDuration(min)}
+                disabled={!canChangeDuration}
+                className={`flex-1 min-w-0 rounded-xl px-1 py-2 text-sm font-semibold whitespace-nowrap tabular-nums transition ${
+                  isSelected
+                    ? 'bg-green-600 text-white shadow'
+                    : 'bg-white/70 text-gray-700 hover:bg-white'
+                } disabled:opacity-50`}
+              >
+                {min}분
+              </button>
+            )
+          })}
+        </div>
+        <label className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 shadow-sm">
+          <span className="text-sm font-medium text-gray-600 shrink-0">직접 입력</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={minutesInput}
+            onChange={handleMinutesInputChange}
+            onBlur={handleMinutesInputBlur}
+            disabled={!canChangeDuration}
+            aria-label="뽀모도로 분 입력"
+            className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-center text-sm font-semibold tabular-nums text-gray-800 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 disabled:opacity-50"
+          />
+          <span className="text-sm font-medium text-gray-600 shrink-0">분</span>
+        </label>
+        <p className="text-center text-[11px] text-gray-400">
+          {MIN_POMODORO_MINUTES}~{MAX_POMODORO_MINUTES}분까지 입력할 수 있어요
+        </p>
       </div>
 
       {/* 컨트롤 버튼 */}

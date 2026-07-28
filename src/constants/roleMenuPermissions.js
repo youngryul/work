@@ -109,11 +109,9 @@ export const ROLE_MENU_CONFIG_GROUPS = [
       'todo-calendar',
       'diary-calendar',
       'schedule-calendar',
-      'timers',
+      'summer-clock',
       'pomodoro',
       'study-timer',
-      'study-time',
-      'summer-clock',
     ],
   },
   {

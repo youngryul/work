@@ -34,6 +34,7 @@ struct PomodoroView: View {
     @State private var saveMessage: String?
     @State private var saveError: String?
     @State private var selectedCategory: StudyTimerCategory = .study
+    @State private var customMinutesText = "25"
 
     private let imageName = "포실이뽀모도로"
 
@@ -157,27 +158,67 @@ struct PomodoroView: View {
     // MARK: - 시간 선택
 
     private var durationPicker: some View {
-        HStack(spacing: 10) {
-            ForEach(PomodoroDuration.allCases) { duration in
-                let isSelected = viewModel.selectedMinutes == duration.rawValue
+        VStack(spacing: 10) {
+            HStack(spacing: 10) {
+                ForEach(PomodoroDuration.allCases) { duration in
+                    let isSelected = viewModel.selectedMinutes == duration.rawValue
 
-                Button {
-                    viewModel.selectDuration(duration.rawValue)
-                } label: {
-                    Text(duration.label)
-                        .font(.subheadline)
-                        .fontWeight(isSelected ? .semibold : .regular)
-                        .foregroundColor(isSelected ? .white : .primary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(isSelected ? Color.green : Color(.secondarySystemBackground))
-                        )
+                    Button {
+                        viewModel.selectDuration(duration.rawValue)
+                        customMinutesText = "\(duration.rawValue)"
+                    } label: {
+                        Text(duration.label)
+                            .font(.subheadline)
+                            .fontWeight(isSelected ? .semibold : .regular)
+                            .foregroundColor(isSelected ? .white : .primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(isSelected ? Color.green : Color(.secondarySystemBackground))
+                            )
+                    }
+                    .disabled(!viewModel.canChangeDuration)
+                    .opacity(viewModel.canChangeDuration ? 1 : 0.5)
                 }
-                .disabled(!viewModel.canChangeDuration)
-                .opacity(viewModel.canChangeDuration ? 1 : 0.5)
             }
+
+            HStack(spacing: 8) {
+                Text("직접 입력")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+
+                TextField("분", text: $customMinutesText)
+                    .keyboardType(.numberPad)
+                    .multilineTextAlignment(.center)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(.secondarySystemBackground))
+                    )
+                    .disabled(!viewModel.canChangeDuration)
+                    .onChange(of: customMinutesText) { _, newValue in
+                        let digits = newValue.filter(\.isNumber)
+                        if digits != newValue {
+                            customMinutesText = digits
+                            return
+                        }
+                        guard viewModel.canChangeDuration, let minutes = Int(digits), minutes > 0 else { return }
+                        viewModel.selectDuration(minutes)
+                    }
+
+                Text("분")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .opacity(viewModel.canChangeDuration ? 1 : 0.5)
+
+            Text("1~180분까지 입력할 수 있어요")
+                .font(.caption2)
+                .foregroundColor(.secondary)
         }
     }
 

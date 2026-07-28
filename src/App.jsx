@@ -21,7 +21,6 @@ import TravelItineraryView from './components/travel/TravelItineraryView.jsx'
 import SummerClockView from './components/SummerClockView.jsx'
 import PomodoroView from './components/PomodoroView.jsx'
 import StudyTimerView from './components/StudyTimerView.jsx'
-import StudyTimeView from './components/StudyTimeView.jsx'
 import FiveYearQuestionView from './components/FiveYearQuestionView.jsx'
 import CategorySettingsModal from './components/CategorySettingsModal.jsx'
 import FoodCalorieCalculator from './components/FoodCalorieCalculator.jsx'
@@ -489,7 +488,6 @@ function AppContent() {
         {currentView === 'nonogram' && <NonogramView />}
         {currentView === 'sudoku' && <SudokuView />}
         {currentView === 'admin' && <AdminDashboard />}
-        {currentView === 'study-time' && <StudyTimeView />}
         <AdSenseBanner />
         </main>
       </div>

@@ -54,8 +54,9 @@ final class PomodoroTimerViewModel: ObservableObject {
 
     func selectDuration(_ minutes: Int) {
         guard canChangeDuration else { return }
-        selectedMinutes = minutes
-        totalSeconds = minutes * 60
+        let clamped = min(180, max(1, minutes))
+        selectedMinutes = clamped
+        totalSeconds = clamped * 60
         remainingSeconds = totalSeconds
         state = .idle
     }

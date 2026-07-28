@@ -28,17 +28,9 @@ const DAILY_MENU_ITEMS = [
   { id: 'todo-calendar', label: '할 일 달력', icon: '📅' },
   { id: 'diary-calendar', label: '일기 달력', icon: '📔' },
   { id: 'schedule-calendar', label: '일정 달력', icon: '🗓️' },
-  {
-    id: 'timers',
-    label: '타이머',
-    icon: '⏱️',
-    children: [
-      { id: 'pomodoro', label: '뽀모도로', icon: '🍅' },
-      { id: 'study-timer', label: '공부 타이머', icon: '⏳' },
-      { id: 'study-time', label: '공부 통계', icon: '📊' },
-    ],
-  },
   { id: 'summer-clock', label: '시계', icon: '🕐' },
+  { id: 'pomodoro', label: '뽀모도로', icon: '🍅' },
+  { id: 'study-timer', label: '타이머', icon: '⏳' },
 ]
 
 /** 기록·라이프 */
