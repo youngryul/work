@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 포실이 공부 타이머 — 스톱워치 방식 (경과 시간 측정)
+/// 포실이 타이머 — 스톱워치 방식 (경과 시간 측정)
 struct StudyTimerView: View {
     @StateObject private var viewModel = StudyTimerViewModel()
     @ObservedObject private var bgm = TimerBgmPlayer.shared

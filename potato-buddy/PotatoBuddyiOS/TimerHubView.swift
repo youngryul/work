@@ -1,17 +1,17 @@
 import SwiftUI
 
-/// 뽀모도로 / 공부 타이머를 하나의 탭으로 묶는 허브
+/// 타이머 / 뽀모도로를 하나의 탭으로 묶는 허브
 struct TimerHubView: View {
-    @State private var selectedPage: Page = .pomodoro
+    @State private var selectedPage: Page = .stopwatch
 
     enum Page: String, CaseIterable {
-        case pomodoro   = "뽀모도로"
         case stopwatch  = "타이머"
+        case pomodoro   = "뽀모도로"
 
         var icon: String {
             switch self {
-            case .pomodoro:  return "timer"
             case .stopwatch: return "stopwatch"
+            case .pomodoro:  return "timer"
             }
         }
     }
@@ -31,8 +31,8 @@ struct TimerHubView: View {
             Divider()
 
             switch selectedPage {
-            case .pomodoro:  PomodoroView()
             case .stopwatch: StudyTimerView()
+            case .pomodoro:  PomodoroView()
             }
         }
         .navigationBarHidden(true)

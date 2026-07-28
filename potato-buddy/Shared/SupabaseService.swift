@@ -718,6 +718,123 @@ final class SupabaseService {
 
     // MARK: - 일정 삭제
 
+    func updateSchedule(
+        id: String,
+        scheduleDate: String,
+        endDate: String,
+        title: String,
+        tag: String,
+        repeatType: String = ScheduleRepeatType.none.rawValue,
+        repeatInterval: Int = 1,
+        repeatWeekdays: [Int] = [],
+        repeatMonthlyRule: String = ScheduleMonthlyRule.day.rawValue,
+        repeatMonthDay: Int? = nil,
+        repeatNth: Int? = nil,
+        repeatWeekday: Int? = nil,
+        repeatEndType: String = ScheduleRepeatEndType.never.rawValue,
+        repeatCount: Int? = nil,
+        repeatUntil: String? = nil
+    ) async throws -> ScheduleItem {
+        let (userId, token) = await authInfo()
+
+        let masterId: String = {
+            if let range = id.range(of: "__") {
+                return String(id[..<range.lowerBound])
+            }
+            return id
+        }()
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/schedule_calendar_events?id=eq.\(masterId)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        let safeRepeat = ScheduleRepeatType.normalize(repeatType).rawValue
+        let safeEndType: String = {
+            if safeRepeat == ScheduleRepeatType.none.rawValue {
+                return ScheduleRepeatEndType.never.rawValue
+            }
+            return ScheduleRepeatEndType.normalize(repeatEndType).rawValue
+        }()
+
+        var body: [String: Any] = [
+            "schedule_date": scheduleDate,
+            "end_date": endDate,
+            "title": title,
+            "tag": tag,
+            "repeat_type": safeRepeat,
+            "repeat_interval": max(1, repeatInterval),
+            "repeat_end_type": safeEndType,
+            "repeat_monthly_rule": ScheduleMonthlyRule.normalize(repeatMonthlyRule).rawValue,
+            "updated_at": ISO8601DateFormatter().string(from: Date()),
+        ]
+
+        if safeRepeat == ScheduleRepeatType.weekly.rawValue {
+            body["repeat_weekdays"] = repeatWeekdays.sorted().map(String.init).joined(separator: ",")
+        } else {
+            body["repeat_weekdays"] = NSNull()
+        }
+
+        if safeRepeat == ScheduleRepeatType.monthly.rawValue {
+            let rule = ScheduleMonthlyRule.normalize(repeatMonthlyRule)
+            body["repeat_monthly_rule"] = rule.rawValue
+            if rule == .day {
+                body["repeat_month_day"] = repeatMonthDay
+                    ?? Int(scheduleDate.split(separator: "-").last.map(String.init) ?? "1")
+                    ?? 1
+                body["repeat_nth"] = NSNull()
+                body["repeat_weekday"] = NSNull()
+            } else if rule == .nthWeekday {
+                body["repeat_nth"] = repeatNth ?? 1
+                body["repeat_weekday"] = repeatWeekday ?? 1
+                body["repeat_month_day"] = NSNull()
+            } else if rule == .lastWeekday {
+                body["repeat_weekday"] = repeatWeekday ?? 1
+                body["repeat_month_day"] = NSNull()
+                body["repeat_nth"] = NSNull()
+            } else {
+                body["repeat_month_day"] = NSNull()
+                body["repeat_nth"] = NSNull()
+                body["repeat_weekday"] = NSNull()
+            }
+        } else {
+            body["repeat_month_day"] = NSNull()
+            body["repeat_nth"] = NSNull()
+            body["repeat_weekday"] = NSNull()
+        }
+
+        if safeRepeat != ScheduleRepeatType.none.rawValue {
+            if safeEndType == ScheduleRepeatEndType.until.rawValue,
+               let until = repeatUntil,
+               !until.isEmpty {
+                body["repeat_until"] = until
+            } else {
+                body["repeat_until"] = NSNull()
+            }
+
+            if safeEndType == ScheduleRepeatEndType.count.rawValue,
+               let count = repeatCount,
+               count > 0 {
+                body["repeat_count"] = count
+            } else {
+                body["repeat_count"] = NSNull()
+            }
+        } else {
+            body["repeat_until"] = NSNull()
+            body["repeat_count"] = NSNull()
+        }
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        let items = try JSONDecoder().decode([ScheduleItem].self, from: data)
+        guard let item = items.first else {
+            throw URLError(.badServerResponse)
+        }
+        return item
+    }
+
     func deleteSchedule(id: String) async throws {
         let (userId, token) = await authInfo()
         let masterId: String = {

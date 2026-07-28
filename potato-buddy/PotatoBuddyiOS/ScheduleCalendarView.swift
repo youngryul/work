@@ -19,6 +19,8 @@ struct ScheduleCalendarView: View {
     @State private var selectedMonth: Int
     @State private var selectedDate: String
     @State private var showAddSheet = false
+    @State private var showEditSheet = false
+    @State private var editingSchedule: ScheduleItem? = nil
     @State private var newTitle = ""
     @State private var newTagName: String = "업무"
     @State private var isRangeSchedule = false
@@ -133,6 +135,9 @@ struct ScheduleCalendarView: View {
             }
             .sheet(isPresented: $showAddSheet) {
                 addScheduleSheet
+            }
+            .sheet(isPresented: $showEditSheet) {
+                editScheduleSheet
             }
             .sheet(isPresented: $showMenstrualSettings) {
                 menstrualSettingsSheet
@@ -435,6 +440,13 @@ struct ScheduleCalendarView: View {
                 }
             }
             Spacer(minLength: 0)
+            Button {
+                beginEdit(schedule)
+            } label: {
+                Image(systemName: "pencil")
+                    .font(.body)
+            }
+            .buttonStyle(.borderless)
             Button(role: .destructive) {
                 requestDelete(schedule)
             } label: {
@@ -444,6 +456,12 @@ struct ScheduleCalendarView: View {
         }
         .padding(.vertical, 4)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button {
+                beginEdit(schedule)
+            } label: {
+                Label("수정", systemImage: "pencil")
+            }
+            .tint(.blue)
             Button(role: .destructive) {
                 requestDelete(schedule)
             } label: {
@@ -643,6 +661,200 @@ struct ScheduleCalendarView: View {
                 }
             }
         }
+        .environment(\.locale, Locale(identifier: "ko_KR"))
+        .modifier(SheetDetentModifier())
+    }
+
+    private var editScheduleSheet: some View {
+        NavigationView {
+            Form {
+                Section("날짜") {
+                    DatePicker(
+                        "시작일",
+                        selection: Binding(
+                            get: {
+                                ScheduleDateHelper.dayFormatter.date(from: selectedDate) ?? Date()
+                            },
+                            set: { date in
+                                selectedDate = ScheduleDateHelper.dayFormatter.string(from: date)
+                                syncRepeatDefaults(from: date)
+                                if newEndDate < date {
+                                    newEndDate = date
+                                }
+                                if let until = newRepeatUntil, until < date {
+                                    newRepeatUntil = date
+                                }
+                            }
+                        ),
+                        displayedComponents: .date
+                    )
+
+                    Toggle("연속 일정 (기간)", isOn: $isRangeSchedule)
+                        .onChange(of: isRangeSchedule) { _, enabled in
+                            if enabled {
+                                let start = ScheduleDateHelper.dayFormatter.date(from: selectedDate) ?? Date()
+                                if newEndDate < start {
+                                    newEndDate = start
+                                }
+                            }
+                        }
+
+                    if isRangeSchedule {
+                        DatePicker(
+                            "종료일",
+                            selection: $newEndDate,
+                            in: (ScheduleDateHelper.dayFormatter.date(from: selectedDate) ?? Date())...,
+                            displayedComponents: .date
+                        )
+                        Text("\(rangeDayCount)일")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                Section("일정") { TextField("제목", text: $newTitle) }
+                Section("태그") {
+                    if scheduleTags.isEmpty {
+                        Text("태그를 불러오는 중...").foregroundColor(.secondary)
+                    } else {
+                        Picker("태그", selection: $newTagName) {
+                            ForEach(scheduleTags) { tag in
+                                HStack {
+                                    Circle().fill(tag.swiftUIColor).frame(width: 10, height: 10)
+                                    Text(tag.name)
+                                }
+                                .tag(tag.name)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+                }
+                Section("반복") {
+                    Picker("반복", selection: $newRepeatType) {
+                        ForEach(ScheduleRepeatType.allCases) { type in
+                            Text(type.label).tag(type)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .onChange(of: newRepeatType) { _, next in
+                        if next != .none, newRepeatUntil == nil {
+                            let base = ScheduleDateHelper.dayFormatter.date(from: selectedDate) ?? Date()
+                            newRepeatUntil = Calendar(identifier: .gregorian).date(byAdding: .month, value: 2, to: base)
+                        }
+                        if next == .none {
+                            newRepeatUntil = nil
+                        }
+                    }
+
+                    if newRepeatType != .none {
+                        Stepper("\(newRepeatInterval)\(newRepeatType == .weekly ? "주" : newRepeatType == .monthly ? "개월" : "년")마다", value: $newRepeatInterval, in: 1...52)
+
+                        if newRepeatType == .weekly {
+                            Text("반복 요일")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            HStack(spacing: 6) {
+                                ForEach(ScheduleWeekdayOption.all) { day in
+                                    Button {
+                                        if newRepeatWeekdays.contains(day.id) {
+                                            if newRepeatWeekdays.count > 1 {
+                                                newRepeatWeekdays.remove(day.id)
+                                            }
+                                        } else {
+                                            newRepeatWeekdays.insert(day.id)
+                                        }
+                                    } label: {
+                                        Text(day.label)
+                                            .font(.caption.weight(.semibold))
+                                            .frame(width: 32, height: 32)
+                                            .background(
+                                                newRepeatWeekdays.contains(day.id)
+                                                    ? Color.indigo
+                                                    : Color(.systemGray6)
+                                            )
+                                            .foregroundColor(
+                                                newRepeatWeekdays.contains(day.id) ? .white : .primary
+                                            )
+                                            .clipShape(Circle())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+
+                        if newRepeatType == .monthly {
+                            Picker("반복 방식", selection: $newMonthlyRule) {
+                                ForEach(ScheduleMonthlyRule.allCases) { rule in
+                                    Text(rule.label).tag(rule)
+                                }
+                            }
+                            .pickerStyle(.menu)
+
+                            if newMonthlyRule == .day {
+                                Stepper("매월 \(newRepeatMonthDay)일", value: $newRepeatMonthDay, in: 1...31)
+                            }
+                            if newMonthlyRule == .nthWeekday {
+                                Stepper("\(nthLabel(newRepeatNth))", value: $newRepeatNth, in: 1...4)
+                                Picker("요일", selection: $newRepeatWeekday) {
+                                    ForEach(ScheduleWeekdayOption.all) { day in
+                                        Text("\(day.label)요일").tag(day.id)
+                                    }
+                                }
+                            }
+                            if newMonthlyRule == .lastWeekday {
+                                Picker("요일", selection: $newRepeatWeekday) {
+                                    ForEach(ScheduleWeekdayOption.all) { day in
+                                        Text("마지막 \(day.label)요일").tag(day.id)
+                                    }
+                                }
+                            }
+                        }
+
+                        if newRepeatType == .yearly {
+                            Text("반복일: 매년 \(formattedMonthDay(selectedDate))")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+
+                        Picker("종료", selection: $newRepeatEndType) {
+                            ForEach(ScheduleRepeatEndType.allCases) { end in
+                                Text(end.label).tag(end)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+
+                        if newRepeatEndType == .count {
+                            Stepper("\(newRepeatCount)회 반복", value: $newRepeatCount, in: 1...999)
+                        }
+                        if newRepeatEndType == .until {
+                            DatePicker(
+                                "종료일",
+                                selection: Binding(
+                                    get: {
+                                        newRepeatUntil
+                                            ?? (ScheduleDateHelper.dayFormatter.date(from: selectedDate) ?? Date())
+                                    },
+                                    set: { newRepeatUntil = $0 }
+                                ),
+                                in: (ScheduleDateHelper.dayFormatter.date(from: selectedDate) ?? Date())...,
+                                displayedComponents: .date
+                            )
+                        }
+                    }
+                }
+            }
+            .navigationTitle("일정 수정")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("취소") { showEditSheet = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("저장") { Task { await updateSchedule() } }
+                        .disabled(newTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
+                }
+            }
+        }
+        .environment(\.locale, Locale(identifier: "ko_KR"))
         .modifier(SheetDetentModifier())
     }
 
@@ -824,6 +1036,116 @@ struct ScheduleCalendarView: View {
         isSaving = false
     }
 
+    private func beginEdit(_ schedule: ScheduleItem) {
+        editingSchedule = schedule
+        selectedDate = schedule.scheduleDate
+        newTitle = schedule.title
+        newTagName = schedule.tag
+        isRangeSchedule = schedule.resolvedEndDate != schedule.scheduleDate
+        newEndDate = ScheduleDateHelper.dayFormatter.date(from: schedule.resolvedEndDate) ?? Date()
+
+        let startDate = ScheduleDateHelper.dayFormatter.date(from: schedule.scheduleDate) ?? Date()
+        syncRepeatDefaults(from: startDate)
+
+        newRepeatType = schedule.resolvedRepeatType
+        newRepeatInterval = max(1, schedule.repeatInterval ?? 1)
+        let weekdays = schedule.resolvedWeekdays
+        if !weekdays.isEmpty {
+            newRepeatWeekdays = Set(weekdays)
+        }
+        newMonthlyRule = schedule.resolvedMonthlyRule
+        if let monthDay = schedule.repeatMonthDay { newRepeatMonthDay = monthDay }
+        if let nth = schedule.repeatNth { newRepeatNth = nth }
+        if let weekday = schedule.repeatWeekday { newRepeatWeekday = weekday }
+        newRepeatEndType = schedule.resolvedRepeatEndType
+        newRepeatCount = max(1, schedule.repeatCount ?? 10)
+        if let until = schedule.repeatUntil, let untilDate = ScheduleDateHelper.dayFormatter.date(from: until) {
+            newRepeatUntil = untilDate
+        } else if newRepeatType != .none {
+            newRepeatUntil = Calendar(identifier: .gregorian).date(byAdding: .month, value: 2, to: startDate)
+        } else {
+            newRepeatUntil = nil
+        }
+        showEditSheet = true
+    }
+
+    private func updateSchedule() async {
+        guard let editingSchedule else { return }
+        let title = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty else { return }
+
+        let endDateString: String = {
+            if isRangeSchedule {
+                return ScheduleDateHelper.dayFormatter.string(from: newEndDate)
+            }
+            return selectedDate
+        }()
+        if endDateString < selectedDate {
+            errorMessage = "종료일은 시작일보다 빠를 수 없습니다."
+            return
+        }
+        if isRangeSchedule, rangeDayCount > Self.maxScheduleRangeDays {
+            errorMessage = "연속 일정은 최대 \(Self.maxScheduleRangeDays)일까지 등록할 수 있습니다."
+            return
+        }
+
+        if newRepeatType != .none {
+            if newRepeatType == .weekly, newRepeatWeekdays.isEmpty {
+                errorMessage = "반복할 요일을 선택해주세요."
+                return
+            }
+            if newRepeatEndType == .until, newRepeatUntil == nil {
+                errorMessage = "반복 종료일을 선택해주세요."
+                return
+            }
+            if newRepeatEndType == .count, newRepeatCount < 1 {
+                errorMessage = "반복 횟수를 입력해주세요."
+                return
+            }
+        }
+
+        isSaving = true
+        errorMessage = ""
+        do {
+            let untilString: String? = {
+                guard newRepeatType != .none,
+                      newRepeatEndType == .until,
+                      let until = newRepeatUntil else { return nil }
+                return ScheduleDateHelper.dayFormatter.string(from: until)
+            }()
+            if let untilString, untilString < selectedDate {
+                errorMessage = "반복 종료일은 시작일보다 빠를 수 없습니다."
+                isSaving = false
+                return
+            }
+
+            _ = try await SupabaseService.shared.updateSchedule(
+                id: editingSchedule.id,
+                scheduleDate: selectedDate,
+                endDate: endDateString,
+                title: title,
+                tag: newTagName,
+                repeatType: newRepeatType.rawValue,
+                repeatInterval: newRepeatInterval,
+                repeatWeekdays: Array(newRepeatWeekdays).sorted(),
+                repeatMonthlyRule: newMonthlyRule.rawValue,
+                repeatMonthDay: newRepeatMonthDay,
+                repeatNth: newRepeatNth,
+                repeatWeekday: newRepeatWeekday,
+                repeatEndType: newRepeatEndType.rawValue,
+                repeatCount: newRepeatEndType == .count ? newRepeatCount : nil,
+                repeatUntil: untilString
+            )
+            await loadSchedules()
+            syncWidgetIfNeeded()
+            showEditSheet = false
+            editingSchedule = nil
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isSaving = false
+    }
+
     private func resetAddForm(for ymd: String) {
         newTitle = ""
         isRangeSchedule = false
@@ -976,6 +1298,7 @@ struct ScheduleCalendarView: View {
         guard let date = ScheduleDateHelper.dayFormatter.date(from: dateString) else { return dateString }
         let f = DateFormatter()
         f.dateFormat = "M/d"
+        f.locale = Locale(identifier: "ko_KR")
         return f.string(from: date)
     }
 
