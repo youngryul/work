@@ -1,9 +1,14 @@
 import SwiftUI
 
 struct TodayView: View {
+    private static let completeDelayNanoseconds: UInt64 = 3_000_000_000
+
     @EnvironmentObject private var jellyStore: JellyBalanceStore
     @Environment(\.scenePhase) private var scenePhase
     @State private var tasks: [TaskItem] = []
+    @State private var categories: [CategoryItem] = []
+    @State private var pendingCompleteIds: Set<String> = []
+    @State private var completeGeneration: [String: Int] = [:]
     @State private var isLoading: Bool = false
     @State private var errorMessage: String = ""
     @State private var jellyEarnedMessage: String = ""
@@ -44,6 +49,7 @@ struct TodayView: View {
                                 } else {
                                     LazyVStack(spacing: 18) {
                                         ForEach(Array(tasks.enumerated()), id: \.element.id) { index, task in
+                                            let isPending = pendingCompleteIds.contains(task.id)
                                             BoardStickyNoteCard(
                                                 id: task.id,
                                                 title: task.title,
@@ -51,14 +57,14 @@ struct TodayView: View {
                                                     (cat != "작업" && !cat.isEmpty) ? cat : nil
                                                 },
                                                 captionColor: CorkBoardTheme.accentBlue.opacity(0.85),
-                                                primarySystemImage: "checkmark.circle.fill",
-                                                primaryTint: CorkBoardTheme.posilyGreen,
-                                                onPrimary: {
-                                                    Task { await complete(task) }
+                                                isStruckThrough: isPending,
+                                                showPrimaryAction: false,
+                                                onCardTap: {
+                                                    togglePendingComplete(task)
                                                 },
                                                 accessory: {
-                                                    Text(pinEmoji(for: index))
-                                                        .font(.system(size: 22))
+                                                    Text(CategoryConstants.emoji(for: task.category, in: categories))
+                                                        .font(.system(size: 26))
                                                 }
                                             )
                                             .padding(.horizontal, CGFloat(10 + (index % 3) * 4))
@@ -74,7 +80,9 @@ struct TodayView: View {
                             .padding(.bottom, 20)
                         }
                         .refreshable {
-                            await loadTasks()
+                            async let tasksLoad: Void = loadTasks()
+                            async let categoriesLoad: Void = loadCategories()
+                            _ = await (tasksLoad, categoriesLoad)
                         }
                     }
                 }
@@ -127,8 +135,9 @@ struct TodayView: View {
         }
         .task {
             async let tasksLoad: Void = loadTasks()
+            async let categoriesLoad: Void = loadCategories()
             async let jellyLoad: Void = jellyStore.refresh()
-            _ = await (tasksLoad, jellyLoad)
+            _ = await (tasksLoad, categoriesLoad, jellyLoad)
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
@@ -153,8 +162,50 @@ struct TodayView: View {
             .rotationEffect(.degrees(-1))
     }
 
-    private func pinEmoji(for index: Int) -> String {
-        ["⭐️", "🌿", "☀️", "💙", "📎"][index % 5]
+    private func togglePendingComplete(_ task: TaskItem) {
+        if pendingCompleteIds.contains(task.id) {
+            pendingCompleteIds.remove(task.id)
+            completeGeneration[task.id, default: 0] += 1
+            return
+        }
+
+        pendingCompleteIds.insert(task.id)
+        let generation = (completeGeneration[task.id] ?? 0) + 1
+        completeGeneration[task.id] = generation
+
+        Task {
+            try? await Task.sleep(nanoseconds: Self.completeDelayNanoseconds)
+            guard completeGeneration[task.id] == generation,
+                  pendingCompleteIds.contains(task.id) else { return }
+            await finalizeComplete(task)
+        }
+    }
+
+    @MainActor
+    private func finalizeComplete(_ task: TaskItem) async {
+        do {
+            let awarded = try await SupabaseService.shared.completeTask(id: task.id)
+            pendingCompleteIds.remove(task.id)
+            tasks.removeAll { $0.id == task.id }
+            if awarded > 0 {
+                jellyEarnedMessage = "젤리 +\(awarded)을 획득했어요."
+                await jellyStore.refresh()
+            }
+        } catch {
+            pendingCompleteIds.remove(task.id)
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func loadCategories() async {
+        do {
+            categories = try await SupabaseService.shared.fetchCategories()
+        } catch {
+            if categories.isEmpty {
+                categories = CategoryConstants.localFallbackList()
+            }
+        }
     }
 
     private func loadTasks() async {
@@ -162,23 +213,12 @@ struct TodayView: View {
         errorMessage = ""
         do {
             tasks = try await SupabaseService.shared.fetchTodayTasks()
+            let ids = Set(tasks.map(\.id))
+            pendingCompleteIds = pendingCompleteIds.intersection(ids)
         } catch {
             errorMessage = error.localizedDescription
         }
         isLoading = false
-    }
-
-    private func complete(_ task: TaskItem) async {
-        do {
-            let awarded = try await SupabaseService.shared.completeTask(id: task.id)
-            tasks.removeAll { $0.id == task.id }
-            if awarded > 0 {
-                jellyEarnedMessage = "젤리 +\(awarded)을 획득했어요."
-                await jellyStore.refresh()
-            }
-        } catch {
-            errorMessage = error.localizedDescription
-        }
     }
 
     private func addTask() async {

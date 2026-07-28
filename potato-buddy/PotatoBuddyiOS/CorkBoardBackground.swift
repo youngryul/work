@@ -152,7 +152,10 @@ struct BoardStickyNoteCard<Accessory: View>: View {
     let caption: String?
     let captionColor: Color
     let noteColor: Color?
+    let isStruckThrough: Bool
+    let showPrimaryAction: Bool
     let onPrimary: () -> Void
+    let onCardTap: (() -> Void)?
     let primarySystemImage: String
     let primaryTint: Color
     @ViewBuilder var accessory: () -> Accessory
@@ -163,9 +166,12 @@ struct BoardStickyNoteCard<Accessory: View>: View {
         caption: String? = nil,
         captionColor: Color = .secondary,
         noteColor: Color? = nil,
-        primarySystemImage: String,
+        isStruckThrough: Bool = false,
+        showPrimaryAction: Bool = true,
+        primarySystemImage: String = "checkmark.circle.fill",
         primaryTint: Color = CorkBoardTheme.posilyGreen,
-        onPrimary: @escaping () -> Void,
+        onPrimary: @escaping () -> Void = {},
+        onCardTap: (() -> Void)? = nil,
         @ViewBuilder accessory: @escaping () -> Accessory
     ) {
         self.id = id
@@ -173,9 +179,12 @@ struct BoardStickyNoteCard<Accessory: View>: View {
         self.caption = caption
         self.captionColor = captionColor
         self.noteColor = noteColor
+        self.isStruckThrough = isStruckThrough
+        self.showPrimaryAction = showPrimaryAction
         self.primarySystemImage = primarySystemImage
         self.primaryTint = primaryTint
         self.onPrimary = onPrimary
+        self.onCardTap = onCardTap
         self.accessory = accessory
     }
 
@@ -186,25 +195,34 @@ struct BoardStickyNoteCard<Accessory: View>: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundColor(Color(red: 0.18, green: 0.16, blue: 0.14))
+                    .foregroundColor(
+                        isStruckThrough
+                            ? Color(red: 0.45, green: 0.42, blue: 0.38)
+                            : Color(red: 0.18, green: 0.16, blue: 0.14)
+                    )
+                    .strikethrough(isStruckThrough, color: Color(red: 0.35, green: 0.32, blue: 0.28))
                     .fixedSize(horizontal: false, vertical: true)
 
                 if let caption, !caption.isEmpty {
                     Text(caption)
                         .font(.system(size: 11, weight: .medium, design: .rounded))
                         .foregroundColor(captionColor)
+                        .strikethrough(isStruckThrough, color: captionColor.opacity(0.7))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .opacity(isStruckThrough ? 0.65 : 1)
 
-            Button(action: onPrimary) {
-                Image(systemName: primarySystemImage)
-                    .font(.title3.weight(.semibold))
-                    .foregroundColor(primaryTint)
-                    .padding(8)
-                    .background(Circle().fill(Color.white.opacity(0.75)))
+            if showPrimaryAction {
+                Button(action: onPrimary) {
+                    Image(systemName: primarySystemImage)
+                        .font(.title3.weight(.semibold))
+                        .foregroundColor(primaryTint)
+                        .padding(8)
+                        .background(Circle().fill(Color.white.opacity(0.75)))
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .padding(.top, 18)
         .padding(.horizontal, 14)
@@ -224,6 +242,11 @@ struct BoardStickyNoteCard<Accessory: View>: View {
         }
         .rotationEffect(.degrees(CorkBoardTheme.tilt(for: id)))
         .padding(.horizontal, 4)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onCardTap?()
+        }
+        .animation(.easeInOut(duration: 0.2), value: isStruckThrough)
     }
 }
 
@@ -234,9 +257,12 @@ extension BoardStickyNoteCard where Accessory == EmptyView {
         caption: String? = nil,
         captionColor: Color = .secondary,
         noteColor: Color? = nil,
-        primarySystemImage: String,
+        isStruckThrough: Bool = false,
+        showPrimaryAction: Bool = true,
+        primarySystemImage: String = "checkmark.circle.fill",
         primaryTint: Color = CorkBoardTheme.posilyGreen,
-        onPrimary: @escaping () -> Void
+        onPrimary: @escaping () -> Void = {},
+        onCardTap: (() -> Void)? = nil
     ) {
         self.init(
             id: id,
@@ -244,9 +270,12 @@ extension BoardStickyNoteCard where Accessory == EmptyView {
             caption: caption,
             captionColor: captionColor,
             noteColor: noteColor,
+            isStruckThrough: isStruckThrough,
+            showPrimaryAction: showPrimaryAction,
             primarySystemImage: primarySystemImage,
             primaryTint: primaryTint,
             onPrimary: onPrimary,
+            onCardTap: onCardTap,
             accessory: { EmptyView() }
         )
     }
