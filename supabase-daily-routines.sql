@@ -31,3 +31,9 @@ CREATE POLICY "daily_routines_update_own" ON daily_routines
 DROP POLICY IF EXISTS "daily_routines_delete_own" ON daily_routines;
 CREATE POLICY "daily_routines_delete_own" ON daily_routines
   FOR DELETE USING (auth.uid() = user_id);
+
+-- last_applied_date: 오늘 할일 반영 여부 플래그 (YYYY-MM-DD)
+ALTER TABLE daily_routines
+  ADD COLUMN IF NOT EXISTS last_applied_date TEXT;
+
+COMMENT ON COLUMN daily_routines.last_applied_date IS '루틴이 오늘 할일로 반영된 날짜(YYYY-MM-DD). 같은 날 재생성 방지용';

@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
+import { uploadImage } from './imageService.js'
 
 /**
  * @param {Object} row
@@ -439,6 +440,7 @@ function normalizePackingItem(row) {
     tripId: row.trip_id,
     userId: row.user_id,
     title: row.title,
+    imageUrl: row.image_url ?? row.imageUrl ?? null,
     isChecked: Boolean(row.is_checked),
     sortOrder: row.sort_order ?? 0,
     createdAt: row.created_at,
@@ -594,14 +596,15 @@ export async function getAbroadSouvenirItems(tripId) {
 }
 
 /**
- * @param {{ tripId: string, title: string }} params
+ * @param {{ tripId: string, title: string, imageFile?: File | null }} params
  */
-export async function createAbroadSouvenirItem({ tripId, title }) {
+export async function createAbroadSouvenirItem({ tripId, title, imageFile = null }) {
   const userId = await getCurrentUserId()
   if (!userId) throw new Error('로그인이 필요합니다.')
 
   const trimmed = (title || '').trim()
   if (!trimmed) throw new Error('기념품 이름을 입력해주세요.')
+  const imageUrl = imageFile ? await uploadImage(imageFile, 'travel-souvenirs') : null
 
   const { data, error } = await supabase
     .from('travel_abroad_souvenir_items')
@@ -610,6 +613,7 @@ export async function createAbroadSouvenirItem({ tripId, title }) {
         trip_id: tripId,
         user_id: userId,
         title: trimmed,
+        image_url: imageUrl,
         is_checked: false,
         sort_order: Date.now() % 1000000000,
       },
@@ -627,7 +631,7 @@ export async function createAbroadSouvenirItem({ tripId, title }) {
 
 /**
  * @param {string} itemId
- * @param {{ title?: string, isChecked?: boolean }} updates
+ * @param {{ title?: string, isChecked?: boolean, imageFile?: File | null, clearImage?: boolean }} updates
  */
 export async function updateAbroadSouvenirItem(itemId, updates) {
   const userId = await getCurrentUserId()
@@ -641,6 +645,11 @@ export async function updateAbroadSouvenirItem(itemId, updates) {
   }
   if (updates.isChecked != null) {
     payload.is_checked = Boolean(updates.isChecked)
+  }
+  if (updates.imageFile) {
+    payload.image_url = await uploadImage(updates.imageFile, 'travel-souvenirs')
+  } else if (updates.clearImage) {
+    payload.image_url = null
   }
 
   const { data, error } = await supabase
@@ -780,6 +789,168 @@ export async function deleteAbroadSpareItem(itemId) {
 
   if (error) {
     console.error('예비 일정 삭제 오류:', error)
+    throw error
+  }
+
+  return true
+}
+
+/** 여행 폴라로이드 앨범 최대 장수 */
+export const TRAVEL_ALBUM_MAX_PHOTOS = 10
+
+/**
+ * @param {Object} row
+ */
+function normalizeAlbumPhoto(row) {
+  return {
+    id: row.id,
+    tripId: row.trip_id,
+    userId: row.user_id,
+    imageUrl: row.image_url,
+    caption: row.caption || '',
+    sortOrder: row.sort_order ?? 0,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
+/**
+ * 여행 앨범 사진 목록
+ * @param {string} tripId
+ */
+export async function getAbroadAlbumPhotos(tripId) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const { data, error } = await supabase
+    .from('travel_abroad_album_photos')
+    .select('*')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('여행 앨범 조회 오류:', error)
+    throw error
+  }
+
+  return (data || []).map(normalizeAlbumPhoto)
+}
+
+/**
+ * @param {{ tripId: string, imageFile: File, caption?: string }} params
+ */
+export async function createAbroadAlbumPhoto({ tripId, imageFile, caption = '' }) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+  if (!imageFile) throw new Error('사진을 선택해주세요.')
+
+  const existing = await getAbroadAlbumPhotos(tripId)
+  if (existing.length >= TRAVEL_ALBUM_MAX_PHOTOS) {
+    throw new Error(`앨범은 최대 ${TRAVEL_ALBUM_MAX_PHOTOS}장까지 추가할 수 있습니다.`)
+  }
+
+  const imageUrl = await uploadImage(imageFile, 'travel-albums')
+  const captionText = (caption || '').trim().slice(0, 40)
+
+  const { data, error } = await supabase
+    .from('travel_abroad_album_photos')
+    .insert([
+      {
+        trip_id: tripId,
+        user_id: userId,
+        image_url: imageUrl,
+        caption: captionText,
+        sort_order: existing.length,
+      },
+    ])
+    .select()
+    .single()
+
+  if (error) {
+    console.error('여행 앨범 사진 추가 오류:', error)
+    throw error
+  }
+
+  return normalizeAlbumPhoto(data)
+}
+
+/**
+ * 여러 장 일괄 추가 (잔여 슬롯만큼)
+ * @param {{ tripId: string, imageFiles: File[] }} params
+ */
+export async function createAbroadAlbumPhotosBatch({ tripId, imageFiles }) {
+  const files = (imageFiles || []).filter((file) => file?.type?.startsWith('image/'))
+  if (files.length === 0) throw new Error('이미지 파일을 선택해주세요.')
+
+  const existing = await getAbroadAlbumPhotos(tripId)
+  const remaining = TRAVEL_ALBUM_MAX_PHOTOS - existing.length
+  if (remaining <= 0) {
+    throw new Error(`앨범은 최대 ${TRAVEL_ALBUM_MAX_PHOTOS}장까지 추가할 수 있습니다.`)
+  }
+
+  const toUpload = files.slice(0, remaining)
+  const created = []
+  for (let i = 0; i < toUpload.length; i += 1) {
+    const photo = await createAbroadAlbumPhoto({
+      tripId,
+      imageFile: toUpload[i],
+      caption: '',
+    })
+    created.push(photo)
+  }
+
+  return {
+    created,
+    skipped: files.length - toUpload.length,
+  }
+}
+
+/**
+ * @param {string} photoId
+ * @param {{ caption?: string }} updates
+ */
+export async function updateAbroadAlbumPhoto(photoId, updates) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const payload = { updated_at: new Date().toISOString() }
+  if (updates.caption != null) {
+    payload.caption = String(updates.caption).trim().slice(0, 40)
+  }
+
+  const { data, error } = await supabase
+    .from('travel_abroad_album_photos')
+    .update(payload)
+    .eq('id', photoId)
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('여행 앨범 수정 오류:', error)
+    throw error
+  }
+
+  return normalizeAlbumPhoto(data)
+}
+
+/**
+ * @param {string} photoId
+ */
+export async function deleteAbroadAlbumPhoto(photoId) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const { error } = await supabase
+    .from('travel_abroad_album_photos')
+    .delete()
+    .eq('id', photoId)
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error('여행 앨범 삭제 오류:', error)
     throw error
   }
 
