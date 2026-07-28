@@ -97,8 +97,11 @@ struct PomodoroView: View {
                 viewModel.syncWhenAppBecomesActive()
             }
         }
+        .onAppear {
+            bgm.resumeIfEnabled()
+        }
         .onDisappear {
-            bgm.stopAndTurnOff()
+            bgm.pausePlayback()
         }
     }
 

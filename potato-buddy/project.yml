@@ -82,6 +82,9 @@ targets:
       - path: PotatoBuddyiOS/타이머.png
       - path: PotatoBuddyiOS/타이머운동.png
       - path: PotatoBuddyiOS/타이머책.png
+      - path: PotatoBuddyiOS/timer-study.png
+      - path: PotatoBuddyiOS/timer-book.png
+      - path: PotatoBuddyiOS/timer-exercise.png
       - path: PotatoBuddyiOS/summer.png
       - path: PotatoBuddyiOS/toeicNorangiVocab.json
       - path: PotatoBuddyiOS/Assets.xcassets

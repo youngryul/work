@@ -32,12 +32,17 @@ final class TimerBgmPlayer: ObservableObject {
         isEnabled.toggle()
     }
 
-    /// 화면 이탈 시 재생만 멈춤 (ON 설정은 유지하지 않고 OFF로 맞춤)
-    func stopAndTurnOff() {
+    /// 화면 진입 시 ON 상태이면 재생 재개
+    func resumeIfEnabled() {
+        guard isEnabled else { return }
+        guard let player, !player.isPlaying else { return }
+        configureAudioSession()
+        player.play()
+    }
+
+    /// 화면 이탈 시 재생만 일시정지 (ON/OFF 설정 유지)
+    func pausePlayback() {
         player?.pause()
-        if isEnabled {
-            isEnabled = false
-        }
     }
 
     private func preparePlayer() {

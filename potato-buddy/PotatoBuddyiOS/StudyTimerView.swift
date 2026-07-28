@@ -6,55 +6,62 @@ struct StudyTimerView: View {
     @ObservedObject private var bgm = TimerBgmPlayer.shared
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Spacer()
-                TimerBgmToggleButton()
-                    .padding(.trailing, 16)
-                    .padding(.top, 10)
+        ZStack {
+            // 배경 이미지: ZStack 최하단에 배치, id로 SwiftUI가 확실히 교체
+            timerBackground(for: viewModel.selectedCategory)
+
+            // 반투명 오버레이 (정지 상태)
+            if viewModel.state != .running {
+                Color.white.opacity(0.30)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
             }
 
-            Spacer()
+            // 콘텐츠
+            VStack(spacing: 0) {
+                HStack {
+                    Spacer()
+                    TimerBgmToggleButton()
+                        .padding(.trailing, 16)
+                        .padding(.top, 10)
+                }
 
-            timeDisplay
-                .padding(.horizontal, 24)
+                Spacer()
 
-            Spacer()
+                timeDisplay
+                    .padding(.horizontal, 24)
 
-            bottomPanel
-                .padding(.horizontal, 16)
-                .padding(.bottom, 20)
+                Spacer()
+
+                bottomPanel
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 20)
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(backgroundImage)
         .clipped()
-        .overlay(
-            viewModel.state != .running
-                ? Color.white.opacity(0.30)
-                    .allowsHitTesting(false)
-                    .animation(.easeInOut(duration: 0.3), value: viewModel.state == .running)
-                : nil
-        )
+        .onAppear {
+            bgm.resumeIfEnabled()
+        }
         .onDisappear {
-            bgm.stopAndTurnOff()
+            bgm.pausePlayback()
         }
     }
 
     // MARK: - 배경 이미지
 
-    private var backgroundImage: some View {
-        Group {
-            if let uiImage = UIImage(named: viewModel.selectedCategory.timerBackgroundImageName)
-                ?? UIImage(named: "타이머")
-            {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Color(red: 245/255, green: 237/255, blue: 224/255)
-            }
+    @ViewBuilder
+    private func timerBackground(for category: StudyTimerCategory) -> some View {
+        let name = category.timerBackgroundImageName
+        if let uiImage = UIImage(named: name) {
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+                .id(name)
+        } else {
+            Color(red: 245/255, green: 237/255, blue: 224/255)
+                .ignoresSafeArea()
         }
-        .animation(.easeInOut(duration: 0.25), value: viewModel.selectedCategory)
     }
 
     // MARK: - 시간 표시

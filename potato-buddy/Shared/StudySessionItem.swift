@@ -26,11 +26,20 @@ enum StudyTimerCategory: String, CaseIterable, Identifiable {
         }
     }
 
-    /// 타이머 전체 배경 이미지 에셋 이름
+    /// 타이머 전체 배경 이미지 에셋 이름 (영어 파일명 사용으로 런타임 로드 안정화)
     var timerBackgroundImageName: String {
         switch self {
+        case .book:     return "timer-book"
+        case .study:    return "timer-study"
+        case .exercise: return "timer-exercise"
+        }
+    }
+
+    /// 뽀모도로 배경 이미지 에셋 이름 (공부는 포실이 이미지, 책·운동은 테마 이미지)
+    var pomodoroBackgroundImageName: String {
+        switch self {
         case .book:     return "타이머책"
-        case .study:    return "타이머"
+        case .study:    return "포실이뽀모도로"
         case .exercise: return "타이머운동"
         }
     }

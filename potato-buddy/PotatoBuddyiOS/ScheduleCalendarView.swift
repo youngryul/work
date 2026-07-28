@@ -1139,7 +1139,7 @@ struct ScheduleCalendarView: View {
             await loadSchedules()
             syncWidgetIfNeeded()
             showEditSheet = false
-            editingSchedule = nil
+            self.editingSchedule = nil
         } catch {
             errorMessage = error.localizedDescription
         }
