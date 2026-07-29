@@ -1,5 +1,8 @@
 import WidgetKit
 import SwiftUI
+#if canImport(ActivityKit)
+import ActivityKit
+#endif
 
 struct ScheduleWidgetEntry: TimelineEntry {
     let date: Date
@@ -199,9 +202,75 @@ struct ScheduleWidget: Widget {
     }
 }
 
+#if canImport(ActivityKit)
+@available(iOS 16.1, *)
+struct StudyTimerLiveActivityWidget: Widget {
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: StudyTimerLiveActivityAttributes.self) { context in
+            HStack(spacing: 10) {
+                Text("포실이")
+                    .font(.headline.bold())
+                Text(context.state.categoryEmoji)
+                    .font(.title3)
+                timerText(for: context.state)
+                    .font(.system(.title3, design: .rounded).monospacedDigit().weight(.bold))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .activityBackgroundTint(.black.opacity(0.88))
+            .activitySystemActionForegroundColor(.white)
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) {
+                    Text("포실이 \(context.state.categoryEmoji)")
+                        .font(.subheadline.weight(.semibold))
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    timerText(for: context.state)
+                        .font(.system(.headline, design: .rounded).monospacedDigit())
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    Text(context.state.isRunning ? "집중 중..." : "일시정지")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } compactLeading: {
+                Text("🥔")
+            } compactTrailing: {
+                timerText(for: context.state)
+                    .font(.system(.caption2, design: .rounded).monospacedDigit())
+            } minimal: {
+                Text("🥔")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func timerText(for state: StudyTimerLiveActivityAttributes.ContentState) -> some View {
+        if state.isRunning, let startedAt = state.startedAt {
+            Text(timerInterval: startedAt...Date.distantFuture, countsDown: false)
+        } else {
+            Text(formatElapsed(state.elapsedSeconds))
+        }
+    }
+
+    private func formatElapsed(_ seconds: Int) -> String {
+        let safe = max(0, seconds)
+        let hours = safe / 3600
+        let minutes = (safe % 3600) / 60
+        let secs = safe % 60
+        return String(format: "%02d:%02d:%02d", hours, minutes, secs)
+    }
+}
+#endif
+
 @main
 struct ScheduleWidgetBundle: WidgetBundle {
     var body: some Widget {
         ScheduleWidget()
+        if #available(iOS 16.1, *) {
+            StudyTimerLiveActivityWidget()
+        }
     }
 }

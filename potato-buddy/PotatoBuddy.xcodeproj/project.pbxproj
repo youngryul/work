@@ -105,7 +105,9 @@
 		DD8541835BC47F627984832D /* timer-bgm.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 96749DCBF60CC35730DDA5F7 /* timer-bgm.mp3 */; };
 		DE251144FA08275BFCC4D540 /* PomodoroTimerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAED64335E137E7C0A4F7265 /* PomodoroTimerViewModel.swift */; };
 		DF05F38D2773F52E3BFF51E0 /* StudyTimerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FFB3866A23995C2BD9656D2 /* StudyTimerViewModel.swift */; };
+		E1176A4FB9A8402EA2584B2C /* StudyTimerLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5A811417764F808287371A /* StudyTimerLiveActivityAttributes.swift */; };
 		E07C57782C90A202B7737328 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607BDE05A4DD4BE69A4932DA /* TodayView.swift */; };
+		EF398476413E4ADF924712E1 /* StudyTimerLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A5A811417764F808287371A /* StudyTimerLiveActivityAttributes.swift */; };
 		E36C962B966204F6559F1749 /* ScheduleWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 97B324C9F1AB5D40D49B5E29 /* ScheduleWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E55319BA3F5F13380251C8DB /* CharacterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34391A214A69FA4C5B297D86 /* CharacterView.swift */; };
 		E6235A9B21BDDCE08A3F6B79 /* MenstrualItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E22CB2A26C939DAFA03960 /* MenstrualItem.swift */; };
@@ -148,6 +150,7 @@
 
 /* Begin PBXFileReference section */
 		0987064D68A1DF4DD6756AF6 /* CategoryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryItem.swift; sourceTree = "<group>"; };
+		0A5A811417764F808287371A /* StudyTimerLiveActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyTimerLiveActivityAttributes.swift; sourceTree = "<group>"; };
 		0C51632D4FE1AE1587ACF991 /* iPadClockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iPadClockView.swift; sourceTree = "<group>"; };
 		0DFAFDD1DF4B7C785A8DEDD0 /* ToeicVocabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToeicVocabView.swift; sourceTree = "<group>"; };
 		0FD17E57252F9B177B544AD9 /* PotatoBuddyiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PotatoBuddyiOS.entitlements; sourceTree = "<group>"; };
@@ -271,6 +274,7 @@
 				AB0635FCBC596282AB2A46EA /* ScheduleTagItem.swift */,
 				1FFBB4172FF64DBCCA30AD3C /* StepCounterConstants.swift */,
 				8A85FD45DEA3E16AA58CB2CD /* StudySessionItem.swift */,
+				0A5A811417764F808287371A /* StudyTimerLiveActivityAttributes.swift */,
 				7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */,
 				AE031E1DC9B579555F16B096 /* TaskItem.swift */,
 				4BD7E5050DED68E0DBBC2FF6 /* ToeicVocabData.swift */,
@@ -600,6 +604,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FA02ED3C589CF9E19E54ECDC /* ScheduleWidgetBundle.swift in Sources */,
+				E1176A4FB9A8402EA2584B2C /* StudyTimerLiveActivityAttributes.swift in Sources */,
 				92F16E8E33B86336DBB3B45E /* WidgetScheduleStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -647,6 +652,7 @@
 				A7E60D15A9CB5C360BB50E1E /* StepCounterView.swift in Sources */,
 				ADAF4EF35257B5552AEC2BCC /* StepCounterViewModel.swift in Sources */,
 				312F5DA73545D2D908165DE6 /* StudySessionItem.swift in Sources */,
+				EF398476413E4ADF924712E1 /* StudyTimerLiveActivityAttributes.swift in Sources */,
 				65C848E7EB8E555C266527FB /* StudyTimeView.swift in Sources */,
 				BA4544E70322E98D72C0085C /* StudyTimerView.swift in Sources */,
 				DF05F38D2773F52E3BFF51E0 /* StudyTimerViewModel.swift in Sources */,

@@ -1,5 +1,8 @@
 import Combine
 import Foundation
+#if canImport(ActivityKit)
+import ActivityKit
+#endif
 
 enum StudyTimerState {
     case idle
@@ -14,7 +17,11 @@ final class StudyTimerViewModel: ObservableObject {
     @Published var saveError: String?
     @Published var isSaving: Bool = false
     @Published var savedMessage: String?
-    @Published var selectedCategory: StudyTimerCategory = .study
+    @Published var selectedCategory: StudyTimerCategory = .study {
+        didSet {
+            syncLiveActivity()
+        }
+    }
 
     private var startDate: Date?
     private var baseSeconds: Int = 0
@@ -35,6 +42,7 @@ final class StudyTimerViewModel: ObservableObject {
         startDate = Date()
         state = .running
         startTicking()
+        syncLiveActivity()
     }
 
     func pause() {
@@ -45,6 +53,7 @@ final class StudyTimerViewModel: ObservableObject {
         startDate = nil
         stopTicking()
         state = .paused
+        syncLiveActivity()
     }
 
     func reset() {
@@ -55,6 +64,7 @@ final class StudyTimerViewModel: ObservableObject {
         state = .idle
         saveError = nil
         savedMessage = nil
+        endLiveActivity()
     }
 
     func save() async {
@@ -94,4 +104,87 @@ final class StudyTimerViewModel: ObservableObject {
         guard state == .running, let startDate else { return }
         elapsedSeconds = baseSeconds + Int(Date().timeIntervalSince(startDate))
     }
+
+    private func syncLiveActivity() {
+        #if canImport(ActivityKit)
+        if #available(iOS 16.1, *) {
+            let adjustedStartDate = state == .running
+                ? Date().addingTimeInterval(-Double(elapsedSeconds))
+                : nil
+            StudyTimerLiveActivityManager.shared.sync(
+                state: state,
+                elapsedSeconds: elapsedSeconds,
+                startedAt: adjustedStartDate,
+                category: selectedCategory
+            )
+        }
+        #endif
+    }
+
+    private func endLiveActivity() {
+        #if canImport(ActivityKit)
+        if #available(iOS 16.1, *) {
+            StudyTimerLiveActivityManager.shared.end()
+        }
+        #endif
+    }
 }
+
+#if canImport(ActivityKit)
+@available(iOS 16.1, *)
+@MainActor
+private final class StudyTimerLiveActivityManager {
+    static let shared = StudyTimerLiveActivityManager()
+    private var activity: Activity<StudyTimerLiveActivityAttributes>?
+
+    func sync(
+        state: StudyTimerState,
+        elapsedSeconds: Int,
+        startedAt: Date?,
+        category: StudyTimerCategory
+    ) {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+
+        let content = StudyTimerLiveActivityAttributes.ContentState(
+            isRunning: state == .running,
+            elapsedSeconds: max(0, elapsedSeconds),
+            startedAt: startedAt,
+            categoryLabel: category.label,
+            categoryEmoji: category.emoji
+        )
+
+        if let activity {
+            Task { await activity.update(ActivityContent(state: content, staleDate: nil)) }
+            return
+        }
+
+        let attributes = StudyTimerLiveActivityAttributes(title: "포실이 타이머")
+        do {
+            activity = try Activity.request(
+                attributes: attributes,
+                content: ActivityContent(state: content, staleDate: nil)
+            )
+        } catch {
+            // Live Activity 시작 실패는 타이머 동작에 영향을 주지 않음
+        }
+    }
+
+    func end() {
+        guard let activity else { return }
+        let endState = StudyTimerLiveActivityAttributes.ContentState(
+            isRunning: false,
+            elapsedSeconds: 0,
+            startedAt: nil,
+            categoryLabel: "타이머",
+            categoryEmoji: "🥔"
+        )
+        Task {
+            await activity.end(
+                ActivityContent(state: endState, staleDate: nil),
+                dismissalPolicy: .immediate
+            )
+        }
+        self.activity = nil
+    }
+}
+#endif
