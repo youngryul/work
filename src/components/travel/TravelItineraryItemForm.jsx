@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { minuteToTimeLabel } from '../../services/travelItineraryService.js'
+import TravelItineraryPlaceField from './TravelItineraryPlaceField.jsx'
 
 const HALF_HOUR_OPTIONS = Array.from({ length: 49 }, (_, i) => {
   const minute = i * 30
@@ -14,6 +15,7 @@ const HALF_HOUR_OPTIONS = Array.from({ length: 49 }, (_, i) => {
  *   initialStartMinute?: number,
  *   initialEndMinute?: number,
  *   editingItem?: object | null,
+ *   countryCode?: string,
  *   formHeading?: string,
  *   onClose: () => void,
  *   onSubmit: (payload: object) => Promise<void>,
@@ -27,6 +29,7 @@ export default function TravelItineraryItemForm({
   initialStartMinute = 540,
   initialEndMinute = 570,
   editingItem = null,
+  countryCode = '',
   formHeading,
   onClose,
   onSubmit,
@@ -37,6 +40,11 @@ export default function TravelItineraryItemForm({
   const [itemDate, setItemDate] = useState(initialDate)
   const [startMinute, setStartMinute] = useState(initialStartMinute)
   const [endMinute, setEndMinute] = useState(initialEndMinute)
+  const [placeName, setPlaceName] = useState('')
+  const [placeAddress, setPlaceAddress] = useState('')
+  const [placeLat, setPlaceLat] = useState(null)
+  const [placeLng, setPlaceLng] = useState(null)
+  const [googlePlaceId, setGooglePlaceId] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -47,12 +55,22 @@ export default function TravelItineraryItemForm({
       setItemDate(editingItem.itemDate)
       setStartMinute(editingItem.startMinute)
       setEndMinute(editingItem.endMinute)
+      setPlaceName(editingItem.placeName || '')
+      setPlaceAddress(editingItem.placeAddress || '')
+      setPlaceLat(editingItem.placeLat ?? null)
+      setPlaceLng(editingItem.placeLng ?? null)
+      setGooglePlaceId(editingItem.googlePlaceId || '')
     } else {
       setTitle(initialTitle || '')
       setMemo('')
       setItemDate(initialDate)
       setStartMinute(initialStartMinute)
       setEndMinute(initialEndMinute)
+      setPlaceName('')
+      setPlaceAddress('')
+      setPlaceLat(null)
+      setPlaceLng(null)
+      setGooglePlaceId('')
     }
   }, [isOpen, editingItem, initialDate, initialTitle, initialStartMinute, initialEndMinute])
 
@@ -77,6 +95,11 @@ export default function TravelItineraryItemForm({
         itemDate,
         startMinute,
         endMinute,
+        placeName,
+        placeAddress,
+        placeLat,
+        placeLng,
+        googlePlaceId,
       })
     } finally {
       setIsSaving(false)
@@ -155,6 +178,22 @@ export default function TravelItineraryItemForm({
               </select>
             </label>
           </div>
+
+          <TravelItineraryPlaceField
+            placeName={placeName}
+            placeAddress={placeAddress}
+            placeLat={placeLat}
+            placeLng={placeLng}
+            googlePlaceId={googlePlaceId}
+            countryCode={countryCode}
+            onChange={(next) => {
+              setPlaceName(next.placeName)
+              setPlaceAddress(next.placeAddress)
+              setPlaceLat(next.placeLat)
+              setPlaceLng(next.placeLng)
+              setGooglePlaceId(next.googlePlaceId)
+            }}
+          />
 
           <label className="block">
             <span className="text-sm font-medium text-gray-700 mb-1 block">메모</span>

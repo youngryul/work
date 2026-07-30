@@ -44,6 +44,7 @@
 		48F9629FACE0EE24B04C6D98 /* ScheduleTagItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0635FCBC596282AB2A46EA /* ScheduleTagItem.swift */; };
 		4BE217685FD4FE9ECC03341B /* JellyRewardConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29331826BBBDC0B4BAFFEB9D /* JellyRewardConstants.swift */; };
 		4CAD02C6E54F2FBAD1F1B56F /* TravelItineraryItemFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE1FABD7B22059A21BA9A3A /* TravelItineraryItemFormView.swift */; };
+		4E8F2C1A9B7D4051A3C6E8F0 /* PlaceSearchCompleter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D9E3B2C8A6F4172B4D7E9F1 /* PlaceSearchCompleter.swift */; };
 		4D3D770D12A3298198028228 /* StepCounterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63553EC69C58CF3D81F60ECF /* StepCounterService.swift */; };
 		4F5194A182679CBCC20151E6 /* CategoryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0987064D68A1DF4DD6756AF6 /* CategoryItem.swift */; };
 		51DF8B94BE030B25BDFABE60 /* 모바일배경.png in Resources */ = {isa = PBXBuildFile; fileRef = 12DF9FBB4D85C2F270AAC672 /* 모바일배경.png */; };
@@ -227,6 +228,7 @@
 		AC32AEBCA73A2947E5767A41 /* ScheduleItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleItem.swift; sourceTree = "<group>"; };
 		AE031E1DC9B579555F16B096 /* TaskItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskItem.swift; sourceTree = "<group>"; };
 		AFE1FABD7B22059A21BA9A3A /* TravelItineraryItemFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelItineraryItemFormView.swift; sourceTree = "<group>"; };
+		5D9E3B2C8A6F4172B4D7E9F1 /* PlaceSearchCompleter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceSearchCompleter.swift; sourceTree = "<group>"; };
 		B02DFAC49D9D4482ECF09A64 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		B5BDDCD1590A7803996444EC /* 타이머운동.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "타이머운동.png"; sourceTree = "<group>"; };
 		B9A7D77243F59003489A78F8 /* timer-exercise.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "timer-exercise.png"; sourceTree = "<group>"; };
@@ -354,6 +356,7 @@
 				190A1D03682FC74D860AEC01 /* TravelItineraryCreateView.swift */,
 				57C79908BA24A75EEB51BD6D /* TravelItineraryDetailView.swift */,
 				AFE1FABD7B22059A21BA9A3A /* TravelItineraryItemFormView.swift */,
+				5D9E3B2C8A6F4172B4D7E9F1 /* PlaceSearchCompleter.swift */,
 				1F38DC95AC1E797AF29D0752 /* TravelItineraryPackingListView.swift */,
 				FE439661AA11BAB52C599244 /* TravelItinerarySouvenirListView.swift */,
 				17F3B6A1E66F1B5F9751D237 /* TravelItinerarySpareListView.swift */,
@@ -672,6 +675,7 @@
 				85D97A5267B17E36E96E3EDF /* TravelItineraryCreateView.swift in Sources */,
 				1DCDF7FD4411937AE13138F7 /* TravelItineraryDetailView.swift in Sources */,
 				4CAD02C6E54F2FBAD1F1B56F /* TravelItineraryItemFormView.swift in Sources */,
+				4E8F2C1A9B7D4051A3C6E8F0 /* PlaceSearchCompleter.swift in Sources */,
 				03B36B1762E16E2217D43F8D /* TravelItineraryPackingListView.swift in Sources */,
 				F5DEF779C5B65BDF0844CFAE /* TravelItinerarySouvenirListView.swift in Sources */,
 				DD4FD6A4A04A8658E9B1B1C7 /* TravelItinerarySpareListView.swift in Sources */,

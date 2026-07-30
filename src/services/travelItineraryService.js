@@ -22,6 +22,8 @@ function normalizeTrip(row) {
  * @param {Object} row
  */
 function normalizeItem(row) {
+  const placeLat = row.place_lat == null ? null : Number(row.place_lat)
+  const placeLng = row.place_lng == null ? null : Number(row.place_lng)
   return {
     id: row.id,
     tripId: row.trip_id,
@@ -31,8 +33,38 @@ function normalizeItem(row) {
     endMinute: row.end_minute,
     title: row.title,
     memo: row.memo || '',
+    placeName: row.place_name || '',
+    placeAddress: row.place_address || '',
+    placeLat: Number.isFinite(placeLat) ? placeLat : null,
+    placeLng: Number.isFinite(placeLng) ? placeLng : null,
+    googlePlaceId: row.google_place_id || '',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  }
+}
+
+/**
+ * @param {object} params
+ */
+function buildPlacePatch(params) {
+  const placeName = (params.placeName || '').trim()
+  const placeAddress = (params.placeAddress || '').trim()
+  const googlePlaceId = (params.googlePlaceId || '').trim()
+  const placeLat =
+    params.placeLat == null || params.placeLat === ''
+      ? null
+      : Number(params.placeLat)
+  const placeLng =
+    params.placeLng == null || params.placeLng === ''
+      ? null
+      : Number(params.placeLng)
+
+  return {
+    place_name: placeName || null,
+    place_address: placeAddress || null,
+    place_lat: Number.isFinite(placeLat) ? placeLat : null,
+    place_lng: Number.isFinite(placeLng) ? placeLng : null,
+    google_place_id: googlePlaceId || null,
   }
 }
 
@@ -237,6 +269,11 @@ export async function getAbroadItineraryItems(tripId, itemDate) {
  *   endMinute: number,
  *   title: string,
  *   memo?: string,
+ *   placeName?: string,
+ *   placeAddress?: string,
+ *   placeLat?: number | null,
+ *   placeLng?: number | null,
+ *   googlePlaceId?: string,
  *   tripDepartureAt: string,
  *   tripReturnAt: string,
  * }} params
@@ -274,6 +311,7 @@ export async function createAbroadItineraryItem(params) {
         end_minute: endMinute,
         title,
         memo: (params.memo || '').trim() || null,
+        ...buildPlacePatch(params),
       },
     ])
     .select('*')
@@ -295,6 +333,11 @@ export async function createAbroadItineraryItem(params) {
  *   endMinute?: number,
  *   title?: string,
  *   memo?: string,
+ *   placeName?: string,
+ *   placeAddress?: string,
+ *   placeLat?: number | null,
+ *   placeLng?: number | null,
+ *   googlePlaceId?: string,
  *   tripDepartureAt?: string,
  *   tripReturnAt?: string,
  * }} params
@@ -311,6 +354,15 @@ export async function updateAbroadItineraryItem(itemId, params) {
     patch.title = title
   }
   if (params.memo != null) patch.memo = params.memo.trim() || null
+  if (
+    params.placeName != null ||
+    params.placeAddress != null ||
+    params.placeLat !== undefined ||
+    params.placeLng !== undefined ||
+    params.googlePlaceId != null
+  ) {
+    Object.assign(patch, buildPlacePatch(params))
+  }
   if (params.itemDate != null) patch.item_date = params.itemDate
   if (params.startMinute != null) {
     assertHalfHour(Number(params.startMinute), '시작 시각')

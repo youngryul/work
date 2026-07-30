@@ -1157,7 +1157,7 @@ final class SupabaseService {
         var queryItems = [
             URLQueryItem(name: "trip_id", value: "eq.\(tripId)"),
             URLQueryItem(name: "user_id", value: "eq.\(userId)"),
-            URLQueryItem(name: "select", value: "id,trip_id,item_date,start_minute,end_minute,title,memo"),
+            URLQueryItem(name: "select", value: "id,trip_id,item_date,start_minute,end_minute,title,memo,place_name,place_address,place_lat,place_lng,google_place_id"),
             URLQueryItem(name: "order", value: "item_date.asc,start_minute.asc"),
         ]
         if let itemDate, !itemDate.isEmpty {
@@ -1179,7 +1179,12 @@ final class SupabaseService {
         startMinute: Int,
         endMinute: Int,
         title: String,
-        memo: String?
+        memo: String?,
+        placeName: String? = nil,
+        placeAddress: String? = nil,
+        placeLat: Double? = nil,
+        placeLng: Double? = nil,
+        googlePlaceId: String? = nil
     ) async throws -> AbroadItineraryItem {
         let (userId, token) = await authInfo()
 
@@ -1200,6 +1205,14 @@ final class SupabaseService {
         if let memo, !memo.isEmpty {
             body["memo"] = memo
         }
+        applyPlaceFields(
+            to: &body,
+            placeName: placeName,
+            placeAddress: placeAddress,
+            placeLat: placeLat,
+            placeLng: placeLng,
+            googlePlaceId: googlePlaceId
+        )
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await fetch(request)
@@ -1215,7 +1228,12 @@ final class SupabaseService {
         startMinute: Int,
         endMinute: Int,
         title: String,
-        memo: String?
+        memo: String?,
+        placeName: String? = nil,
+        placeAddress: String? = nil,
+        placeLat: Double? = nil,
+        placeLng: Double? = nil,
+        googlePlaceId: String? = nil
     ) async throws -> AbroadItineraryItem {
         let (userId, token) = await authInfo()
 
@@ -1225,7 +1243,7 @@ final class SupabaseService {
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
         request.addValue("return=representation", forHTTPHeaderField: "Prefer")
 
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "item_date": itemDate,
             "start_minute": startMinute,
             "end_minute": endMinute,
@@ -1233,6 +1251,14 @@ final class SupabaseService {
             "memo": memo ?? "",
             "updated_at": ISO8601DateFormatter().string(from: Date()),
         ]
+        applyPlaceFields(
+            to: &body,
+            placeName: placeName,
+            placeAddress: placeAddress,
+            placeLat: placeLat,
+            placeLng: placeLng,
+            googlePlaceId: googlePlaceId
+        )
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await fetch(request)
@@ -1240,6 +1266,29 @@ final class SupabaseService {
         let items = try JSONDecoder().decode([AbroadItineraryItem].self, from: data)
         guard let item = items.first else { throw URLError(.badServerResponse) }
         return item
+    }
+
+    private func applyPlaceFields(
+        to body: inout [String: Any],
+        placeName: String?,
+        placeAddress: String?,
+        placeLat: Double?,
+        placeLng: Double?,
+        googlePlaceId: String?
+    ) {
+        let name = placeName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let address = placeAddress?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let placeId = googlePlaceId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        body["place_name"] = name.isEmpty ? NSNull() : name
+        body["place_address"] = address.isEmpty ? NSNull() : address
+        body["google_place_id"] = placeId.isEmpty ? NSNull() : placeId
+        if let placeLat, let placeLng {
+            body["place_lat"] = placeLat
+            body["place_lng"] = placeLng
+        } else {
+            body["place_lat"] = NSNull()
+            body["place_lng"] = NSNull()
+        }
     }
 
     func deleteAbroadItineraryItem(id: String) async throws {

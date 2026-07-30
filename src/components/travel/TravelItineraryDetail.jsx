@@ -300,6 +300,7 @@ export default function TravelItineraryDetail({ trip, onBack }) {
         initialStartMinute={draftStart}
         initialEndMinute={draftEnd}
         editingItem={editingItem}
+        countryCode={trip.countryCode}
         formHeading={movingSpareItem ? '예비 일정 → 일정으로' : undefined}
         onClose={closeForm}
         onSubmit={handleSubmit}

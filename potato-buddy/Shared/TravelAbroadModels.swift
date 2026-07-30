@@ -31,6 +31,11 @@ struct AbroadItineraryItem: Codable, Identifiable, Hashable {
     let endMinute: Int
     let title: String
     let memo: String?
+    let placeName: String?
+    let placeAddress: String?
+    let placeLat: Double?
+    let placeLng: Double?
+    let googlePlaceId: String?
 
     enum CodingKeys: String, CodingKey {
         case id, title, memo
@@ -38,10 +43,42 @@ struct AbroadItineraryItem: Codable, Identifiable, Hashable {
         case itemDate = "item_date"
         case startMinute = "start_minute"
         case endMinute = "end_minute"
+        case placeName = "place_name"
+        case placeAddress = "place_address"
+        case placeLat = "place_lat"
+        case placeLng = "place_lng"
+        case googlePlaceId = "google_place_id"
     }
 
     var startLabel: String { TravelItineraryTime.minuteToLabel(startMinute) }
     var endLabel: String { TravelItineraryTime.minuteToLabel(endMinute) }
+
+    var hasPlace: Bool {
+        let name = placeName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let address = placeAddress?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let hasCoords = placeLat != nil && placeLng != nil
+        let hasPlaceId = !(googlePlaceId?.isEmpty ?? true)
+        return !name.isEmpty || !address.isEmpty || hasCoords || hasPlaceId
+    }
+
+    var googleMapsURL: URL? {
+        if let lat = placeLat, let lng = placeLng {
+            return URL(string: "https://www.google.com/maps/search/?api=1&query=\(lat)%2C\(lng)")
+        }
+        if let placeId = googlePlaceId, !placeId.isEmpty,
+           let encoded = placeId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
+            return URL(string: "https://www.google.com/maps/search/?api=1&query_place_id=\(encoded)")
+        }
+        let query = [placeName, placeAddress]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+        guard !query.isEmpty,
+              let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            return nil
+        }
+        return URL(string: "https://www.google.com/maps/search/?api=1&query=\(encoded)")
+    }
 }
 
 struct AbroadPackingItem: Codable, Identifiable, Hashable {

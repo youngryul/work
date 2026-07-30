@@ -259,6 +259,16 @@ struct TravelItineraryDetailView: View {
                         Text("\(item.startLabel) – \(item.endLabel)")
                             .font(.caption2)
                             .foregroundColor(.secondary)
+                        if item.hasPlace, let name = item.placeName, !name.isEmpty {
+                            Text(name)
+                                .font(.caption2)
+                                .foregroundColor(.green)
+                        } else if item.hasPlace, let address = item.placeAddress, !address.isEmpty {
+                            Text(address)
+                                .font(.caption2)
+                                .foregroundColor(.green)
+                                .lineLimit(1)
+                        }
                     }
                     Spacer()
                     Image(systemName: expanded ? "chevron.up" : "chevron.down")
@@ -270,6 +280,29 @@ struct TravelItineraryDetailView: View {
 
             if expanded {
                 VStack(alignment: .leading, spacing: 8) {
+                    if item.hasPlace {
+                        Text("PLACE")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.orange)
+                        Text(item.placeName?.isEmpty == false ? item.placeName! : (item.placeAddress ?? ""))
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        if let address = item.placeAddress,
+                           !address.isEmpty,
+                           address != item.placeName {
+                            Text(address)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        if let mapsURL = item.googleMapsURL {
+                            Link("구글 지도에서 열기", destination: mapsURL)
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.green)
+                        }
+                    }
+
                     Text("MEMO")
                         .font(.caption)
                         .fontWeight(.semibold)

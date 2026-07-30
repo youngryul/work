@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { minuteToTimeLabel } from '../../services/travelItineraryService.js'
+import { buildGoogleMapsSearchUrl, hasPlaceLocation } from '../../utils/googleMapsLinks.js'
 
 /**
  * 등록된 일정만 세로 타임라인으로 표시. 클릭 시 상세(메모) 펼침.
@@ -66,11 +67,35 @@ export default function TravelItineraryTimeline({ items, onEdit }) {
                   </div>
                   <p className="text-xs text-gray-400 mt-0.5 font-mono">
                     {startLabel} – {endLabel}
+                    {hasPlaceLocation(item) && (
+                      <span className="ml-2 text-emerald-600 font-sans font-medium">
+                        · {item.placeName || '지도'}
+                      </span>
+                    )}
                   </p>
                 </button>
 
                 {isExpanded && (
                   <div className="mt-3 rounded-xl border border-amber-100 bg-white p-4 shadow-sm animate-[fadeIn_0.15s_ease-out]">
+                    {hasPlaceLocation(item) && (
+                      <div className="mb-3">
+                        <p className="text-xs font-semibold text-amber-800/80 mb-1">PLACE</p>
+                        <p className="text-sm text-gray-800 font-medium">
+                          {item.placeName || item.placeAddress}
+                        </p>
+                        {item.placeName && item.placeAddress && (
+                          <p className="text-xs text-gray-500 mt-0.5">{item.placeAddress}</p>
+                        )}
+                        <a
+                          href={buildGoogleMapsSearchUrl(item)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 hover:text-emerald-800"
+                        >
+                          구글 지도에서 열기 ↗
+                        </a>
+                      </div>
+                    )}
                     <p className="text-xs font-semibold text-amber-800/80 mb-2">MEMO</p>
                     {item.memo?.trim() ? (
                       <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
