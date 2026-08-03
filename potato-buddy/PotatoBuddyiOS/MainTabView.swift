@@ -52,6 +52,12 @@ struct MainTabView: View {
                 }
                 .tag(12)
 
+            ProjectRecordsView()
+                .tabItem {
+                    Label("프로젝트", systemImage: "folder.fill")
+                }
+                .tag(13)
+
             StepCounterView()
                 .tabItem {
                     Label("걸음", systemImage: "figure.walk")

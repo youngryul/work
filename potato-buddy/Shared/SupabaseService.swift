@@ -2067,6 +2067,184 @@ final class SupabaseService {
         try checkResponse(data, response)
     }
 
+    // MARK: - 프로젝트 기록
+
+    func fetchProjectCounts() async throws -> [ProjectCountItem] {
+        let (userId, token) = await authInfo()
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/project_records")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "select", value: "projectname"),
+        ]
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+
+        struct NameRow: Decodable {
+            let projectname: String
+        }
+        let rows = try JSONDecoder().decode([NameRow].self, from: data)
+        var counts: [String: Int] = [:]
+        for row in rows {
+            counts[row.projectname, default: 0] += 1
+        }
+        return counts
+            .map { ProjectCountItem(projectName: $0.key, count: $0.value) }
+            .sorted { $0.projectName.localizedStandardCompare($1.projectName) == .orderedAscending }
+    }
+
+    func fetchProjectNames() async throws -> [String] {
+        try await fetchProjectCounts().map(\.projectName)
+    }
+
+    func fetchProjectRecords(projectName: String) async throws -> [ProjectRecordItem] {
+        let (userId, token) = await authInfo()
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/project_records")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "projectname", value: "eq.\(projectName)"),
+            URLQueryItem(name: "select", value: "id,projectname,type,date,title,background,is_main"),
+            URLQueryItem(name: "order", value: "date.desc,createdat.desc"),
+        ]
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        return try JSONDecoder().decode([ProjectRecordItem].self, from: data)
+    }
+
+    func fetchMainProjectRecord(projectName: String) async throws -> ProjectRecordItem? {
+        let (userId, token) = await authInfo()
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/project_records")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "projectname", value: "eq.\(projectName)"),
+            URLQueryItem(name: "is_main", value: "eq.true"),
+            URLQueryItem(name: "select", value: "id,projectname,type,date,title,background,is_main"),
+            URLQueryItem(name: "limit", value: "1"),
+        ]
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        return try JSONDecoder().decode([ProjectRecordItem].self, from: data).first
+    }
+
+    func createProjectRecord(
+        projectName: String,
+        date: String,
+        title: String,
+        content: String,
+        isMain: Bool = false
+    ) async throws -> ProjectRecordItem {
+        let (userId, token) = await authInfo()
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/project_records")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        let body: [String: Any] = [
+            "user_id": userId,
+            "projectname": projectName.trimmingCharacters(in: .whitespacesAndNewlines),
+            "type": "MEETING",
+            "date": date,
+            "title": title.trimmingCharacters(in: .whitespacesAndNewlines),
+            "background": content.isEmpty ? NSNull() : content,
+            "discussion": NSNull(),
+            "problem": NSNull(),
+            "decision": NSNull(),
+            "actionitems": NSNull(),
+            "is_main": isMain,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        let items = try JSONDecoder().decode([ProjectRecordItem].self, from: data)
+        guard let item = items.first else { throw URLError(.badServerResponse) }
+        return item
+    }
+
+    func updateProjectRecord(
+        id: String,
+        projectName: String,
+        date: String,
+        title: String,
+        content: String
+    ) async throws -> ProjectRecordItem {
+        let (userId, token) = await authInfo()
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/project_records?id=eq.\(id)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        let body: [String: Any] = [
+            "projectname": projectName.trimmingCharacters(in: .whitespacesAndNewlines),
+            "date": date,
+            "title": title.trimmingCharacters(in: .whitespacesAndNewlines),
+            "background": content.isEmpty ? NSNull() : content,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        let items = try JSONDecoder().decode([ProjectRecordItem].self, from: data)
+        guard let item = items.first else { throw URLError(.badServerResponse) }
+        return item
+    }
+
+    func deleteProjectRecord(id: String) async throws {
+        let (userId, token) = await authInfo()
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/project_records?id=eq.\(id)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+    }
+
+    /// 프로젝트당 메인 기록 1개 — 기존 메인 해제 후 지정
+    func setMainProjectRecord(id: String, projectName: String) async throws {
+        let (userId, token) = await authInfo()
+
+        var clearComponents = URLComponents(string: "\(Config.supabaseURL)/rest/v1/project_records")!
+        clearComponents.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "projectname", value: "eq.\(projectName)"),
+            URLQueryItem(name: "is_main", value: "eq.true"),
+        ]
+        var clearRequest = URLRequest(url: clearComponents.url!)
+        clearRequest.httpMethod = "PATCH"
+        headers(token: token).forEach { clearRequest.addValue($1, forHTTPHeaderField: $0) }
+        clearRequest.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+        clearRequest.httpBody = try JSONSerialization.data(withJSONObject: ["is_main": false])
+        let (clearData, clearResponse) = try await fetch(clearRequest)
+        try checkResponse(clearData, clearResponse)
+
+        let setURL = URL(string: "\(Config.supabaseURL)/rest/v1/project_records?id=eq.\(id)&user_id=eq.\(userId)")!
+        var setRequest = URLRequest(url: setURL)
+        setRequest.httpMethod = "PATCH"
+        headers(token: token).forEach { setRequest.addValue($1, forHTTPHeaderField: $0) }
+        setRequest.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+        setRequest.httpBody = try JSONSerialization.data(withJSONObject: ["is_main": true])
+        let (setData, setResponse) = try await fetch(setRequest)
+        try checkResponse(setData, setResponse)
+    }
+
+    func unsetMainProjectRecord(id: String) async throws {
+        let (userId, token) = await authInfo()
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/project_records?id=eq.\(id)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["is_main": false])
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+    }
+
     // MARK: - 독서 (책 / 기록)
 
     func fetchBooks() async throws -> [BookItem] {
