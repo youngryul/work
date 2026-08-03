@@ -195,8 +195,10 @@ export default function PomodoroView({ onClose }) {
     if (secs <= 0 || isSaving) return
     setIsSaving(true)
     try {
-      await addStudySession(secs, { source: 'pomodoro', category })
-      showToast(`${formatStudyDuration(secs)} 기록 완료!`, TOAST_TYPES.SUCCESS)
+      const result = await addStudySession(secs, { source: 'pomodoro', category })
+      const jellyMsg =
+        result?.jellyAwarded > 0 ? ` · 젤리 +${result.jellyAwarded}` : ''
+      showToast(`${formatStudyDuration(secs)} 기록 완료!${jellyMsg}`, TOAST_TYPES.SUCCESS)
       window.dispatchEvent(new CustomEvent('refreshStudyTime'))
       setState('idle')
       setRemainingSeconds(selectedMinutes * 60)

@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct HabitTrackerView: View {
     @EnvironmentObject private var jellyStore: JellyBalanceStore
@@ -211,7 +211,7 @@ struct HabitTrackerView: View {
                 month: selectedMonth
             )
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
         isLoading = false
     }
@@ -240,7 +240,7 @@ struct HabitTrackerView: View {
                 await jellyStore.refresh()
             }
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
             await loadTrackers()
         }
     }
@@ -250,7 +250,7 @@ struct HabitTrackerView: View {
             try await SupabaseService.shared.deleteHabitTracker(id: tracker.id)
             trackers.removeAll { $0.id == tracker.id }
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -273,7 +273,7 @@ struct HabitTrackerView: View {
             }
             trackerToEdit = nil
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 

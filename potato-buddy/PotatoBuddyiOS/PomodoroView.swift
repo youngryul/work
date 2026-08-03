@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 private struct ClockwiseWhiteFillShape: Shape {
     var progress: CGFloat
@@ -36,8 +36,6 @@ struct PomodoroView: View {
     @State private var selectedCategory: StudyTimerCategory = .study
     @State private var customMinutesText = "25"
 
-    private let imageName = "포실이뽀모도로"
-
     var body: some View {
         NavigationView {
             VStack(spacing: 24) {
@@ -46,6 +44,7 @@ struct PomodoroView: View {
                 pomodoroImage
                     .frame(maxWidth: 280, maxHeight: 280)
                     .padding(.horizontal, 24)
+                    .id(selectedCategory.rawValue)
 
                 Text(viewModel.digitalTimeText)
                     .font(.system(size: 56, weight: .semibold, design: .rounded))
@@ -113,7 +112,7 @@ struct PomodoroView: View {
 
             ZStack {
                 Group {
-                    if let uiImage = UIImage(named: imageName) {
+                    if let uiImage = selectedCategory.loadPomodoroUIImage() {
                         Image(uiImage: uiImage)
                             .resizable()
                             .scaledToFit()
@@ -293,15 +292,20 @@ struct PomodoroView: View {
         saveMessage = nil
         saveError = nil
         do {
-            try await SupabaseService.shared.addStudySession(
+            let awarded = try await SupabaseService.shared.addStudySession(
                 seconds: secs,
                 source: "pomodoro",
                 category: selectedCategory.rawValue
             )
-            saveMessage = "\(formatStudyDuration(secs)) 기록 완료! 🎉"
+            if awarded > 0 {
+                saveMessage = "\(formatStudyDuration(secs)) 기록 완료! 젤리 +\(awarded) 🎉"
+                await JellyBalanceStore.shared.refresh()
+            } else {
+                saveMessage = "\(formatStudyDuration(secs)) 기록 완료! 🎉"
+            }
             viewModel.reset()
         } catch {
-            saveError = error.localizedDescription
+            if !error.isCancellation { saveError = error.localizedDescription }
         }
         isSaving = false
     }

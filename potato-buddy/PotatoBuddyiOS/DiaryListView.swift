@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct DiaryListView: View {
     @State private var diaries: [DiaryItem] = []
@@ -140,7 +140,7 @@ struct DiaryListView: View {
         do {
             diaries = try await SupabaseService.shared.fetchDiaries(year: selectedYear, month: selectedMonth)
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
         isLoading = false
     }

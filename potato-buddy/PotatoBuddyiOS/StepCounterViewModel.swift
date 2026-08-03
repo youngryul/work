@@ -1,4 +1,4 @@
-import Combine
+﻿import Combine
 import Foundation
 
 @MainActor
@@ -85,7 +85,7 @@ final class StepCounterViewModel: ObservableObject {
             authorizationDenied = StepCounterService.isDenied
             reloadClaimedMilestonesFromStorage()
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
             authorizationDenied = StepCounterService.isDenied
         }
     }

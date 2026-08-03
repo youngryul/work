@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct TravelItineraryView: View {
     @State private var trips: [AbroadTrip] = []
@@ -96,7 +96,7 @@ struct TravelItineraryView: View {
         do {
             trips = try await SupabaseService.shared.fetchAbroadTrips()
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -108,7 +108,7 @@ struct TravelItineraryView: View {
             }
             trips.remove(atOffsets: indexSet)
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 }

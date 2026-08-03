@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct FridgeInventoryView: View {
     @State private var activeZone: FridgeZone = .fridge
@@ -199,7 +199,7 @@ struct FridgeInventoryView: View {
                 status: activeStatus.rawValue
             )
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -534,7 +534,7 @@ private struct FridgeItemFormSheet: View {
                 await onSave(true)
             }
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -548,7 +548,7 @@ private struct FridgeItemFormSheet: View {
             try await SupabaseService.shared.deleteFridgeItem(id: item.id)
             await onSave(false)
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 }

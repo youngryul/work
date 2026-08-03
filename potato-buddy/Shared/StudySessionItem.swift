@@ -1,5 +1,8 @@
 import Foundation
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 // MARK: - 타이머 카테고리
 
@@ -47,14 +50,44 @@ enum StudyTimerCategory: String, CaseIterable, Identifiable {
         }
     }
 
-    /// 뽀모도로 배경 이미지 에셋 이름 (공부는 포실이 이미지, 책·운동은 테마 이미지)
-    var pomodoroBackgroundImageName: String {
+    /// 뽀모도로 이미지 후보 (공부는 포실이, 책·운동은 테마)
+    var pomodoroBackgroundImageCandidates: [String] {
         switch self {
-        case .book:     return "타이머책"
-        case .study:    return "포실이뽀모도로"
-        case .exercise: return "타이머운동"
+        case .book:
+            return ["timer-book", "타이머책"]
+        case .study:
+            return ["포실이뽀모도로"]
+        case .exercise:
+            return ["timer-exercise", "타이머운동"]
         }
     }
+
+    /// 번들에서 카테고리 배경 이미지를 로드 (png/jpg 모두 시도)
+    #if canImport(UIKit)
+    func loadBackgroundUIImage() -> UIImage? {
+        Self.loadUIImage(namedCandidates: timerBackgroundImageCandidates)
+    }
+
+    func loadPomodoroUIImage() -> UIImage? {
+        Self.loadUIImage(namedCandidates: pomodoroBackgroundImageCandidates)
+    }
+
+    static func loadUIImage(namedCandidates names: [String]) -> UIImage? {
+        let extensions = ["png", "jpg", "jpeg"]
+        for name in names {
+            if let image = UIImage(named: name) {
+                return image
+            }
+            for ext in extensions {
+                if let url = Bundle.main.url(forResource: name, withExtension: ext),
+                   let image = UIImage(contentsOfFile: url.path) {
+                    return image
+                }
+            }
+        }
+        return nil
+    }
+    #endif
 
     static func normalize(_ raw: String?) -> StudyTimerCategory {
         guard let raw, let cat = StudyTimerCategory(rawValue: raw) else {

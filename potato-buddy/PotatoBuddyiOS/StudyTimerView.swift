@@ -51,13 +51,12 @@ struct StudyTimerView: View {
 
     @ViewBuilder
     private func timerBackground(for category: StudyTimerCategory) -> some View {
-        let names = category.timerBackgroundImageCandidates
-        if let uiImage = names.lazy.compactMap({ UIImage(named: $0) }).first {
+        if let uiImage = category.loadBackgroundUIImage() {
             Image(uiImage: uiImage)
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
-                .id(names.joined(separator: "|"))
+                .id(category.rawValue)
         } else {
             Color(red: 245/255, green: 237/255, blue: 224/255)
                 .ignoresSafeArea()

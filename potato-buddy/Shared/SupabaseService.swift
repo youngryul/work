@@ -1574,9 +1574,12 @@ final class SupabaseService {
 
     // MARK: - 공부 세션
 
-    func addStudySession(seconds: Int, source: String, category: String = StudyTimerCategory.study.rawValue) async throws {
+    /// 공부 세션 저장 후 10분당 젤리 1개 지급. 세션 ID로 웹/앱 중복 지급 방지.
+    /// - Returns: 이번에 지급된 젤리 수
+    @discardableResult
+    func addStudySession(seconds: Int, source: String, category: String = StudyTimerCategory.study.rawValue) async throws -> Int {
         let (userId, token) = await authInfo()
-        guard seconds > 0 else { return }
+        guard seconds > 0 else { return 0 }
 
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -1589,7 +1592,7 @@ final class SupabaseService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
-        request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
 
         let body: [String: Any] = [
             "user_id":          userId,
@@ -1601,6 +1604,28 @@ final class SupabaseService {
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         let (data, response) = try await fetch(request)
         try checkResponse(data, response)
+
+        struct InsertedSession: Decodable {
+            let id: String
+        }
+        let sessions = try JSONDecoder().decode([InsertedSession].self, from: data)
+        guard let sessionId = sessions.first?.id else { return 0 }
+
+        let jellyAmount = StudyTimerJelly.amount(forSeconds: seconds)
+        guard jellyAmount > 0 else { return 0 }
+
+        do {
+            let jelly = try await awardJelly(
+                amount: jellyAmount,
+                reason: JellyRewardReason.studyTimer,
+                idempotencyKey: "study_session:\(sessionId)"
+            )
+            return jelly.alreadyAwarded ? 0 : jelly.awarded
+        } catch {
+            // 세션 저장은 성공했으므로 젤리 실패는 삼킴
+            print("타이머 젤리 지급 실패: \(error.localizedDescription)")
+            return 0
+        }
     }
 
     /// 최근 N개월 공부 세션 전체 조회

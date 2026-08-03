@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 import MapKit
 
 struct TravelItineraryItemFormView: View {
@@ -294,7 +294,7 @@ struct TravelItineraryItemFormView: View {
             }
             dismiss()
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -307,7 +307,7 @@ struct TravelItineraryItemFormView: View {
             onSaved(nil)
             dismiss()
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 }

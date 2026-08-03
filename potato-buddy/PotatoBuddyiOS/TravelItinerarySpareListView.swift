@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 /// 날짜/시간 없이 제목만 적는 예비 일정
 struct TravelItinerarySpareListView: View {
@@ -123,7 +123,7 @@ struct TravelItinerarySpareListView: View {
         do {
             items = try await SupabaseService.shared.fetchAbroadSpareItems(tripId: tripId)
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -137,7 +137,7 @@ struct TravelItinerarySpareListView: View {
             items.append(created)
             draftTitle = ""
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -156,7 +156,7 @@ struct TravelItinerarySpareListView: View {
             self.editingItem = nil
             editingTitle = ""
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -165,7 +165,7 @@ struct TravelItinerarySpareListView: View {
             try await SupabaseService.shared.deleteAbroadSpareItem(id: item.id)
             items.removeAll { $0.id == item.id }
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 }

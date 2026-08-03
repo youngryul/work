@@ -3,6 +3,7 @@ import {
   JELLY_REWARD_FIVE_YEAR_ANSWER,
   JELLY_REWARD_HABIT_TRACKER_FIRST_TODAY,
   JELLY_REWARD_RECIPE_CREATE,
+  JELLY_REWARD_STUDY_TIMER_PER_10_MIN,
   JELLY_REWARD_TASK_COMPLETE,
   JELLY_REWARD_WEIGHT_GOAL_REACHED,
   JELLY_REWARD_WEIGHT_RECORD,
@@ -16,6 +17,13 @@ export const JELLY_EARNING_GUIDE = [
     label: '할 일 완료',
     description: '오늘 할 일을 완료하면 젤리를 받아요.',
     amount: JELLY_REWARD_TASK_COMPLETE,
+  },
+  {
+    id: 'study_timer',
+    icon: '⏱️',
+    label: '타이머 기록',
+    description: '타이머·뽀모도로를 저장하면 10분당 젤리 1개를 받아요.',
+    amount: JELLY_REWARD_STUDY_TIMER_PER_10_MIN,
   },
   {
     id: 'diary',

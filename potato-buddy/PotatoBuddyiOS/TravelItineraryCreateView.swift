@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct TravelItineraryCreateView: View {
     let onCreated: (AbroadTrip) -> Void
@@ -89,7 +89,7 @@ struct TravelItineraryCreateView: View {
             onCreated(trip)
             dismiss()
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 }

@@ -1,4 +1,4 @@
-import Combine
+﻿import Combine
 import Foundation
 #if canImport(ActivityKit)
 import ActivityKit
@@ -73,15 +73,20 @@ final class StudyTimerViewModel: ObservableObject {
         isSaving = true
         saveError = nil
         do {
-            try await SupabaseService.shared.addStudySession(
+            let awarded = try await SupabaseService.shared.addStudySession(
                 seconds: secs,
                 source: "study-timer",
                 category: selectedCategory.rawValue
             )
-            savedMessage = "\(formatStudyDuration(secs)) 기록 완료!"
+            if awarded > 0 {
+                savedMessage = "\(formatStudyDuration(secs)) 기록 완료! 젤리 +\(awarded)"
+                await JellyBalanceStore.shared.refresh()
+            } else {
+                savedMessage = "\(formatStudyDuration(secs)) 기록 완료!"
+            }
             reset()
         } catch {
-            saveError = error.localizedDescription
+            if !error.isCancellation { saveError = error.localizedDescription }
         }
         isSaving = false
     }

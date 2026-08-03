@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 private enum TravelDetailTab: String, CaseIterable, Identifiable {
     case schedule
@@ -342,7 +342,7 @@ struct TravelItineraryDetailView: View {
                 itemDate: selectedDate
             )
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 

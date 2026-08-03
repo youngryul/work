@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct TodayView: View {
     private static let completeDelayNanoseconds: UInt64 = 1_000_000_000
@@ -193,7 +193,7 @@ struct TodayView: View {
             }
         } catch {
             pendingCompleteIds.remove(task.id)
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -216,7 +216,7 @@ struct TodayView: View {
             let ids = Set(tasks.map(\.id))
             pendingCompleteIds = pendingCompleteIds.intersection(ids)
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
         isLoading = false
     }
@@ -227,7 +227,7 @@ struct TodayView: View {
             try await SupabaseService.shared.addTask(title: title)
             await loadTasks()
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 }

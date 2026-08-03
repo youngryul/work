@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 /// 일자별 공부 시간 통계 — 달력 뷰
 struct StudyTimeView: View {
@@ -168,7 +168,7 @@ struct StudyTimeView: View {
             totalDays = dateSet.count
             categoryTotals = cats
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
         isLoading = false
         await loadMonthData()

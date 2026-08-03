@@ -84,8 +84,10 @@ export default function StudyTimerView({ onClose }) {
     const secs = elapsedSeconds
     setIsSaving(true)
     try {
-      await addStudySession(secs, { source: 'study-timer', category })
-      showToast(`${formatStudyDuration(secs)} 기록 완료!`, TOAST_TYPES.SUCCESS)
+      const result = await addStudySession(secs, { source: 'study-timer', category })
+      const jellyMsg =
+        result?.jellyAwarded > 0 ? ` · 젤리 +${result.jellyAwarded}` : ''
+      showToast(`${formatStudyDuration(secs)} 기록 완료!${jellyMsg}`, TOAST_TYPES.SUCCESS)
       window.dispatchEvent(new CustomEvent('refreshStudyTime'))
       handleReset()
     } catch (err) {

@@ -5,6 +5,7 @@ import {
   normalizeStudyCategory,
   DEFAULT_STUDY_TIMER_CATEGORY,
 } from '../constants/studyTimerCategories.js'
+import { awardJellyForStudySession } from './jellyService.js'
 
 /**
  * 오늘 날짜 YYYY-MM-DD (로컬)
@@ -49,10 +50,10 @@ export function formatStudyDurationShort(totalSeconds) {
 }
 
 /**
- * 공부 세션 추가
+ * 공부 세션 추가 (+ 10분당 젤리 1, 세션 ID로 웹/앱 중복 방지)
  * @param {number} durationSeconds
  * @param {{ studyDate?: string, source?: string, category?: string }} [options]
- * @returns {Promise<object>}
+ * @returns {Promise<object & { jellyAwarded: number }>}
  */
 export async function addStudySession(durationSeconds, options = {}) {
   const {
@@ -82,7 +83,16 @@ export async function addStudySession(durationSeconds, options = {}) {
     .single()
 
   if (error) throw error
-  return data
+
+  let jellyAwarded = 0
+  try {
+    const jellyResult = await awardJellyForStudySession(data.id, seconds)
+    jellyAwarded = jellyResult?.awarded ?? 0
+  } catch (jellyError) {
+    console.error('타이머 젤리 지급 실패:', jellyError)
+  }
+
+  return { ...data, jellyAwarded }
 }
 
 /**

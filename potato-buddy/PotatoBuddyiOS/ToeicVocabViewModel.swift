@@ -1,4 +1,4 @@
-import Foundation
+﻿import Foundation
 
 @MainActor
 final class ToeicVocabViewModel: ObservableObject {
@@ -34,7 +34,7 @@ final class ToeicVocabViewModel: ObservableObject {
             errorMessage = nil
         } catch {
             if vocab.wordCount == 0 {
-                errorMessage = error.localizedDescription
+                if !error.isCancellation { errorMessage = error.localizedDescription }
             }
         }
     }

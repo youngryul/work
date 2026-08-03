@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 /// 여행별 준비물 체크리스트
 struct TravelItineraryPackingListView: View {
@@ -119,7 +119,7 @@ struct TravelItineraryPackingListView: View {
         do {
             items = try await SupabaseService.shared.fetchAbroadPackingItems(tripId: tripId)
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -133,7 +133,7 @@ struct TravelItineraryPackingListView: View {
             items.append(created)
             draftTitle = ""
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -161,7 +161,7 @@ struct TravelItineraryPackingListView: View {
             if let index = items.firstIndex(where: { $0.id == item.id }) {
                 items[index] = item
             }
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -184,7 +184,7 @@ struct TravelItineraryPackingListView: View {
             self.editingItem = nil
             editingTitle = ""
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -193,7 +193,7 @@ struct TravelItineraryPackingListView: View {
             try await SupabaseService.shared.deleteAbroadPackingItem(id: item.id)
             items.removeAll { $0.id == item.id }
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 }

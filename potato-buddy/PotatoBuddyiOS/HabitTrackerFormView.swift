@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct HabitTrackerFormView: View {
     let year: Int
@@ -90,7 +90,7 @@ struct HabitTrackerFormView: View {
             )
             await onSave()
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
 
         isSaving = false

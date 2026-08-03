@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct DiaryWriteView: View {
     let date: String
@@ -157,7 +157,7 @@ struct DiaryWriteView: View {
                 dismiss()
             }
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
         isSaving = false
     }

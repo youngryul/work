@@ -12,6 +12,7 @@ import {
   JELLY_REWARD_RECIPE_CREATE,
   JELLY_REWARD_WEIGHT_GOAL_REACHED,
   JELLY_REWARD_WEIGHT_RECORD,
+  calcStudyTimerJellyAmount,
 } from '../constants/jellyRewards.js'
 import { notifyJellyUpdated } from '../utils/jellyEvents.js'
 
@@ -199,6 +200,25 @@ export async function awardJellyForRecipeCreate(recipeId) {
     JELLY_REWARD_RECIPE_CREATE,
     JELLY_REWARD_REASON.RECIPE_CREATE,
     `recipe:${recipeId}`,
+  )
+}
+
+/**
+ * 타이머/뽀모도로 세션 저장 시 젤리 지급 (10분당 1개, 세션당 1회 — 웹/앱 중복 방지)
+ * @param {string} sessionId
+ * @param {number} durationSeconds
+ */
+export async function awardJellyForStudySession(sessionId, durationSeconds) {
+  const userId = await getCurrentUserId()
+  if (!userId || !sessionId) return null
+
+  const amount = calcStudyTimerJellyAmount(durationSeconds)
+  if (amount <= 0) return { balance: null, awarded: 0, alreadyAwarded: false }
+
+  return awardJelly(
+    amount,
+    JELLY_REWARD_REASON.STUDY_TIMER,
+    `study_session:${sessionId}`,
   )
 }
 

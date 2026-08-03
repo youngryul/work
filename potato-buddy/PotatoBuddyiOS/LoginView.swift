@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct LoginView: View {
     @State private var showLoginForm = false
@@ -173,7 +173,7 @@ struct LoginFormView: View {
         do {
             try await AuthService.shared.signIn(email: email, password: password)
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
         isLoading = false
     }

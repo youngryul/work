@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 private struct SheetDetentModifier: ViewModifier {
     func body(content: Content) -> some View {
@@ -151,11 +151,11 @@ struct ScheduleCalendarView: View {
                 Text(errorMessage)
             }
             .confirmationDialog(
-                "반복 일정 삭제",
+                "일정 삭제",
                 isPresented: $showDeleteConfirm,
                 titleVisibility: .visible
             ) {
-                Button("시리즈 전체 삭제", role: .destructive) {
+                Button("삭제", role: .destructive) {
                     if let schedule = pendingDeleteSchedule {
                         Task { await deleteSchedule(schedule) }
                     }
@@ -165,7 +165,11 @@ struct ScheduleCalendarView: View {
                     pendingDeleteSchedule = nil
                 }
             } message: {
-                Text("반복 일정 전체가 삭제됩니다.")
+                if pendingDeleteSchedule?.isRecurring == true {
+                    Text("이 반복 일정 시리즈 전체가 삭제됩니다. 정말 삭제할까요?")
+                } else {
+                    Text("이 일정을 정말 삭제할까요?")
+                }
             }
         }
         .task {
@@ -928,7 +932,7 @@ struct ScheduleCalendarView: View {
             schedules = try await SupabaseService.shared.fetchSchedules(year: selectedYear, month: selectedMonth)
             syncWidgetIfNeeded()
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
         isLoading = false
     }
@@ -1031,7 +1035,7 @@ struct ScheduleCalendarView: View {
             showAddSheet = false
             resetAddForm(for: selectedDate)
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
         isSaving = false
     }
@@ -1141,7 +1145,7 @@ struct ScheduleCalendarView: View {
             showEditSheet = false
             self.editingSchedule = nil
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
         isSaving = false
     }
@@ -1191,12 +1195,8 @@ struct ScheduleCalendarView: View {
     }
 
     private func requestDelete(_ schedule: ScheduleItem) {
-        if schedule.isRecurring {
-            pendingDeleteSchedule = schedule
-            showDeleteConfirm = true
-        } else {
-            Task { await deleteSchedule(schedule) }
-        }
+        pendingDeleteSchedule = schedule
+        showDeleteConfirm = true
     }
 
     private func deleteSchedule(_ schedule: ScheduleItem) async {
@@ -1207,7 +1207,7 @@ struct ScheduleCalendarView: View {
             }
             syncWidgetIfNeeded()
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
             await loadSchedules()
         }
     }
@@ -1224,7 +1224,7 @@ struct ScheduleCalendarView: View {
             rebuildMarkers()
             showMenstrualSettings = false
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
         isSavingMenstrual = false
     }
@@ -1238,7 +1238,7 @@ struct ScheduleCalendarView: View {
             menstrualRecords.append(record)
             rebuildMarkers()
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -1248,7 +1248,7 @@ struct ScheduleCalendarView: View {
             menstrualRecords.removeAll { $0.id == id }
             rebuildMarkers()
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 

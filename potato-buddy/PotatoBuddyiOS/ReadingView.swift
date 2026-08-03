@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 /// 웹 ReadingView와 대응 — 책 목록, 검색 등록, 기록 CRUD, 월 통계, 완독
 struct ReadingView: View {
@@ -331,7 +331,7 @@ struct ReadingView: View {
                 records = try await SupabaseService.shared.fetchReadingRecords(bookId: refreshed.id)
             }
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -339,7 +339,7 @@ struct ReadingView: View {
         do {
             stats = try await SupabaseService.shared.fetchMonthlyReadingStats(year: year, month: month)
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -348,7 +348,7 @@ struct ReadingView: View {
         do {
             records = try await SupabaseService.shared.fetchReadingRecords(bookId: book.id)
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -370,7 +370,7 @@ struct ReadingView: View {
             await reloadAll()
             await selectBook(book)
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -396,7 +396,7 @@ struct ReadingView: View {
             records = try await SupabaseService.shared.fetchReadingRecords(bookId: bookId)
             await loadStats()
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -407,7 +407,7 @@ struct ReadingView: View {
             records = try await SupabaseService.shared.fetchReadingRecords(bookId: selectedBook.id)
             await loadStats()
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -425,7 +425,7 @@ struct ReadingView: View {
             selectedBook = updated
             records = try await SupabaseService.shared.fetchReadingRecords(bookId: updated.id)
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -439,7 +439,7 @@ struct ReadingView: View {
             await reloadAll()
             selectedBook = updated
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 }
@@ -522,7 +522,7 @@ private struct BookSearchSheet: View {
         do {
             results = try await SupabaseService.shared.searchBooks(query: q)
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
             results = []
         }
     }

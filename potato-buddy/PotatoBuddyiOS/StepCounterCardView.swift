@@ -177,7 +177,9 @@ struct StepCounterCardView: View {
                 onJellyEarned?("젤리 +\(awarded)을 획득했어요.")
             }
         } catch {
-            onClaimError?(error.localizedDescription)
+            if !error.isCancellation {
+                onClaimError?(error.localizedDescription)
+            }
         }
     }
 }

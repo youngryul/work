@@ -80,11 +80,11 @@ targets:
       - path: PotatoBuddyiOS/포실이(투명).png
       - path: PotatoBuddyiOS/포실이뽀모도로.png
       - path: PotatoBuddyiOS/타이머.png
-      - path: PotatoBuddyiOS/타이머운동.png
-      - path: PotatoBuddyiOS/타이머책.png
+      - path: PotatoBuddyiOS/타이머운동.jpg
+      - path: PotatoBuddyiOS/타이머책.jpg
       - path: PotatoBuddyiOS/timer-study.png
-      - path: PotatoBuddyiOS/timer-book.png
-      - path: PotatoBuddyiOS/timer-exercise.png
+      - path: PotatoBuddyiOS/timer-book.jpg
+      - path: PotatoBuddyiOS/timer-exercise.jpg
       - path: PotatoBuddyiOS/summer.png
       - path: PotatoBuddyiOS/toeicNorangiVocab.json
       - path: PotatoBuddyiOS/Assets.xcassets

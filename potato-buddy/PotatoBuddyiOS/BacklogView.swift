@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 
 struct BacklogView: View {
     @State private var tasks: [TaskItem] = []
@@ -261,7 +261,7 @@ struct BacklogView: View {
         do {
             tasks = try await SupabaseService.shared.fetchBacklogTasks()
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -271,7 +271,7 @@ struct BacklogView: View {
             try await SupabaseService.shared.moveToToday(id: task.id)
             tasks.removeAll { $0.id == task.id }
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -281,7 +281,7 @@ struct BacklogView: View {
             try await SupabaseService.shared.deleteTask(id: task.id)
             tasks.removeAll { $0.id == task.id }
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 
@@ -302,7 +302,7 @@ struct BacklogView: View {
             newTaskTitle = ""
             await loadTasks()
         } catch {
-            errorMessage = error.localizedDescription
+            if !error.isCancellation { errorMessage = error.localizedDescription }
         }
     }
 }
