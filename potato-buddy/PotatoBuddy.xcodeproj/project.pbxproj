@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		63C1D2E3F4152637485A8102 /* WidgetWeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C1D2E3F4152637485A8101 /* WidgetWeatherModels.swift */; };
+		63C1D2E3F4152637485A8103 /* WidgetWeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C1D2E3F4152637485A8101 /* WidgetWeatherModels.swift */; };
+		63C1D2E3F4152637485A8104 /* WidgetWeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C1D2E3F4152637485A8101 /* WidgetWeatherModels.swift */; };
+		63C1D2E3F4152637485A8106 /* WeatherWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C1D2E3F4152637485A8105 /* WeatherWidget.swift */; };
+		63C1D2E3F4152637485A8108 /* WeatherWidgetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C1D2E3F4152637485A8107 /* WeatherWidgetService.swift */; };
+		63C1D2E3F4152637485A810A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 63C1D2E3F4152637485A8109 /* Assets.xcassets */; };
 		01882407C87EE8CD8545AD3A /* HabitTrackerCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AA6CB30D85668CDA815DE41 /* HabitTrackerCardView.swift */; };
 		02602D5243B4A5E3095C4BD5 /* JellyRewardConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29331826BBBDC0B4BAFFEB9D /* JellyRewardConstants.swift */; };
 		03B36B1762E16E2217D43F8D /* TravelItineraryPackingListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F38DC95AC1E797AF29D0752 /* TravelItineraryPackingListView.swift */; };
@@ -159,6 +165,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		63C1D2E3F4152637485A8101 /* WidgetWeatherModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetWeatherModels.swift; sourceTree = "<group>"; };
+		63C1D2E3F4152637485A8105 /* WeatherWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherWidget.swift; sourceTree = "<group>"; };
+		63C1D2E3F4152637485A8107 /* WeatherWidgetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherWidgetService.swift; sourceTree = "<group>"; };
+		63C1D2E3F4152637485A8109 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0987064D68A1DF4DD6756AF6 /* CategoryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryItem.swift; sourceTree = "<group>"; };
 		0A5A811417764F808287371A /* StudyTimerLiveActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyTimerLiveActivityAttributes.swift; sourceTree = "<group>"; };
 		0C51632D4FE1AE1587ACF991 /* iPadClockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iPadClockView.swift; sourceTree = "<group>"; };
@@ -300,6 +310,7 @@
 				4BD7E5050DED68E0DBBC2FF6 /* ToeicVocabData.swift */,
 				D39AAC1A8BF6E487B9ED6FEE /* TravelAbroadModels.swift */,
 				DB8B7BD1BEADE12B74909D2C /* WidgetScheduleStore.swift */,
+				63C1D2E3F4152637485A8101 /* WidgetWeatherModels.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -352,6 +363,7 @@
 				1135FADE4C8DF6A8508C291E /* PotatoBuddyiOSApp.swift */,
 				4CC56B1102F36D279C196D42 /* ScheduleCalendarView.swift */,
 				3EBE98E4AA439E5B105C2588 /* ScheduleWidgetService.swift */,
+				63C1D2E3F4152637485A8107 /* WeatherWidgetService.swift */,
 				17F2503650D67FEFAECD28EC /* SettingsView.swift */,
 				687C3B2D7029A9D36927DA24 /* StepCounterCardView.swift */,
 				63553EC69C58CF3D81F60ECF /* StepCounterService.swift */,
@@ -392,6 +404,8 @@
 				8BFFADCA528934985EE8E602 /* Info.plist */,
 				DA3A098CD3E5E0FDEDA0DE5D /* ScheduleWidget.entitlements */,
 				CAB43CB7FED3699D0B1A7E1C /* ScheduleWidgetBundle.swift */,
+				63C1D2E3F4152637485A8105 /* WeatherWidget.swift */,
+				63C1D2E3F4152637485A8109 /* Assets.xcassets */,
 			);
 			path = ScheduleWidget;
 			sourceTree = "<group>";
@@ -446,6 +460,7 @@
 			buildConfigurationList = E6C36F21ECE8CF12E77D5E26 /* Build configuration list for PBXNativeTarget "ScheduleWidgetExtension" */;
 			buildPhases = (
 				6B80F0E8FDFC07F3C41DA979 /* Sources */,
+				63C1D2E3F4152637485A8110 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -545,6 +560,14 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		63C1D2E3F4152637485A8110 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				63C1D2E3F4152637485A810A /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		58ECAEB6290F206BCB7B3063 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -633,6 +656,8 @@
 				FA02ED3C589CF9E19E54ECDC /* ScheduleWidgetBundle.swift in Sources */,
 				E1176A4FB9A8402EA2584B2C /* StudyTimerLiveActivityAttributes.swift in Sources */,
 				92F16E8E33B86336DBB3B45E /* WidgetScheduleStore.swift in Sources */,
+				63C1D2E3F4152637485A8104 /* WidgetWeatherModels.swift in Sources */,
+				63C1D2E3F4152637485A8106 /* WeatherWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -678,6 +703,8 @@
 				DB972F13B96FFEC35DAD6E17 /* ScheduleItem.swift in Sources */,
 				2877771ED542DFFAAAB533DC /* ScheduleTagItem.swift in Sources */,
 				CAEC59D5B68A5480E504DBF2 /* ScheduleWidgetService.swift in Sources */,
+				63C1D2E3F4152637485A8108 /* WeatherWidgetService.swift in Sources */,
+				63C1D2E3F4152637485A8103 /* WidgetWeatherModels.swift in Sources */,
 				EF1F6C5100CD872A2E638934 /* SettingsView.swift in Sources */,
 				122F05E24517F4876E1111C5 /* StepCounterCardView.swift in Sources */,
 				EA765BB6DF73662C9FAE9A61 /* StepCounterConstants.swift in Sources */,
@@ -711,6 +738,7 @@
 				DD4FD6A4A04A8658E9B1B1C7 /* TravelItinerarySpareListView.swift in Sources */,
 				9E24F2E0DE2AA6234D734E69 /* TravelItineraryView.swift in Sources */,
 				674E1DDC6C3A3C05E535859C /* WidgetScheduleStore.swift in Sources */,
+				63C1D2E3F4152637485A8102 /* WidgetWeatherModels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

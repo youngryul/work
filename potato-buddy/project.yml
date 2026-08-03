@@ -110,6 +110,7 @@ targets:
             CFBundleURLSchemes:
               - potatobuddy
         NSMotionUsageDescription: 오늘 걸음 수를 만보기처럼 확인하기 위해 동작 및 피트니스 데이터가 필요합니다.
+        NSLocationWhenInUseUsageDescription: 현재 위치의 날씨 위젯을 보여주기 위해 위치 정보가 필요합니다.
     entitlements:
       path: PotatoBuddyiOS/PotatoBuddyiOS.entitlements
       properties:
@@ -154,6 +155,9 @@ targets:
     sources:
       - path: ScheduleWidget
       - path: Shared/WidgetScheduleStore.swift
+      - path: Shared/WidgetWeatherModels.swift
+    resources:
+      - path: ScheduleWidget/Assets.xcassets
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.youngryul.potatobuddy.ios.schedulewidget

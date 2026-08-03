@@ -269,6 +269,7 @@ struct StudyTimerLiveActivityWidget: Widget {
 struct ScheduleWidgetBundle: WidgetBundle {
     var body: some Widget {
         ScheduleWidget()
+        WeatherWidget()
         if #available(iOS 16.1, *) {
             StudyTimerLiveActivityWidget()
         }

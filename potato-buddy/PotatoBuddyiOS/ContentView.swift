@@ -22,6 +22,7 @@ struct ContentView: View {
             if newValue {
                 Task {
                     await ScheduleWidgetService.refreshTodayWidget()
+                    await WeatherWidgetService.shared.refreshWeatherWidget()
                     await jellyStore.refresh()
                 }
             }
@@ -30,6 +31,7 @@ struct ContentView: View {
             guard newPhase == .active, auth.isLoggedIn else { return }
             Task {
                 await ScheduleWidgetService.refreshTodayWidget()
+                await WeatherWidgetService.shared.refreshWeatherWidget()
                 await jellyStore.refresh()
                 await NotificationService.shared.refreshIfEnabled()
             }
@@ -37,6 +39,7 @@ struct ContentView: View {
         .task {
             if auth.isLoggedIn {
                 await ScheduleWidgetService.refreshTodayWidget()
+                await WeatherWidgetService.shared.refreshWeatherWidget()
                 await jellyStore.refresh()
             }
         }
