@@ -2041,4 +2041,363 @@ final class SupabaseService {
         let (data, response) = try await fetch(request)
         try checkResponse(data, response)
     }
+
+    // MARK: - 독서 (책 / 기록)
+
+    func fetchBooks() async throws -> [BookItem] {
+        let (userId, token) = await authInfo()
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/books")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "select", value: "id,title,author,publisher,isbn,thumbnail_url,description,page_count,published_date,api_source,api_id,is_completed,one_line_insight,completed_at"),
+            URLQueryItem(name: "order", value: "created_at.desc"),
+        ]
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        return try JSONDecoder().decode([BookItem].self, from: data)
+    }
+
+    func createBook(
+        title: String,
+        author: String?,
+        publisher: String?,
+        isbn: String?,
+        thumbnailUrl: String?,
+        description: String?,
+        pageCount: Int?,
+        publishedDate: String?,
+        apiSource: String?,
+        apiId: String?
+    ) async throws -> BookItem {
+        let (userId, token) = await authInfo()
+
+        if let isbn, !isbn.isEmpty {
+            var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/books")!
+            components.queryItems = [
+                URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+                URLQueryItem(name: "isbn", value: "eq.\(isbn)"),
+                URLQueryItem(name: "select", value: "id,title,author,publisher,isbn,thumbnail_url,description,page_count,published_date,api_source,api_id,is_completed,one_line_insight,completed_at"),
+                URLQueryItem(name: "limit", value: "1"),
+            ]
+            var existingReq = URLRequest(url: components.url!)
+            headers(token: token).forEach { existingReq.addValue($1, forHTTPHeaderField: $0) }
+            let (existingData, existingResponse) = try await fetch(existingReq)
+            try checkResponse(existingData, existingResponse)
+            let existing = try JSONDecoder().decode([BookItem].self, from: existingData)
+            if let first = existing.first {
+                return first
+            }
+        }
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/books")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        var body: [String: Any] = [
+            "user_id": userId,
+            "title": title,
+        ]
+        if let author, !author.isEmpty { body["author"] = author }
+        if let publisher, !publisher.isEmpty { body["publisher"] = publisher }
+        if let isbn, !isbn.isEmpty { body["isbn"] = isbn }
+        if let thumbnailUrl, !thumbnailUrl.isEmpty { body["thumbnail_url"] = thumbnailUrl }
+        if let description, !description.isEmpty { body["description"] = description }
+        if let pageCount, pageCount > 0 { body["page_count"] = pageCount }
+        if let publishedDate, !publishedDate.isEmpty { body["published_date"] = publishedDate }
+        if let apiSource, !apiSource.isEmpty { body["api_source"] = apiSource }
+        if let apiId, !apiId.isEmpty { body["api_id"] = apiId }
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        let items = try JSONDecoder().decode([BookItem].self, from: data)
+        guard let item = items.first else { throw URLError(.badServerResponse) }
+        return item
+    }
+
+    func updateBookCompletion(bookId: String, isCompleted: Bool, oneLineInsight: String?) async throws -> BookItem {
+        let (userId, token) = await authInfo()
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/books?id=eq.\(bookId)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+
+        var body: [String: Any] = [
+            "is_completed": isCompleted,
+            "updated_at": ISO8601DateFormatter().string(from: Date()),
+            "completed_at": isCompleted ? today : NSNull(),
+        ]
+        if let oneLineInsight {
+            body["one_line_insight"] = oneLineInsight.isEmpty ? NSNull() : oneLineInsight
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        let items = try JSONDecoder().decode([BookItem].self, from: data)
+        guard let item = items.first else { throw URLError(.badServerResponse) }
+        return item
+    }
+
+    func fetchReadingRecords(bookId: String) async throws -> [ReadingRecordItem] {
+        let (userId, token) = await authInfo()
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/reading_records")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "book_id", value: "eq.\(bookId)"),
+            URLQueryItem(name: "select", value: "id,book_id,reading_date,start_time,end_time,reading_minutes,pages_read,notes"),
+            URLQueryItem(name: "order", value: "reading_date.desc"),
+        ]
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        return try JSONDecoder().decode([ReadingRecordItem].self, from: data)
+    }
+
+    func createReadingRecord(
+        bookId: String,
+        readingDate: String,
+        pagesRead: Int?,
+        notes: String?
+    ) async throws -> ReadingRecordItem {
+        let (userId, token) = await authInfo()
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/reading_records")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        var body: [String: Any] = [
+            "user_id": userId,
+            "book_id": bookId,
+            "reading_date": readingDate,
+        ]
+        if let pagesRead, pagesRead > 0 { body["pages_read"] = pagesRead }
+        if let notes, !notes.isEmpty { body["notes"] = notes }
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        let items = try JSONDecoder().decode([ReadingRecordItem].self, from: data)
+        guard let item = items.first else { throw URLError(.badServerResponse) }
+        return item
+    }
+
+    func updateReadingRecord(
+        id: String,
+        readingDate: String,
+        pagesRead: Int?,
+        notes: String?
+    ) async throws -> ReadingRecordItem {
+        let (userId, token) = await authInfo()
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/reading_records?id=eq.\(id)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        let body: [String: Any] = [
+            "reading_date": readingDate,
+            "pages_read": pagesRead ?? NSNull(),
+            "notes": (notes?.isEmpty == false) ? notes! : NSNull(),
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        let items = try JSONDecoder().decode([ReadingRecordItem].self, from: data)
+        guard let item = items.first else { throw URLError(.badServerResponse) }
+        return item
+    }
+
+    func deleteReadingRecord(id: String) async throws {
+        let (userId, token) = await authInfo()
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/reading_records?id=eq.\(id)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+    }
+
+    func fetchMonthlyReadingStats(year: Int, month: Int) async throws -> MonthlyReadingStats {
+        let (userId, token) = await authInfo()
+        let start = String(format: "%04d-%02d-01", year, month)
+        let calendar = Calendar(identifier: .gregorian)
+        var comps = DateComponents()
+        comps.year = year
+        comps.month = month
+        comps.day = 1
+        guard let startDate = calendar.date(from: comps),
+              let endDate = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: startDate)
+        else {
+            return MonthlyReadingStats(totalBooks: 0, totalSessions: 0, totalMinutes: 0)
+        }
+        let formatter = DateFormatter()
+        formatter.calendar = calendar
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        let end = formatter.string(from: endDate)
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/reading_records")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "and", value: "(reading_date.gte.\(start),reading_date.lte.\(end))"),
+            URLQueryItem(name: "select", value: "id,book_id,reading_minutes"),
+        ]
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+
+        struct Row: Decodable {
+            let id: String
+            let bookId: String
+            let readingMinutes: Int?
+            enum CodingKeys: String, CodingKey {
+                case id
+                case bookId = "book_id"
+                case readingMinutes = "reading_minutes"
+            }
+        }
+        let rows = try JSONDecoder().decode([Row].self, from: data)
+        let books = Set(rows.map(\.bookId)).count
+        let minutes = rows.reduce(0) { $0 + ($1.readingMinutes ?? 0) }
+        return MonthlyReadingStats(totalBooks: books, totalSessions: rows.count, totalMinutes: minutes)
+    }
+
+    /// Google Books → 실패 시 Open Library (웹과 동일)
+    func searchBooks(query: String) async throws -> [BookSearchResult] {
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !q.isEmpty else { return [] }
+
+        let google = try await searchBooksGoogle(query: q)
+        if !google.isEmpty { return google }
+        return try await searchBooksOpenLibrary(query: q)
+    }
+
+    private func searchBooksGoogle(query: String) async throws -> [BookSearchResult] {
+        var components = URLComponents(string: "https://www.googleapis.com/books/v1/volumes")!
+        components.queryItems = [
+            URLQueryItem(name: "q", value: query),
+            URLQueryItem(name: "maxResults", value: "20"),
+            URLQueryItem(name: "langRestrict", value: "ko"),
+        ]
+        var request = URLRequest(url: components.url!)
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            return []
+        }
+
+        struct GoogleResponse: Decodable {
+            let items: [GoogleItem]?
+        }
+        struct GoogleItem: Decodable {
+            let id: String
+            let volumeInfo: VolumeInfo?
+        }
+        struct VolumeInfo: Decodable {
+            let title: String?
+            let authors: [String]?
+            let publisher: String?
+            let description: String?
+            let pageCount: Int?
+            let publishedDate: String?
+            let imageLinks: ImageLinks?
+            let industryIdentifiers: [IndustryId]?
+        }
+        struct ImageLinks: Decodable {
+            let thumbnail: String?
+            let smallThumbnail: String?
+        }
+        struct IndustryId: Decodable {
+            let type: String?
+            let identifier: String?
+        }
+
+        let decoded = try? JSONDecoder().decode(GoogleResponse.self, from: data)
+        return (decoded?.items ?? []).map { item in
+            let info = item.volumeInfo
+            let isbn13 = info?.industryIdentifiers?.first(where: { $0.type == "ISBN_13" })?.identifier
+            let isbn10 = info?.industryIdentifiers?.first(where: { $0.type == "ISBN_10" })?.identifier
+            return BookSearchResult(
+                apiId: item.id,
+                title: info?.title ?? "",
+                author: info?.authors?.joined(separator: ", ") ?? "",
+                publisher: info?.publisher ?? "",
+                isbn: isbn13 ?? isbn10 ?? "",
+                thumbnailUrl: info?.imageLinks?.thumbnail ?? info?.imageLinks?.smallThumbnail ?? "",
+                description: info?.description ?? "",
+                pageCount: info?.pageCount ?? 0,
+                publishedDate: info?.publishedDate ?? "",
+                apiSource: "google_books"
+            )
+        }.filter { !$0.title.isEmpty }
+    }
+
+    private func searchBooksOpenLibrary(query: String) async throws -> [BookSearchResult] {
+        guard query.count >= 3 else { return [] }
+        var components = URLComponents(string: "https://openlibrary.org/search.json")!
+        components.queryItems = [
+            URLQueryItem(name: "q", value: query),
+            URLQueryItem(name: "limit", value: "20"),
+        ]
+        var request = URLRequest(url: components.url!)
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            return []
+        }
+
+        struct OLResponse: Decodable { let docs: [OLDoc]? }
+        struct OLDoc: Decodable {
+            let key: String?
+            let cover_edition_key: String?
+            let cover_i: Int?
+            let title: String?
+            let author_name: [String]?
+            let publisher: [String]?
+            let isbn: [String]?
+            let number_of_pages_median: Int?
+            let first_publish_year: Int?
+        }
+
+        let decoded = try? JSONDecoder().decode(OLResponse.self, from: data)
+        return (decoded?.docs ?? []).compactMap { doc in
+            let title = doc.title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard !title.isEmpty else { return nil }
+            let isbns = doc.isbn ?? []
+            let isbn13 = isbns.first { $0.replacingOccurrences(of: "-", with: "").count == 13 }
+            let isbn10 = isbns.first { $0.replacingOccurrences(of: "-", with: "").count == 10 }
+            let apiId = doc.key ?? doc.cover_edition_key ?? (doc.cover_i.map { "cover:\($0)" } ?? title)
+            let thumb = doc.cover_i.map { "https://covers.openlibrary.org/b/id/\($0)-M.jpg" } ?? ""
+            return BookSearchResult(
+                apiId: apiId,
+                title: title,
+                author: doc.author_name?.joined(separator: ", ") ?? "",
+                publisher: doc.publisher?.first ?? "",
+                isbn: isbn13 ?? isbn10 ?? isbns.first ?? "",
+                thumbnailUrl: thumb,
+                description: "",
+                pageCount: doc.number_of_pages_median ?? 0,
+                publishedDate: doc.first_publish_year.map(String.init) ?? "",
+                apiSource: "open_library"
+            )
+        }
+    }
 }

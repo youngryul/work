@@ -46,6 +46,12 @@ struct MainTabView: View {
                 }
                 .tag(5)
 
+            ReadingView()
+                .tabItem {
+                    Label("독서", systemImage: "books.vertical.fill")
+                }
+                .tag(12)
+
             StepCounterView()
                 .tabItem {
                     Label("걸음", systemImage: "figure.walk")
