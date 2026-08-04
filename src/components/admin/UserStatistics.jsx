@@ -2,6 +2,31 @@ import { useState, useEffect } from 'react'
 import { getUserStatistics } from '../../services/adminStatisticsService.js'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
+const ROLE_LABELS = {
+  admin: '관리자',
+  superuser: '슈퍼유저',
+  regular: '일반',
+}
+
+/**
+ * @param {string|null} iso
+ * @returns {string}
+ */
+function formatSignupDate(iso) {
+  if (!iso) return '-'
+  try {
+    return new Date(iso).toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch {
+    return '-'
+  }
+}
+
 /**
  * 사용자 통계 컴포넌트
  */
@@ -42,89 +67,78 @@ export default function UserStatistics() {
     )
   }
 
+  const users = statistics.users || []
+
   return (
     <div className="space-y-6">
-      {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2 font-sans">총 사용자 수</h3>
-          <p className="text-4xl font-bold text-blue-600 font-sans">{statistics.totalUsers}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2 font-sans">활성 사용자 수</h3>
-          <p className="text-4xl font-bold text-green-600 font-sans">{statistics.activeUsers}</p>
-          <p className="text-sm text-gray-500 mt-2 font-sans">(최근 30일 내 활동)</p>
-        </div>
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2 font-sans">최근 활동 사용자</h3>
-          <p className="text-4xl font-bold text-purple-600 font-sans">{statistics.recentSignUps}</p>
-          <p className="text-sm text-gray-500 mt-2 font-sans">(최근 활동 기준)</p>
-        </div>
+      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 max-w-sm">
+        <h3 className="text-lg font-semibold text-gray-700 mb-2 font-sans">총 사용자 수</h3>
+        <p className="text-4xl font-bold text-blue-600 font-sans">{statistics.totalUsers}</p>
       </div>
 
-      {/* 활성 사용자 비율 */}
-      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4 font-sans">활성 사용자 비율</h3>
-        <div className="flex items-center gap-4">
-          <div className="flex-1 bg-gray-200 rounded-full h-8">
-            <div
-              className="bg-green-500 h-8 rounded-full flex items-center justify-center text-white font-semibold font-sans"
-              style={{
-                width: `${
-                  statistics.totalUsers > 0
-                    ? (statistics.activeUsers / statistics.totalUsers) * 100
-                    : 0
-                }%`,
-              }}
-            >
-              {statistics.totalUsers > 0
-                ? Math.round((statistics.activeUsers / statistics.totalUsers) * 100)
-                : 0}
-              %
-            </div>
-          </div>
-          <span className="text-sm text-gray-600 font-sans">
-            {statistics.activeUsers} / {statistics.totalUsers}
-          </span>
-        </div>
-      </div>
-
-      {/* 최근 활동 사용자 */}
-      {statistics.recentUsers && statistics.recentUsers.length > 0 && (
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 font-sans">
-            최근 활동 사용자
-            <span className="text-sm font-normal text-gray-500 ml-2">(최신 활동 순)</span>
+      <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-3">
+          <h3 className="text-xl font-bold text-gray-800 font-sans">
+            전체 사용자
+            <span className="ml-2 text-sm font-normal text-gray-500">
+              ({users.length}명 · 가입일 최신순)
+            </span>
           </h3>
-          <div className="space-y-2">
-            {statistics.recentUsers.map((user, index) => (
-              <div
-                key={user.userId || user}
-                className="p-3 bg-gray-50 rounded-lg border border-gray-200 font-sans"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-600">#{index + 1}</span>
-                    <span className="text-gray-800 font-medium">
-                      {typeof user === 'string' ? user : user.email}
-                    </span>
-                    {typeof user === 'object' && user.menu && (
-                      <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full font-medium">
-                        {user.menu}
-                      </span>
-                    )}
-                  </div>
-                  {typeof user === 'object' && user.date && (
-                    <span className="text-xs text-gray-400">
-                      {new Date(user.date).toLocaleDateString('ko-KR')}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          <button
+            type="button"
+            onClick={loadStatistics}
+            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 font-sans"
+          >
+            새로고침
+          </button>
         </div>
-      )}
+
+        {users.length === 0 ? (
+          <p className="p-6 text-center text-gray-500 font-sans">등록된 사용자가 없습니다.</p>
+        ) : (
+          <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
+            <table className="min-w-full text-sm font-sans">
+              <thead className="bg-gray-50 sticky top-0 z-10">
+                <tr className="text-left text-gray-600">
+                  <th className="px-4 py-3 font-semibold w-14">#</th>
+                  <th className="px-4 py-3 font-semibold">이메일</th>
+                  <th className="px-4 py-3 font-semibold">권한</th>
+                  <th className="px-4 py-3 font-semibold whitespace-nowrap">회원가입일</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user, index) => (
+                  <tr
+                    key={user.userId}
+                    className="border-t border-gray-100 hover:bg-gray-50"
+                  >
+                    <td className="px-4 py-3 text-gray-500">{index + 1}</td>
+                    <td className="px-4 py-3 text-gray-900 font-medium break-all">
+                      {user.email}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                          user.role === 'admin'
+                            ? 'bg-purple-100 text-purple-700'
+                            : user.role === 'superuser'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {ROLE_LABELS[user.role] || user.role}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                      {formatSignupDate(user.createdAt)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
