@@ -28,14 +28,14 @@ struct ReadingView: View {
                 if isLoading && books.isEmpty {
                     ProgressView("불러오는 중...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let selectedBook {
-                    bookDetail(selectedBook)
                 } else {
                     bookList
                 }
             }
             .navigationTitle("독서")
             .navigationBarTitleDisplayMode(.large)
+            // 탭 '더보기' 시스템 뒤로가기와 상세 뒤로가기 중복 방지
+            .navigationBarBackButtonHidden(true)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -44,6 +44,9 @@ struct ReadingView: View {
                         Image(systemName: "plus")
                     }
                 }
+            }
+            .navigationDestination(item: $selectedBook) { book in
+                bookDetail(book)
             }
             .task { await reloadAll() }
             .refreshable { await reloadAll() }
@@ -183,93 +186,88 @@ struct ReadingView: View {
     // MARK: - 책 상세
 
     private func bookDetail(_ book: BookItem) -> some View {
-        VStack(spacing: 0) {
-            HStack {
-                Button {
-                    selectedBook = nil
-                    records = []
-                } label: {
-                    Label("목록", systemImage: "chevron.left")
+        List {
+            Section {
+                HStack(alignment: .top, spacing: 14) {
+                    bookThumbnail(url: book.thumbnailUrl, size: 72)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(book.title).font(.title3.weight(.bold))
+                        Text(book.authorLabel).foregroundStyle(.secondary)
+                        if let insight = book.oneLineInsight, !insight.isEmpty {
+                            Text("“\(insight)”")
+                                .font(.callout)
+                                .foregroundStyle(.green)
+                        }
+                        Button {
+                            if book.completed {
+                                Task { await uncomplete(book) }
+                            } else {
+                                bookToComplete = book
+                                insightText = book.oneLineInsight ?? ""
+                                showInsightAlert = true
+                            }
+                        } label: {
+                            Text(book.completed ? "완독 해제" : "완독 처리")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(book.completed ? .orange : .green)
+                    }
                 }
-                Spacer()
+            }
+
+            Section("독서 기록") {
+                if records.isEmpty {
+                    Text("기록이 없습니다.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(records) { record in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(record.readingDate)
+                                    .font(.subheadline.weight(.semibold))
+                                Spacer()
+                                Text(record.pagesLabel)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            if let notes = record.notes, !notes.isEmpty {
+                                Text(notes)
+                                    .font(.body)
+                                    .foregroundStyle(.primary)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            editingRecord = record
+                            showRecordForm = true
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                Task { await deleteRecord(record.id) }
+                            } label: {
+                                Label("삭제", systemImage: "trash")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .navigationTitle(book.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
                 Button {
                     editingRecord = nil
                     showRecordForm = true
                 } label: {
-                    Label("기록 추가", systemImage: "plus.circle")
+                    Image(systemName: "plus.circle")
                 }
             }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-
-            List {
-                Section {
-                    HStack(alignment: .top, spacing: 14) {
-                        bookThumbnail(url: book.thumbnailUrl, size: 72)
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(book.title).font(.title3.weight(.bold))
-                            Text(book.authorLabel).foregroundStyle(.secondary)
-                            if let insight = book.oneLineInsight, !insight.isEmpty {
-                                Text("“\(insight)”")
-                                    .font(.callout)
-                                    .foregroundStyle(.green)
-                            }
-                            Button {
-                                if book.completed {
-                                    Task { await uncomplete(book) }
-                                } else {
-                                    bookToComplete = book
-                                    insightText = book.oneLineInsight ?? ""
-                                    showInsightAlert = true
-                                }
-                            } label: {
-                                Text(book.completed ? "완독 해제" : "완독 처리")
-                                    .font(.subheadline.weight(.semibold))
-                            }
-                            .buttonStyle(.bordered)
-                            .tint(book.completed ? .orange : .green)
-                        }
-                    }
-                }
-
-                Section("독서 기록") {
-                    if records.isEmpty {
-                        Text("기록이 없습니다.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(records) { record in
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Text(record.readingDate)
-                                        .font(.subheadline.weight(.semibold))
-                                    Spacer()
-                                    Text(record.pagesLabel)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                if let notes = record.notes, !notes.isEmpty {
-                                    Text(notes)
-                                        .font(.body)
-                                        .foregroundStyle(.primary)
-                                }
-                            }
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                editingRecord = record
-                                showRecordForm = true
-                            }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    Task { await deleteRecord(record.id) }
-                                } label: {
-                                    Label("삭제", systemImage: "trash")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            .listStyle(.insetGrouped)
+        }
+        .task {
+            await loadRecords(for: book.id)
         }
     }
 
@@ -345,8 +343,12 @@ struct ReadingView: View {
 
     private func selectBook(_ book: BookItem) async {
         selectedBook = book
+        await loadRecords(for: book.id)
+    }
+
+    private func loadRecords(for bookId: String) async {
         do {
-            records = try await SupabaseService.shared.fetchReadingRecords(bookId: book.id)
+            records = try await SupabaseService.shared.fetchReadingRecords(bookId: bookId)
         } catch {
             if !error.isCancellation { errorMessage = error.localizedDescription }
         }
