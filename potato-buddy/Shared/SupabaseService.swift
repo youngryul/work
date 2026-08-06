@@ -1952,17 +1952,20 @@ final class SupabaseService {
 
     // MARK: - 냉장고 재고
 
-    func fetchFridgeItems(zone: String, status: String) async throws -> [FridgeItem] {
+    func fetchFridgeItems(zone: String? = nil, status: String) async throws -> [FridgeItem] {
         let (userId, token) = await authInfo()
 
         var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/fridge_items")!
-        components.queryItems = [
+        var queryItems = [
             URLQueryItem(name: "user_id", value: "eq.\(userId)"),
-            URLQueryItem(name: "zone", value: "eq.\(zone)"),
             URLQueryItem(name: "status", value: "eq.\(status)"),
             URLQueryItem(name: "select", value: "id,zone,name,quantity,status,registered_at,expires_at"),
             URLQueryItem(name: "order", value: "expires_at.asc.nullslast,registered_at.desc"),
         ]
+        if let zone {
+            queryItems.insert(URLQueryItem(name: "zone", value: "eq.\(zone)"), at: 1)
+        }
+        components.queryItems = queryItems
 
         var request = URLRequest(url: components.url!)
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
