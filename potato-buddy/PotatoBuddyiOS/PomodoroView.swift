@@ -238,12 +238,24 @@ struct PomodoroView: View {
             }
             .buttonStyle(PomodoroSecondaryButtonStyle())
 
-            // 완료 상태일 때 저장 버튼
+            // 완료 상태일 때 전체 기록 저장
             if viewModel.state == .finished {
                 Button {
                     Task { await saveSession() }
                 } label: {
                     Label(isSaving ? "저장 중..." : "기록 저장", systemImage: "checkmark.circle.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(PomodoroPrimaryButtonStyle(color: .blue))
+                .disabled(isSaving)
+            }
+
+            // 중간에 멈춘 경우 경과 시간을 통계에 합산
+            if viewModel.state == .paused && viewModel.elapsedSeconds > 0 {
+                Button {
+                    Task { await saveSession() }
+                } label: {
+                    Text(isSaving ? "저장 중..." : "완료")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(PomodoroPrimaryButtonStyle(color: .blue))

@@ -347,10 +347,21 @@ export default function PomodoroView({ onClose }) {
             {state === 'paused' ? '재개' : '시작'}
           </button>
         )}
+
+        {state === 'paused' && elapsedSeconds > 0 && (
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex-1 rounded-xl bg-sky-600 py-3 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 transition disabled:opacity-60"
+          >
+            {isSaving ? '저장 중...' : '완료'}
+          </button>
+        )}
       </div>
 
       <p className="mt-3 text-xs text-gray-400 text-center px-6">
-        완료 후 기록 저장하면 공부 통계에 쌓여요
+        중간에 멈춰도 「완료」로 통계에 합산할 수 있어요
       </p>
     </div>
   )
