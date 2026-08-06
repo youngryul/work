@@ -16,6 +16,7 @@ import {
 } from '../services/fridgeInventoryService.js'
 import { getRecipeCatalog } from '../services/recipeCatalogService.js'
 import FridgeShelfView from './FridgeShelfView.jsx'
+import FridgeMenuRecommendModal from './FridgeMenuRecommendModal.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 function todayYmd() {
@@ -174,6 +175,7 @@ export default function FridgeInventoryView() {
   const [updatingQuantityId, setUpdatingQuantityId] = useState(null)
   /** 목록 모드로 보는 구역 id 집합 */
   const [listViewZones, setListViewZones] = useState(() => new Set())
+  const [showMenuRecommend, setShowMenuRecommend] = useState(false)
   const [catalog, setCatalog] = useState([])
   const [formData, setFormData] = useState({
     zone: FRIDGE_ZONES.FRIDGE,
@@ -400,13 +402,23 @@ export default function FridgeInventoryView() {
           ))}
         </div>
         {isActiveView && (
-          <button
-            type="button"
-            onClick={() => openCreateForm()}
-            className="px-5 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors font-sans font-medium shadow-md"
-          >
-            + 상품 추가
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setShowMenuRecommend(true)}
+              disabled={loading || shelfItems.length === 0}
+              className="px-5 py-2 bg-orange-400 text-white rounded-lg hover:bg-orange-500 transition-colors font-sans font-medium shadow-md disabled:opacity-50 disabled:hover:bg-orange-400"
+            >
+              메뉴 추천
+            </button>
+            <button
+              type="button"
+              onClick={() => openCreateForm()}
+              className="px-5 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors font-sans font-medium shadow-md"
+            >
+              + 상품 추가
+            </button>
+          </div>
         )}
       </div>
 
@@ -515,6 +527,14 @@ export default function FridgeInventoryView() {
           </ul>
         )}
       </div>
+
+      {showMenuRecommend && (
+        <FridgeMenuRecommendModal
+          open={showMenuRecommend}
+          ingredients={shelfItems}
+          onClose={() => setShowMenuRecommend(false)}
+        />
+      )}
 
       {showForm && (
         <div

@@ -75,6 +75,9 @@
 		68A11C0F1C0F1C0F1C0F1001 /* FridgeItemIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A11C0F1C0F1C0F1C0F0001 /* FridgeItemIcons.swift */; };
 		68A11C0F1C0F1C0F1C0F1002 /* FridgeItemIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A11C0F1C0F1C0F1C0F0001 /* FridgeItemIcons.swift */; };
 		68A11C0F1C0F1C0F1C0F1003 /* FridgeShelfView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A11C0F1C0F1C0F1C0F0002 /* FridgeShelfView.swift */; };
+		68A11C0F1C0F1C0F1C0F1004 /* MenuRecommendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A11C0F1C0F1C0F1C0F0003 /* MenuRecommendService.swift */; };
+		68A11C0F1C0F1C0F1C0F1005 /* MenuRecommendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A11C0F1C0F1C0F1C0F0003 /* MenuRecommendService.swift */; };
+		68A11C0F1C0F1C0F1C0F1006 /* FridgeMenuRecommendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A11C0F1C0F1C0F1C0F0004 /* FridgeMenuRecommendView.swift */; };
 		6903FAAFADF91E26AED656F6 /* 포실이(투명).png in Resources */ = {isa = PBXBuildFile; fileRef = 7C66F6E22CD38ED9563C49F4 /* 포실이(투명).png */; };
 		69E6B81F2C9230C1DCA47B37 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */; };
 		6B1E60F44EA898EC371A4B4E /* OverlayRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC4808FE02D6272C60A42FA /* OverlayRootView.swift */; };
@@ -226,6 +229,8 @@
 		758A8A2B777A70B6D61AC077 /* FridgeItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FridgeItem.swift; sourceTree = "<group>"; };
 		68A11C0F1C0F1C0F1C0F0001 /* FridgeItemIcons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FridgeItemIcons.swift; sourceTree = "<group>"; };
 		68A11C0F1C0F1C0F1C0F0002 /* FridgeShelfView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FridgeShelfView.swift; sourceTree = "<group>"; };
+		68A11C0F1C0F1C0F1C0F0003 /* MenuRecommendService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuRecommendService.swift; sourceTree = "<group>"; };
+		68A11C0F1C0F1C0F1C0F0004 /* FridgeMenuRecommendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FridgeMenuRecommendView.swift; sourceTree = "<group>"; };
 		7707A38521008641F0613304 /* 포실이뽀모도로.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이뽀모도로.png"; sourceTree = "<group>"; };
 		7AF31EBB9A3CF5C2540D76F8 /* SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseService.swift; sourceTree = "<group>"; };
 		7C66F6E22CD38ED9563C49F4 /* 포실이(투명).png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이(투명).png"; sourceTree = "<group>"; };
@@ -301,6 +306,7 @@
 				E4717E3CA4063BD8A41F8C7F /* FridgeInventoryConstants.swift */,
 				758A8A2B777A70B6D61AC077 /* FridgeItem.swift */,
 				68A11C0F1C0F1C0F1C0F0001 /* FridgeItemIcons.swift */,
+				68A11C0F1C0F1C0F1C0F0003 /* MenuRecommendService.swift */,
 				F85A90516C48B9FF889E29A8 /* HabitTrackerItem.swift */,
 				584E41A27919963F981D3E60 /* JellyBalanceStore.swift */,
 				29331826BBBDC0B4BAFFEB9D /* JellyRewardConstants.swift */,
@@ -353,6 +359,7 @@
 				547F99007C6FCE58B7F29335 /* DiaryWriteView.swift */,
 				FE1632EAD25D05BCCBDEC155 /* FridgeInventoryView.swift */,
 				68A11C0F1C0F1C0F1C0F0002 /* FridgeShelfView.swift */,
+				68A11C0F1C0F1C0F1C0F0004 /* FridgeMenuRecommendView.swift */,
 				9AA6CB30D85668CDA815DE41 /* HabitTrackerCardView.swift */,
 				E7916200BAF477DE717FF740 /* HabitTrackerFormView.swift */,
 				F13D6503838960444F2CA0B6 /* HabitTrackerView.swift */,
@@ -628,6 +635,7 @@
 				87F5F42390E27F17BE4D0D76 /* FridgeInventoryConstants.swift in Sources */,
 				9C324EE423B2AC665B1411E9 /* FridgeItem.swift in Sources */,
 				68A11C0F1C0F1C0F1C0F1001 /* FridgeItemIcons.swift in Sources */,
+				68A11C0F1C0F1C0F1C0F1004 /* MenuRecommendService.swift in Sources */,
 				C4F4462F705B6C84836B0ECF /* HabitTrackerItem.swift in Sources */,
 				2EAB13F7247ADE757A0F9C26 /* JellyBalanceStore.swift in Sources */,
 				02602D5243B4A5E3095C4BD5 /* JellyRewardConstants.swift in Sources */,
@@ -691,6 +699,8 @@
 				6852538528FE21F5E7A86BC3 /* FridgeItem.swift in Sources */,
 				68A11C0F1C0F1C0F1C0F1002 /* FridgeItemIcons.swift in Sources */,
 				68A11C0F1C0F1C0F1C0F1003 /* FridgeShelfView.swift in Sources */,
+				68A11C0F1C0F1C0F1C0F1005 /* MenuRecommendService.swift in Sources */,
+				68A11C0F1C0F1C0F1C0F1006 /* FridgeMenuRecommendView.swift in Sources */,
 				01882407C87EE8CD8545AD3A /* HabitTrackerCardView.swift in Sources */,
 				108351B7AC1351E3A723006B /* HabitTrackerFormView.swift in Sources */,
 				D8B31DB54794DFAA42FE92A2 /* HabitTrackerItem.swift in Sources */,

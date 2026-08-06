@@ -37,6 +37,8 @@
 	<string>현재 위치의 날씨 위젯을 보여주기 위해 위치 정보가 필요합니다.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>OPENAI_API_KEY</key>
+	<string>$(OPENAI_API_KEY)</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>

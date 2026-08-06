@@ -1975,6 +1975,73 @@ final class SupabaseService {
         return try JSONDecoder().decode([FridgeItem].self, from: data)
     }
 
+    // MARK: - AI 토큰
+
+    struct AiTokenInfo: Decodable {
+        let balance: Int
+        let generationCost: Int
+        let backlogAssistantCost: Int
+
+        enum CodingKeys: String, CodingKey {
+            case balance
+            case generationCost
+            case generation_cost
+            case backlogAssistantCost
+            case backlog_assistant_cost
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            balance = try c.decodeIfPresent(Int.self, forKey: .balance) ?? 0
+            generationCost =
+                (try c.decodeIfPresent(Int.self, forKey: .generationCost))
+                ?? (try c.decodeIfPresent(Int.self, forKey: .generation_cost))
+                ?? 3
+            backlogAssistantCost =
+                (try c.decodeIfPresent(Int.self, forKey: .backlogAssistantCost))
+                ?? (try c.decodeIfPresent(Int.self, forKey: .backlog_assistant_cost))
+                ?? 1
+        }
+    }
+
+    func getMyAiTokenInfo() async throws -> AiTokenInfo {
+        let (_, token) = await authInfo()
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/rpc/get_my_ai_token_info")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.httpBody = try JSONSerialization.data(withJSONObject: [:])
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        return try JSONDecoder().decode(AiTokenInfo.self, from: data)
+    }
+
+    func consumeAiTokens(amount: Int) async throws -> Int {
+        let (_, token) = await authInfo()
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/rpc/consume_ai_tokens")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.httpBody = try JSONSerialization.data(withJSONObject: [
+            "p_amount": amount,
+        ])
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        if let value = try? JSONDecoder().decode(Int.self, from: data) {
+            return value
+        }
+        if let wrapped = try? JSONDecoder().decode([Int].self, from: data), let first = wrapped.first {
+            return first
+        }
+        throw NSError(
+            domain: "SupabaseService",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: "토큰 차감 응답을 해석하지 못했습니다."]
+        )
+    }
+
     func createFridgeItem(
         zone: String,
         name: String,

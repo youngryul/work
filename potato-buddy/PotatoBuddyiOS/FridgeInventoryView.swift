@@ -13,6 +13,7 @@ struct FridgeInventoryView: View {
     /** 목록 모드로 보는 구역 */
     @State private var listViewZones: Set<FridgeZone> = []
     @State private var updatingQuantityId: String?
+    @State private var showMenuRecommend = false
 
     private var isActiveView: Bool {
         activeStatus == .active
@@ -49,6 +50,24 @@ struct FridgeInventoryView: View {
                     .padding(.horizontal)
                     .padding(.vertical, 10)
 
+                if isActiveView {
+                    Button {
+                        showMenuRecommend = true
+                    } label: {
+                        Label("메뉴 추천", systemImage: "fork.knife")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Color.orange.opacity(0.15))
+                            .foregroundStyle(.orange)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(allShelfItems.isEmpty)
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                }
+
                 Group {
                     if isLoading && allShelfItems.isEmpty && archiveItems.isEmpty {
                         ProgressView("불러오는 중...")
@@ -75,11 +94,21 @@ struct FridgeInventoryView: View {
             .toolbar {
                 if isActiveView {
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        Button {
-                            openCreate()
-                        } label: {
-                            Image(systemName: "plus")
-                                .foregroundColor(.green)
+                        HStack(spacing: 12) {
+                            Button {
+                                showMenuRecommend = true
+                            } label: {
+                                Image(systemName: "fork.knife")
+                                    .foregroundColor(.orange)
+                            }
+                            .disabled(allShelfItems.isEmpty)
+
+                            Button {
+                                openCreate()
+                            } label: {
+                                Image(systemName: "plus")
+                                    .foregroundColor(.green)
+                            }
                         }
                     }
                 }
@@ -109,6 +138,9 @@ struct FridgeInventoryView: View {
                         editingItem = nil
                     }
                 )
+            }
+            .sheet(isPresented: $showMenuRecommend) {
+                FridgeMenuRecommendView(ingredients: allShelfItems)
             }
             .confirmationDialog(
                 statusChangeRequest?.title ?? "",
