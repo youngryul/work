@@ -1993,14 +1993,12 @@ final class SupabaseService {
         init(from decoder: Decoder) throws {
             let c = try decoder.container(keyedBy: CodingKeys.self)
             balance = try c.decodeIfPresent(Int.self, forKey: .balance) ?? 0
-            generationCost =
-                (try c.decodeIfPresent(Int.self, forKey: .generationCost))
-                ?? (try c.decodeIfPresent(Int.self, forKey: .generation_cost))
-                ?? 3
-            backlogAssistantCost =
-                (try c.decodeIfPresent(Int.self, forKey: .backlogAssistantCost))
-                ?? (try c.decodeIfPresent(Int.self, forKey: .backlog_assistant_cost))
-                ?? 1
+            let gc1 = try c.decodeIfPresent(Int.self, forKey: .generationCost)
+            let gc2 = try c.decodeIfPresent(Int.self, forKey: .generation_cost)
+            generationCost = gc1 ?? gc2 ?? 3
+            let bac1 = try c.decodeIfPresent(Int.self, forKey: .backlogAssistantCost)
+            let bac2 = try c.decodeIfPresent(Int.self, forKey: .backlog_assistant_cost)
+            backlogAssistantCost = bac1 ?? bac2 ?? 1
         }
     }
 
