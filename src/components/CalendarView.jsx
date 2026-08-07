@@ -62,7 +62,7 @@ export default function CalendarView({
         <>
           <ViewPageTitle iconSrc={MENU_ICON_PATHS.diaryCalendar} title="일기 달력">
             <p className="text-xl text-gray-600">
-              날짜를 클릭하여 일기를 작성하고 AI 그림을 생성해보세요
+              날짜를 클릭해 글을 쓴 뒤, 사진·이미지를 생성하거나 첨부해 보세요
             </p>
             <AiTokenGenerationCostNote cost={generationCost} className="mt-2" />
           </ViewPageTitle>

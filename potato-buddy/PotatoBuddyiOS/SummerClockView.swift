@@ -26,6 +26,7 @@ struct SummerClockView: View {
 
     var body: some View {
         GeometryReader { geometry in
+            let isLandscape = geometry.size.width > geometry.size.height
             ZStack {
                 Color(red: 207 / 255, green: 232 / 255, blue: 216 / 255)
                     .ignoresSafeArea()
@@ -44,14 +45,14 @@ struct SummerClockView: View {
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
 
-                clockTexts(size: geometry.size)
+                clockTexts(size: geometry.size, isLandscape: isLandscape)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                     .padding(.horizontal, 24)
 
-                if let onBack {
+                if onBack != nil {
                     backButton
-                        .padding(.top, geometry.safeAreaInsets.top + 8)
-                        .padding(.leading, 16)
+                        .padding(.top, max(geometry.safeAreaInsets.top, 8) + (isLandscape ? 4 : 8))
+                        .padding(.leading, max(geometry.safeAreaInsets.leading, 16))
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
             }
@@ -59,6 +60,9 @@ struct SummerClockView: View {
         .ignoresSafeArea()
         .statusBar(hidden: true)
         .persistentSystemOverlays(.hidden)
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
         .onReceive(timer) { value in
             now = value
         }
@@ -78,8 +82,7 @@ struct SummerClockView: View {
     }
 
     @ViewBuilder
-    private func clockTexts(size: CGSize) -> some View {
-        let isLandscape = size.width > size.height
+    private func clockTexts(size: CGSize, isLandscape: Bool) -> some View {
         VStack(spacing: isLandscape ? 6 : 10) {
             Text(Self.dateFormatter.string(from: now))
                 .font(.system(size: isLandscape ? 16 : 20, weight: .medium, design: .rounded))
@@ -87,7 +90,7 @@ struct SummerClockView: View {
                 .shadow(color: .white.opacity(0.55), radius: 4, x: 0, y: 1)
 
             Text(Self.timeFormatter.string(from: now))
-                .font(.system(size: clockFontSize(for: size), weight: .semibold, design: .rounded))
+                .font(.system(size: clockFontSize(for: size, isLandscape: isLandscape), weight: .semibold, design: .rounded))
                 .monospacedDigit()
                 .foregroundColor(Color(red: 0.12, green: 0.12, blue: 0.14))
                 .shadow(color: .white.opacity(0.45), radius: 12, x: 0, y: 2)
@@ -96,8 +99,7 @@ struct SummerClockView: View {
         }
     }
 
-    private func clockFontSize(for size: CGSize) -> CGFloat {
-        let isLandscape = size.width > size.height
+    private func clockFontSize(for size: CGSize, isLandscape: Bool) -> CGFloat {
         if isLandscape {
             return min(max(size.height * 0.35, 60), 100)
         }

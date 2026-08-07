@@ -1,61 +1,124 @@
 ﻿import SwiftUI
 
 struct FridgeInventoryView: View {
-    @State private var activeZone: FridgeZone = .fridge
     @State private var activeStatus: FridgeItemStatus = .active
-    @State private var items: [FridgeItem] = []
+    @State private var allShelfItems: [FridgeItem] = []
+    @State private var archiveItems: [FridgeItem] = []
     @State private var isLoading = false
     @State private var errorMessage = ""
     @State private var showForm = false
     @State private var editingItem: FridgeItem?
-    @State private var updatingQuantityId: String?
+    @State private var formZone: FridgeZone = .fridge
     @State private var statusChangeRequest: FridgeStatusChangeRequest?
+    /** 목록 모드로 보는 구역 */
+    @State private var listViewZones: Set<FridgeZone> = []
+    @State private var updatingQuantityId: String?
+    @State private var showMenuRecommend = false
 
-    private var isActiveList: Bool {
+    private var isActiveView: Bool {
         activeStatus == .active
+    }
+
+    private func shelfItems(for zone: FridgeZone) -> [FridgeItem] {
+        allShelfItems.filter { $0.zone == zone.rawValue }
+    }
+
+    private func toggleListView(for zone: FridgeZone) {
+        if listViewZones.contains(zone) {
+            listViewZones.remove(zone)
+        } else {
+            listViewZones.insert(zone)
+        }
+    }
+
+    private func openCreate(zone: FridgeZone = .fridge) {
+        editingItem = nil
+        formZone = zone
+        showForm = true
+    }
+
+    private func openEdit(_ item: FridgeItem) {
+        editingItem = item
+        formZone = FridgeZone(rawValue: item.zone) ?? .fridge
+        showForm = true
     }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                zoneTabs
-                Divider()
                 statusBar
                     .padding(.horizontal)
                     .padding(.vertical, 10)
 
+                if isActiveView {
+                    Button {
+                        showMenuRecommend = true
+                    } label: {
+                        Label("메뉴 추천", systemImage: "fork.knife")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Color.orange.opacity(0.15))
+                            .foregroundStyle(.orange)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(allShelfItems.isEmpty)
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                }
+
                 Group {
-                    if isLoading && items.isEmpty {
+                    if isLoading && allShelfItems.isEmpty && archiveItems.isEmpty {
                         ProgressView("불러오는 중...")
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else if items.isEmpty {
+                    } else if isActiveView {
+                        ScrollView {
+                            LazyVStack(spacing: 20) {
+                                ForEach(FridgeZone.allCases) { zone in
+                                    zoneSection(zone)
+                                }
+                            }
+                            .padding(.horizontal)
+                            .padding(.bottom, 24)
+                        }
+                    } else if archiveItems.isEmpty {
                         emptyState
                     } else {
-                        itemList
+                        archiveList
                     }
                 }
             }
             .navigationTitle("냉장고 관리")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
-                if isActiveList {
+                if isActiveView {
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        Button {
-                            editingItem = nil
-                            showForm = true
-                        } label: {
-                            Image(systemName: "plus")
-                                .foregroundColor(.green)
+                        HStack(spacing: 12) {
+                            Button {
+                                showMenuRecommend = true
+                            } label: {
+                                Image(systemName: "fork.knife")
+                                    .foregroundColor(.orange)
+                            }
+                            .disabled(allShelfItems.isEmpty)
+
+                            Button {
+                                openCreate()
+                            } label: {
+                                Image(systemName: "plus")
+                                    .foregroundColor(.green)
+                            }
                         }
                     }
                 }
             }
             .refreshable {
-                await loadItems()
+                await loadData()
             }
             .sheet(isPresented: $showForm) {
                 FridgeItemFormSheet(
-                    zone: activeZone,
+                    zone: $formZone,
                     editingItem: editingItem,
                     onSave: { wasCreate in
                         showForm = false
@@ -63,13 +126,21 @@ struct FridgeInventoryView: View {
                         if wasCreate, activeStatus != .active {
                             activeStatus = .active
                         }
-                        await loadItems()
+                        await loadData()
+                    },
+                    onStatusChange: { item, next in
+                        showForm = false
+                        editingItem = nil
+                        statusChangeRequest = FridgeStatusChangeRequest(item: item, nextStatus: next)
                     },
                     onCancel: {
                         showForm = false
                         editingItem = nil
                     }
                 )
+            }
+            .sheet(isPresented: $showMenuRecommend) {
+                FridgeMenuRecommendView(ingredients: allShelfItems)
             }
             .confirmationDialog(
                 statusChangeRequest?.title ?? "",
@@ -101,39 +172,88 @@ struct FridgeInventoryView: View {
                 Text(errorMessage)
             }
         }
-        .task(id: "\(activeZone.rawValue)-\(activeStatus.rawValue)") {
-            await loadItems()
+        .task(id: activeStatus.rawValue) {
+            await loadData()
         }
     }
 
-    private var zoneTabs: some View {
-        Picker("구역", selection: $activeZone) {
-            ForEach(FridgeZone.allCases) { zone in
-                Text(zone.label).tag(zone)
+    @ViewBuilder
+    private func zoneSection(_ zone: FridgeZone) -> some View {
+        let zoneItems = shelfItems(for: zone)
+        let showList = listViewZones.contains(zone)
+        VStack(spacing: 8) {
+            if showList {
+                FridgeZoneListView(
+                    zoneLabel: zone.label,
+                    items: zoneItems,
+                    updatingQuantityId: updatingQuantityId,
+                    onQuantityChange: { item, next in
+                        Task { await changeQuantity(item: item, to: next) }
+                    },
+                    onEdit: openEdit,
+                    onComplete: { item in
+                        statusChangeRequest = FridgeStatusChangeRequest(
+                            item: item,
+                            nextStatus: .completed
+                        )
+                    },
+                    onDiscard: { item in
+                        statusChangeRequest = FridgeStatusChangeRequest(
+                            item: item,
+                            nextStatus: .discarded
+                        )
+                    }
+                )
+            } else {
+                FridgeShelfView(zone: zone, items: zoneItems) { item in
+                    openEdit(item)
+                }
+            }
+
+            HStack(spacing: 8) {
+                Button {
+                    toggleListView(for: zone)
+                } label: {
+                    Text(showList ? "그림으로 보기" : "목록으로 보기")
+                        .font(.subheadline.weight(.medium))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(showList ? Color(.systemGray5) : Color.blue.opacity(0.12))
+                        .foregroundStyle(showList ? Color.primary : Color.blue)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    openCreate(zone: zone)
+                } label: {
+                    Text("+ 추가")
+                        .font(.subheadline.weight(.medium))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color.green.opacity(0.12))
+                        .foregroundStyle(Color.green)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
             }
         }
-        .pickerStyle(.segmented)
-        .padding(.horizontal)
-        .padding(.top, 8)
-        .padding(.bottom, 4)
     }
 
     private var statusBar: some View {
-        HStack {
-            Picker("상태", selection: $activeStatus) {
-                ForEach(FridgeItemStatus.allCases) { status in
-                    Text(status.label).tag(status)
-                }
+        Picker("상태", selection: $activeStatus) {
+            ForEach(FridgeItemStatus.allCases) { status in
+                Text(status.label).tag(status)
             }
-            .pickerStyle(.segmented)
         }
+        .pickerStyle(.segmented)
     }
 
     private var emptyState: some View {
         VStack(spacing: 12) {
             Text("🧊")
                 .font(.system(size: 48))
-            Text(emptyMessage)
+            Text("\(activeStatus.label) 상품이 없습니다.")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -142,62 +262,54 @@ struct FridgeInventoryView: View {
         .padding()
     }
 
-    private var emptyMessage: String {
-        if isActiveList {
-            return "등록된 상품이 없습니다."
-        }
-        return "\(activeStatus.label) 상품이 없습니다."
-    }
-
-    private var itemList: some View {
+    private var archiveList: some View {
         List {
-            ForEach(items) { item in
-                FridgeItemRow(
-                    item: item,
-                    isActiveList: isActiveList,
-                    isUpdatingQuantity: updatingQuantityId == item.id,
-                    onQuantityChange: { next in
-                        Task { await changeQuantity(item: item, to: next) }
-                    },
-                    onEdit: {
-                        editingItem = item
-                        showForm = true
-                    },
-                    onComplete: {
-                        statusChangeRequest = FridgeStatusChangeRequest(
-                            item: item,
-                            nextStatus: .completed
-                        )
-                    },
-                    onDiscard: {
-                        statusChangeRequest = FridgeStatusChangeRequest(
-                            item: item,
-                            nextStatus: .discarded
-                        )
-                    },
-                    onRestoreActive: {
+            ForEach(archiveItems) { item in
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(item.name)
+                        .font(.headline)
+                    HStack(spacing: 0) {
+                        Text(FridgeZone(rawValue: item.zone)?.label ?? item.zone)
+                        Text("  |  ")
+                            .foregroundColor(.secondary.opacity(0.6))
+                        Text("수량 \(item.quantity)")
+                    }
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                    Button("보관중으로") {
                         statusChangeRequest = FridgeStatusChangeRequest(
                             item: item,
                             nextStatus: .active
                         )
                     }
-                )
+                    .buttonStyle(.bordered)
+                    .tint(.green)
+                    .font(.caption)
+                }
+                .padding(.vertical, 4)
             }
         }
         .listStyle(.insetGrouped)
     }
 
     @MainActor
-    private func loadItems() async {
+    private func loadData() async {
         isLoading = true
         errorMessage = ""
         defer { isLoading = false }
 
         do {
-            items = try await SupabaseService.shared.fetchFridgeItems(
-                zone: activeZone.rawValue,
-                status: activeStatus.rawValue
-            )
+            if activeStatus == .active {
+                allShelfItems = try await SupabaseService.shared.fetchFridgeItems(
+                    status: FridgeItemStatus.active.rawValue
+                )
+                archiveItems = []
+            } else {
+                archiveItems = try await SupabaseService.shared.fetchFridgeItems(
+                    status: activeStatus.rawValue
+                )
+            }
         } catch {
             if !error.isCancellation { errorMessage = error.localizedDescription }
         }
@@ -210,7 +322,7 @@ struct FridgeInventoryView: View {
         guard next != previous else { return }
 
         updatingQuantityId = item.id
-        items = items.map { row in
+        let patch: (FridgeItem) -> FridgeItem = { row in
             row.id == item.id ? FridgeItem(
                 id: row.id,
                 zone: row.zone,
@@ -221,22 +333,24 @@ struct FridgeInventoryView: View {
                 expiresAt: row.expiresAt
             ) : row
         }
+        let revert: (FridgeItem) -> FridgeItem = { row in
+            row.id == item.id ? FridgeItem(
+                id: row.id,
+                zone: row.zone,
+                name: row.name,
+                quantity: previous,
+                status: row.status,
+                registeredAt: row.registeredAt,
+                expiresAt: row.expiresAt
+            ) : row
+        }
+        allShelfItems = allShelfItems.map(patch)
         defer { updatingQuantityId = nil }
 
         do {
             _ = try await SupabaseService.shared.updateFridgeItem(id: item.id, quantity: next)
         } catch {
-            items = items.map { row in
-                row.id == item.id ? FridgeItem(
-                    id: row.id,
-                    zone: row.zone,
-                    name: row.name,
-                    quantity: previous,
-                    status: row.status,
-                    registeredAt: row.registeredAt,
-                    expiresAt: row.expiresAt
-                ) : row
-            }
+            allShelfItems = allShelfItems.map(revert)
             errorMessage = "수량 변경에 실패했습니다."
         }
     }
@@ -249,7 +363,7 @@ struct FridgeInventoryView: View {
                 id: request.item.id,
                 status: request.nextStatus.rawValue
             )
-            await loadItems()
+            await loadData()
         } catch {
             errorMessage = "상태 변경에 실패했습니다."
         }
@@ -269,73 +383,84 @@ private struct FridgeStatusChangeRequest {
     var confirmLabel: String { "\(nextStatus.label)(으)로 변경" }
 }
 
-// MARK: - 행
+// MARK: - 구역 목록 뷰
 
-private struct FridgeItemRow: View {
-    let item: FridgeItem
-    let isActiveList: Bool
-    let isUpdatingQuantity: Bool
-    let onQuantityChange: (Int) -> Void
-    let onEdit: () -> Void
-    let onComplete: () -> Void
-    let onDiscard: () -> Void
-    let onRestoreActive: () -> Void
-
-    private var expiry: FridgeExpiryDisplay {
-        FridgeExpiryDisplay.make(expiresAt: item.expiresAt)
-    }
+private struct FridgeZoneListView: View {
+    let zoneLabel: String
+    let items: [FridgeItem]
+    let updatingQuantityId: String?
+    let onQuantityChange: (FridgeItem, Int) -> Void
+    let onEdit: (FridgeItem) -> Void
+    let onComplete: (FridgeItem) -> Void
+    let onDiscard: (FridgeItem) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(item.name)
-                .font(.headline)
-
-            HStack(spacing: 0) {
-                Text("등록일 \(item.registeredAt)")
-                Text("  |  ")
-                    .foregroundColor(.secondary.opacity(0.6))
-                Text("유통기한 ")
-                Text(expiry.text)
-                    .foregroundColor(expiryColor)
-                    .fontWeight(expiry.isUrgent ? .semibold : .regular)
+            HStack {
+                Text("\(zoneLabel) 목록")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Text(items.isEmpty ? "비어 있음" : "\(items.count)개")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .font(.caption)
-            .foregroundColor(.secondary)
 
-            HStack(spacing: 8) {
-                if isActiveList {
-                    FridgeQuantityStepper(
-                        value: item.quantity,
-                        disabled: isUpdatingQuantity,
-                        onChange: onQuantityChange
-                    )
-                    Button("수정", action: onEdit)
-                        .buttonStyle(.bordered)
-                        .tint(.green)
-                    Button("완료", action: onComplete)
-                        .buttonStyle(.bordered)
-                        .tint(.blue)
-                    Button("폐기", action: onDiscard)
-                        .buttonStyle(.bordered)
-                        .tint(.orange)
-                } else {
-                    Text("수량 \(item.quantity)")
-                        .font(.subheadline)
+            if items.isEmpty {
+                Text("등록된 상품이 없습니다.")
+                    .font(.subheadline)
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 40)
+            } else {
+                ForEach(items) { item in
+                    let expiry = FridgeExpiryDisplay.make(expiresAt: item.expiresAt)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(item.name)
+                            .font(.headline)
+                        HStack(spacing: 0) {
+                            Text("등록 \(item.registeredAt)")
+                            Text("  |  ")
+                                .foregroundColor(.secondary.opacity(0.6))
+                            Text("기한 ")
+                            Text(expiry.text)
+                                .foregroundColor(expiry.isExpired ? .red : (expiry.isUrgent ? .orange : .secondary))
+                                .fontWeight(expiry.isUrgent ? .semibold : .regular)
+                        }
+                        .font(.caption)
                         .foregroundColor(.secondary)
-                    Button("보관중으로", action: onRestoreActive)
-                        .buttonStyle(.bordered)
-                        .tint(.green)
+
+                        HStack(spacing: 8) {
+                            FridgeQuantityStepper(
+                                value: item.quantity,
+                                disabled: updatingQuantityId == item.id,
+                                onChange: { onQuantityChange(item, $0) }
+                            )
+                            Button("수정") { onEdit(item) }
+                                .buttonStyle(.bordered)
+                                .tint(.green)
+                            Button("완료") { onComplete(item) }
+                                .buttonStyle(.bordered)
+                                .tint(.blue)
+                            Button("폐기") { onDiscard(item) }
+                                .buttonStyle(.bordered)
+                                .tint(.orange)
+                        }
+                        .font(.caption)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.green.opacity(0.06))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             }
-            .font(.caption)
         }
-        .padding(.vertical, 4)
-    }
-
-    private var expiryColor: Color {
-        if expiry.isExpired { return .red }
-        if expiry.isUrgent { return .orange }
-        return .secondary
+        .padding(12)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.green.opacity(0.25), lineWidth: 2)
+        )
     }
 }
 
@@ -380,9 +505,10 @@ struct FridgeQuantityStepper: View {
 // MARK: - 추가·수정 시트
 
 private struct FridgeItemFormSheet: View {
-    let zone: FridgeZone
+    @Binding var zone: FridgeZone
     let editingItem: FridgeItem?
     let onSave: (_ wasCreate: Bool) async -> Void
+    var onStatusChange: ((FridgeItem, FridgeItemStatus) -> Void)?
     let onCancel: () -> Void
 
     @State private var name = ""
@@ -399,6 +525,15 @@ private struct FridgeItemFormSheet: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("보관 구역") {
+                    Picker("구역", selection: $zone) {
+                        ForEach(FridgeZone.allCases) { z in
+                            Text(z.label).tag(z)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
                 Section("상품") {
                     TextField("상품명", text: $name)
                         .textInputAutocapitalization(.never)
@@ -429,7 +564,16 @@ private struct FridgeItemFormSheet: View {
                     }
                 }
 
-                if isEditing {
+                if isEditing, let item = editingItem {
+                    Section("상태") {
+                        Button("완료") {
+                            onStatusChange?(item, .completed)
+                        }
+                        Button("폐기") {
+                            onStatusChange?(item, .discarded)
+                        }
+                        .foregroundStyle(.orange)
+                    }
                     Section {
                         Button("상품 삭제", role: .destructive) {
                             showDeleteConfirm = true
@@ -489,6 +633,7 @@ private struct FridgeItemFormSheet: View {
         }
         name = item.name
         quantity = max(1, item.quantity)
+        zone = FridgeZone(rawValue: item.zone) ?? zone
         registeredDate = FridgeDateHelper.date(from: item.registeredAt) ?? Date()
         if let expires = item.expiresAt, !expires.isEmpty {
             hasExpiry = true

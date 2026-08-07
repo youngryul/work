@@ -57,6 +57,7 @@ struct TravelItineraryView: View {
             }
             .navigationTitle("여행 일정")
             .navigationBarTitleDisplayMode(.large)
+            .navigationBarBackButtonHidden(true)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {

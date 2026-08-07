@@ -50,6 +50,7 @@ struct TravelItineraryCreateView: View {
             }
             .navigationTitle("해외 여행 등록")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(true)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("취소") { dismiss() }
@@ -62,6 +63,7 @@ struct TravelItineraryCreateView: View {
                 }
             }
         }
+        .navigationViewStyle(.stack)
     }
 
     private func save() async {

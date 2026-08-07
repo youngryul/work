@@ -124,6 +124,22 @@ export async function uploadImageFromUrl(imageUrl, folder = 'diaries', fileName 
 }
 
 /**
+ * Blob/File을 Storage에 업로드
+ * @param {Blob|File} blob
+ * @param {string} folder
+ * @param {string} fileName
+ * @returns {Promise<string>}
+ */
+export async function uploadImageBlob(blob, folder = 'diaries', fileName) {
+  if (!blob) throw new Error('업로드할 이미지가 없습니다.')
+  const name = fileName || `${Date.now()}-${Math.random().toString(36).substring(2)}.png`
+  const file = blob instanceof File
+    ? blob
+    : new File([blob], name, { type: blob.type || 'image/png' })
+  return uploadImage(file, folder)
+}
+
+/**
  * 이미지 삭제
  * @param {string} filePath - 삭제할 파일 경로
  * @returns {Promise<void>}

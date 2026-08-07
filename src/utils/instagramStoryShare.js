@@ -112,3 +112,41 @@ export async function shareDiaryImageToInstagramStory(imageUrl, options = {}) {
   downloadImageBlob(blob, fileName)
   return 'download'
 }
+
+/**
+ * 이미지 Blob을 Web Share API로 공유하거나, 미지원 시 다운로드
+ * @param {Blob} blob
+ * @param {string} fileName
+ * @param {{ title?: string }} [options]
+ * @returns {Promise<'share' | 'download'>}
+ */
+export async function shareOrDownloadImageBlob(blob, fileName, options = {}) {
+  const file = new File([blob], fileName, { type: blob.type || 'image/png' })
+  const title = options.title || INSTAGRAM_STORY_BRAND_LABEL
+
+  if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function') {
+    if (navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title,
+      })
+      return 'share'
+    }
+  }
+
+  downloadImageBlob(blob, fileName)
+  return 'download'
+}
+
+/**
+ * 포실이네컷 합성본을 인스타 등에 공유 (또는 저장)
+ * @param {Blob} blob
+ * @param {{ dateString?: string }} [options]
+ * @returns {Promise<'share' | 'download'>}
+ */
+export async function shareFourCutImageBlob(blob, options = {}) {
+  const safeDate = options.dateString || 'fourcut'
+  return shareOrDownloadImageBlob(blob, `posily-fourcut-${safeDate}.png`, {
+    title: '포실이네컷',
+  })
+}

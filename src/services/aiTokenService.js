@@ -6,6 +6,8 @@ import {
   DEFAULT_AI_IMAGE_GENERATION_COST,
   DEFAULT_BACKLOG_ASSISTANT_COST,
   RECIPE_IMAGE_GENERATION_TOKEN_COST,
+  AI_FOUR_CUT_TOKEN_COST,
+  MENU_RECOMMEND_TOKEN_COST,
 } from '../constants/aiTokenSettings.js'
 import { notifyAiTokensUpdated } from '../utils/aiTokenEvents.js'
 
@@ -41,38 +43,47 @@ export async function getMyAiTokenInfo() {
 
 /**
  * AI 이미지 생성 가능 여부 확인
- * @returns {Promise<{balance: number, generationCost: number}>}
+ * @param {number} [times=1] - 생성 횟수 (AI 4컷 등)
+ * @returns {Promise<{balance: number, generationCost: number, required: number}>}
  */
-export async function assertSufficientTokensForImageGeneration() {
+export async function assertSufficientTokensForImageGeneration(times = 1) {
   const info = await getMyAiTokenInfo()
-  if (info.balance < info.generationCost) {
+  const count = Math.max(1, Math.floor(Number(times) || 1))
+  const required = info.generationCost * count
+  if (info.balance < required) {
     throw new Error(
-      `AI 이미지 생성 토큰이 부족합니다. (보유: ${info.balance}, 필요: ${info.generationCost})`,
+      `AI 이미지 생성 토큰이 부족합니다. (보유: ${info.balance}, 필요: ${required})`,
     )
   }
-  return info
+  return { ...info, required }
 }
 
 /**
  * 이미지 생성 성공 후 토큰 차감
+ * @param {number} [times=1]
  * @returns {Promise<number>} 남은 토큰
  */
-export async function consumeTokensForImageGeneration() {
+export async function consumeTokensForImageGeneration(times = 1) {
   const userId = await getCurrentUserId()
   if (!userId) {
     throw new Error('로그인이 필요합니다.')
   }
 
-  const { data, error } = await supabase.rpc('consume_ai_tokens', {
-    p_amount: null,
-  })
+  const count = Math.max(1, Math.floor(Number(times) || 1))
+  let remainingBalance = 0
+  for (let i = 0; i < count; i += 1) {
+    const { data, error } = await supabase.rpc('consume_ai_tokens', {
+      p_amount: null,
+    })
 
-  if (error) {
-    console.error('토큰 차감 실패:', error)
-    throw new Error(error.message || '토큰 차감에 실패했습니다.')
+    if (error) {
+      console.error('토큰 차감 실패:', error)
+      throw new Error(error.message || '토큰 차감에 실패했습니다.')
+    }
+
+    remainingBalance = typeof data === 'number' ? data : Number(data)
   }
 
-  const remainingBalance = typeof data === 'number' ? data : Number(data)
   notifyAiTokensUpdated({ balance: remainingBalance })
   return remainingBalance
 }
@@ -90,6 +101,45 @@ export async function assertSufficientTokensForRecipeImageGeneration() {
     )
   }
   return { balance: info.balance, recipeImageCost }
+}
+
+/**
+ * 일기 AI 4컷 생성 가능 여부 확인 (고정 비용)
+ * @returns {Promise<{balance: number, fourCutCost: number}>}
+ */
+export async function assertSufficientTokensForFourCutGeneration() {
+  const info = await getMyAiTokenInfo()
+  const fourCutCost = AI_FOUR_CUT_TOKEN_COST
+  if (info.balance < fourCutCost) {
+    throw new Error(
+      `AI 이미지 생성 토큰이 부족합니다. (보유: ${info.balance}, 필요: ${fourCutCost})`,
+    )
+  }
+  return { balance: info.balance, fourCutCost }
+}
+
+/**
+ * 일기 AI 4컷 생성 성공 후 토큰 차감
+ * @returns {Promise<number>} 남은 토큰
+ */
+export async function consumeTokensForFourCutGeneration() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  const { data, error } = await supabase.rpc('consume_ai_tokens', {
+    p_amount: AI_FOUR_CUT_TOKEN_COST,
+  })
+
+  if (error) {
+    console.error('토큰 차감 실패:', error)
+    throw new Error(error.message || '토큰 차감에 실패했습니다.')
+  }
+
+  const remainingBalance = typeof data === 'number' ? data : Number(data)
+  notifyAiTokensUpdated({ balance: remainingBalance })
+  return remainingBalance
 }
 
 /**
@@ -147,6 +197,48 @@ export async function consumeTokensForBacklogAssistant() {
 
   const { data, error } = await supabase.rpc('consume_ai_tokens', {
     p_amount: backlogAssistantCost,
+  })
+
+  if (error) {
+    console.error('토큰 차감 실패:', error)
+    throw new Error(error.message || '토큰 차감에 실패했습니다.')
+  }
+
+  const remainingBalance = typeof data === 'number' ? data : Number(data)
+  notifyAiTokensUpdated({ balance: remainingBalance })
+  return remainingBalance
+}
+
+/**
+ * 냉장고 메뉴 추천 가능 여부 확인 (고정 1 토큰)
+ * @returns {Promise<{balance: number, menuRecommendCost: number}>}
+ */
+export async function assertSufficientTokensForMenuRecommend() {
+  const info = await getMyAiTokenInfo()
+  const menuRecommendCost = MENU_RECOMMEND_TOKEN_COST
+  if (info.balance < menuRecommendCost) {
+    throw new Error(
+      `AI 토큰이 부족합니다. (보유: ${info.balance}, 필요: ${menuRecommendCost})`,
+    )
+  }
+  return {
+    balance: info.balance,
+    menuRecommendCost,
+  }
+}
+
+/**
+ * 냉장고 메뉴 추천 성공 후 토큰 차감
+ * @returns {Promise<number>} 남은 토큰
+ */
+export async function consumeTokensForMenuRecommend() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  const { data, error } = await supabase.rpc('consume_ai_tokens', {
+    p_amount: MENU_RECOMMEND_TOKEN_COST,
   })
 
   if (error) {

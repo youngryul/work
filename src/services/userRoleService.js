@@ -48,7 +48,7 @@ export async function setUserRole(targetUserId, role) {
 /**
  * 전체 유저 목록 + role 조회 (관리자 전용)
  * auth.users 기준 전체 유저 조회 후 user_roles 와 join
- * @returns {Promise<Array<{userId, email, role}>>}
+ * @returns {Promise<Array<{userId: string, email: string, role: string, createdAt: string|null}>>}
  */
 export async function getAllUsersWithRoles() {
   const currentUserId = await getCurrentUserId()
@@ -60,6 +60,7 @@ export async function getAllUsersWithRoles() {
   // auth.users 기반 전체 유저 조회
   let userIdList = []
   const emailMap = new Map()
+  const createdAtMap = new Map()
   try {
     const { data: allUsers, error: allUsersError } = await supabase.rpc('get_all_users_for_admin')
     if (!allUsersError && Array.isArray(allUsers)) {
@@ -67,6 +68,9 @@ export async function getAllUsersWithRoles() {
         if (!userData.user_id) return
         userIdList.push(userData.user_id)
         emailMap.set(userData.user_id, userData.email || userData.user_id)
+        if (userData.created_at) {
+          createdAtMap.set(userData.user_id, userData.created_at)
+        }
       })
     }
   } catch {
@@ -120,9 +124,17 @@ export async function getAllUsersWithRoles() {
   const roleMap = new Map()
   rolesData?.forEach((r) => roleMap.set(r.user_id, r.role))
 
-  return userIdList.map((uid) => ({
-    userId: uid,
-    email: emailMap.get(uid) || uid,
-    role: roleMap.get(uid) || 'regular',
-  }))
+  return userIdList
+    .map((uid) => ({
+      userId: uid,
+      email: emailMap.get(uid) || uid,
+      role: roleMap.get(uid) || 'regular',
+      createdAt: createdAtMap.get(uid) || null,
+    }))
+    .sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0
+      return bTime - aTime
+    })
 }
+

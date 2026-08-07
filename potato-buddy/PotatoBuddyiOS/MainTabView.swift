@@ -3,12 +3,22 @@ import SwiftUI
 struct MainTabView: View {
     static let scheduleTabTag = 3
     static let stepsTabTag = 11
+    static let clockTabTag = 9
 
     @Binding var selectedTab: Int
     @ObservedObject private var auth = AuthService.shared
     @State private var showLogoutConfirm = false
 
     var body: some View {
+        // 시계는 TabView 밖으로 분리해 가로·아이패드에서도 탭/사이드바 메뉴가 안 보이게 함
+        if selectedTab == Self.clockTabTag {
+            SummerClockView(onBack: { selectedTab = 0 })
+        } else {
+            mainTabView
+        }
+    }
+
+    private var mainTabView: some View {
         TabView(selection: $selectedTab) {
             TodayView()
                 .tabItem {
@@ -51,6 +61,7 @@ struct MainTabView: View {
                     Label("독서", systemImage: "books.vertical.fill")
                 }
                 .tag(12)
+                .navigationBarBackButtonHidden(true)
 
             ProjectRecordsView()
                 .tabItem {
@@ -69,6 +80,7 @@ struct MainTabView: View {
                     Label("여행", systemImage: "airplane")
                 }
                 .tag(6)
+                .navigationBarBackButtonHidden(true)
 
             ToeicVocabView()
                 .tabItem {
@@ -82,12 +94,12 @@ struct MainTabView: View {
                 }
                 .tag(8)
 
-            SummerClockView(onBack: { selectedTab = 0 })
+            // 실제 시계 UI는 body에서 전체 화면으로 표시 — 탭만 선택용
+            Color.clear
                 .tabItem {
                     Label("시계", systemImage: "clock.fill")
                 }
-                .tag(9)
-                .toolbar(.hidden, for: .tabBar)
+                .tag(Self.clockTabTag)
 
             SettingsView(showLogoutConfirm: $showLogoutConfirm)
                 .tabItem {
