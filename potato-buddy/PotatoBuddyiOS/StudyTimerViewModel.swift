@@ -163,6 +163,9 @@ private final class StudyTimerLiveActivityManager {
             return
         }
 
+        // 타이머가 실행 중일 때만 새 Live Activity 시작
+        guard state == .running else { return }
+
         let attributes = StudyTimerLiveActivityAttributes(title: "포실이 타이머")
         do {
             activity = try Activity.request(

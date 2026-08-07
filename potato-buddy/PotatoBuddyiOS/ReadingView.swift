@@ -103,7 +103,7 @@ struct ReadingView: View {
             }
             Spacer()
             VStack(spacing: 4) {
-                Text("\(year)년 \(month)월")
+                Text(verbatim: "\(year)년 \(month)월")
                     .font(.headline)
                 Text("\(stats.totalBooks)권 · \(stats.totalSessions)회")
                     .font(.caption)
