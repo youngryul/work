@@ -394,3 +394,84 @@ export const diaries = pgTable('diaries', {
   updatedAt: timestamp('updatedat').defaultNow().notNull(),
 })
 
+/**
+ * ledger_categories — 가계부 카테고리 (지출/수입)
+ */
+export const ledgerCategories = pgTable('ledger_categories', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  name: text('name').notNull(),
+  type: text('type').notNull(), // EXPENSE | INCOME
+  parentCategoryId: uuid('parent_category_id'),
+  fixedCostYn: boolean('fixed_cost_yn').default(false).notNull(),
+  displayOrder: integer('display_order').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * ledger_accounts — 가계부 계좌/자산/부채
+ */
+export const ledgerAccounts = pgTable('ledger_accounts', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  name: text('name').notNull(),
+  type: text('type').notNull(), // CASH | BANK(적금) | CARD | INVESTMENT | LOAN
+  currency: text('currency').default('KRW').notNull(), // KRW | USD | JPY | EUR | CNY
+  balance: numeric('balance').default('0').notNull(),
+  displayOrder: integer('display_order').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * ledger_transactions — 가계부 거래
+ */
+export const ledgerTransactions = pgTable('ledger_transactions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  type: text('type').notNull(), // EXPENSE | INCOME | TRANSFER | INVESTMENT
+  amount: numeric('amount').notNull(),
+  categoryId: uuid('category_id'),
+  accountId: uuid('account_id'),
+  toAccountId: uuid('to_account_id'),
+  paymentMethod: text('payment_method'),
+  transactionDate: text('transaction_date').notNull(), // YYYY-MM-DD
+  memo: text('memo'),
+  fixedCostYn: boolean('fixed_cost_yn').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * ledger_investments — 투자 자산
+ */
+export const ledgerInvestments = pgTable('ledger_investments', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  assetName: text('asset_name').notNull(),
+  assetType: text('asset_type').notNull(),
+  currency: text('currency').default('KRW').notNull(), // KRW | USD (해외주식 기록 통화)
+  sourceSymbol: text('source_symbol'), // 주식 워치리스트 심볼 연동 키
+  quantity: numeric('quantity').default('0'),
+  avgPrice: numeric('avg_price').default('0'),
+  currentPrice: numeric('current_price').default('0'),
+  investedAmount: numeric('invested_amount').default('0').notNull(),
+  currentValue: numeric('current_value').default('0').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * ledger_net_worth_snapshots — 월별 순자산 스냅샷 (그래프용 예약)
+ */
+export const ledgerNetWorthSnapshots = pgTable('ledger_net_worth_snapshots', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  snapshotDate: text('snapshot_date').notNull(), // YYYY-MM-DD
+  totalAssets: numeric('total_assets').default('0').notNull(),
+  totalLiabilities: numeric('total_liabilities').default('0').notNull(),
+  netWorth: numeric('net_worth').default('0').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+

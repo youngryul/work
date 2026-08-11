@@ -44,6 +44,7 @@ const LIFE_MENU_ITEMS = [
   { id: 'food-calorie', label: '음식 칼로리', icon: '🍽️' },
   { id: 'weight-tracking', label: '몸무게 기록', icon: '⚖️' },
   { id: 'congratulatory-money', label: '경조사 기록', icon: '💐' },
+  { id: 'ledger', label: '가계부', icon: '💰' },
   { id: 'fridge-inventory', label: '냉장고 관리', icon: '🧊' },
   { id: 'recipes', label: '레시피', icon: '🍳' },
   { id: 'toeic-vocab', label: '토익 단어', icon: '📗' },

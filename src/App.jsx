@@ -26,6 +26,7 @@ import CategorySettingsModal from './components/CategorySettingsModal.jsx'
 import FoodCalorieCalculator from './components/FoodCalorieCalculator.jsx'
 import WeightTrackingView from './components/weight/WeightTrackingView.jsx'
 import CongratulatoryMoneyView from './components/CongratulatoryMoneyView.jsx'
+import LedgerView from './components/ledger/LedgerView.jsx'
 import FridgeInventoryView from './components/FridgeInventoryView.jsx'
 import RecipeView from './components/recipe/RecipeView.jsx'
 import ToeicVocabView from './components/ToeicVocabView.jsx'
@@ -475,6 +476,7 @@ function AppContent() {
         {currentView === 'food-calorie' && <FoodCalorieCalculator />}
         {currentView === 'weight-tracking' && <WeightTrackingView />}
         {currentView === 'congratulatory-money' && <CongratulatoryMoneyView />}
+        {currentView === 'ledger' && <LedgerView />}
         {currentView === 'fridge-inventory' && <FridgeInventoryView />}
         {currentView === 'recipes' && <RecipeView />}
         {currentView === 'toeic-vocab' && <ToeicVocabView />}

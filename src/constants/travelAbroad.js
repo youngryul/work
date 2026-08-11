@@ -12,7 +12,7 @@ export const TRAVEL_ABROAD_META = {
   TW: { timeZone: 'Asia/Taipei', currencyCode: 'TWD', currencyLabel: '대만달러' },
   SG: { timeZone: 'Asia/Singapore', currencyCode: 'SGD', currencyLabel: '싱가포르달러' },
   TH: { timeZone: 'Asia/Bangkok', currencyCode: 'THB', currencyLabel: '바트' },
-  VN: { timeZone: 'Asia/Ho_Chi_Minh', currencyCode: 'VND', currencyLabel: '동' },
+  VN: { timeZone: 'Asia/Ho_Chi_Minh', currencyCode: 'VND', naverFxCode: 'FX_VNDKRW', currencyLabel: '동' },
   PH: { timeZone: 'Asia/Manila', currencyCode: 'PHP', currencyLabel: '페소' },
   MY: { timeZone: 'Asia/Kuala_Lumpur', currencyCode: 'MYR', currencyLabel: '링깃' },
   ID: { timeZone: 'Asia/Jakarta', currencyCode: 'IDR', currencyLabel: '루피아' },

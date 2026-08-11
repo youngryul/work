@@ -132,5 +132,33 @@ export async function updateStockHoldings(id, { holdingsQuantity = null, average
     .single()
 
   if (error) throw error
-  return mapWatchlistRow(data)
+
+  const item = mapWatchlistRow(data)
+
+  // 보유 정보가 있으면 가계부 투자와 동기화
+  try {
+    const { hasStockHoldings } = await import('../utils/stockHoldings.js')
+    if (hasStockHoldings(item)) {
+      const { fetchStockQuotes } = await import('./stockMarketService.js')
+      const { upsertInvestmentFromStock } = await import('./ledgerService.js')
+      let currentPrice = null
+      try {
+        const quotes = await fetchStockQuotes([item.symbol])
+        currentPrice = quotes[item.symbol]?.currentPrice ?? null
+      } catch {
+        // 시세 실패해도 평단가 기준으로 동기화
+      }
+      await upsertInvestmentFromStock({
+        symbol: item.symbol,
+        displayName: item.displayName,
+        holdingsQuantity: item.holdingsQuantity,
+        averagePrice: item.averagePrice,
+        currentPrice,
+      })
+    }
+  } catch (syncError) {
+    console.warn('가계부 투자 동기화 실패:', syncError)
+  }
+
+  return item
 }

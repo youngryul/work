@@ -4,6 +4,7 @@ export const EXCHANGE_RATE_ITEMS = [
   { code: 'FX_JPYKRW', label: '일본 엔', flag: '🇯🇵', unitLabel: '100 JPY' },
   { code: 'FX_EURKRW', label: '유럽 유로', flag: '🇪🇺', unitLabel: 'EUR' },
   { code: 'FX_CNYKRW', label: '중국 위안', flag: '🇨🇳', unitLabel: 'CNY' },
+  { code: 'FX_VNDKRW', label: '베트남 동', flag: '🇻🇳', unitLabel: '100 VND' },
 ]
 
 export const EXCHANGE_RATE_POLL_INTERVAL_MS = 60_000
