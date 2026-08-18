@@ -10,6 +10,7 @@ enum StudyTimerCategory: String, CaseIterable, Identifiable {
     case book = "book"
     case study = "study"
     case exercise = "exercise"
+    case coding = "coding"
 
     var id: String { rawValue }
 
@@ -18,6 +19,7 @@ enum StudyTimerCategory: String, CaseIterable, Identifiable {
         case .book:     return "책"
         case .study:    return "공부"
         case .exercise: return "운동"
+        case .coding:   return "코딩"
         }
     }
 
@@ -26,6 +28,7 @@ enum StudyTimerCategory: String, CaseIterable, Identifiable {
         case .book:     return "📖"
         case .study:    return "📚"
         case .exercise: return "🏃"
+        case .coding:   return "💻"
         }
     }
 
@@ -35,6 +38,7 @@ enum StudyTimerCategory: String, CaseIterable, Identifiable {
         case .book:     return "timer-book"
         case .study:    return "timer-study"
         case .exercise: return "timer-exercise"
+        case .coding:   return "timer-coding"
         }
     }
 
@@ -47,10 +51,12 @@ enum StudyTimerCategory: String, CaseIterable, Identifiable {
             return ["timer-study", "타이머"]
         case .exercise:
             return ["timer-exercise", "타이머운동"]
+        case .coding:
+            return ["timer-coding"]
         }
     }
 
-    /// 뽀모도로 이미지 후보 (공부는 포실이, 책·운동은 테마)
+    /// 뽀모도로 이미지 후보 (공부는 포실이, 책·운동·코딩은 테마)
     var pomodoroBackgroundImageCandidates: [String] {
         switch self {
         case .book:
@@ -59,6 +65,8 @@ enum StudyTimerCategory: String, CaseIterable, Identifiable {
             return ["포실이뽀모도로"]
         case .exercise:
             return ["timer-exercise", "타이머운동"]
+        case .coding:
+            return ["timer-coding"]
         }
     }
 
@@ -102,7 +110,8 @@ struct StudyTimerCategoryPicker: View {
     var disabled: Bool = false
 
     var body: some View {
-        HStack(spacing: 8) {
+        let columns = [GridItem(.adaptive(minimum: 78), spacing: 8)]
+        LazyVGrid(columns: columns, spacing: 8) {
             ForEach(StudyTimerCategory.allCases) { cat in
                 Button {
                     selection = cat
@@ -111,6 +120,7 @@ struct StudyTimerCategoryPicker: View {
                         .font(.caption.weight(.semibold))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
+                        .frame(maxWidth: .infinity)
                         .background(
                             Capsule().fill(
                                 selection == cat

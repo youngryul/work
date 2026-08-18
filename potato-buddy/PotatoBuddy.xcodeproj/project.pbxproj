@@ -33,6 +33,7 @@
 		265F477B90F3B1AA9D051A19 /* iPadClockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C51632D4FE1AE1587ACF991 /* iPadClockView.swift */; };
 		2877771ED542DFFAAAB533DC /* ScheduleTagItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0635FCBC596282AB2A46EA /* ScheduleTagItem.swift */; };
 		2B037424402D59ED5066CCA3 /* timer-study.png in Resources */ = {isa = PBXBuildFile; fileRef = 739BD6AB90804BA18146B1A6 /* timer-study.png */; };
+		A8C3E1F047D29B6A15E4C903 /* timer-coding.png in Resources */ = {isa = PBXBuildFile; fileRef = A8C3E1F047D29B6A15E4C902 /* timer-coding.png */; };
 		2DA5A0A4C9F98B31BECE0E43 /* 포실이(투명).png in Resources */ = {isa = PBXBuildFile; fileRef = 6BEEDF33B6BA4C250F262C91 /* 포실이(투명).png */; };
 		2E3FB359F9065D1F5299CAE2 /* ToeicVocabData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD7E5050DED68E0DBBC2FF6 /* ToeicVocabData.swift */; };
 		2E495F3BAC7718EAB6E0FB4C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DA69A7AC454A59D4370CA0AA /* Assets.xcassets */; };
@@ -225,6 +226,7 @@
 		6EC4808FE02D6272C60A42FA /* OverlayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayRootView.swift; sourceTree = "<group>"; };
 		70E0F19BC75F1A6C397BBE1C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		739BD6AB90804BA18146B1A6 /* timer-study.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "timer-study.png"; sourceTree = "<group>"; };
+		A8C3E1F047D29B6A15E4C902 /* timer-coding.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "timer-coding.png"; sourceTree = "<group>"; };
 		7464AC9BA45E00EF6E7C1FD8 /* CorkBoardBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorkBoardBackground.swift; sourceTree = "<group>"; };
 		758A8A2B777A70B6D61AC077 /* FridgeItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FridgeItem.swift; sourceTree = "<group>"; };
 		68A11C0F1C0F1C0F1C0F0001 /* FridgeItemIcons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FridgeItemIcons.swift; sourceTree = "<group>"; };
@@ -390,6 +392,7 @@
 				CF0CA9CF9A6A323934F91997 /* SummerClockView.swift */,
 				96749DCBF60CC35730DDA5F7 /* timer-bgm.mp3 */,
 				63805DE4F3B62712BE1A2F9D /* timer-book.jpg */,
+				A8C3E1F047D29B6A15E4C902 /* timer-coding.png */,
 				B9A7D77243F59003489A78F8 /* timer-exercise.jpg */,
 				739BD6AB90804BA18146B1A6 /* timer-study.png */,
 				D64D91FB4F9441E3D614A378 /* TimerBgmPlayer.swift */,
@@ -590,6 +593,7 @@
 				D05ACB77F8057E8AD16BD17C /* summer.png in Resources */,
 				DD8541835BC47F627984832D /* timer-bgm.mp3 in Resources */,
 				EF42526DBF3DADA1EBCF503D /* timer-book.jpg in Resources */,
+				A8C3E1F047D29B6A15E4C903 /* timer-coding.png in Resources */,
 				78FE6FA603656EE148C86E40 /* timer-exercise.jpg in Resources */,
 				2B037424402D59ED5066CCA3 /* timer-study.png in Resources */,
 				51DF8B94BE030B25BDFABE60 /* 모바일배경.png in Resources */,

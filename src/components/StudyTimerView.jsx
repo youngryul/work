@@ -10,6 +10,7 @@ const TIMER_IMAGE_BY_CATEGORY = {
   book: `/images/${encodeURIComponent('타이머책.png')}`,
   study: `/images/${encodeURIComponent('타이머공부.png')}`,
   exercise: `/images/${encodeURIComponent('타이머운동.png')}`,
+  coding: `/images/${encodeURIComponent('타이머코딩.png')}`,
 }
 
 function getTimerBackgroundSrc(category) {

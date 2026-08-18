@@ -5,7 +5,7 @@ import {
 } from '../constants/studyTimerCategories.js'
 
 /**
- * 타이머 카테고리 선택 (책 / 공부 / 운동) — select
+ * 타이머 카테고리 선택 (책 / 공부 / 운동 / 코딩) — select
  * @param {{ value: string, onChange: (id: string) => void, disabled?: boolean, className?: string, label?: string }} props
  */
 export default function StudyTimerCategoryPicker({

@@ -1,4 +1,4 @@
-/** @typedef {'book' | 'study' | 'exercise'} StudyTimerCategoryId */
+/** @typedef {'book' | 'study' | 'exercise' | 'coding'} StudyTimerCategoryId */
 
 export const DEFAULT_STUDY_TIMER_CATEGORY = /** @type {StudyTimerCategoryId} */ ('study')
 
@@ -6,6 +6,7 @@ export const STUDY_TIMER_CATEGORIES = [
   { id: /** @type {const} */ ('book'), label: '책', emoji: '📖' },
   { id: /** @type {const} */ ('study'), label: '공부', emoji: '📚' },
   { id: /** @type {const} */ ('exercise'), label: '운동', emoji: '🏃' },
+  { id: /** @type {const} */ ('coding'), label: '코딩', emoji: '💻' },
 ]
 
 /**
@@ -41,7 +42,7 @@ export function getStudyCategoryEmoji(categoryId) {
 
 /** @returns {Record<StudyTimerCategoryId, number>} */
 export function emptyStudyCategoryTotals() {
-  return { book: 0, study: 0, exercise: 0 }
+  return { book: 0, study: 0, exercise: 0, coding: 0 }
 }
 
 /**
