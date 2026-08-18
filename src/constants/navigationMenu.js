@@ -131,4 +131,11 @@ export const EXTERNAL_LINKS = [
     href: 'https://money-two-alpha.vercel.app/',
     target: '_blank',
   },
+  {
+    id: 'stock-agent',
+    label: '주식 에이전트',
+    icon: '🤖',
+    href: 'https://stock-agent-olive.vercel.app/',
+    target: '_blank',
+  },
 ]

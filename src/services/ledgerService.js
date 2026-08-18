@@ -19,6 +19,119 @@ import {
 } from './exchangeRateService.js'
 
 /**
+ * JWT 세션 기준 사용자 ID (FK auth.users 와 일치하도록)
+ * @returns {Promise<string>}
+ */
+async function requireLedgerUserId() {
+  const { data, error } = await supabase.auth.getSession()
+  if (error) throw error
+  const sessionUserId = data?.session?.user?.id || null
+  if (sessionUserId) return sessionUserId
+
+  const fallbackId = await getCurrentUserId()
+  if (fallbackId) return fallbackId
+
+  throw new Error('로그인이 필요합니다.')
+}
+
+/**
+ * 레거시 category 텍스트 컬럼용 라벨
+ * @param {string} type
+ * @param {string|null|undefined} categoryName
+ * @returns {string}
+ */
+function resolveLegacyCategoryLabel(type, categoryName) {
+  if (categoryName) return categoryName
+  if (type === LEDGER_TRANSACTION_TYPES.TRANSFER) return '이체'
+  if (type === LEDGER_TRANSACTION_TYPES.INVESTMENT) return '투자'
+  return '-'
+}
+
+/**
+ * @param {string} userId
+ * @param {string|null|undefined} categoryId
+ * @returns {Promise<string|null>}
+ */
+async function fetchCategoryName(userId, categoryId) {
+  if (!categoryId) return null
+  const { data, error } = await supabase
+    .from('ledger_categories')
+    .select('name')
+    .eq('id', categoryId)
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (error) throw error
+  return data?.name || null
+}
+
+/**
+ * PostgREST "column does not exist" 오류에서 컬럼명 추출
+ * @param {unknown} error
+ * @returns {string|null}
+ */
+function extractMissingColumnName(error) {
+  const message = String(error?.message || error?.details || '')
+  if (!/could not find|schema cache|does not exist/i.test(message)) {
+    return null
+  }
+  const match =
+    message.match(/Could not find the ['"]([^'"]+)['"] column/i) ||
+    message.match(/column ["']([^"']+)["'] (?:of relation|does not exist)/i)
+  return match?.[1] || null
+}
+
+/**
+ * 없는 레거시 컬럼은 제거하며 insert/update 재시도
+ * @param {'insert'|'update'} mode
+ * @param {Record<string, unknown>} row
+ * @param {{ id?: string, userId?: string }} [context]
+ * @returns {Promise<{ data: Object, error: null }|{ data: null, error: Object }>}
+ */
+async function saveTransactionRow(mode, row, context = {}) {
+  /** @type {Record<string, unknown>} */
+  let nextRow = { ...row }
+  let lastError = null
+
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    let result
+    if (mode === 'insert') {
+      result = await supabase
+        .from('ledger_transactions')
+        .insert(nextRow)
+        .select('*, ledger_categories ( id, name, type, fixed_cost_yn )')
+        .single()
+    } else {
+      result = await supabase
+        .from('ledger_transactions')
+        .update(nextRow)
+        .eq('id', context.id)
+        .eq('user_id', context.userId)
+        .select('*, ledger_categories ( id, name, type, fixed_cost_yn )')
+        .single()
+    }
+
+    if (!result.error) {
+      return { data: result.data, error: null }
+    }
+
+    lastError = result.error
+    const missingColumn = extractMissingColumnName(result.error)
+    // 스키마에 없는 컬럼만 제거하고 재시도 (NOT NULL 위반은 그대로 throw)
+    if (
+      missingColumn &&
+      Object.prototype.hasOwnProperty.call(nextRow, missingColumn)
+    ) {
+      const { [missingColumn]: _removed, ...rest } = nextRow
+      nextRow = rest
+      continue
+    }
+    break
+  }
+
+  return { data: null, error: lastError }
+}
+
+/**
  * @param {Object} row
  * @returns {Object}
  */
@@ -134,14 +247,14 @@ function normalizeTransaction(row, accountMap) {
     type: row.type,
     amount: Number(row.amount) || 0,
     categoryId: row.category_id || null,
-    categoryName: category?.name || null,
+    categoryName: category?.name || row.category || null,
     accountId,
     toAccountId,
     accountName: account?.name || null,
     toAccountName: toAccount?.name || null,
     toAccountType: toAccount?.type || null,
     paymentMethod: row.payment_method || '',
-    transactionDate: row.transaction_date,
+    transactionDate: row.transaction_date || row.date || '',
     memo: row.memo || '',
     fixedCostYn: Boolean(row.fixed_cost_yn),
     createdAt: row.created_at,
@@ -522,8 +635,7 @@ export async function getTransactions(options = {}) {
  * @returns {Promise<Object>}
  */
 export async function createTransaction(payload) {
-  const userId = await getCurrentUserId()
-  if (!userId) throw new Error('로그인이 필요합니다.')
+  const userId = await requireLedgerUserId()
 
   const amount = Number(payload.amount)
   if (!amount || amount <= 0) throw new Error('금액을 입력해주세요.')
@@ -543,25 +655,27 @@ export async function createTransaction(payload) {
     throw new Error('이체 출금/입금 계좌를 선택해주세요.')
   }
 
+  const categoryName = await fetchCategoryName(userId, payload.categoryId)
+  const legacyCategory = resolveLegacyCategoryLabel(payload.type, categoryName)
+
   const row = {
     user_id: userId,
     type: payload.type,
     amount,
     category_id: payload.categoryId || null,
+    // 레거시 category 텍스트 컬럼(NOT NULL) 호환
+    category: legacyCategory,
     account_id: payload.accountId || null,
     to_account_id: payload.toAccountId || null,
     payment_method: payload.paymentMethod || null,
+    // 레거시 date 컬럼(NOT NULL)과 transaction_date 동시 기록
+    date: payload.transactionDate,
     transaction_date: payload.transactionDate,
     memo: payload.memo || null,
     fixed_cost_yn: Boolean(payload.fixedCostYn),
   }
 
-  const { data, error } = await supabase
-    .from('ledger_transactions')
-    .insert(row)
-    .select('*, ledger_categories ( id, name, type, fixed_cost_yn )')
-    .single()
-
+  const { data, error } = await saveTransactionRow('insert', row)
   if (error) throw error
 
   const normalized = normalizeTransaction(data)
@@ -583,8 +697,7 @@ export async function createTransaction(payload) {
  * @returns {Promise<Object>}
  */
 export async function updateTransaction(transactionId, updates) {
-  const userId = await getCurrentUserId()
-  if (!userId) throw new Error('로그인이 필요합니다.')
+  const userId = await requireLedgerUserId()
 
   const { data: existing, error: fetchError } = await supabase
     .from('ledger_transactions')
@@ -602,7 +715,14 @@ export async function updateTransaction(transactionId, updates) {
   const row = { updated_at: new Date().toISOString() }
   if (updates.type !== undefined) row.type = updates.type
   if (updates.amount !== undefined) row.amount = Number(updates.amount)
-  if (updates.categoryId !== undefined) row.category_id = updates.categoryId || null
+  if (updates.categoryId !== undefined) {
+    row.category_id = updates.categoryId || null
+    const categoryName = await fetchCategoryName(userId, updates.categoryId)
+    const typeForLabel = updates.type || prev.type
+    row.category = resolveLegacyCategoryLabel(typeForLabel, categoryName)
+  } else if (updates.type !== undefined) {
+    row.category = resolveLegacyCategoryLabel(updates.type, prev.categoryName)
+  }
   if (updates.accountId !== undefined) row.account_id = updates.accountId || null
   if (updates.toAccountId !== undefined) row.to_account_id = updates.toAccountId || null
   if (updates.paymentMethod !== undefined) {
@@ -610,18 +730,15 @@ export async function updateTransaction(transactionId, updates) {
   }
   if (updates.transactionDate !== undefined) {
     row.transaction_date = updates.transactionDate
+    row.date = updates.transactionDate
   }
   if (updates.memo !== undefined) row.memo = updates.memo || null
   if (updates.fixedCostYn !== undefined) row.fixed_cost_yn = Boolean(updates.fixedCostYn)
 
-  const { data, error } = await supabase
-    .from('ledger_transactions')
-    .update(row)
-    .eq('id', transactionId)
-    .eq('user_id', userId)
-    .select('*, ledger_categories ( id, name, type, fixed_cost_yn )')
-    .single()
-
+  const { data, error } = await saveTransactionRow('update', row, {
+    id: transactionId,
+    userId,
+  })
   if (error) throw error
 
   const next = normalizeTransaction(data)

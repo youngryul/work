@@ -85,6 +85,55 @@ ALTER TABLE ledger_transactions ADD COLUMN IF NOT EXISTS fixed_cost_yn BOOLEAN N
 ALTER TABLE ledger_transactions ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 ALTER TABLE ledger_transactions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
+-- 거래 type 체크 제약 (레거시 값이 있으면 앱 상수에 맞게 교체)
+ALTER TABLE ledger_transactions DROP CONSTRAINT IF EXISTS ledger_transactions_type_check;
+ALTER TABLE ledger_transactions
+  ADD CONSTRAINT ledger_transactions_type_check
+  CHECK (type IN ('EXPENSE', 'INCOME', 'TRANSFER', 'INVESTMENT'));
+
+-- 카테고리 type 체크 제약도 동일하게 맞춤
+ALTER TABLE ledger_categories DROP CONSTRAINT IF EXISTS ledger_categories_type_check;
+ALTER TABLE ledger_categories
+  ADD CONSTRAINT ledger_categories_type_check
+  CHECK (type IN ('EXPENSE', 'INCOME'));
+
+-- user_id FK를 auth.users로 재설정 (레거시 public.users/profiles 참조 방지)
+ALTER TABLE ledger_transactions DROP CONSTRAINT IF EXISTS ledger_transactions_user_id_fkey;
+ALTER TABLE ledger_transactions
+  ADD CONSTRAINT ledger_transactions_user_id_fkey
+  FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE CASCADE;
+
+ALTER TABLE ledger_categories DROP CONSTRAINT IF EXISTS ledger_categories_user_id_fkey;
+ALTER TABLE ledger_categories
+  ADD CONSTRAINT ledger_categories_user_id_fkey
+  FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE CASCADE;
+
+ALTER TABLE ledger_accounts DROP CONSTRAINT IF EXISTS ledger_accounts_user_id_fkey;
+ALTER TABLE ledger_accounts
+  ADD CONSTRAINT ledger_accounts_user_id_fkey
+  FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE CASCADE;
+
+ALTER TABLE ledger_investments DROP CONSTRAINT IF EXISTS ledger_investments_user_id_fkey;
+ALTER TABLE ledger_investments
+  ADD CONSTRAINT ledger_investments_user_id_fkey
+  FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE CASCADE;
+
+-- 레거시 category 텍스트 컬럼: NOT NULL 완화 (앱은 category_id 사용)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'ledger_transactions'
+      AND column_name = 'category'
+  ) THEN
+    ALTER TABLE ledger_transactions ALTER COLUMN category DROP NOT NULL;
+    UPDATE ledger_transactions
+    SET category = COALESCE(category, '-')
+    WHERE category IS NULL;
+  END IF;
+END $$;
+
 -- 예전 컬럼명(date 등)이 있고 transaction_date가 비어 있으면 이전
 DO $$
 BEGIN
@@ -95,10 +144,27 @@ BEGIN
       AND column_name = 'date'
   ) THEN
     UPDATE ledger_transactions
-    SET transaction_date = date
+    SET transaction_date = date::text
     WHERE (transaction_date IS NULL OR transaction_date = '')
       AND date IS NOT NULL;
+
+    -- date가 NOT NULL인 경우 신규 insert 호환을 위해 빈 값 보강
+    EXECUTE $q$
+      UPDATE ledger_transactions
+      SET date = transaction_date::date
+      WHERE date IS NULL
+        AND transaction_date IS NOT NULL
+        AND transaction_date <> ''
+    $q$;
   END IF;
+EXCEPTION
+  WHEN others THEN
+    -- date 컬럼 타입이 text인 경우
+    UPDATE ledger_transactions
+    SET date = transaction_date
+    WHERE date IS NULL
+      AND transaction_date IS NOT NULL
+      AND transaction_date <> '';
 END $$;
 
 CREATE INDEX IF NOT EXISTS ledger_transactions_user_id_idx ON ledger_transactions (user_id);
