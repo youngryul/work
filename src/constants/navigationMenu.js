@@ -138,4 +138,11 @@ export const EXTERNAL_LINKS = [
     href: 'https://stock-agent-olive.vercel.app/',
     target: '_blank',
   },
+  {
+    id: 'coding-mate',
+    label: '코딩메이트',
+    icon: '💻',
+    href: 'https://codingmate.vercel.app/',
+    target: '_blank',
+  },
 ]
