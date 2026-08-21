@@ -12,15 +12,41 @@ import { getDiaryEmotionLabel } from '../constants/diaryEmotions.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
+ * YYYY-MM-DD → 해당 날짜의 Date (로컬)
+ * @param {string} dateString
+ * @returns {Date}
+ */
+function dateFromString(dateString) {
+  const [year, month, day] = dateString.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+/**
+ * Date → YYYY-MM-DD
+ * @param {Date} date
+ * @returns {string}
+ */
+function toDateString(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+/**
  * 일기 달력 컴포넌트
  * 각 날짜별로 일기 이미지를 표시
+ * @param {{
+ *   onDateClick?: (dateString: string) => void,
+ *   initialDate?: string | null,
+ * }} props
  */
-export default function DiaryCalendar({ onDateClick }) {
-  const [currentDate, setCurrentDate] = useState(new Date())
+export default function DiaryCalendar({ onDateClick, initialDate = null }) {
+  const [currentDate, setCurrentDate] = useState(() => (
+    initialDate ? dateFromString(initialDate) : new Date()
+  ))
   const [diaries, setDiaries] = useState({})
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState(null)
   const [selectedDiary, setSelectedDiary] = useState(null)
+  const [focusedDate, setFocusedDate] = useState(initialDate || null)
   const [imageErrors, setImageErrors] = useState({})
   const [showFourCutModal, setShowFourCutModal] = useState(false)
   const [isUpdatingCover, setIsUpdatingCover] = useState(false)
@@ -58,26 +84,35 @@ export default function DiaryCalendar({ onDateClick }) {
   }
 
   const handleToday = () => {
-    setCurrentDate(new Date())
+    const today = new Date()
+    setCurrentDate(today)
+    setFocusedDate(toDateString(today))
+  }
+
+  const handleJumpDate = (dateString) => {
+    if (!dateString) return
+    setCurrentDate(dateFromString(dateString))
+    setFocusedDate(dateString)
+    handleDateClick(dateString)
   }
 
   const handleDateClick = async (dateString) => {
+    setFocusedDate(dateString)
+
     if (onDateClick) {
       onDateClick(dateString)
       return
     }
 
     const diary = diaries[dateString]
-    if (diary) {
-      try {
-        const fullDiary = await getDiaryByDate(dateString)
-        setSelectedDiary(fullDiary)
-        setSelectedDate(dateString)
-      } catch (error) {
-        console.error('일기 조회 오류:', error)
-      }
-    } else if (onDateClick) {
-      onDateClick(dateString)
+    if (!diary) return
+
+    try {
+      const fullDiary = await getDiaryByDate(dateString)
+      setSelectedDiary(fullDiary)
+      setSelectedDate(dateString)
+    } catch (error) {
+      console.error('일기 조회 오류:', error)
     }
   }
 
@@ -153,20 +188,23 @@ export default function DiaryCalendar({ onDateClick }) {
         today.getFullYear() === year
         && today.getMonth() === month
         && today.getDate() === day
+      const isFocused = focusedDate === dateString
 
       days.push(
         <div
           key={day}
           onClick={() => handleDateClick(dateString)}
           className={`aspect-square flex flex-col items-start justify-start p-1 rounded-lg transition-all duration-200 relative overflow-hidden cursor-pointer hover:shadow-md ${
-            isToday
+            isFocused
               ? 'bg-green-200 border-2 border-green-400'
-              : 'bg-gray-50 hover:bg-gray-100'
+              : isToday
+                ? 'bg-green-50 border-2 border-green-300'
+                : 'bg-gray-50 hover:bg-gray-100'
           }`}
         >
           <span
             className={`text-xs font-medium z-10 ${
-              isToday ? 'text-green-700' : 'text-gray-700'
+              isFocused || isToday ? 'text-green-700' : 'text-gray-700'
             }`}
           >
             {day}
@@ -233,10 +271,17 @@ export default function DiaryCalendar({ onDateClick }) {
         >
           ‹
         </button>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 flex-wrap justify-center">
           <h2 className="text-2xl font-handwriting text-gray-800">
             {getMonthYearString()}
           </h2>
+          <input
+            type="date"
+            value={focusedDate || toDateString(currentDate)}
+            onChange={(e) => handleJumpDate(e.target.value)}
+            className="px-3 py-1 text-sm border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400 font-sans"
+            aria-label="날짜 선택"
+          />
           <button
             onClick={handleToday}
             className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-200"

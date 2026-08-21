@@ -23,16 +23,24 @@ export default function CalendarView({
 }) {
   const [selectedDate, setSelectedDate] = useState(null)
   const [showDiaryForm, setShowDiaryForm] = useState(false)
+  /** 달력에 표시할 날짜 (작성한 날짜의 달을 유지) */
+  const [calendarFocusDate, setCalendarFocusDate] = useState(null)
   const { generationCost } = useAiTokenInfo(calendarKey)
 
   useEffect(() => {
     if (!initialOpenDate) return
     setSelectedDate(initialOpenDate)
+    setCalendarFocusDate(initialOpenDate)
     setShowDiaryForm(true)
   }, [initialOpenDate])
 
-  const handleDateClick = (dateString) => {
+  const rememberDate = (dateString) => {
     setSelectedDate(dateString)
+    setCalendarFocusDate(dateString)
+  }
+
+  const handleDateClick = (dateString) => {
+    rememberDate(dateString)
     setShowDiaryForm(true)
   }
 
@@ -52,6 +60,7 @@ export default function CalendarView({
       {showDiaryForm ? (
         <DiaryForm
           selectedDate={selectedDate}
+          onDateChange={rememberDate}
           onSave={handleSave}
           onCancel={handleCancel}
           embedded
@@ -62,11 +71,15 @@ export default function CalendarView({
         <>
           <ViewPageTitle iconSrc={MENU_ICON_PATHS.diaryCalendar} title="일기 달력">
             <p className="text-xl text-gray-600">
-              날짜를 클릭해 글을 쓴 뒤, 사진·이미지를 생성하거나 첨부해 보세요
+              날짜를 선택해 글을 쓴 뒤, 사진·이미지를 생성하거나 첨부해 보세요
             </p>
             <AiTokenGenerationCostNote cost={generationCost} className="mt-2" />
           </ViewPageTitle>
-          <DiaryCalendar key={calendarKey} onDateClick={handleDateClick} />
+          <DiaryCalendar
+            key={calendarKey}
+            initialDate={calendarFocusDate}
+            onDateClick={handleDateClick}
+          />
         </>
       )}
     </div>

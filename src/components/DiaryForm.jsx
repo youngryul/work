@@ -27,6 +27,7 @@ const EMOTION_LABELS = DIARY_EMOTION_LABELS
 /**
  * 일기 작성/수정 폼 컴포넌트
  * @param {string} selectedDate - 선택된 날짜 (YYYY-MM-DD)
+ * @param {Function} [onDateChange] - 날짜 변경 핸들러
  * @param {Function} onSave - 저장 완료 핸들러
  * @param {Function} onCancel - 취소 핸들러
  * @param {boolean} isModal - 모달 안에서 사용되는지 여부
@@ -36,6 +37,7 @@ const EMOTION_LABELS = DIARY_EMOTION_LABELS
  */
 export default function DiaryForm({
   selectedDate,
+  onDateChange,
   onSave,
   onCancel,
   isModal = false,
@@ -77,9 +79,14 @@ export default function DiaryForm({
 
   // 기존 일기 로드
   useEffect(() => {
-    if (selectedDate) {
-      loadExistingDiary()
-    }
+    if (!selectedDate) return
+    setError(null)
+    setLiveSceneUrls([])
+    setLiveFourCutUrl(null)
+    setShowFourCutModal(false)
+    setFourCutProgress(null)
+    setShowPrompt(false)
+    loadExistingDiary()
   }, [selectedDate])
 
   const loadExistingDiary = async () => {
@@ -503,6 +510,28 @@ export default function DiaryForm({
     }
   }
 
+  const handleDateInputChange = (e) => {
+    const nextDate = e.target.value
+    if (!nextDate || !onDateChange) return
+    onDateChange(nextDate)
+  }
+
+  const datePicker = (
+    <div className="flex flex-wrap items-center gap-3">
+      <input
+        type="date"
+        value={selectedDate || ''}
+        onChange={handleDateInputChange}
+        disabled={!onDateChange}
+        className="px-3 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:border-green-400 font-sans text-base disabled:bg-gray-50 disabled:text-gray-500"
+        aria-label="일기 날짜 선택"
+      />
+      <p className="text-base text-gray-600 font-sans">
+        {selectedDate && formatDate(selectedDate)}
+      </p>
+    </div>
+  )
+
   const stepTabs = (
     <div className="mt-4 flex gap-2">
       <button
@@ -542,12 +571,10 @@ export default function DiaryForm({
         <h1 className="text-3xl font-bold text-gray-800 mb-2 font-sans">
           {existingDiary ? '일기 수정' : '일기 작성'}
         </h1>
-        <p className="text-base text-gray-600 font-sans">
-          {selectedDate && formatDate(selectedDate)}
-        </p>
+        {datePicker}
         {stepTabs}
         <p className="mt-3 text-sm text-gray-500 font-sans">
-          먼저 오늘의 글을 쓰고, 다음 단계에서 사진을 생성하거나 첨부합니다.
+          날짜를 고른 뒤 글을 쓰고, 다음 단계에서 사진을 생성하거나 첨부합니다.
         </p>
       </div>
 
@@ -605,9 +632,7 @@ export default function DiaryForm({
         <h1 className="text-3xl font-bold text-gray-800 mb-2 font-sans">
           사진 · 이미지
         </h1>
-        <p className="text-base text-gray-600 font-sans">
-          {selectedDate && formatDate(selectedDate)}
-        </p>
+        {datePicker}
         {stepTabs}
 
         <div className="mt-4 flex flex-wrap gap-2">
