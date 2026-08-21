@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { useAiTokenInfo } from '../hooks/useAiTokenInfo.js'
-import { saveDiary, getDiaryByDate } from '../services/diaryService.js'
+import { saveDiary, getDiaryByDate, updateDiaryCoverImage } from '../services/diaryService.js'
 import { uploadImage } from '../services/imageService.js'
 import { markDiaryReminderShown } from '../services/diaryReminderService.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
@@ -67,6 +67,7 @@ export default function DiaryForm({
   const [isCreatingAiFourCut, setIsCreatingAiFourCut] = useState(false)
   /** write: 글 작성 / media: 글·사진 출력 및 생성·첨부 */
   const [formStep, setFormStep] = useState('write')
+  const [isUpdatingCover, setIsUpdatingCover] = useState(false)
 
   const { balance: tokenBalance, generationCost } = useAiTokenInfo(
     tokenRefreshDep ?? selectedDate,
@@ -105,13 +106,7 @@ export default function DiaryForm({
         } else {
           setDiaryMode(DIARY_MODE.NORMAL)
         }
-        const hasMedia = Boolean(
-          diary.imageUrl
-          || diary.fourCutUrl
-          || (diary.fourCutSceneUrls || []).length > 0
-          || (diary.attachedImages || []).length > 0,
-        )
-        setFormStep(hasMedia ? 'media' : 'write')
+        setFormStep('write')
       } else {
         setContent('')
         setExistingDiary(null)
@@ -226,60 +221,41 @@ export default function DiaryForm({
     }
   }
 
-  /** 글 저장 후 이미지 단계로 이동 */
-  const handleSaveTextAndGoMedia = async () => {
+  /**
+   * AI 1컷 / AI 4컷 / 사진 4컷 저장
+   * @param {string} mode
+   */
+  const saveDiaryWithMode = async (mode) => {
     if (!content.trim()) {
       showToast('일기 내용을 입력해주세요.', TOAST_TYPES.ERROR)
       return
     }
 
-    setIsSavingWithoutImage(true)
-    setError(null)
+    const isPhoto = mode === DIARY_MODE.PHOTO_FOUR_CUT
+    const isAiFour = mode === DIARY_MODE.AI_FOUR_CUT
+    const isAiOne = mode === DIARY_MODE.NORMAL
 
-    try {
-      const saved = await saveTextOnly()
-      setExistingDiary(saved)
-      showToast('글이 저장되었습니다. 사진을 만들거나 첨부해 보세요.', TOAST_TYPES.SUCCESS)
-      setFormStep('media')
-    } catch (err) {
-      console.error('일기 저장 실패:', err)
-      const message = err.message || '일기 저장에 실패했습니다.'
-      setError(message)
-      showToast(message, TOAST_TYPES.ERROR)
-    } finally {
-      setIsSavingWithoutImage(false)
-    }
-  }
-
-  // 저장 (AI 1컷 / AI 4컷 / 사진 4컷)
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    if (!content.trim()) {
-      showToast('일기 내용을 입력해주세요.', TOAST_TYPES.ERROR)
-      return
-    }
-
-    if (isPhotoFourCut && attachedImages.length === 0) {
+    if (isPhoto && attachedImages.length === 0) {
       showToast('사진 4컷 모드에서는 사진을 1장 이상 첨부해주세요.', TOAST_TYPES.ERROR)
       return
     }
 
-    if (needsNewImageOnSave && hasInsufficientTokens) {
+    if (isAiOne && hasInsufficientTokens) {
       openDepositModal()
       return
     }
 
-    if (needsTokensForAiFourCutSubmit && hasInsufficientTokensForAiFourCut) {
+    if (isAiFour && hasInsufficientTokensForAiFourCut) {
       openDepositModal()
       return
     }
 
+    setDiaryMode(mode)
     setIsLoading(true)
-    setIsGeneratingImage(isAiOneCut)
+    setIsGeneratingImage(isAiOne)
     setError(null)
 
-    if (isAiFourCut) {
+    if (isAiFour) {
       setIsCreatingAiFourCut(true)
       setLiveSceneUrls([])
       setLiveFourCutUrl(null)
@@ -288,13 +264,12 @@ export default function DiaryForm({
     }
 
     try {
-      const imagesForSave = isPhotoFourCut ? attachedImages : []
-      // 미디어 단계의 AI 1컷은 생성/재생성 버튼이므로 기존 이미지가 있어도 다시 생성
-      const regenerateOneCut = isAiOneCut && Boolean(existingDiary?.imageUrl)
+      const imagesForSave = isPhoto ? attachedImages : []
+      const regenerateOneCut = isAiOne && Boolean(existingDiary?.imageUrl)
       const saved = await saveDiary(selectedDate, content, regenerateOneCut, imagesForSave, {
-        mode: diaryMode,
-        skipImageGeneration: isPhotoFourCut,
-        onFourCutProgress: isAiFourCut
+        mode,
+        skipImageGeneration: isPhoto,
+        onFourCutProgress: isAiFour
           ? (info) => {
               setFourCutProgress({
                 done: info.done,
@@ -313,7 +288,7 @@ export default function DiaryForm({
           : undefined,
       })
       setExistingDiary(saved)
-      if (isPhotoFourCut) {
+      if (isPhoto) {
         setAttachedImages(saved?.attachedImages || attachedImages)
       }
       if (saved?.fourCutSceneUrls?.length) {
@@ -322,16 +297,15 @@ export default function DiaryForm({
       if (saved?.fourCutUrl) {
         setLiveFourCutUrl(saved.fourCutUrl)
       }
-      // 이미지 생성 후 결과 확인을 위해 폼은 닫지 않음
       await runAfterDiarySaved(saved, {
-        openBooth: isAiFourCut || isPhotoFourCut,
+        openBooth: isAiFour || isPhoto,
         closeAfter: false,
       })
     } catch (error) {
       console.error('일기 저장 실패:', error)
       const message = error.message || '일기 저장에 실패했습니다.'
       setError(message)
-      if (isAiFourCut) {
+      if (isAiFour) {
         setShowFourCutModal(false)
       }
       if (isTokenError(message)) {
@@ -344,6 +318,30 @@ export default function DiaryForm({
       setIsGeneratingImage(false)
       setIsCreatingAiFourCut(false)
       setFourCutProgress(null)
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    await saveDiaryWithMode(diaryMode)
+  }
+
+  const handleSaveAiFourCut = () => saveDiaryWithMode(DIARY_MODE.AI_FOUR_CUT)
+
+  const handleSelectCover = async (imageUrl) => {
+    if (!selectedDate || !imageUrl || isUpdatingCover) return
+    if (existingDiary?.coverImageUrl === imageUrl) return
+
+    setIsUpdatingCover(true)
+    try {
+      const updated = await updateDiaryCoverImage(selectedDate, imageUrl)
+      setExistingDiary(updated)
+      showToast('달력 대문 사진을 변경했습니다.', TOAST_TYPES.SUCCESS)
+    } catch (error) {
+      console.error('대문 이미지 변경 실패:', error)
+      showToast(error.message || '대문 이미지 변경에 실패했습니다.', TOAST_TYPES.ERROR)
+    } finally {
+      setIsUpdatingCover(false)
     }
   }
 
@@ -532,6 +530,67 @@ export default function DiaryForm({
     </div>
   )
 
+  const fourCutScenes = existingDiary?.fourCutSceneUrls || []
+  const currentCoverUrl =
+    existingDiary?.coverImageUrl
+    || fourCutScenes[0]
+    || null
+
+  const fourCutCoverPicker = fourCutScenes.length > 0 && (
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h4 className="text-sm font-medium text-gray-600 font-sans">
+          대문 사진 선택 ({fourCutScenes.length}컷)
+        </h4>
+        {existingDiary?.fourCutUrl && (
+          <button
+            type="button"
+            onClick={() => {
+              setLiveSceneUrls(fourCutScenes)
+              setLiveFourCutUrl(existingDiary.fourCutUrl)
+              setShowFourCutModal(true)
+            }}
+            className="rounded-lg bg-stone-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-stone-700"
+          >
+            4컷 보기
+          </button>
+        )}
+      </div>
+      <p className="mb-3 text-xs text-gray-500 font-sans">
+        달력에 보일 대표 사진을 4컷 중에서 골라 주세요.
+      </p>
+      <div className="grid grid-cols-4 gap-2">
+        {fourCutScenes.map((url, index) => {
+          const isSelected = currentCoverUrl === url
+          return (
+            <button
+              key={`${url}-${index}`}
+              type="button"
+              disabled={isUpdatingCover}
+              onClick={() => handleSelectCover(url)}
+              className={`relative overflow-hidden rounded-lg border-2 transition-all ${
+                isSelected
+                  ? 'border-green-500 ring-2 ring-green-300'
+                  : 'border-gray-200 hover:border-green-300'
+              } disabled:opacity-60`}
+            >
+              <img
+                src={url}
+                alt={`${index + 1}컷`}
+                className="h-24 w-full object-cover"
+              />
+              {isSelected && (
+                <span className="absolute bottom-1 left-1 rounded bg-green-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                  대문
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+
   const stepTabs = (
     <div className="mt-4 flex gap-2">
       <button
@@ -574,7 +633,7 @@ export default function DiaryForm({
         {datePicker}
         {stepTabs}
         <p className="mt-3 text-sm text-gray-500 font-sans">
-          날짜를 고른 뒤 글을 쓰고, 다음 단계에서 사진을 생성하거나 첨부합니다.
+          글을 쓴 뒤 글만 저장하거나 AI 4컷을 만들 수 있습니다.
         </p>
       </div>
 
@@ -591,11 +650,30 @@ export default function DiaryForm({
           />
         </div>
 
+        {fourCutCoverPicker}
+
         {error && formStep === 'write' && (
           <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
             <p className="text-sm text-red-700 font-sans">{error}</p>
           </div>
         )}
+
+        {hasInsufficientTokensForAiFourCut && (
+          <div className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 font-sans">
+            <p className="font-semibold">AI 4컷에 토큰이 부족합니다. (필요 {aiFourCutCost}개)</p>
+            <button
+              type="button"
+              onClick={openDepositModal}
+              className="mt-2 text-sm font-semibold text-amber-700 underline hover:text-amber-900"
+            >
+              토큰 충전 신청하기 →
+            </button>
+          </div>
+        )}
+
+        <p className="text-sm text-amber-800 font-sans">
+          AI 4컷은 일기를 4장면으로 만들어 저장합니다. 1회 {aiFourCutCost}토큰이 소모됩니다.
+        </p>
 
         <div className="flex flex-wrap gap-3 justify-end pt-4 border-t-2 border-green-200">
           <button
@@ -608,18 +686,28 @@ export default function DiaryForm({
           <button
             type="button"
             onClick={handleSaveWithoutImage}
-            disabled={isSavingWithoutImage || !content.trim()}
+            disabled={isSavingWithoutImage || isCreatingAiFourCut || isLoading || !content.trim()}
             className="px-6 py-2 border-2 border-green-400 bg-green-50 text-green-800 rounded-lg hover:bg-green-100 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
           >
             {isSavingWithoutImage ? '저장 중...' : '글만 저장'}
           </button>
           <button
             type="button"
-            onClick={handleSaveTextAndGoMedia}
-            disabled={isSavingWithoutImage || !content.trim()}
+            onClick={handleSaveAiFourCut}
+            disabled={
+              isSavingWithoutImage
+              || isCreatingAiFourCut
+              || isLoading
+              || !content.trim()
+              || hasInsufficientTokensForAiFourCut
+            }
             className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
           >
-            {isSavingWithoutImage ? '저장 중...' : '다음: 사진·이미지 →'}
+            {isCreatingAiFourCut
+              ? 'AI 4컷 생성 중...'
+              : existingDiary?.fourCutUrl || fourCutScenes.length > 0
+                ? `AI 4컷 다시 만들기 (${aiFourCutCost}토큰)`
+                : `AI 4컷 저장 (${aiFourCutCost}토큰)`}
           </button>
         </div>
       </div>
@@ -768,29 +856,21 @@ export default function DiaryForm({
               </div>
             )}
 
-            {existingDiary?.fourCutUrl ? (
-              <div>
-                <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
-                  AI 4컷
-                </label>
-                <div className="flex flex-wrap items-start gap-3">
-                  <img
-                    src={existingDiary.fourCutUrl}
-                    alt="4컷 일기"
-                    className="w-40 rounded-lg border-2 border-green-200 bg-white object-contain shadow"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLiveSceneUrls(existingDiary?.fourCutSceneUrls || [])
-                      setLiveFourCutUrl(existingDiary?.fourCutUrl || null)
-                      setShowFourCutModal(true)
-                    }}
-                    className="px-4 py-2 bg-stone-800 text-white rounded-lg text-sm font-medium font-sans hover:bg-stone-700"
-                  >
-                    4컷 보기 (애니메이션)
-                  </button>
-                </div>
+            {existingDiary?.fourCutUrl || fourCutScenes.length > 0 ? (
+              <div className="space-y-4">
+                {fourCutCoverPicker}
+                {existingDiary?.fourCutUrl && (
+                  <div>
+                    <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
+                      AI 4컷
+                    </label>
+                    <img
+                      src={existingDiary.fourCutUrl}
+                      alt="4컷 일기"
+                      className="w-40 rounded-lg border-2 border-green-200 bg-white object-contain shadow"
+                    />
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-sm text-gray-500 font-sans">
@@ -866,27 +946,30 @@ export default function DiaryForm({
             )}
 
             {existingDiary?.fourCutUrl && (existingDiary?.attachedImages || []).length > 0 && (
-              <div>
-                <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
-                  저장된 사진 4컷
-                </label>
-                <div className="flex flex-wrap items-start gap-3">
-                  <img
-                    src={existingDiary.fourCutUrl}
-                    alt="사진 4컷"
-                    className="w-40 rounded-lg border-2 border-green-200 bg-white object-contain shadow"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLiveSceneUrls(existingDiary?.fourCutSceneUrls || existingDiary?.attachedImages || [])
-                      setLiveFourCutUrl(existingDiary?.fourCutUrl || null)
-                      setShowFourCutModal(true)
-                    }}
-                    className="px-4 py-2 bg-stone-800 text-white rounded-lg text-sm font-medium font-sans hover:bg-stone-700"
-                  >
-                    4컷 보기 (애니메이션)
-                  </button>
+              <div className="space-y-4">
+                {fourCutCoverPicker}
+                <div>
+                  <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
+                    저장된 사진 4컷
+                  </label>
+                  <div className="flex flex-wrap items-start gap-3">
+                    <img
+                      src={existingDiary.fourCutUrl}
+                      alt="사진 4컷"
+                      className="w-40 rounded-lg border-2 border-green-200 bg-white object-contain shadow"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLiveSceneUrls(existingDiary?.fourCutSceneUrls || existingDiary?.attachedImages || [])
+                        setLiveFourCutUrl(existingDiary?.fourCutUrl || null)
+                        setShowFourCutModal(true)
+                      }}
+                      className="px-4 py-2 bg-stone-800 text-white rounded-lg text-sm font-medium font-sans hover:bg-stone-700"
+                    >
+                      4컷 보기 (애니메이션)
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

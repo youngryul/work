@@ -93,7 +93,6 @@ export default function DiaryCalendar({ onDateClick, initialDate = null }) {
     if (!dateString) return
     setCurrentDate(dateFromString(dateString))
     setFocusedDate(dateString)
-    handleDateClick(dateString)
   }
 
   const handleDateClick = async (dateString) => {
