@@ -18,14 +18,12 @@ import TravelItineraryTimeline from './TravelItineraryTimeline.jsx'
 import TravelItineraryPackingList from './TravelItineraryPackingList.jsx'
 import TravelItinerarySouvenirList from './TravelItinerarySouvenirList.jsx'
 import TravelItinerarySpareList from './TravelItinerarySpareList.jsx'
-import TravelItineraryAlbum from './TravelItineraryAlbum.jsx'
 
 const DETAIL_TABS = [
   { id: 'schedule', label: '일정' },
   { id: 'packing', label: '준비물' },
   { id: 'souvenir', label: '기념품' },
   { id: 'spare', label: '예비 일정' },
-  { id: 'album', label: '앨범' },
 ]
 
 /**
@@ -288,9 +286,6 @@ export default function TravelItineraryDetail({ trip, onBack }) {
       {activeTab === 'souvenir' && <TravelItinerarySouvenirList tripId={trip.id} />}
       {activeTab === 'spare' && (
         <TravelItinerarySpareList tripId={trip.id} onMoveToSchedule={openMoveFromSpare} />
-      )}
-      {activeTab === 'album' && (
-        <TravelItineraryAlbum tripId={trip.id} tripTitle={trip.title} />
       )}
 
       <TravelItineraryItemForm

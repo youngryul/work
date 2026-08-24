@@ -2,6 +2,7 @@ import { supabase } from '../config/supabase.js'
 import { isAdmin } from './adminService.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
 import { getAllUsersWithRoles } from './userRoleService.js'
+import { getUserActivityList } from './userActivityService.js'
 
 /**
  * 관리자 통계 서비스
@@ -9,14 +10,46 @@ import { getAllUsersWithRoles } from './userRoleService.js'
  */
 
 /**
- * 사용자 통계 조회 (전체 사용자 목록·가입일 포함)
- * @returns {Promise<{ totalUsers: number, users: Array<{userId: string, email: string, role: string, createdAt: string|null}> }>}
+ * 사용자 통계 조회 (전체 사용자 목록·가입일·최근 접속·사용 메뉴 포함)
+ * @returns {Promise<{
+ *   totalUsers: number,
+ *   users: Array<{
+ *     userId: string,
+ *     email: string,
+ *     role: string,
+ *     createdAt: string|null,
+ *     lastSignInAt: string|null,
+ *     lastSeenAt: string|null,
+ *     lastView: string,
+ *     usedViews: string[],
+ *   }>
+ * }>}
  */
 export async function getUserStatistics() {
   const users = await getAllUsersWithRoles()
+  const activityList = await getUserActivityList()
+  const activityMap = new Map(activityList.map((row) => [row.userId, row]))
+
+  const mergedUsers = users.map((user) => {
+    const activity = activityMap.get(user.userId)
+    return {
+      ...user,
+      lastSignInAt: user.lastSignInAt || null,
+      lastSeenAt: activity?.lastSeenAt || null,
+      lastView: activity?.lastView || '',
+      usedViews: activity?.usedViews || [],
+    }
+  })
+
+  mergedUsers.sort((a, b) => {
+    const aTime = new Date(a.lastSeenAt || a.lastSignInAt || a.createdAt || 0).getTime()
+    const bTime = new Date(b.lastSeenAt || b.lastSignInAt || b.createdAt || 0).getTime()
+    return bTime - aTime
+  })
+
   return {
-    totalUsers: users.length,
-    users,
+    totalUsers: mergedUsers.length,
+    users: mergedUsers,
   }
 }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
+import { recordUserActivity } from './services/userActivityService.js'
 import LandingPage from './components/LandingPage.jsx'
 import LoginForm from './components/LoginForm.jsx'
 import TodayView from './components/TodayView.jsx'
@@ -18,6 +19,7 @@ import ReadingView from './components/reading/ReadingView.jsx'
 import TravelView from './components/travel/TravelView.jsx'
 import DomesticTravelView from './components/travel/DomesticTravelView.jsx'
 import TravelItineraryView from './components/travel/TravelItineraryView.jsx'
+import TravelAlbumView from './components/travel/TravelAlbumView.jsx'
 import SummerClockView from './components/SummerClockView.jsx'
 import PomodoroView from './components/PomodoroView.jsx'
 import StudyTimerView from './components/StudyTimerView.jsx'
@@ -253,10 +255,11 @@ function AppContent() {
     setEditingRecord(null)
   }
 
-  // currentView가 변경될 때마다 localStorage에 저장
+  // currentView가 변경될 때마다 localStorage에 저장하고 사용 메뉴를 기록
   useEffect(() => {
     if (user && !loading && currentView) {
       localStorage.setItem('lastView', currentView)
+      recordUserActivity(currentView)
     }
   }, [currentView, user, loading])
 
@@ -472,6 +475,7 @@ function AppContent() {
         {currentView === 'travel' && <TravelView />}
         {currentView === 'domestic-travel' && <DomesticTravelView />}
         {currentView === 'travel-itinerary' && <TravelItineraryView />}
+        {currentView === 'travel-album' && <TravelAlbumView />}
         {currentView === 'five-year-questions' && <FiveYearQuestionView />}
         {currentView === 'food-calorie' && <FoodCalorieCalculator />}
         {currentView === 'weight-tracking' && <WeightTrackingView />}

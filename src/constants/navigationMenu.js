@@ -57,6 +57,7 @@ const LIFE_MENU_ITEMS = [
       { id: 'travel', label: '세계 여행 기록', icon: '🌍' },
       { id: 'domestic-travel', label: '국내 여행 기록', icon: '🗺️' },
       { id: 'travel-itinerary', label: '여행 일정', icon: '🧳' },
+      { id: 'travel-album', label: '여행 앨범', icon: '📸' },
     ],
   },
   {

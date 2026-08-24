@@ -475,3 +475,29 @@ export const ledgerNetWorthSnapshots = pgTable('ledger_net_worth_snapshots', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+/**
+ * user_activity — 최근 접속·사용 메뉴
+ */
+export const userActivity = pgTable('user_activity', {
+  userId: uuid('user_id').primaryKey(),
+  lastSeenAt: timestamp('last_seen_at').defaultNow().notNull(),
+  lastView: text('last_view').default('').notNull(),
+  usedViews: text('used_views').array().default([]).notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * travel_albums — 여행 폴라로이드 앨범
+ */
+export const travelAlbums = pgTable('travel_albums', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  title: text('title').notNull(),
+  countryCode: text('country_code'),
+  tripId: uuid('trip_id'),
+  startDate: text('start_date'),
+  endDate: text('end_date'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+

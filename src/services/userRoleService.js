@@ -48,7 +48,7 @@ export async function setUserRole(targetUserId, role) {
 /**
  * 전체 유저 목록 + role 조회 (관리자 전용)
  * auth.users 기준 전체 유저 조회 후 user_roles 와 join
- * @returns {Promise<Array<{userId: string, email: string, role: string, createdAt: string|null}>>}
+ * @returns {Promise<Array<{userId: string, email: string, role: string, createdAt: string|null, lastSignInAt: string|null}>>}
  */
 export async function getAllUsersWithRoles() {
   const currentUserId = await getCurrentUserId()
@@ -61,6 +61,7 @@ export async function getAllUsersWithRoles() {
   let userIdList = []
   const emailMap = new Map()
   const createdAtMap = new Map()
+  const lastSignInAtMap = new Map()
   try {
     const { data: allUsers, error: allUsersError } = await supabase.rpc('get_all_users_for_admin')
     if (!allUsersError && Array.isArray(allUsers)) {
@@ -70,6 +71,9 @@ export async function getAllUsersWithRoles() {
         emailMap.set(userData.user_id, userData.email || userData.user_id)
         if (userData.created_at) {
           createdAtMap.set(userData.user_id, userData.created_at)
+        }
+        if (userData.last_sign_in_at) {
+          lastSignInAtMap.set(userData.user_id, userData.last_sign_in_at)
         }
       })
     }
@@ -130,6 +134,7 @@ export async function getAllUsersWithRoles() {
       email: emailMap.get(uid) || uid,
       role: roleMap.get(uid) || 'regular',
       createdAt: createdAtMap.get(uid) || null,
+      lastSignInAt: lastSignInAtMap.get(uid) || null,
     }))
     .sort((a, b) => {
       const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0

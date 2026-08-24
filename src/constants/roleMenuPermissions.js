@@ -135,6 +135,7 @@ export const ROLE_MENU_CONFIG_GROUPS = [
       'travel',
       'domestic-travel',
       'travel-itinerary',
+      'travel-album',
       'review-menu',
       'review',
       'review-2026',

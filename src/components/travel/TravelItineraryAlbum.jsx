@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { TRAVEL_ALBUM_MAX_PHOTOS } from '../../constants/travelConstants.js'
 import {
-  TRAVEL_ALBUM_MAX_PHOTOS,
   createAbroadAlbumPhotosBatch,
   deleteAbroadAlbumPhoto,
   getAbroadAlbumPhotos,
+  recompressAbroadAlbumPhotos,
   updateAbroadAlbumPhoto,
 } from '../../services/travelItineraryService.js'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
@@ -25,38 +26,82 @@ function getPolaroidRotation(id, index) {
 
 /**
  * 여행 폴라로이드 앨범
- * @param {{ tripId: string, tripTitle?: string }} props
+ * @param {{ albumId: string, tripId?: string|null, albumTitle?: string, periodLabel?: string, initialPhotos?: Array }} props
  */
-export default function TravelItineraryAlbum({ tripId, tripTitle = '' }) {
-  const [photos, setPhotos] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+export default function TravelItineraryAlbum({
+  albumId,
+  tripId = null,
+  albumTitle = '',
+  periodLabel = '',
+  initialPhotos,
+}) {
+  const [photos, setPhotos] = useState(() => initialPhotos || [])
+  const [isLoading, setIsLoading] = useState(!initialPhotos)
   const [isUploading, setIsUploading] = useState(false)
+  const [isCompressing, setIsCompressing] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(null)
+  const [compressProgress, setCompressProgress] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [editingCaption, setEditingCaption] = useState('')
   const [savingId, setSavingId] = useState(null)
   const fileInputRef = useRef(null)
+  const previewUrlsRef = useRef([])
 
   const remaining = TRAVEL_ALBUM_MAX_PHOTOS - photos.length
   const albumLabel = useMemo(() => {
-    const base = (tripTitle || '').trim()
+    const base = (albumTitle || '').trim()
     return base ? `${base} dump` : 'travel dump'
-  }, [tripTitle])
+  }, [albumTitle])
+
+  const revokePreviewUrls = () => {
+    previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url))
+    previewUrlsRef.current = []
+  }
 
   const loadPhotos = useCallback(async () => {
-    setIsLoading(true)
+    if (!initialPhotos) setIsLoading(true)
     try {
-      const data = await getAbroadAlbumPhotos(tripId)
+      const data = await getAbroadAlbumPhotos(albumId)
       setPhotos(data)
+      return data
     } catch (error) {
       showToast(error?.message || '앨범을 불러오지 못했습니다.', TOAST_TYPES.ERROR)
+      return []
     } finally {
       setIsLoading(false)
     }
-  }, [tripId])
+  }, [albumId, initialPhotos])
 
   useEffect(() => {
-    loadPhotos()
-  }, [loadPhotos])
+    let cancelled = false
+    const init = async () => {
+      const data = await loadPhotos()
+      if (cancelled) return
+      const needsCompress = (data || []).some((photo) => !photo.isCompressed && photo.imageUrl)
+      if (!needsCompress) return
+      setIsCompressing(true)
+      try {
+        const changed = await recompressAbroadAlbumPhotos(albumId, setCompressProgress)
+        if (cancelled || changed.length === 0) return
+        setPhotos((prev) =>
+          prev.map((photo) => changed.find((item) => item.id === photo.id) || photo),
+        )
+        showToast(`기존 사진 ${changed.length}장 용량을 줄였습니다.`, TOAST_TYPES.SUCCESS)
+      } catch (error) {
+        if (!cancelled) console.warn('기존 사진 압축 실패:', error)
+      } finally {
+        if (!cancelled) {
+          setIsCompressing(false)
+          setCompressProgress(null)
+        }
+      }
+    }
+    init()
+    return () => {
+      cancelled = true
+      revokePreviewUrls()
+    }
+  }, [loadPhotos, albumId])
 
   const handleUploadFiles = async (fileList) => {
     const files = Array.from(fileList || []).filter((file) => file.type.startsWith('image/'))
@@ -69,31 +114,53 @@ export default function TravelItineraryAlbum({ tripId, tripTitle = '' }) {
       return
     }
 
+    const filesToUpload = files.slice(0, remaining)
+    const extraSkipped = files.length - filesToUpload.length
+    const previewItems = filesToUpload.map((file, index) => {
+      const imageUrl = URL.createObjectURL(file)
+      previewUrlsRef.current.push(imageUrl)
+      return {
+        id: `local-${Date.now()}-${index}`,
+        imageUrl,
+        caption: '',
+        isLocal: true,
+      }
+    })
+
     setIsUploading(true)
+    setUploadProgress({ phase: 'compress', completed: 0, total: filesToUpload.length })
+    setPhotos((prev) => [...prev, ...previewItems])
     try {
       const { created, skipped } = await createAbroadAlbumPhotosBatch({
+        albumId,
         tripId,
-        imageFiles: files,
+        imageFiles: filesToUpload,
+        onProgress: setUploadProgress,
       })
-      setPhotos((prev) => [...prev, ...created])
-      if (skipped > 0) {
+      revokePreviewUrls()
+      setPhotos((prev) => [...prev.filter((row) => !row.isLocal), ...created])
+      const skippedCount = skipped + extraSkipped
+      if (skippedCount > 0) {
         showToast(
-          `${created.length}장 추가 · ${skipped}장은 한도(${TRAVEL_ALBUM_MAX_PHOTOS}장)로 제외`,
+          `${created.length}장 추가 · ${skippedCount}장은 한도(${TRAVEL_ALBUM_MAX_PHOTOS}장)로 제외`,
           TOAST_TYPES.INFO,
         )
       } else {
         showToast(`${created.length}장을 앨범에 추가했습니다.`, TOAST_TYPES.SUCCESS)
       }
     } catch (error) {
+      revokePreviewUrls()
+      setPhotos((prev) => prev.filter((row) => !row.isLocal))
       showToast(error?.message || '사진 업로드에 실패했습니다.', TOAST_TYPES.ERROR)
     } finally {
       setIsUploading(false)
+      setUploadProgress(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
   const handlePaste = (event) => {
-    if (remaining <= 0 || isUploading) return
+    if (remaining <= 0 || isUploading || isCompressing) return
     const files = Array.from(event.clipboardData?.files || []).filter((file) =>
       file.type.startsWith('image/'),
     )
@@ -103,6 +170,7 @@ export default function TravelItineraryAlbum({ tripId, tripTitle = '' }) {
   }
 
   const startEditCaption = (photo) => {
+    if (photo.isLocal) return
     setEditingId(photo.id)
     setEditingCaption(photo.caption || '')
   }
@@ -124,6 +192,7 @@ export default function TravelItineraryAlbum({ tripId, tripTitle = '' }) {
   }
 
   const handleDelete = async (photo) => {
+    if (photo.isLocal) return
     if (!window.confirm('이 사진을 앨범에서 삭제할까요?')) return
     try {
       await deleteAbroadAlbumPhoto(photo.id)
@@ -138,6 +207,15 @@ export default function TravelItineraryAlbum({ tripId, tripTitle = '' }) {
     }
   }
 
+  const uploadButtonLabel = (() => {
+    if (!isUploading) {
+      return remaining > 0 ? `사진 추가 (${remaining})` : '가득 참'
+    }
+    if (!uploadProgress) return '업로드 중…'
+    const phaseLabel = uploadProgress.phase === 'compress' ? '압축' : '업로드'
+    return `${phaseLabel} ${uploadProgress.completed}/${uploadProgress.total}`
+  })()
+
   return (
     <div onPaste={handlePaste}>
       <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
@@ -148,6 +226,14 @@ export default function TravelItineraryAlbum({ tripId, tripTitle = '' }) {
             <span className="ml-2 text-gray-400">
               {photos.length}/{TRAVEL_ALBUM_MAX_PHOTOS}
             </span>
+            {isCompressing && (
+              <span className="ml-2 text-rose-500">
+                기존 사진 압축 중
+                {compressProgress
+                  ? ` ${compressProgress.completed}/${compressProgress.total}`
+                  : ''}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -162,10 +248,10 @@ export default function TravelItineraryAlbum({ tripId, tripTitle = '' }) {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading || remaining <= 0}
+            disabled={isUploading || isCompressing || remaining <= 0}
             className="px-3 py-2 rounded-lg bg-rose-500 text-white text-sm font-semibold hover:bg-rose-600 disabled:opacity-50"
           >
-            {isUploading ? '업로드 중…' : remaining > 0 ? `사진 추가 (${remaining})` : '가득 참'}
+            {uploadButtonLabel}
           </button>
         </div>
       </div>
@@ -180,7 +266,6 @@ export default function TravelItineraryAlbum({ tripId, tripTitle = '' }) {
               'radial-gradient(circle at 20% 10%, #fff8f0 0%, transparent 40%), radial-gradient(circle at 80% 90%, #f3f7ef 0%, transparent 45%), linear-gradient(180deg, #faf7f2 0%, #f4f1ea 55%, #eef2ea 100%)',
           }}
         >
-          {/* 스크랩북 장식 */}
           <div className="pointer-events-none absolute inset-x-6 top-4 flex justify-between text-stone-300 text-lg">
             <span>✦</span>
             <span>☆</span>
@@ -200,6 +285,9 @@ export default function TravelItineraryAlbum({ tripId, tripTitle = '' }) {
             >
               {albumLabel}
             </h3>
+            {periodLabel ? (
+              <p className="mt-1 text-sm font-semibold text-stone-600">{periodLabel}</p>
+            ) : null}
             <p className="mt-1 text-xs text-stone-500">이미지 붙여넣기(Ctrl+V)도 가능해요</p>
           </div>
 
@@ -229,12 +317,21 @@ export default function TravelItineraryAlbum({ tripId, tripTitle = '' }) {
                     }}
                   >
                     <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-10 h-3 bg-white/70 border border-stone-200/80 shadow-sm rotate-[-2deg]" />
-                    <div className="aspect-square overflow-hidden bg-stone-100">
+                    <div className="relative aspect-square overflow-hidden bg-stone-100">
                       <img
                         src={photo.imageUrl}
                         alt={photo.caption || `앨범 사진 ${index + 1}`}
                         className="w-full h-full object-cover"
+                        width={170}
+                        height={170}
+                        loading={index < 4 ? 'eager' : 'lazy'}
+                        decoding="async"
                       />
+                      {photo.isLocal && (
+                        <div className="absolute inset-0 bg-white/50 flex items-center justify-center text-[10px] text-stone-600">
+                          준비 중
+                        </div>
+                      )}
                     </div>
                     <div className="mt-2 min-h-[42px]">
                       {isEditing ? (
@@ -260,6 +357,7 @@ export default function TravelItineraryAlbum({ tripId, tripTitle = '' }) {
                         <button
                           type="button"
                           onClick={() => startEditCaption(photo)}
+                          disabled={photo.isLocal}
                           className="w-full text-left text-xs sm:text-sm font-handwriting text-stone-700 leading-snug min-h-[1.5rem]"
                           title="클릭해서 한줄 수정"
                         >
@@ -269,33 +367,35 @@ export default function TravelItineraryAlbum({ tripId, tripTitle = '' }) {
                         </button>
                       )}
                     </div>
-                    <div className="mt-1 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
-                      {isEditing ? (
+                    {!photo.isLocal && (
+                      <div className="mt-1 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+                        {isEditing ? (
+                          <button
+                            type="button"
+                            onClick={() => saveCaption(photo.id)}
+                            disabled={savingId === photo.id}
+                            className="text-[10px] px-1.5 py-0.5 rounded bg-rose-50 text-rose-700"
+                          >
+                            저장
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => startEditCaption(photo)}
+                            className="text-[10px] px-1.5 py-0.5 rounded bg-stone-50 text-stone-600"
+                          >
+                            한줄
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={() => saveCaption(photo.id)}
-                          disabled={savingId === photo.id}
-                          className="text-[10px] px-1.5 py-0.5 rounded bg-rose-50 text-rose-700"
+                          onClick={() => handleDelete(photo)}
+                          className="text-[10px] px-1.5 py-0.5 rounded bg-red-50 text-red-600"
                         >
-                          저장
+                          삭제
                         </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => startEditCaption(photo)}
-                          className="text-[10px] px-1.5 py-0.5 rounded bg-stone-50 text-stone-600"
-                        >
-                          한줄
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(photo)}
-                        className="text-[10px] px-1.5 py-0.5 rounded bg-red-50 text-red-600"
-                      >
-                        삭제
-                      </button>
-                    </div>
+                      </div>
+                    )}
                   </article>
                 )
               })}

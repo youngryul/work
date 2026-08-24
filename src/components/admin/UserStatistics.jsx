@@ -1,18 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { buildMenuLabelMap, USER_ROLE_LABELS } from '../../constants/roleMenuPermissions.js'
 import { getUserStatistics } from '../../services/adminStatisticsService.js'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
-
-const ROLE_LABELS = {
-  admin: '관리자',
-  superuser: '슈퍼유저',
-  regular: '일반',
-}
 
 /**
  * @param {string|null} iso
  * @returns {string}
  */
-function formatSignupDate(iso) {
+function formatDateTime(iso) {
   if (!iso) return '-'
   try {
     return new Date(iso).toLocaleString('ko-KR', {
@@ -28,11 +23,12 @@ function formatSignupDate(iso) {
 }
 
 /**
- * 사용자 통계 컴포넌트
+ * 사용자 통계 (최근 접속·사용 메뉴 목록)
  */
 export default function UserStatistics() {
   const [statistics, setStatistics] = useState(null)
   const [loading, setLoading] = useState(true)
+  const menuLabels = buildMenuLabelMap()
 
   useEffect(() => {
     loadStatistics()
@@ -50,6 +46,11 @@ export default function UserStatistics() {
       setLoading(false)
     }
   }
+
+  /**
+   * @param {string} viewId
+   */
+  const getMenuLabel = (viewId) => menuLabels[viewId] || viewId
 
   if (loading) {
     return (
@@ -81,7 +82,7 @@ export default function UserStatistics() {
           <h3 className="text-xl font-bold text-gray-800 font-sans">
             전체 사용자
             <span className="ml-2 text-sm font-normal text-gray-500">
-              ({users.length}명 · 가입일 최신순)
+              ({users.length}명 · 최근 접속순)
             </span>
           </h3>
           <button
@@ -103,37 +104,71 @@ export default function UserStatistics() {
                   <th className="px-4 py-3 font-semibold w-14">#</th>
                   <th className="px-4 py-3 font-semibold">이메일</th>
                   <th className="px-4 py-3 font-semibold">권한</th>
+                  <th className="px-4 py-3 font-semibold whitespace-nowrap">최근 접속</th>
+                  <th className="px-4 py-3 font-semibold">사용한 메뉴</th>
                   <th className="px-4 py-3 font-semibold whitespace-nowrap">회원가입일</th>
                 </tr>
               </thead>
               <tbody>
-                {users.map((user, index) => (
-                  <tr
-                    key={user.userId}
-                    className="border-t border-gray-100 hover:bg-gray-50"
-                  >
-                    <td className="px-4 py-3 text-gray-500">{index + 1}</td>
-                    <td className="px-4 py-3 text-gray-900 font-medium break-all">
-                      {user.email}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                          user.role === 'admin'
-                            ? 'bg-purple-100 text-purple-700'
-                            : user.role === 'superuser'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {ROLE_LABELS[user.role] || user.role}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                      {formatSignupDate(user.createdAt)}
-                    </td>
-                  </tr>
-                ))}
+                {users.map((user, index) => {
+                  const lastAccessAt = user.lastSeenAt || user.lastSignInAt
+                  const usedViews = user.usedViews?.length
+                    ? user.usedViews
+                    : user.lastView
+                      ? [user.lastView]
+                      : []
+                  return (
+                    <tr
+                      key={user.userId}
+                      className="border-t border-gray-100 hover:bg-gray-50 align-top"
+                    >
+                      <td className="px-4 py-3 text-gray-500">{index + 1}</td>
+                      <td className="px-4 py-3 text-gray-900 font-medium break-all">
+                        {user.email}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                            user.role === 'admin'
+                              ? 'bg-purple-100 text-purple-700'
+                              : user.role === 'superuser'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-gray-100 text-gray-700'
+                          }`}
+                        >
+                          {USER_ROLE_LABELS[user.role] || user.role}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                        <div>{formatDateTime(lastAccessAt)}</div>
+                        {user.lastView ? (
+                          <div className="text-xs text-gray-400 mt-0.5">
+                            {getMenuLabel(user.lastView)}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3">
+                        {usedViews.length === 0 ? (
+                          <span className="text-gray-400">-</span>
+                        ) : (
+                          <div className="flex flex-wrap gap-1 max-w-md">
+                            {usedViews.map((viewId) => (
+                              <span
+                                key={viewId}
+                                className="inline-block rounded-full bg-sky-50 text-sky-800 px-2 py-0.5 text-xs"
+                              >
+                                {getMenuLabel(viewId)}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                        {formatDateTime(user.createdAt)}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

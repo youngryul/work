@@ -36,5 +36,5 @@ DROP POLICY IF EXISTS "travel_abroad_album_photos_delete_own" ON travel_abroad_a
 CREATE POLICY "travel_abroad_album_photos_delete_own" ON travel_abroad_album_photos
   FOR DELETE USING (auth.uid() = user_id);
 
-COMMENT ON TABLE travel_abroad_album_photos IS '여행 폴라로이드 앨범 사진 (여행당 최대 10장)';
+COMMENT ON TABLE travel_abroad_album_photos IS '여행 폴라로이드 앨범 사진 (앨범당 최대 12장)';
 COMMENT ON COLUMN travel_abroad_album_photos.caption IS '폴라로이드 하단 한줄 캡션';

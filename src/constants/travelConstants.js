@@ -143,3 +143,36 @@ export const COMMON_TRAVEL_PURPOSE_TAGS = [
   '산',
   '도시 탐방',
 ]
+
+/** 여행 폴라로이드 앨범 최대 장수 */
+export const TRAVEL_ALBUM_MAX_PHOTOS = 12
+
+/** 앨범 업로드 전 리사이즈 긴 변 (px) */
+export const TRAVEL_ALBUM_MAX_EDGE_PX = 1600
+
+/** 앨범 JPEG 품질 (0~1) */
+export const TRAVEL_ALBUM_JPEG_QUALITY = 0.82
+
+/** 앨범 업로드 동시 요청 수 */
+export const TRAVEL_ALBUM_UPLOAD_CONCURRENCY = 3
+
+/**
+ * 여행 기간 표시 (YYYY.MM.DD – YYYY.MM.DD)
+ * @param {string|null} startDate
+ * @param {string|null} endDate
+ * @returns {string}
+ */
+export function formatTravelPeriod(startDate, endDate) {
+  const format = (value) => {
+    if (!value) return ''
+    const key = String(value).slice(0, 10)
+    const [year, month, day] = key.split('-')
+    if (!year || !month || !day) return key
+    return `${year}.${month}.${day}`
+  }
+  const start = format(startDate)
+  const end = format(endDate)
+  if (start && end) return `${start} – ${end}`
+  return start || end
+}
+
