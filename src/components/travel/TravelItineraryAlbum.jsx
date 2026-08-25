@@ -175,11 +175,16 @@ export default function TravelItineraryAlbum({
     setEditingCaption(photo.caption || '')
   }
 
-  const saveCaption = async (photoId) => {
+  /**
+   * 한줄 메모 저장
+   * @param {string} photoId
+   * @param {string} [caption] 조합 중인 한글까지 포함한 입력창의 현재 값
+   */
+  const saveCaption = async (photoId, caption = editingCaption) => {
     if (savingId) return
     setSavingId(photoId)
     try {
-      const updated = await updateAbroadAlbumPhoto(photoId, { caption: editingCaption })
+      const updated = await updateAbroadAlbumPhoto(photoId, { caption })
       setPhotos((prev) => prev.map((row) => (row.id === photoId ? updated : row)))
       setEditingId(null)
       setEditingCaption('')
@@ -343,10 +348,11 @@ export default function TravelItineraryAlbum({
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               e.preventDefault()
-                              saveCaption(photo.id)
+                              saveCaption(photo.id, e.currentTarget.value)
                             }
                             if (e.key === 'Escape') {
                               setEditingId(null)
+                              setEditingCaption('')
                             }
                           }}
                           className="w-full px-1 py-0.5 border border-rose-200 rounded text-xs font-handwriting focus:outline-none focus:ring-1 focus:ring-rose-300"
