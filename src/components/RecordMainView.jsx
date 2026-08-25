@@ -7,11 +7,14 @@ import ProjectList from './ProjectList.jsx'
 import { 
   getAllRecords, 
   deleteRecord, 
-  getProjectCounts,
+  getProjectCountsByArchiveState,
+  archiveProject,
+  unarchiveProject,
   getMainRecordByProject,
   setMainRecord,
   unsetMainRecord
 } from '../services/recordService.js'
+import { PROJECT_ARCHIVE_LABELS } from '../constants/projectArchive.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
@@ -20,7 +23,10 @@ import { showToast, TOAST_TYPES } from './Toast.jsx'
  * @param {Function} onEditRecord - 기록 수정 핸들러
  */
 export default function RecordMainView({ onNewRecord, onEditRecord }) {
-  const [projects, setProjects] = useState([]) // [{ projectName, count }]
+  const [activeProjects, setActiveProjects] = useState([]) // [{ projectName, count }]
+  const [archivedProjects, setArchivedProjects] = useState([]) // 보관한 프로젝트
+  const [isArchiveView, setIsArchiveView] = useState(false)
+  const [isProjectsLoading, setIsProjectsLoading] = useState(true)
   const [selectedProject, setSelectedProject] = useState(null)
   const [mainRecord, setMainRecordState] = useState(null)
   const [records, setRecords] = useState([])
@@ -34,17 +40,21 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
   })
   const [loading, setLoading] = useState(false)
 
-  // 프로젝트 목록 및 개수 로드
+  /**
+   * 프로젝트 목록(일반·보관) 및 개수 로드
+   * @returns {Promise<{ activeProjects: Array, archivedProjects: Array }>}
+   */
   const loadProjects = async () => {
     try {
-      const projectData = await getProjectCounts()
-      setProjects(projectData)
-      // 첫 번째 프로젝트를 기본 선택
-      if (projectData.length > 0 && !selectedProject) {
-        setSelectedProject(projectData[0].projectName)
-      }
+      const result = await getProjectCountsByArchiveState()
+      setActiveProjects(result.activeProjects)
+      setArchivedProjects(result.archivedProjects)
+      return result
     } catch (error) {
       console.error('프로젝트 목록 로드 실패:', error)
+      return { activeProjects: [], archivedProjects: [] }
+    } finally {
+      setIsProjectsLoading(false)
     }
   }
 
@@ -71,9 +81,14 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
     }
   }
 
-  // 프로젝트 목록 초기 로드
+  // 프로젝트 목록 초기 로드 (첫 번째 프로젝트를 기본 선택)
   useEffect(() => {
-    loadProjects()
+    const init = async () => {
+      const { activeProjects: initialProjects } = await loadProjects()
+      setSelectedProject((current) => current ?? initialProjects[0]?.projectName ?? null)
+    }
+    init()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // 저장 완료 후 프로젝트 목록 다시 로드
@@ -168,6 +183,46 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
     setSelectedProject(projectName)
   }
 
+  // 프로젝트 보관 (프로젝트 목록에서 숨기고 보관함으로 이동)
+  const handleArchiveProject = async (projectName) => {
+    try {
+      await archiveProject(projectName)
+      const { activeProjects: nextProjects } = await loadProjects()
+      if (selectedProject === projectName) {
+        setSelectedProject(nextProjects[0]?.projectName ?? null)
+      }
+      showToast(`「${projectName}」을(를) 보관함으로 옮겼습니다.`, TOAST_TYPES.SUCCESS)
+    } catch (error) {
+      console.error('프로젝트 보관 실패:', error)
+      showToast(error?.message || '프로젝트 보관에 실패했습니다.', TOAST_TYPES.ERROR)
+    }
+  }
+
+  // 프로젝트 보관 해제 (보관함에서 프로젝트 목록으로 복원)
+  const handleUnarchiveProject = async (projectName) => {
+    try {
+      await unarchiveProject(projectName)
+      const { archivedProjects: nextArchived } = await loadProjects()
+      if (selectedProject === projectName) {
+        setSelectedProject(nextArchived[0]?.projectName ?? null)
+      }
+      showToast(`「${projectName}」을(를) 프로젝트 목록으로 복원했습니다.`, TOAST_TYPES.SUCCESS)
+    } catch (error) {
+      console.error('프로젝트 보관 해제 실패:', error)
+      showToast(error?.message || '프로젝트 복원에 실패했습니다.', TOAST_TYPES.ERROR)
+    }
+  }
+
+  // 보관함 ↔ 프로젝트 목록 전환 (전환한 목록의 첫 프로젝트를 선택)
+  const handleToggleArchiveView = () => {
+    const nextIsArchiveView = !isArchiveView
+    const nextProjects = nextIsArchiveView ? archivedProjects : activeProjects
+    setIsArchiveView(nextIsArchiveView)
+    setSelectedProject(nextProjects[0]?.projectName ?? null)
+  }
+
+  const visibleProjects = isArchiveView ? archivedProjects : activeProjects
+
   // Supabase 데이터를 애플리케이션 형식으로 변환
   function parseRecordData(data) {
     return {
@@ -200,14 +255,32 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
         {/* 좌측: 프로젝트 목록 */}
         <div className="lg:col-span-1">
           <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-green-200 p-4 h-[calc(100vh-200px)] overflow-y-auto">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4 font-sans">프로젝트</h2>
-            {loading ? (
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <h2 className="text-xl font-semibold text-gray-700 font-sans">
+                {isArchiveView
+                  ? PROJECT_ARCHIVE_LABELS.archiveView
+                  : PROJECT_ARCHIVE_LABELS.activeView}
+              </h2>
+              <button
+                type="button"
+                onClick={handleToggleArchiveView}
+                className="shrink-0 px-3 py-1 text-sm rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors font-sans"
+              >
+                {isArchiveView
+                  ? `← ${PROJECT_ARCHIVE_LABELS.activeView}`
+                  : `📦 ${PROJECT_ARCHIVE_LABELS.archiveView} ${archivedProjects.length}`}
+              </button>
+            </div>
+            {isProjectsLoading ? (
               <div className="text-center py-8 text-gray-500 text-base font-sans">로딩 중...</div>
             ) : (
               <ProjectList
-                projects={projects}
+                projects={visibleProjects}
                 selectedProject={selectedProject}
                 onSelect={handleProjectSelect}
+                onArchive={handleArchiveProject}
+                onUnarchive={handleUnarchiveProject}
+                isArchiveView={isArchiveView}
               />
             )}
           </div>

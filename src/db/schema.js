@@ -487,6 +487,21 @@ export const userActivity = pgTable('user_activity', {
 })
 
 /**
+ * archived_projects — 프로젝트 기록에서 보관한 프로젝트명
+ */
+export const archivedProjects = pgTable(
+  'archived_projects',
+  {
+    userId: uuid('user_id').notNull(),
+    projectName: text('project_name').notNull(),
+    archivedAt: timestamp('archived_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.projectName] }),
+  }),
+)
+
+/**
  * travel_albums — 여행 폴라로이드 앨범
  */
 export const travelAlbums = pgTable('travel_albums', {

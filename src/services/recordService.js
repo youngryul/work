@@ -1,5 +1,9 @@
 import { supabase } from '../config/supabase.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
+import {
+  ARCHIVED_PROJECTS_TABLE,
+  PROJECT_ARCHIVE_TABLE_MISSING_MESSAGE,
+} from '../constants/projectArchive.js'
 
 /**
  * 프로젝트 기록 서비스
@@ -116,6 +120,117 @@ export async function getProjectCounts() {
   return Object.entries(counts)
     .map(([projectName, count]) => ({ projectName, count }))
     .sort((a, b) => a.projectName.localeCompare(b.projectName))
+}
+
+/**
+ * archived_projects 테이블 미생성 여부 판별
+ * @param {Object} error - Supabase 에러
+ * @returns {boolean}
+ */
+function isArchiveTableMissing(error) {
+  if (!error) return false
+  if (error.code === '42P01' || error.code === 'PGRST205') return true
+  return /could not find the table|does not exist/i.test(error.message || '')
+}
+
+/**
+ * 보관한 프로젝트명 목록 조회
+ * @returns {Promise<string[]>} 보관한 프로젝트명 목록
+ */
+export async function getArchivedProjectNames() {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from(ARCHIVED_PROJECTS_TABLE)
+    .select('project_name')
+    .eq('user_id', userId)
+
+  if (error) {
+    // 테이블 미생성 시에도 기록 화면은 정상 동작해야 함
+    console.error('보관 프로젝트 조회 오류:', error)
+    return []
+  }
+
+  return (data || []).map((row) => row.project_name)
+}
+
+/**
+ * 프로젝트 목록을 일반·보관으로 나눠 조회
+ * @returns {Promise<{ activeProjects: Array, archivedProjects: Array }>} 일반·보관 프로젝트 목록
+ */
+export async function getProjectCountsByArchiveState() {
+  const [projects, archivedNames] = await Promise.all([
+    getProjectCounts(),
+    getArchivedProjectNames(),
+  ])
+
+  const archivedNameSet = new Set(archivedNames)
+
+  return {
+    activeProjects: projects.filter((project) => !archivedNameSet.has(project.projectName)),
+    archivedProjects: projects.filter((project) => archivedNameSet.has(project.projectName)),
+  }
+}
+
+/**
+ * 프로젝트 보관
+ * @param {string} projectName - 프로젝트명
+ * @returns {Promise<void>}
+ */
+export async function archiveProject(projectName) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+  if (!projectName) {
+    throw new Error('프로젝트명이 필요합니다.')
+  }
+
+  const { error } = await supabase
+    .from(ARCHIVED_PROJECTS_TABLE)
+    .upsert({ user_id: userId, project_name: projectName }, { onConflict: 'user_id,project_name' })
+
+  if (error) {
+    console.error('프로젝트 보관 오류:', error)
+    throw new Error(
+      isArchiveTableMissing(error)
+        ? PROJECT_ARCHIVE_TABLE_MISSING_MESSAGE
+        : error.message || '프로젝트 보관에 실패했습니다.',
+    )
+  }
+}
+
+/**
+ * 프로젝트 보관 해제
+ * @param {string} projectName - 프로젝트명
+ * @returns {Promise<void>}
+ */
+export async function unarchiveProject(projectName) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+  if (!projectName) {
+    throw new Error('프로젝트명이 필요합니다.')
+  }
+
+  const { error } = await supabase
+    .from(ARCHIVED_PROJECTS_TABLE)
+    .delete()
+    .eq('user_id', userId)
+    .eq('project_name', projectName)
+
+  if (error) {
+    console.error('프로젝트 보관 해제 오류:', error)
+    throw new Error(
+      isArchiveTableMissing(error)
+        ? PROJECT_ARCHIVE_TABLE_MISSING_MESSAGE
+        : error.message || '프로젝트 보관 해제에 실패했습니다.',
+    )
+  }
 }
 
 /**
