@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react'
-import { getCountryName } from '../../constants/countries.js'
-import { getAbroadCountryOptions } from '../../constants/travelAbroad.js'
+import {
+  DEFAULT_TRAVEL_ALBUM_COUNTRY_CODE,
+  getCountryName,
+  getTravelAlbumCountryOptions,
+} from '../../constants/countries.js'
 import {
   createTravelAlbum,
   createTravelAlbumFromTrip,
@@ -22,12 +25,12 @@ export default function TravelAlbumCreateModal({
   onCancel,
   onCreated,
 }) {
-  const countries = useMemo(() => getAbroadCountryOptions(), [])
+  const countries = useMemo(() => getTravelAlbumCountryOptions(), [])
   const availableTrips = trips.filter((trip) => !linkedTripIds.has(trip.id))
   const [mode, setMode] = useState(availableTrips.length > 0 ? 'trip' : 'new')
   const [selectedTripId, setSelectedTripId] = useState(availableTrips[0]?.id || '')
   const [title, setTitle] = useState('')
-  const [countryCode, setCountryCode] = useState('JP')
+  const [countryCode, setCountryCode] = useState(DEFAULT_TRAVEL_ALBUM_COUNTRY_CODE)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [isSaving, setIsSaving] = useState(false)

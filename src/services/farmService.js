@@ -3,7 +3,11 @@
  */
 import { supabase } from '../config/supabase.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
-import { FARM_MAX_STAGE, FARM_MILK_EVENT_KEY } from '../constants/farm.js'
+import {
+  FARM_MAX_FEED_BATCH,
+  FARM_MAX_STAGE,
+  FARM_MILK_EVENT_KEY,
+} from '../constants/farm.js'
 import { notifyJellyUpdated } from '../utils/jellyEvents.js'
 
 /**
@@ -161,6 +165,115 @@ export async function processFarmXpEvent(eventKey, idempotencyKey = null) {
  */
 export async function feedMilk() {
   return processFarmXpEvent(FARM_MILK_EVENT_KEY)
+}
+
+/**
+ * @param {Object|null|undefined} data
+ * @returns {{
+ *   feedCount: number,
+ *   xpAwarded: number,
+ *   jellySpent: number,
+ *   jellyBalance: number | null,
+ *   leveledUp: boolean,
+ *   stage: number | null,
+ *   seedGranted: number,
+ * }}
+ */
+function normalizeFeedMaxResult(data) {
+  const rawBalance = data?.jellyBalance ?? data?.jelly_balance
+  return {
+    feedCount: Number(data?.feedCount ?? data?.feed_count) || 0,
+    xpAwarded: Number(data?.xpAwarded ?? data?.xp_awarded) || 0,
+    jellySpent: Number(data?.jellySpent ?? data?.jelly_spent) || 0,
+    jellyBalance: rawBalance == null || rawBalance === '' ? null : Number(rawBalance),
+    leveledUp: Boolean(data?.leveledUp ?? data?.leveled_up),
+    stage: data?.stage != null ? Number(data.stage) : null,
+    seedGranted: Number(data?.seedGranted ?? data?.seed_granted) || 0,
+  }
+}
+
+/**
+ * RPC 미반영 여부
+ * @param {{ code?: string, message?: string }} error
+ * @returns {boolean}
+ */
+function isMissingFarmFeedMaxRpc(error) {
+  return (
+    error?.code === 'PGRST202' ||
+    error?.code === '42883' ||
+    /404|not find|Could not find/i.test(error?.message || '')
+  )
+}
+
+/**
+ * 보유 젤리로 먹이를 최대 횟수만큼 먹인다.
+ * @param {number} maxCount
+ * @returns {Promise<ReturnType<typeof normalizeFeedMaxResult>>}
+ */
+export async function feedMilkMax(maxCount) {
+  const userId = await getCurrentUserId()
+  const limit = Math.min(Math.max(Number(maxCount) || 0, 0), FARM_MAX_FEED_BATCH)
+  if (!userId || limit < 1) {
+    return normalizeFeedMaxResult({ feedCount: 0 })
+  }
+
+  const { data, error } = await supabase.rpc('feed_farm_milk_max', {
+    p_max_count: limit,
+  })
+
+  if (!error) {
+    const result = normalizeFeedMaxResult(data)
+    if (result.jellySpent > 0) {
+      notifyJellyUpdated({
+        balance: result.jellyBalance,
+        awarded: -result.jellySpent,
+      })
+    }
+    return result
+  }
+
+  if (!isMissingFarmFeedMaxRpc(error)) {
+    console.error('최대 먹이기 오류:', error)
+    throw error
+  }
+
+  let feedCount = 0
+  let xpAwarded = 0
+  let jellySpent = 0
+  let seedGranted = 0
+  let leveledUp = false
+  let stage = null
+
+  for (let i = 0; i < limit; i += 1) {
+    try {
+      const result = await feedMilk()
+      const gainedXp = Number(result?.xpAwarded) || 0
+      const didLevelUp = Boolean(result?.leveledUp)
+      if (!result || (gainedXp <= 0 && !didLevelUp)) break
+
+      feedCount += 1
+      xpAwarded += gainedXp
+      jellySpent += Number(result?.jellySpent) || 0
+      seedGranted += Number(result?.seedGranted) || 0
+      if (didLevelUp) {
+        leveledUp = true
+        stage = result.stage != null ? Number(result.stage) : stage
+      }
+      if (didLevelUp && (Number(result.stage) || 0) >= FARM_MAX_STAGE) break
+    } catch (feedError) {
+      if (feedCount === 0) throw feedError
+      break
+    }
+  }
+
+  return normalizeFeedMaxResult({
+    feedCount,
+    xpAwarded,
+    jellySpent,
+    leveledUp,
+    stage,
+    seedGranted,
+  })
 }
 
 /**

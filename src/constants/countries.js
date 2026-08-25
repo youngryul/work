@@ -213,6 +213,21 @@ export function getAllCountries() {
   }))
 }
 
+/** 여행 앨범 국가 선택 기본값 */
+export const DEFAULT_TRAVEL_ALBUM_COUNTRY_CODE = 'KR'
+
+/**
+ * 여행 앨범 국가 선택 목록 (대한민국 포함, 기본 국가를 맨 앞)
+ * @returns {Array<{code: string, name: string}>}
+ */
+export function getTravelAlbumCountryOptions() {
+  return getAllCountries().sort((a, b) => {
+    if (a.code === DEFAULT_TRAVEL_ALBUM_COUNTRY_CODE) return -1
+    if (b.code === DEFAULT_TRAVEL_ALBUM_COUNTRY_CODE) return 1
+    return a.name.localeCompare(b.name, 'ko')
+  })
+}
+
 /**
  * 국가명으로 국가 검색
  * @param {string} query - 검색어

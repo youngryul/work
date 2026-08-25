@@ -27,6 +27,28 @@ export const FARM_FEED_JELLY_COST_STAGE_3_PLUS = 5
 /** 3단계부터 먹이 젤리 상향 */
 export const FARM_FEED_JELLY_STAGE_THRESHOLD = 3
 
+/** 한 번에 최대로 먹일 수 있는 횟수 상한 (요청·타임아웃 방지) */
+export const FARM_MAX_FEED_BATCH = 200
+
+/**
+ * 보유 젤리로 먹일 수 있는 최대 횟수
+ * @param {number | null | undefined} jellyBalance
+ * @param {number} feedJellyCost
+ * @param {number} [cap]
+ * @returns {number}
+ */
+export function getMaxFarmFeedCount(
+  jellyBalance,
+  feedJellyCost,
+  cap = FARM_MAX_FEED_BATCH,
+) {
+  const cost = Number(feedJellyCost) || 0
+  if (cost <= 0) return 0
+  const jelly = Math.max(0, Number(jellyBalance) || 0)
+  const safeCap = Math.max(0, Number(cap) || 0)
+  return Math.min(safeCap, Math.floor(jelly / cost))
+}
+
 /**
  * @param {number} stage
  * @param {Record<string, string>} [settings]

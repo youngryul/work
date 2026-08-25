@@ -14,9 +14,8 @@ import {
   FARM_STAGE_GROWTH_SEED_FROM_STAGE,
   getFarmDisplayImage,
   getFarmFeedJellyCost,
-
   getFarmStageLabel,
-
+  getMaxFarmFeedCount,
 } from '../../constants/farm.js'
 
 import { JELLY_EARNING_GUIDE } from '../../constants/jellyEarningGuide.js'
@@ -24,7 +23,7 @@ import { JELLY_EARNING_GUIDE } from '../../constants/jellyEarningGuide.js'
 import {
 
   feedMilk,
-
+  feedMilkMax,
   getFarmSettingsMap,
 
   getMilkFeedEvent,
@@ -141,6 +140,12 @@ export default function FarmView() {
 
   const feedEmoji = stage === 1 ? '🍼' : '🍱'
 
+  const feedNoun = stage === 1 ? '분유' : '음식'
+
+  const maxFeedCount = getMaxFarmFeedCount(jellyBalance, feedJellyCost)
+
+  const maxFeedJelly = maxFeedCount * feedJellyCost
+
   const stageGuideMessage =
     stage === 1
       ? '2단계로 가면 농장이 열려요.'
@@ -181,7 +186,7 @@ export default function FarmView() {
 
       } else if (result?.xpAwarded > 0) {
 
-        showToast(`${stage === 1 ? '분유' : '음식'}를 먹였어요! 성장 경험치 +${result.xpAwarded}`, TOAST_TYPES.SUCCESS)
+        showToast(`${feedNoun}를 먹였어요! 성장 경험치 +${result.xpAwarded}`, TOAST_TYPES.SUCCESS)
 
       }
 
@@ -190,6 +195,79 @@ export default function FarmView() {
     } catch (error) {
 
       showToast(error?.message || '분유 먹이기에 실패했어요.', TOAST_TYPES.ERROR)
+
+    } finally {
+
+      setIsFeeding(false)
+
+    }
+
+  }
+
+  const handleFeedMax = async () => {
+
+    if (!milkEvent || !canFeed || maxFeedCount < 1) return
+
+    if (maxFeedCount === 1) {
+
+      await handleFeedMilk()
+
+      return
+
+    }
+
+    if (
+      !window.confirm(
+        `보유 젤리로 ${feedNoun}를 최대 ${maxFeedCount}회 먹일까요? (젤리 ${maxFeedJelly}개)`,
+      )
+    ) {
+      return
+    }
+
+    setIsFeeding(true)
+
+    try {
+
+      const result = await feedMilkMax(maxFeedCount)
+
+      if (!result?.feedCount) {
+
+        showToast('먹일 수 있는 젤리가 부족해요.', TOAST_TYPES.ERROR)
+
+        return
+
+      }
+
+      if (result.leveledUp && result.stage) {
+        setLevelUpStage(result.stage)
+        setLevelUpSeedGranted((result.seedGranted ?? 0) > 0)
+        const seedMsg =
+          (result.seedGranted ?? 0) > 0
+            ? result.stage === 2
+              ? ` 씨앗 ${FARM_STAGE2_WELCOME_SEED_COUNT}개도 받았어요!`
+              : result.stage >= FARM_STAGE_GROWTH_SEED_FROM_STAGE
+                ? ` 씨앗 ${FARM_STAGE_GROWTH_SEED_COUNT}개도 받았어요!`
+                : ''
+            : ''
+        showToast(
+          `${result.stage}단계로 성장했어요! 🌾 ${feedNoun} ${result.feedCount}회 · 경험치 +${result.xpAwarded}${seedMsg}`,
+          TOAST_TYPES.SUCCESS,
+        )
+
+      } else {
+
+        showToast(
+          `${feedNoun}를 ${result.feedCount}회 먹였어요! 성장 경험치 +${result.xpAwarded}`,
+          TOAST_TYPES.SUCCESS,
+        )
+
+      }
+
+      await load()
+
+    } catch (error) {
+
+      showToast(error?.message || '최대 먹이기에 실패했어요.', TOAST_TYPES.ERROR)
 
     } finally {
 
@@ -363,11 +441,13 @@ export default function FarmView() {
 
           <p className="text-sm text-gray-600 mb-4">
 
-            젤리 {feedJellyCost}개를 사용해 {stage === 1 ? '분유' : '음식'}를 먹이면 성장 경험치 +{milkEvent.xpAmount}를
+            젤리 {feedJellyCost}개를 사용해 {feedNoun}를 먹이면 성장 경험치 +{milkEvent.xpAmount}를
 
             얻어요.
 
           </p>
+
+          <div className="space-y-2">
 
           <button
 
@@ -388,6 +468,32 @@ export default function FarmView() {
               : `${feedEmoji} ${feedTitle} (젤리 ${feedJellyCost} · XP +${milkEvent.xpAmount})`}
 
           </button>
+
+          {maxFeedCount > 1 && (
+
+            <button
+
+              type="button"
+
+              onClick={handleFeedMax}
+
+              disabled={isFeeding}
+
+              className="w-full py-3 rounded-xl border-2 border-pink-300 bg-pink-50 text-pink-700 font-bold shadow-sm hover:bg-pink-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
+
+            >
+
+              {isFeeding
+
+                ? '먹이는 중…'
+
+                : `${feedEmoji} 최대로 먹이기 (${maxFeedCount}회 · 젤리 ${maxFeedJelly} · XP +${maxFeedCount * milkEvent.xpAmount})`}
+
+            </button>
+
+          )}
+
+          </div>
 
           <p className="mt-2 text-xs text-center text-gray-500">
 
