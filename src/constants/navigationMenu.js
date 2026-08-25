@@ -28,6 +28,7 @@ const DAILY_MENU_ITEMS = [
   { id: 'todo-calendar', label: '할 일 달력', icon: '📅' },
   { id: 'diary-calendar', label: '일기 달력', icon: '📔' },
   { id: 'schedule-calendar', label: '일정 달력', icon: '🗓️' },
+  { id: 'graduate-timetable', label: '대학원 시간표', icon: '🎓' },
   { id: 'summer-clock', label: '시계', icon: '🕐' },
   { id: 'pomodoro', label: '뽀모도로', icon: '🍅' },
   { id: 'study-timer', label: '타이머', icon: '⏳' },
