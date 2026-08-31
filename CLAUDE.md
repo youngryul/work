@@ -11,7 +11,7 @@ Korean personal productivity & life-tracking web application. Single-developer f
 ## Commands
 
 ```bash
-npm run dev          # Start Vite dev server (localhost:5173)
+npm run dev          # Start Vite dev server (localhost:5174)
 npm run build        # Production build → dist/
 npm run preview      # Preview production build locally
 
