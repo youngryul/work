@@ -1,5 +1,13 @@
 ﻿import SwiftUI
 
+/// 여행 일정 화면 상단 여백 상수
+private enum TravelItineraryLayout {
+    /// 상단 바와 "여행 일정" 타이틀 사이 여백
+    static let topBarSpacing: CGFloat = 12
+    /// 내비게이션 바와 일정 목록·빈 상태 사이 여백
+    static let contentTopSpacing: CGFloat = 8
+}
+
 struct TravelItineraryView: View {
     @State private var trips: [AbroadTrip] = []
     @State private var isLoading = false
@@ -55,6 +63,7 @@ struct TravelItineraryView: View {
                     .listStyle(.insetGrouped)
                 }
             }
+            .padding(.top, TravelItineraryLayout.contentTopSpacing)
             .navigationTitle("여행 일정")
             .navigationBarTitleDisplayMode(.large)
             .navigationBarBackButtonHidden(true)
@@ -88,6 +97,8 @@ struct TravelItineraryView: View {
                 Text(errorMessage)
             }
         }
+        // 더 보기 탭에서 열릴 때 상단 바에 타이틀이 붙어 보이는 문제를 막기 위한 여백
+        .padding(.top, TravelItineraryLayout.topBarSpacing)
         .task { await loadTrips() }
     }
 
