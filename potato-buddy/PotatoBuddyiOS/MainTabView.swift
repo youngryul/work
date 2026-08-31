@@ -82,12 +82,6 @@ struct MainTabView: View {
                 .tag(6)
                 .navigationBarBackButtonHidden(true)
 
-            ToeicVocabView()
-                .tabItem {
-                    Label("토익", systemImage: "book.closed.fill")
-                }
-                .tag(7)
-
             FridgeInventoryView()
                 .tabItem {
                     Label("냉장고", systemImage: "refrigerator.fill")
