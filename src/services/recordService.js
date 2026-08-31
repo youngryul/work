@@ -2,7 +2,7 @@ import { supabase } from '../config/supabase.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
 import {
   ARCHIVED_PROJECTS_TABLE,
-  PROJECT_ARCHIVE_TABLE_MISSING_MESSAGE,
+  ARCHIVED_PROJECTS_STORAGE_KEY_PREFIX,
 } from '../constants/projectArchive.js'
 
 /**
@@ -130,7 +130,103 @@ export async function getProjectCounts() {
 function isArchiveTableMissing(error) {
   if (!error) return false
   if (error.code === '42P01' || error.code === 'PGRST205') return true
-  return /could not find the table|does not exist/i.test(error.message || '')
+  return /could not find the table|does not exist|relation .* does not exist/i.test(
+    error.message || '',
+  )
+}
+
+/**
+ * 사용자별 보관 목록 localStorage 키
+ * @param {string} userId
+ * @returns {string}
+ */
+function getLocalArchiveStorageKey(userId) {
+  return `${ARCHIVED_PROJECTS_STORAGE_KEY_PREFIX}${userId}`
+}
+
+/**
+ * 로컬에 저장된 보관 프로젝트명 목록
+ * @param {string} userId
+ * @returns {string[]}
+ */
+function readLocalArchivedNames(userId) {
+  if (typeof window === 'undefined' || !userId) return []
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(getLocalArchiveStorageKey(userId)) || '[]')
+    return Array.isArray(parsed)
+      ? parsed.filter((name) => typeof name === 'string' && name.length > 0)
+      : []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * 로컬 보관 프로젝트명 목록 저장
+ * @param {string} userId
+ * @param {string[]} names
+ * @returns {boolean} 저장 성공 여부
+ */
+function writeLocalArchivedNames(userId, names) {
+  if (typeof window === 'undefined' || !userId) return false
+  try {
+    window.localStorage.setItem(
+      getLocalArchiveStorageKey(userId),
+      JSON.stringify([...new Set(names)]),
+    )
+    return true
+  } catch (error) {
+    console.error('로컬 보관 목록 저장 실패:', error)
+    return false
+  }
+}
+
+/**
+ * 로컬 보관 목록에 프로젝트 추가
+ * @param {string} userId
+ * @param {string} projectName
+ * @returns {boolean}
+ */
+function addLocalArchivedName(userId, projectName) {
+  return writeLocalArchivedNames(userId, [...readLocalArchivedNames(userId), projectName])
+}
+
+/**
+ * 로컬 보관 목록에서 프로젝트 제거
+ * @param {string} userId
+ * @param {string} projectName
+ * @returns {boolean}
+ */
+function removeLocalArchivedName(userId, projectName) {
+  return writeLocalArchivedNames(
+    userId,
+    readLocalArchivedNames(userId).filter((name) => name !== projectName),
+  )
+}
+
+/**
+ * 로컬에만 있는 보관 항목을 DB로 동기화 시도
+ * @param {string} userId
+ * @param {string[]} localNames
+ * @param {string[]} dbNames
+ */
+function syncLocalArchivesToDb(userId, localNames, dbNames) {
+  const dbNameSet = new Set(dbNames)
+  const pending = localNames.filter((name) => !dbNameSet.has(name))
+  if (pending.length === 0) return
+
+  Promise.all(
+    pending.map((projectName) =>
+      supabase
+        .from(ARCHIVED_PROJECTS_TABLE)
+        .upsert(
+          { user_id: userId, project_name: projectName },
+          { onConflict: 'user_id,project_name', ignoreDuplicates: true },
+        ),
+    ),
+  ).catch((error) => {
+    console.error('로컬 보관 목록 DB 동기화 실패:', error)
+  })
 }
 
 /**
@@ -143,18 +239,22 @@ export async function getArchivedProjectNames() {
     return []
   }
 
+  const localNames = readLocalArchivedNames(userId)
   const { data, error } = await supabase
     .from(ARCHIVED_PROJECTS_TABLE)
     .select('project_name')
     .eq('user_id', userId)
 
   if (error) {
-    // 테이블 미생성 시에도 기록 화면은 정상 동작해야 함
-    console.error('보관 프로젝트 조회 오류:', error)
-    return []
+    if (!isArchiveTableMissing(error)) {
+      console.error('보관 프로젝트 조회 오류:', error)
+    }
+    return localNames
   }
 
-  return (data || []).map((row) => row.project_name)
+  const dbNames = (data || []).map((row) => row.project_name)
+  syncLocalArchivesToDb(userId, localNames, dbNames)
+  return [...new Set([...dbNames, ...localNames])]
 }
 
 /**
@@ -189,18 +289,25 @@ export async function archiveProject(projectName) {
     throw new Error('프로젝트명이 필요합니다.')
   }
 
+  const savedLocally = addLocalArchivedName(userId, projectName)
   const { error } = await supabase
     .from(ARCHIVED_PROJECTS_TABLE)
-    .upsert({ user_id: userId, project_name: projectName }, { onConflict: 'user_id,project_name' })
-
-  if (error) {
-    console.error('프로젝트 보관 오류:', error)
-    throw new Error(
-      isArchiveTableMissing(error)
-        ? PROJECT_ARCHIVE_TABLE_MISSING_MESSAGE
-        : error.message || '프로젝트 보관에 실패했습니다.',
+    .upsert(
+      { user_id: userId, project_name: projectName },
+      { onConflict: 'user_id,project_name', ignoreDuplicates: true },
     )
+
+  if (!error || (isArchiveTableMissing(error) && savedLocally)) {
+    return
   }
+
+  if (savedLocally) {
+    console.error('프로젝트 보관 DB 동기화 실패:', error)
+    return
+  }
+
+  console.error('프로젝트 보관 오류:', error)
+  throw new Error(error?.message || '프로젝트 보관에 실패했습니다.')
 }
 
 /**
@@ -217,20 +324,24 @@ export async function unarchiveProject(projectName) {
     throw new Error('프로젝트명이 필요합니다.')
   }
 
+  const savedLocally = removeLocalArchivedName(userId, projectName)
   const { error } = await supabase
     .from(ARCHIVED_PROJECTS_TABLE)
     .delete()
     .eq('user_id', userId)
     .eq('project_name', projectName)
 
-  if (error) {
-    console.error('프로젝트 보관 해제 오류:', error)
-    throw new Error(
-      isArchiveTableMissing(error)
-        ? PROJECT_ARCHIVE_TABLE_MISSING_MESSAGE
-        : error.message || '프로젝트 보관 해제에 실패했습니다.',
-    )
+  if (!error || (isArchiveTableMissing(error) && savedLocally)) {
+    return
   }
+
+  if (savedLocally) {
+    console.error('프로젝트 보관 해제 DB 동기화 실패:', error)
+    return
+  }
+
+  console.error('프로젝트 보관 해제 오류:', error)
+  throw new Error(error?.message || '프로젝트 보관 해제에 실패했습니다.')
 }
 
 /**

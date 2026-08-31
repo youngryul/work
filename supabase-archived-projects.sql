@@ -29,4 +29,8 @@ DROP POLICY IF EXISTS "archived_projects_delete_own" ON archived_projects;
 CREATE POLICY "archived_projects_delete_own" ON archived_projects
   FOR DELETE USING (auth.uid() = user_id);
 
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE archived_projects TO authenticated;
+
+NOTIFY pgrst, 'reload schema';
+
 COMMENT ON TABLE archived_projects IS '프로젝트 기록에서 보관 처리한 프로젝트명 (사용자별)';
