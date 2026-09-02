@@ -36,15 +36,27 @@ struct ScheduleWidgetProvider: TimelineProvider {
         let calendar = Calendar.current
         var entries = [makeEntry(for: now)]
 
-        if let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) {
-            entries.append(makeEntry(for: tomorrow))
+        // 다음 자정 엔트리 추가
+        if let nextMidnight = calendar.date(
+            byAdding: .day, value: 1, to: calendar.startOfDay(for: now)
+        ) {
+            entries.append(makeEntry(for: nextMidnight))
         }
 
-        completion(Timeline(entries: entries, policy: .atEnd))
+        // 자정에 타임라인을 다시 생성하도록 .after(nextMidnight) 정책 사용
+        let nextMidnight = calendar.date(
+            byAdding: .day, value: 1, to: calendar.startOfDay(for: now)
+        ) ?? calendar.date(byAdding: .hour, value: 24, to: now)!
+
+        completion(Timeline(entries: entries, policy: .after(nextMidnight)))
     }
 
     private func makeEntry(for date: Date = Date()) -> ScheduleWidgetEntry {
-        let snapshot = WidgetScheduleStore.load() ?? .empty
+        let dateString = WidgetScheduleDateFormatter.string(from: date)
+        // 날짜별 스냅샷 우선, 없으면 레거시 단일 스냅샷으로 폴백
+        let snapshot = WidgetScheduleStore.load(forDate: dateString)
+                    ?? WidgetScheduleStore.load()
+                    ?? .empty
         let hasData = !snapshot.dateString.isEmpty
         return ScheduleWidgetEntry(
             date: date,
