@@ -38,6 +38,19 @@ struct ScheduleCalendarView: View {
     @State private var isSaving = false
     @State private var pendingDeleteSchedule: ScheduleItem? = nil
     @State private var showDeleteConfirm = false
+    // 반복 일정 삭제 scope
+    @State private var showDeleteScopeDialog = false
+    // 반복 일정 수정 scope
+    @State private var showEditScopeDialog = false
+    @State private var pendingEditSchedule: ScheduleItem? = nil
+    // 이 발생분만 수정 (title + tag + date)
+    @State private var editThisTitle = ""
+    @State private var editThisTag = ""
+    @State private var editThisDate: Date = Date()
+    @State private var showEditThisSheet = false
+    @State private var editScope: EditScope = .all
+
+    enum EditScope { case this, all }
 
     private static let maxScheduleRangeDays = 366
 
@@ -150,6 +163,7 @@ struct ScheduleCalendarView: View {
             } message: {
                 Text(errorMessage)
             }
+            // 단일 일정 삭제 확인
             .confirmationDialog(
                 "일정 삭제",
                 isPresented: $showDeleteConfirm,
@@ -165,11 +179,71 @@ struct ScheduleCalendarView: View {
                     pendingDeleteSchedule = nil
                 }
             } message: {
-                if pendingDeleteSchedule?.isRecurring == true {
-                    Text("이 반복 일정 시리즈 전체가 삭제됩니다. 정말 삭제할까요?")
-                } else {
-                    Text("이 일정을 정말 삭제할까요?")
+                Text("이 일정을 정말 삭제할까요?")
+            }
+            // 반복 일정 삭제 scope 선택
+            .confirmationDialog(
+                "반복 일정 삭제",
+                isPresented: $showDeleteScopeDialog,
+                titleVisibility: .visible
+            ) {
+                Button("이 일정만 삭제", role: .destructive) {
+                    if let schedule = pendingDeleteSchedule {
+                        Task { await deleteThisOccurrence(schedule) }
+                    }
+                    pendingDeleteSchedule = nil
                 }
+                Button("이 일정 및 이후 모든 일정 삭제", role: .destructive) {
+                    if let schedule = pendingDeleteSchedule {
+                        Task { await deleteThisAndFutureOccurrences(schedule) }
+                    }
+                    pendingDeleteSchedule = nil
+                }
+                Button("반복 일정 전체 삭제", role: .destructive) {
+                    if let schedule = pendingDeleteSchedule {
+                        Task { await deleteSchedule(schedule) }
+                    }
+                    pendingDeleteSchedule = nil
+                }
+                Button("취소", role: .cancel) {
+                    pendingDeleteSchedule = nil
+                }
+            } message: {
+                Text("어떤 일정을 삭제할까요?")
+            }
+            // 반복 일정 수정 scope 선택
+            .confirmationDialog(
+                "반복 일정 수정",
+                isPresented: $showEditScopeDialog,
+                titleVisibility: .visible
+            ) {
+                Button("이 일정만 변경") {
+                    editScope = .this
+                    if let schedule = pendingEditSchedule {
+                        editingSchedule = schedule
+                        editThisTitle = schedule.title
+                        editThisTag = schedule.tag
+                        editThisDate = ScheduleDateHelper.dayFormatter.date(from: schedule.scheduleDate) ?? Date()
+                        showEditThisSheet = true
+                    }
+                    pendingEditSchedule = nil
+                }
+                Button("모든 일정 변경") {
+                    editScope = .all
+                    if let schedule = pendingEditSchedule {
+                        requestEdit(schedule)
+                    }
+                    pendingEditSchedule = nil
+                }
+                Button("취소", role: .cancel) {
+                    pendingEditSchedule = nil
+                }
+            } message: {
+                Text("어떤 일정을 변경할까요?")
+            }
+            // 이 발생분만 수정 시트
+            .sheet(isPresented: $showEditThisSheet) {
+                editThisSheet
             }
         }
         .task {
@@ -445,7 +519,7 @@ struct ScheduleCalendarView: View {
             }
             Spacer(minLength: 0)
             Button {
-                beginEdit(schedule)
+                requestEdit(schedule)
             } label: {
                 Image(systemName: "pencil")
                     .font(.body)
@@ -461,7 +535,7 @@ struct ScheduleCalendarView: View {
         .padding(.vertical, 4)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button {
-                beginEdit(schedule)
+                requestEdit(schedule)
             } label: {
                 Label("수정", systemImage: "pencil")
             }
@@ -667,6 +741,75 @@ struct ScheduleCalendarView: View {
         }
         .environment(\.locale, Locale(identifier: "ko_KR"))
         .modifier(SheetDetentModifier())
+    }
+
+    // MARK: - 이 발생분만 수정 시트
+
+    private var editThisSheet: some View {
+        NavigationView {
+            Form {
+                Section("제목") {
+                    TextField("제목", text: $editThisTitle)
+                }
+                Section("태그") {
+                    Picker("태그", selection: $editThisTag) {
+                        ForEach(scheduleTags, id: \.name) { tag in
+                            Text(tag.name).tag(tag.name)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+                Section("날짜") {
+                    DatePicker("날짜", selection: $editThisDate, displayedComponents: .date)
+                        .datePickerStyle(.compact)
+                        .environment(\.locale, Locale(identifier: "ko_KR"))
+                }
+            }
+            .navigationTitle("이 일정만 변경")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("취소") { showEditThisSheet = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("저장") {
+                        Task { await saveEditThis() }
+                    }
+                    .disabled(editThisTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
+                }
+            }
+        }
+    }
+
+    private func saveEditThis() async {
+        guard let schedule = editingSchedule ?? pendingEditSchedule else { return }
+        let title = editThisTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty else { return }
+        isSaving = true
+
+        // 원본 발생 날짜와 다를 때만 schedule_date 전송
+        let newDateStr = ScheduleDateHelper.dayFormatter.string(from: editThisDate)
+        let originalOccDate: String = {
+            if let range = schedule.id.range(of: "__") {
+                return String(schedule.id[range.upperBound...])
+            }
+            return schedule.scheduleDate
+        }()
+        let changedDate: String? = newDateStr != originalOccDate ? newDateStr : nil
+
+        do {
+            try await SupabaseService.shared.updateThisOccurrence(
+                id: schedule.id,
+                title: title,
+                tag: editThisTag,
+                scheduleDate: changedDate
+            )
+            showEditThisSheet = false
+            await loadSchedules()
+        } catch {
+            if !error.isCancellation { errorMessage = error.localizedDescription }
+        }
+        isSaving = false
     }
 
     private var editScheduleSheet: some View {
@@ -1040,6 +1183,15 @@ struct ScheduleCalendarView: View {
         isSaving = false
     }
 
+    private func requestEdit(_ schedule: ScheduleItem) {
+        if schedule.isOccurrence {
+            pendingEditSchedule = schedule
+            showEditScopeDialog = true
+        } else {
+            beginEdit(schedule)
+        }
+    }
+
     private func beginEdit(_ schedule: ScheduleItem) {
         editingSchedule = schedule
         selectedDate = schedule.scheduleDate
@@ -1196,7 +1348,11 @@ struct ScheduleCalendarView: View {
 
     private func requestDelete(_ schedule: ScheduleItem) {
         pendingDeleteSchedule = schedule
-        showDeleteConfirm = true
+        if schedule.isOccurrence {
+            showDeleteScopeDialog = true
+        } else {
+            showDeleteConfirm = true
+        }
     }
 
     private func deleteSchedule(_ schedule: ScheduleItem) async {
@@ -1205,6 +1361,28 @@ struct ScheduleCalendarView: View {
             schedules.removeAll {
                 $0.deleteTargetId == schedule.deleteTargetId
             }
+            syncWidgetIfNeeded()
+        } catch {
+            if !error.isCancellation { errorMessage = error.localizedDescription }
+            await loadSchedules()
+        }
+    }
+
+    private func deleteThisOccurrence(_ schedule: ScheduleItem) async {
+        do {
+            try await SupabaseService.shared.deleteThisOccurrence(id: schedule.id)
+            schedules.removeAll { $0.id == schedule.id }
+            syncWidgetIfNeeded()
+        } catch {
+            if !error.isCancellation { errorMessage = error.localizedDescription }
+            await loadSchedules()
+        }
+    }
+
+    private func deleteThisAndFutureOccurrences(_ schedule: ScheduleItem) async {
+        do {
+            try await SupabaseService.shared.deleteThisAndFutureOccurrences(id: schedule.id)
+            await loadSchedules()
             syncWidgetIfNeeded()
         } catch {
             if !error.isCancellation { errorMessage = error.localizedDescription }

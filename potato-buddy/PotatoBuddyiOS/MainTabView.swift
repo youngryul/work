@@ -101,6 +101,8 @@ struct MainTabView: View {
             moreDestination(TravelItineraryView())
         case 8:
             moreDestination(FridgeInventoryView())
+        case 15:
+            moreDestination(GraduateTimetableView())
         case 10:
             moreDestination(SettingsView(showLogoutConfirm: $showLogoutConfirm))
         default:
@@ -141,6 +143,7 @@ private struct MoreMenuView: View {
         (11, "걸음", "figure.walk"),
         (6, "여행", "airplane"),
         (8, "냉장고", "refrigerator.fill"),
+        (15, "시간표", "graduationcap.fill"),
         (9, "시계", "clock.fill"),
         (10, "설정", "gearshape.fill"),
     ]

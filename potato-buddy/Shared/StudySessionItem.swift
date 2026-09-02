@@ -110,7 +110,12 @@ struct StudyTimerCategoryPicker: View {
     var disabled: Bool = false
 
     var body: some View {
-        let columns = [GridItem(.adaptive(minimum: 78), spacing: 8)]
+        let columns = [
+            GridItem(.fixed(78), spacing: 8),
+            GridItem(.fixed(78), spacing: 8),
+            GridItem(.fixed(78), spacing: 8),
+            GridItem(.fixed(78), spacing: 8)
+        ]
         LazyVGrid(columns: columns, spacing: 8) {
             ForEach(StudyTimerCategory.allCases) { cat in
                 Button {
@@ -120,7 +125,7 @@ struct StudyTimerCategoryPicker: View {
                         .font(.caption.weight(.semibold))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .frame(maxWidth: .infinity)
+                        .frame(width: 78)
                         .background(
                             Capsule().fill(
                                 selection == cat

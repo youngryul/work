@@ -93,6 +93,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.youngryul.potatobuddy.ios
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         CODE_SIGN_ENTITLEMENTS: PotatoBuddyiOS/PotatoBuddyiOS.entitlements
+        CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     info:
       path: PotatoBuddyiOS/Info.plist
@@ -156,6 +157,7 @@ targets:
       - path: ScheduleWidget
       - path: Shared/WidgetScheduleStore.swift
       - path: Shared/WidgetWeatherModels.swift
+      - path: Shared/StudyTimerLiveActivityAttributes.swift
     resources:
       - path: ScheduleWidget/Assets.xcassets
     settings:

@@ -358,9 +358,10 @@ function generateOccurrenceStarts(seriesStart, schedule, hardLimit, maxCount) {
  * @param {object} schedule
  * @param {string} rangeStart YYYY-MM-DD
  * @param {string} rangeEnd YYYY-MM-DD
+ * @param {Array<{masterId:string,occurrenceDate:string,isDeleted:boolean,title:string|null,tag:string|null}>} [exceptions]
  * @returns {object[]}
  */
-export function expandScheduleForRange(schedule, rangeStart, rangeEnd) {
+export function expandScheduleForRange(schedule, rangeStart, rangeEnd, exceptions = []) {
   const repeatType = normalizeScheduleRepeatType(schedule.repeatType)
   const durationOffset = getScheduleDurationOffsetDays(
     schedule.scheduleDate,
@@ -409,18 +410,42 @@ export function expandScheduleForRange(schedule, rangeStart, rangeEnd) {
 
   return allStarts
     .filter((occStart) => {
-      const occEnd = addScheduleDays(occStart, durationOffset)
-      return occEnd >= rangeStart && occStart <= rangeEnd && occStart <= hardLimit
+      const exc = exceptions.find(
+        (e) => e.masterId === schedule.id && e.occurrenceDate === occStart,
+      )
+      if (exc?.isDeleted) return false
+      // 날짜 재지정이 있으면 재지정된 날짜 기준으로 범위 체크
+      const effectiveStart = exc?.scheduleDate ?? occStart
+      const effectiveEnd = exc?.scheduleDate
+        ? (exc.endDate ?? effectiveStart)
+        : addScheduleDays(occStart, durationOffset)
+      return effectiveEnd >= rangeStart && effectiveStart <= rangeEnd && occStart <= hardLimit
     })
-    .map((occStart) => ({
-      ...schedule,
-      id: `${schedule.id}__${occStart}`,
-      seriesId: schedule.id,
-      seriesStartDate: schedule.scheduleDate,
-      scheduleDate: occStart,
-      endDate: addScheduleDays(occStart, durationOffset),
-      isOccurrence: true,
-    }))
+    .map((occStart) => {
+      const exc = exceptions.find(
+        (e) => e.masterId === schedule.id && e.occurrenceDate === occStart,
+      )
+      const effectiveStart = exc?.scheduleDate ?? occStart
+      const effectiveEnd = exc?.scheduleDate
+        ? (exc.endDate ?? effectiveStart)
+        : addScheduleDays(occStart, durationOffset)
+      return {
+        ...schedule,
+        id: `${schedule.id}__${occStart}`,
+        seriesId: schedule.id,
+        seriesStartDate: schedule.scheduleDate,
+        scheduleDate: effectiveStart,
+        endDate: effectiveEnd,
+        isOccurrence: true,
+        ...(exc && !exc.isDeleted
+          ? {
+              title: exc.title ?? schedule.title,
+              tag: exc.tag ?? schedule.tag,
+              hasException: true,
+            }
+          : {}),
+      }
+    })
 }
 
 /**

@@ -273,6 +273,53 @@ struct ScheduleItem: Codable, Identifiable {
             isOccurrence: isOccurrence
         )
     }
+
+    /// 예외로 제목·태그·날짜를 덮어씁니다. nil이면 기존 값 유지.
+    func overriding(title: String?, tag: String?, scheduleDate: String? = nil, endDate: String? = nil) -> ScheduleItem {
+        ScheduleItem(
+            id: id,
+            scheduleDate: scheduleDate ?? self.scheduleDate,
+            endDate: endDate ?? self.endDate,
+            title: title ?? self.title,
+            tag: tag ?? self.tag,
+            repeatType: repeatType,
+            repeatInterval: repeatInterval,
+            repeatWeekdays: repeatWeekdays,
+            repeatMonthlyRule: repeatMonthlyRule,
+            repeatMonthDay: repeatMonthDay,
+            repeatNth: repeatNth,
+            repeatWeekday: repeatWeekday,
+            repeatEndType: repeatEndType,
+            repeatCount: repeatCount,
+            repeatUntil: repeatUntil,
+            seriesId: seriesId,
+            seriesStartDate: seriesStartDate,
+            isOccurrence: isOccurrence
+        )
+    }
+}
+
+// MARK: - 반복 일정 예외
+
+struct ScheduleException: Codable {
+    let id: String
+    let masterId: String
+    let occurrenceDate: String
+    let isDeleted: Bool
+    let title: String?
+    let tag: String?
+    let scheduleDate: String?
+    let endDate: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case masterId       = "master_id"
+        case occurrenceDate = "occurrence_date"
+        case isDeleted      = "is_deleted"
+        case title, tag
+        case scheduleDate   = "schedule_date"
+        case endDate        = "end_date"
+    }
 }
 
 enum ScheduleDateHelper {
@@ -571,7 +618,12 @@ enum ScheduleDateHelper {
     }
 
     /// 마스터 일정을 월 범위에 맞게 펼칩니다.
-    static func expand(_ schedule: ScheduleItem, rangeStart: String, rangeEnd: String) -> [ScheduleItem] {
+    static func expand(
+        _ schedule: ScheduleItem,
+        rangeStart: String,
+        rangeEnd: String,
+        exceptions: [ScheduleException] = []
+    ) -> [ScheduleItem] {
         let type = schedule.resolvedRepeatType
         let offset = durationOffsetDays(start: schedule.scheduleDate, end: schedule.resolvedEndDate)
 
@@ -614,16 +666,36 @@ enum ScheduleDateHelper {
         )
 
         return allStarts.compactMap { occStart -> ScheduleItem? in
-            guard let occEnd = addDays(occStart, offset) else { return nil }
-            guard occEnd >= rangeStart, occStart <= rangeEnd, occStart <= hardLimit else { return nil }
-            return schedule.occurrenceCopy(
+            // 예외 확인: 삭제된 발생분은 제외
+            let exc = exceptions.first {
+                $0.masterId == schedule.id && $0.occurrenceDate == occStart
+            }
+            if exc?.isDeleted == true { return nil }
+
+            // 날짜 재지정이 있으면 재지정된 날짜 기준으로 범위 체크
+            let effectiveStart = exc?.scheduleDate ?? occStart
+            let effectiveEnd: String
+            if let excDate = exc?.scheduleDate {
+                effectiveEnd = exc?.endDate ?? excDate
+            } else {
+                guard let computed = addDays(occStart, offset) else { return nil }
+                effectiveEnd = computed
+            }
+            guard effectiveEnd >= rangeStart, effectiveStart <= rangeEnd, occStart <= hardLimit else { return nil }
+
+            var item = schedule.occurrenceCopy(
                 id: "\(schedule.id)__\(occStart)",
-                scheduleDate: occStart,
-                endDate: occEnd,
+                scheduleDate: effectiveStart,
+                endDate: effectiveEnd,
                 seriesId: schedule.id,
                 seriesStartDate: schedule.scheduleDate,
                 isOccurrence: true
             )
+            // 예외로 제목·태그·날짜 덮어쓰기
+            if let exc, !exc.isDeleted {
+                item = item.overriding(title: exc.title, tag: exc.tag)
+            }
+            return item
         }
     }
 }

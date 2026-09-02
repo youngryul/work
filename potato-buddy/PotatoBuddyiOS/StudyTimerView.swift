@@ -7,9 +7,6 @@ struct StudyTimerView: View {
 
     var body: some View {
         ZStack {
-            // 배경 이미지: ZStack 최하단에 배치, id로 SwiftUI가 확실히 교체
-            timerBackground(for: viewModel.selectedCategory)
-
             // 반투명 오버레이 (정지 상태)
             if viewModel.state != .running {
                 Color.white.opacity(0.30)
@@ -37,6 +34,10 @@ struct StudyTimerView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 20)
             }
+        }
+        .background {
+            // 배경 이미지: background로 분리해 ZStack 레이아웃에 영향 없음
+            timerBackground(for: viewModel.selectedCategory)
         }
         .clipped()
         .onAppear {
@@ -105,7 +106,7 @@ struct StudyTimerView: View {
     // MARK: - 하단 버튼 패널
 
     private var bottomPanel: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             if let msg = viewModel.savedMessage {
                 Text(msg)
                     .font(.subheadline.bold())
@@ -118,9 +119,10 @@ struct StudyTimerView: View {
                     .multilineTextAlignment(.center)
             }
 
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
+                Spacer()
                 Button { viewModel.reset() } label: {
-                    Text("초기화").frame(maxWidth: .infinity)
+                    Text("초기화").frame(width: 100)
                 }
                 .buttonStyle(TimerSecondaryButtonStyle())
 
@@ -129,7 +131,7 @@ struct StudyTimerView: View {
                         Task { await viewModel.save() }
                     } label: {
                         Text(viewModel.isSaving ? "저장 중..." : "완료")
-                            .frame(maxWidth: .infinity)
+                            .frame(width: 100)
                     }
                     .buttonStyle(TimerPrimaryButtonStyle(color: .blue))
                     .disabled(viewModel.isSaving)
@@ -141,15 +143,12 @@ struct StudyTimerView: View {
                     case .idle, .paused: viewModel.start()
                     }
                 } label: {
-                    Text(primaryActionTitle).frame(maxWidth: .infinity)
+                    Text(primaryActionTitle).frame(width: 100)
                 }
                 .buttonStyle(TimerPrimaryButtonStyle(color: .green))
+                Spacer()
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 
     private var primaryActionTitle: String {

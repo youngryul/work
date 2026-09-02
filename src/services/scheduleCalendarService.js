@@ -126,7 +126,7 @@ export async function getSchedulesByMonth(year, month) {
   const lastDate = new Date(year, month, 0).getDate()
   const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDate).padStart(2, '0')}`
 
-  const [plainResult, recurringResult] = await Promise.all([
+  const [plainResult, recurringResult, exceptionsResult] = await Promise.all([
     supabase
       .from('schedule_calendar_events')
       .select('*')
@@ -145,6 +145,12 @@ export async function getSchedulesByMonth(year, month) {
       .or(`repeat_until.is.null,repeat_until.gte.${startDate}`)
       .order('schedule_date', { ascending: true })
       .order('created_at', { ascending: true }),
+    supabase
+      .from('schedule_exceptions')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('occurrence_date', startDate)
+      .lte('occurrence_date', endDate),
   ])
 
   if (plainResult.error) {
@@ -160,13 +166,24 @@ export async function getSchedulesByMonth(year, month) {
     throw recurringResult.error
   }
 
+  const exceptions = (exceptionsResult.data || []).map((row) => ({
+    id: row.id,
+    masterId: row.master_id,
+    occurrenceDate: row.occurrence_date,
+    isDeleted: row.is_deleted,
+    title: row.title,
+    tag: row.tag,
+    scheduleDate: row.schedule_date ?? null,
+    endDate: row.end_date ?? null,
+  }))
+
   const masters = [
     ...(plainResult.data || []).map(normalizeSchedule),
     ...(recurringResult.data || []).map(normalizeSchedule),
   ]
 
   const expanded = masters.flatMap((schedule) =>
-    expandScheduleForRange(schedule, startDate, endDate),
+    expandScheduleForRange(schedule, startDate, endDate, exceptions),
   )
 
   expanded.sort((a, b) => {
@@ -426,13 +443,18 @@ export async function updateScheduleDate(params) {
   }
   assertValidScheduleRange(scheduleDate, endDate)
 
+  const title = (params.title || '').trim()
+  const updatePayload = {
+    schedule_date: scheduleDate,
+    end_date: endDate,
+    updated_at: new Date().toISOString(),
+    ...(title ? { title } : {}),
+    ...(params.tag ? { tag: params.tag } : {}),
+  }
+
   const { data, error } = await supabase
     .from('schedule_calendar_events')
-    .update({
-      schedule_date: scheduleDate,
-      end_date: endDate,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq('id', scheduleId)
     .eq('user_id', userId)
     .select('*')
@@ -569,6 +591,104 @@ export async function replaceScheduleTagForUser(deletedTag, fallbackTag) {
 
   if (error) {
     console.error('태그 대체 오류:', error)
+    throw error
+  }
+}
+
+// ─────────────────────────────────────────────
+// 반복 일정 개별 발생분 예외 함수
+// ─────────────────────────────────────────────
+
+/**
+ * 이 발생분만 삭제합니다. (다른 발생분은 유지)
+ * @param {string} scheduleId 발생 ID (masterId__YYYY-MM-DD)
+ */
+export async function deleteThisOccurrence(scheduleId) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+  const masterId = getScheduleSeriesId(scheduleId)
+  const occurrenceDate = scheduleId.slice(masterId.length + 2)
+
+  const { error } = await supabase
+    .from('schedule_exceptions')
+    .upsert(
+      [{ user_id: userId, master_id: masterId, occurrence_date: occurrenceDate, is_deleted: true }],
+      { onConflict: 'master_id,occurrence_date' },
+    )
+  if (error) {
+    console.error('발생분 삭제 오류:', error)
+    throw error
+  }
+}
+
+/**
+ * 이 발생분 이후 모든 발생분을 삭제합니다.
+ * 마스터의 repeat_until을 이 발생분 하루 전으로 설정하고, 이후 예외는 제거합니다.
+ * @param {string} scheduleId 발생 ID (masterId__YYYY-MM-DD)
+ */
+export async function deleteThisAndFutureOccurrences(scheduleId) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+  const masterId = getScheduleSeriesId(scheduleId)
+  const occurrenceDate = scheduleId.slice(masterId.length + 2)
+  const dayBefore = addScheduleDays(occurrenceDate, -1)
+
+  const [updateResult, deleteResult] = await Promise.all([
+    supabase
+      .from('schedule_calendar_events')
+      .update({
+        repeat_end_type: 'until',
+        repeat_until: dayBefore,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', masterId)
+      .eq('user_id', userId),
+    supabase
+      .from('schedule_exceptions')
+      .delete()
+      .eq('master_id', masterId)
+      .eq('user_id', userId)
+      .gte('occurrence_date', occurrenceDate),
+  ])
+
+  if (updateResult.error) {
+    console.error('이후 삭제 오류:', updateResult.error)
+    throw updateResult.error
+  }
+  if (deleteResult.error) {
+    console.error('이후 예외 삭제 오류:', deleteResult.error)
+    throw deleteResult.error
+  }
+}
+
+/**
+ * 이 발생분의 제목·태그·날짜를 변경합니다.
+ * @param {string} scheduleId 발생 ID (masterId__YYYY-MM-DD)
+ * @param {{ title: string, tag: string, scheduleDate?: string, endDate?: string }} params
+ */
+export async function updateThisOccurrence(scheduleId, { title, tag, scheduleDate, endDate }) {
+  const userId = await getCurrentUserId()
+  if (!userId) throw new Error('로그인이 필요합니다.')
+  const masterId = getScheduleSeriesId(scheduleId)
+  const occurrenceDate = scheduleId.slice(masterId.length + 2)
+
+  const { error } = await supabase
+    .from('schedule_exceptions')
+    .upsert(
+      [{
+        user_id: userId,
+        master_id: masterId,
+        occurrence_date: occurrenceDate,
+        is_deleted: false,
+        title: title || null,
+        tag: tag || null,
+        schedule_date: scheduleDate || null,
+        end_date: endDate || null,
+      }],
+      { onConflict: 'master_id,occurrence_date' },
+    )
+  if (error) {
+    console.error('발생분 수정 오류:', error)
     throw error
   }
 }

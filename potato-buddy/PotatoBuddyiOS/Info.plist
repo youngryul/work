@@ -31,14 +31,10 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
-	<key>NSMotionUsageDescription</key>
-	<string>오늘 걸음 수를 만보기처럼 확인하기 위해 동작 및 피트니스 데이터가 필요합니다.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>현재 위치의 날씨 위젯을 보여주기 위해 위치 정보가 필요합니다.</string>
-	<key>NSSupportsLiveActivities</key>
-	<true/>
-	<key>OPENAI_API_KEY</key>
-	<string>$(OPENAI_API_KEY)</string>
+	<key>NSMotionUsageDescription</key>
+	<string>오늘 걸음 수를 만보기처럼 확인하기 위해 동작 및 피트니스 데이터가 필요합니다.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>

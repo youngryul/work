@@ -586,8 +586,11 @@ final class SupabaseService {
                 }
                 return item.resolvedEndDate >= range.start
             }
+            let exceptions = (try? await fetchExceptions(
+                userId: userId, token: token, range: range
+            )) ?? []
             return relevant
-                .flatMap { ScheduleDateHelper.expand($0, rangeStart: range.start, rangeEnd: range.end) }
+                .flatMap { ScheduleDateHelper.expand($0, rangeStart: range.start, rangeEnd: range.end, exceptions: exceptions) }
                 .sorted {
                     if $0.scheduleDate != $1.scheduleDate {
                         return $0.scheduleDate < $1.scheduleDate
@@ -851,6 +854,110 @@ final class SupabaseService {
         request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
 
         _ = try await fetch(request)
+    }
+
+    // MARK: - 반복 일정 예외
+
+    private func fetchExceptions(
+        userId: String,
+        token: String,
+        range: (start: String, end: String)
+    ) async throws -> [ScheduleException] {
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/schedule_exceptions")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "occurrence_date", value: "gte.\(range.start)"),
+            URLQueryItem(name: "occurrence_date", value: "lte.\(range.end)"),
+            URLQueryItem(name: "select", value: "id,master_id,occurrence_date,is_deleted,title,tag,schedule_date,end_date"),
+        ]
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        return (try? JSONDecoder().decode([ScheduleException].self, from: data)) ?? []
+    }
+
+    /// 이 발생분만 삭제 (is_deleted = true 예외 삽입)
+    func deleteThisOccurrence(id: String) async throws {
+        let (userId, token) = await authInfo()
+        let (masterId, occurrenceDate) = splitOccurrenceId(id)
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/schedule_exceptions")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
+        let body: [String: Any] = [
+            "user_id": userId,
+            "master_id": masterId,
+            "occurrence_date": occurrenceDate,
+            "is_deleted": true,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        _ = try await fetch(request)
+    }
+
+    /// 이 발생분 이후 모두 삭제 (repeat_until을 하루 전으로 설정)
+    func deleteThisAndFutureOccurrences(id: String) async throws {
+        let (userId, token) = await authInfo()
+        let (masterId, occurrenceDate) = splitOccurrenceId(id)
+
+        guard let dayBefore = ScheduleDateHelper.addDays(occurrenceDate, -1) else { return }
+
+        // 마스터 repeat_until 업데이트
+        let masterUrl = URL(string: "\(Config.supabaseURL)/rest/v1/schedule_calendar_events?id=eq.\(masterId)&user_id=eq.\(userId)")!
+        var masterRequest = URLRequest(url: masterUrl)
+        masterRequest.httpMethod = "PATCH"
+        headers(token: token).forEach { masterRequest.addValue($1, forHTTPHeaderField: $0) }
+        let masterBody: [String: Any] = [
+            "repeat_end_type": "until",
+            "repeat_until": dayBefore,
+            "updated_at": ISO8601DateFormatter().string(from: Date()),
+        ]
+        masterRequest.httpBody = try JSONSerialization.data(withJSONObject: masterBody)
+        _ = try await fetch(masterRequest)
+
+        // 이후 예외 삭제
+        let excUrl = URL(string: "\(Config.supabaseURL)/rest/v1/schedule_exceptions?master_id=eq.\(masterId)&user_id=eq.\(userId)&occurrence_date=gte.\(occurrenceDate)")!
+        var excRequest = URLRequest(url: excUrl)
+        excRequest.httpMethod = "DELETE"
+        headers(token: token).forEach { excRequest.addValue($1, forHTTPHeaderField: $0) }
+        _ = try await fetch(excRequest)
+    }
+
+    /// 이 발생분의 제목·태그·날짜 변경
+    func updateThisOccurrence(id: String, title: String, tag: String, scheduleDate: String? = nil, endDate: String? = nil) async throws {
+        let (userId, token) = await authInfo()
+        let (masterId, occurrenceDate) = splitOccurrenceId(id)
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/schedule_exceptions")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
+        var body: [String: Any] = [
+            "user_id": userId,
+            "master_id": masterId,
+            "occurrence_date": occurrenceDate,
+            "is_deleted": false,
+            "title": title,
+            "tag": tag,
+        ]
+        if let scheduleDate {
+            body["schedule_date"] = scheduleDate
+        }
+        if let endDate {
+            body["end_date"] = endDate
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        _ = try await fetch(request)
+    }
+
+    private func splitOccurrenceId(_ id: String) -> (masterId: String, occurrenceDate: String) {
+        if let range = id.range(of: "__") {
+            return (String(id[..<range.lowerBound]), String(id[range.upperBound...]))
+        }
+        return (id, "")
     }
 
     // MARK: - 습관 트래커 조회
