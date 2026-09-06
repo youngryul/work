@@ -11,8 +11,8 @@ struct ReadingView: View {
     @State private var errorMessage = ""
 
     @State private var showSearch = false
-    @State private var showRecordForm = false
-    @State private var editingRecord: ReadingRecordItem?
+    @State private var showCreateRecordForm = false  // 새 기록 작성용
+    @State private var editingRecord: ReadingRecordItem?  // 기존 기록 수정용 (sheet(item:) 트리거)
     @State private var showInsightAlert = false
     @State private var insightText = ""
     @State private var bookToComplete: BookItem?
@@ -55,18 +55,39 @@ struct ReadingView: View {
                     Task { await registerBook(result) }
                 }
             }
-            .sheet(isPresented: $showRecordForm) {
+            // 새 기록 작성 시트
+            .sheet(isPresented: $showCreateRecordForm) {
                 if let selectedBook {
                     ReadingRecordFormSheet(
                         bookTitle: selectedBook.title,
-                        editing: editingRecord
+                        editing: nil
                     ) { date, pages, notes in
                         Task {
                             await saveRecord(
                                 bookId: selectedBook.id,
                                 date: date,
                                 pages: pages,
-                                notes: notes
+                                notes: notes,
+                                editingId: nil
+                            )
+                        }
+                    }
+                }
+            }
+            // 기존 기록 수정 시트 — sheet(item:) 으로 editingRecord 를 직접 전달해 SwiftUI 캡처 버그 방지
+            .sheet(item: $editingRecord) { record in
+                if let selectedBook {
+                    ReadingRecordFormSheet(
+                        bookTitle: selectedBook.title,
+                        editing: record
+                    ) { date, pages, notes in
+                        Task {
+                            await saveRecord(
+                                bookId: selectedBook.id,
+                                date: date,
+                                pages: pages,
+                                notes: notes,
+                                editingId: record.id
                             )
                         }
                     }
@@ -216,10 +237,15 @@ struct ReadingView: View {
                 }
             }
 
-            Section("독서 기록") {
+            Section {
                 if records.isEmpty {
-                    Text("기록이 없습니다.")
-                        .foregroundStyle(.secondary)
+                    Button {
+                        showCreateRecordForm = true
+                    } label: {
+                        Label("기록 추가", systemImage: "plus.circle")
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 4)
+                    }
                 } else {
                     ForEach(records) { record in
                         VStack(alignment: .leading, spacing: 4) {
@@ -240,7 +266,6 @@ struct ReadingView: View {
                         .contentShape(Rectangle())
                         .onTapGesture {
                             editingRecord = record
-                            showRecordForm = true
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
@@ -250,7 +275,17 @@ struct ReadingView: View {
                             }
                         }
                     }
+                    // 기록이 있어도 하단에 추가 버튼 노출
+                    Button {
+                        showCreateRecordForm = true
+                    } label: {
+                        Label("기록 추가", systemImage: "plus.circle")
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 4)
+                    }
                 }
+            } header: {
+                Text("독서 기록")
             }
         }
         .listStyle(.insetGrouped)
@@ -259,8 +294,7 @@ struct ReadingView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    editingRecord = nil
-                    showRecordForm = true
+                    showCreateRecordForm = true
                 } label: {
                     Image(systemName: "plus.circle")
                 }
@@ -376,11 +410,11 @@ struct ReadingView: View {
         }
     }
 
-    private func saveRecord(bookId: String, date: String, pages: Int?, notes: String?) async {
+    private func saveRecord(bookId: String, date: String, pages: Int?, notes: String?, editingId: String?) async {
         do {
-            if let editingRecord {
+            if let editingId {
                 _ = try await SupabaseService.shared.updateReadingRecord(
-                    id: editingRecord.id,
+                    id: editingId,
                     readingDate: date,
                     pagesRead: pages,
                     notes: notes
@@ -393,8 +427,8 @@ struct ReadingView: View {
                     notes: notes
                 )
             }
-            showRecordForm = false
-            self.editingRecord = nil
+            showCreateRecordForm = false
+            editingRecord = nil  // sheet(item:) 시트 자동 닫힘
             records = try await SupabaseService.shared.fetchReadingRecords(bookId: bookId)
             await loadStats()
         } catch {

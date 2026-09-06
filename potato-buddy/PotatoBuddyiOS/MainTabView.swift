@@ -14,6 +14,8 @@ struct MainTabView: View {
     @Binding var selectedTab: Int
     @ObservedObject private var auth = AuthService.shared
     @State private var showLogoutConfirm = false
+    /// 탭 이동 시 초기화되지 않도록 MainTabView에서 소유
+    @StateObject private var timerViewModel = StudyTimerViewModel()
 
     /// 하단 탭은 5개만 두어 iOS 시스템 More가 생기지 않게 한다.
     private var tabBarSelection: Binding<Int> {
@@ -88,7 +90,7 @@ struct MainTabView: View {
     private var moreTabRoot: some View {
         switch selectedTab {
         case 4:
-            moreDestination(TimerHubView())
+            moreDestination(TimerHubView(viewModel: timerViewModel))
         case 5:
             moreDestination(HabitTrackerView())
         case 12:

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, bigint, timestamp, numeric, primaryKey, integer } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, boolean, bigint, timestamp, numeric, primaryKey, integer, jsonb, date } from 'drizzle-orm/pg-core'
 
 /**
  * categories 테이블 스키마 정의
@@ -516,3 +516,19 @@ export const travelAlbums = pgTable('travel_albums', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
+
+/**
+ * graduate_notes — 대학원 과목별 예습/강의/복습 기록
+ */
+export const graduateNotes = pgTable('graduate_notes', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  semesterId: text('semester_id').notNull(),
+  subjectName: text('subject_name').notNull(),
+  category: text('category').notNull(),
+  title: text('title').notNull().default(''),
+  content: jsonb('content').notNull().default([]),
+  noteDate: date('note_date').notNull().defaultNow(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})

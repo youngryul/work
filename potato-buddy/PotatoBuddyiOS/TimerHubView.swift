@@ -2,6 +2,7 @@ import SwiftUI
 
 /// 타이머 / 뽀모도로를 하나의 탭으로 묶는 허브
 struct TimerHubView: View {
+    @ObservedObject var viewModel: StudyTimerViewModel
     @State private var selectedPage: Page = .stopwatch
 
     enum Page: String, CaseIterable {
@@ -33,7 +34,7 @@ struct TimerHubView: View {
             Divider()
 
             switch selectedPage {
-            case .stopwatch: StudyTimerView()
+            case .stopwatch: StudyTimerView(viewModel: viewModel)
             case .pomodoro:  PomodoroView()
             case .stats:     StudyTimeView()
             }
