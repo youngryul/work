@@ -6,6 +6,7 @@ import {
 } from '../../constants/graduateTimetable.js'
 import {
   fetchNotes,
+  fetchNote,
   createNote,
   deleteNote,
 } from '../../services/graduateService.js'
@@ -140,9 +141,15 @@ export default function GraduateNotesView() {
     }
   }
 
-  // 노트 선택 (팝업 열기)
-  const handleSelectNote = (note) => {
-    setOpenNote(note)
+  // 노트 선택 (팝업 열기) - 목록에는 content가 없으므로 단건 조회로 전체 내용을 가져온다
+  const handleSelectNote = async (note) => {
+    try {
+      const fullNote = await fetchNote(note.id)
+      setOpenNote(fullNote)
+    } catch (e) {
+      console.error('노트 상세 조회 실패:', e)
+      alert(`기록을 불러오지 못했습니다: ${e.message}`)
+    }
   }
 
   // 노트 삭제
