@@ -38,11 +38,19 @@ function createBlock(type) {
 
 /**
  * textarea 높이 자동 조절
+ * height를 'auto'로 초기화하는 순간 잠깐 줄어들었다가 다시 늘어나는데,
+ * 이때 브라우저가 스크롤 컨테이너 위치를 보정하면서 스크롤이 위로 튀는 현상이 있어
+ * 리사이즈 전후로 스크롤 위치를 그대로 유지시킨다.
  */
 function autoResize(el) {
   if (!el) return
+  const scrollContainer = el.closest('.overflow-y-auto')
+  const prevScrollTop = scrollContainer?.scrollTop
   el.style.height = 'auto'
   el.style.height = `${el.scrollHeight}px`
+  if (scrollContainer && prevScrollTop != null) {
+    scrollContainer.scrollTop = prevScrollTop
+  }
 }
 
 /**
