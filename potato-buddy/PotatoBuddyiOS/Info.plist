@@ -35,6 +35,12 @@
 	<string>현재 위치의 날씨 위젯을 보여주기 위해 위치 정보가 필요합니다.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>오늘 걸음 수를 만보기처럼 확인하기 위해 동작 및 피트니스 데이터가 필요합니다.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>그림일기 이미지를 사진 앱에 저장하기 위해 접근 권한이 필요합니다.</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Hakgyoansim_BoardmarkerR.ttf</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>

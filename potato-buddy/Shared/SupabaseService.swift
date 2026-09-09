@@ -320,6 +320,8 @@ final class SupabaseService {
 
     // MARK: - 월별 일기 목록 조회
 
+    private static let diarySelectColumns = "id,date,content,image_url,image_prompt,emotion,four_cut_url,four_cut_scene_urls,cover_image_url,attached_images"
+
     func fetchDiaries(year: Int, month: Int) async throws -> [DiaryItem] {
         let (userId, token) = await authInfo()
 
@@ -345,7 +347,7 @@ final class SupabaseService {
             URLQueryItem(name: "user_id", value: "eq.\(userId)"),
             URLQueryItem(name: "date",    value: "gte.\(startStr)"),
             URLQueryItem(name: "date",    value: "lte.\(endStr)"),
-            URLQueryItem(name: "select",  value: "id,date,content,image_url,emotion"),
+            URLQueryItem(name: "select",  value: Self.diarySelectColumns),
             URLQueryItem(name: "order",   value: "date.desc"),
         ]
 
@@ -366,7 +368,7 @@ final class SupabaseService {
         components.queryItems = [
             URLQueryItem(name: "user_id", value: "eq.\(userId)"),
             URLQueryItem(name: "date",    value: "eq.\(date)"),
-            URLQueryItem(name: "select",  value: "id,date,content,image_url,emotion"),
+            URLQueryItem(name: "select",  value: Self.diarySelectColumns),
         ]
 
         var request = URLRequest(url: components.url!)
@@ -378,9 +380,9 @@ final class SupabaseService {
         return items.first
     }
 
-    // MARK: - 일기 저장/수정 (upsert)
-
-    func saveDiary(date: String, content: String) async throws -> (item: DiaryItem, awarded: Int) {
+    /// diaries 테이블에 대한 upsert 공통 실행부. 전달된 필드만 갱신되고(PostgREST 병합 upsert),
+    /// 나머지 컬럼은 기존 값이 보존된다.
+    private func upsertDiary(_ fields: [String: Any]) async throws -> DiaryItem {
         let (userId, token) = await authInfo()
 
         let url = URL(string: "\(Config.supabaseURL)/rest/v1/diaries")!
@@ -390,13 +392,9 @@ final class SupabaseService {
         request.addValue("resolution=merge-duplicates,return=representation", forHTTPHeaderField: "Prefer")
 
         let isoFormatter = ISO8601DateFormatter()
-        let nowString = isoFormatter.string(from: Date())
-        let body: [String: Any] = [
-            "date":       date,
-            "content":    content,
-            "user_id":    userId,
-            "updated_at": nowString,
-        ]
+        var body = fields
+        body["user_id"]    = userId
+        body["updated_at"] = isoFormatter.string(from: Date())
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await fetch(request)
@@ -405,12 +403,255 @@ final class SupabaseService {
         guard let item = items.first else {
             throw URLError(.badServerResponse)
         }
+        return item
+    }
+
+    private func awardJellyForDiary(date: String) async throws -> Int {
         let jelly = try await awardJelly(
             amount: JellyRewardAmount.diaryWrite,
             reason: JellyRewardReason.diaryWrite,
             idempotencyKey: "diary:\(date)"
         )
-        return (item, jelly.awarded)
+        return jelly.awarded
+    }
+
+    // MARK: - 일기 저장 (글만)
+
+    /// 이미지 관련 컬럼은 body에 넣지 않으므로 기존 이미지가 그대로 보존된다.
+    func saveDiaryTextOnly(date: String, content: String) async throws -> (item: DiaryItem, awarded: Int) {
+        let item = try await upsertDiary(["date": date, "content": content])
+        let awarded = try await awardJellyForDiary(date: date)
+        return (item, awarded)
+    }
+
+    // MARK: - 대문 이미지 선택 변경
+
+    func updateDiaryCoverImage(date: String, coverImageUrl: String) async throws -> DiaryItem {
+        try await upsertDiary(["date": date, "cover_image_url": coverImageUrl])
+    }
+
+    // MARK: - Storage 업로드
+
+    /// Supabase Storage `images` 버킷에 바이너리를 직접 업로드하고 공개 URL을 반환한다.
+    func uploadImageData(_ data: Data, folder: String, fileName: String, contentType: String = "image/png") async throws -> String {
+        let (_, token) = await authInfo()
+        let path = "\(folder)/\(fileName)"
+        let url = URL(string: "\(Config.supabaseURL)/storage/v1/object/images/\(path)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue(Config.anonKey, forHTTPHeaderField: "apikey")
+        request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.addValue(contentType, forHTTPHeaderField: "Content-Type")
+        request.addValue("3600", forHTTPHeaderField: "x-upsert")
+        request.httpBody = data
+
+        let (respData, response) = try await fetch(request)
+        try checkResponse(respData, response)
+        return "\(Config.supabaseURL)/storage/v1/object/public/images/\(path)"
+    }
+
+    /// 원격 URL(OpenAI가 반환한 임시 URL) 또는 data: URI를 내려받아 Storage에 영구 저장한다.
+    func downloadAndStoreRemoteImage(urlString: String, folder: String, fileName: String) async throws -> String {
+        let imageData: Data
+        if urlString.hasPrefix("data:") {
+            guard let commaIndex = urlString.firstIndex(of: ","),
+                  let decoded = Data(base64Encoded: String(urlString[urlString.index(after: commaIndex)...]))
+            else {
+                throw NSError(domain: "SupabaseService", code: -1,
+                              userInfo: [NSLocalizedDescriptionKey: "이미지 데이터를 해석할 수 없습니다."])
+            }
+            imageData = decoded
+        } else {
+            guard let remoteURL = URL(string: urlString) else {
+                throw NSError(domain: "SupabaseService", code: -1,
+                              userInfo: [NSLocalizedDescriptionKey: "이미지 URL이 올바르지 않습니다."])
+            }
+            let (data, _) = try await URLSession.shared.data(from: remoteURL)
+            imageData = data
+        }
+        return try await uploadImageData(imageData, folder: folder, fileName: fileName)
+    }
+
+    // MARK: - AI 그림일기 생성 (edge function: generate-image-huggingface)
+
+    private struct GeneratedImageResponse: Decodable {
+        let imageUrl: String
+        let prompt: String?
+        let emotion: String?
+        let scene: String?
+    }
+
+    private struct FourCutPanel: Decodable {
+        let beat: String?
+        let timeLabel: String?
+        let summary: String?
+        let setting: String?
+        let action: String?
+    }
+
+    private struct FourCutPlanResponse: Decodable {
+        let emotion: String?
+        let styleLock: String?
+        let panels: [FourCutPanel]
+    }
+
+    /// 일기 diary 이미지 생성 edge function을 anon key로 직접 호출한다 (웹의 freeImageService.js와 동일한 인증 방식).
+    private func callGenerateImageFunction(_ body: [String: Any]) async throws -> Data {
+        let url = URL(string: "\(Config.supabaseURL)/functions/v1/generate-image-huggingface")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue(Config.anonKey, forHTTPHeaderField: "apikey")
+        request.addValue("Bearer \(Config.anonKey)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        return data
+    }
+
+    private func finalizedPrompt(_ prompt: String) -> String {
+        let lower = prompt.lowercased()
+        if lower.contains("no text") { return prompt }
+        return prompt + ", no text, no letters, no numbers, no watermark"
+    }
+
+    /// AI 1컷: 일기 본문을 그대로 넘겨 이미지 1장을 생성한다.
+    func generateOneCutImage(date: String, content: String, isRegenerate: Bool, existingCoverImageUrl: String?) async throws -> (item: DiaryItem, tokensUsed: Int, awarded: Int) {
+        let tokenInfo = try await getMyAiTokenInfo()
+        guard tokenInfo.balance >= tokenInfo.generationCost else {
+            throw NSError(domain: "SupabaseService", code: -2,
+                          userInfo: [NSLocalizedDescriptionKey: "AI 토큰이 부족합니다. (필요 \(tokenInfo.generationCost), 보유 \(tokenInfo.balance))"])
+        }
+
+        let responseData = try await callGenerateImageFunction(["diaryContent": content])
+        let generated = try JSONDecoder().decode(GeneratedImageResponse.self, from: responseData)
+
+        let timestamp = Int(Date().timeIntervalSince1970)
+        let fileName = isRegenerate ? "\(date)-\(timestamp).png" : "\(date).png"
+        let storedUrl = try await downloadAndStoreRemoteImage(urlString: generated.imageUrl, folder: "diaries", fileName: fileName)
+
+        _ = try await consumeAiTokens(amount: tokenInfo.generationCost)
+
+        var fields: [String: Any] = [
+            "date": date,
+            "content": content,
+            "image_url": storedUrl,
+        ]
+        if let prompt = generated.prompt { fields["image_prompt"] = prompt }
+        if let emotion = generated.emotion { fields["emotion"] = emotion }
+        if existingCoverImageUrl == nil || existingCoverImageUrl?.isEmpty == true {
+            fields["cover_image_url"] = storedUrl
+        }
+
+        let item = try await upsertDiary(fields)
+        let awarded = try await awardJellyForDiary(date: date)
+        return (item, tokenInfo.generationCost, awarded)
+    }
+
+    static let fourCutTokenCost = 10
+
+    /// AI 4컷 장면 4장을 생성해 Storage에 저장하고 토큰을 소비한다.
+    /// 스트립 합성(UIKit 필요)과 최종 diaries 저장은 호출부(iOS UI 레이어)의 몫이다 — 이 파일은 macOS 타겟에도 공유되므로 UIKit에 의존하지 않는다.
+    func generateFourCutSceneUrls(
+        date: String, content: String,
+        onProgress: @escaping (Int, Int) -> Void
+    ) async throws -> (sceneUrls: [String], tokenCost: Int) {
+        let tokenInfo = try await getMyAiTokenInfo()
+        guard tokenInfo.balance >= Self.fourCutTokenCost else {
+            throw NSError(domain: "SupabaseService", code: -2,
+                          userInfo: [NSLocalizedDescriptionKey: "AI 토큰이 부족합니다. (필요 \(Self.fourCutTokenCost), 보유 \(tokenInfo.balance))"])
+        }
+
+        var panelPrompts: [String] = []
+        if let planData = try? await callGenerateImageFunction(["action": "plan_four_cut", "diaryContent": content]),
+           let plan = try? JSONDecoder().decode(FourCutPlanResponse.self, from: planData),
+           !plan.panels.isEmpty {
+            let styleLock = plan.styleLock ?? "Posili the same cute round bear character every panel, crayon and colored-pencil style, thick black outlines, soft pastel palette"
+            for (index, panel) in plan.panels.prefix(4).enumerated() {
+                let timeLabel = panel.timeLabel ?? "장면 \(index + 1)"
+                let summary = panel.summary ?? panel.beat ?? "오늘 하루의 한 장면"
+                let setting = panel.setting ?? ""
+                let action = panel.action ?? ""
+                panelPrompts.append(finalizedPrompt(
+                    "\(styleLock). Panel \(index + 1) of 4 in a chronological photo-booth diary story (\(timeLabel))." +
+                    " Scene: \(summary). Setting: \(setting). Action: \(action)." +
+                    " Keep the same character and art style consistent across all 4 panels. Single scene only, no collage, no grid, no multiple panels within one image."
+                ))
+            }
+        }
+        if panelPrompts.isEmpty {
+            // 기획(plan) 호출 실패 시 시간 흐름을 나타내는 고정 4장면으로 대체
+            let fallbackHints = ["아침, 하루의 시작", "낮, 하루 동안의 일", "저녁, 그날의 감정", "밤, 하루를 마무리"]
+            for hint in fallbackHints {
+                panelPrompts.append(finalizedPrompt(
+                    "Posili the same cute round bear character, crayon and colored-pencil style, thick black outlines, soft pastel palette." +
+                    " A single scene representing: \(hint), inspired by this diary: \(String(content.prefix(300)))." +
+                    " Single scene only, no collage, no grid, no multiple panels within one image."
+                ))
+            }
+        }
+
+        var sceneUrls: [String] = []
+        let timestamp = Int(Date().timeIntervalSince1970)
+        for (index, prompt) in panelPrompts.enumerated() {
+            let responseData = try await callGenerateImageFunction(["imagePrompt": prompt])
+            let generated = try JSONDecoder().decode(GeneratedImageResponse.self, from: responseData)
+            let storedUrl = try await downloadAndStoreRemoteImage(
+                urlString: generated.imageUrl, folder: "diaries",
+                fileName: "\(date)-scene\(index + 1)-\(timestamp).png"
+            )
+            sceneUrls.append(storedUrl)
+            onProgress(sceneUrls.count, panelPrompts.count)
+        }
+        guard !sceneUrls.isEmpty else {
+            throw NSError(domain: "SupabaseService", code: -3,
+                          userInfo: [NSLocalizedDescriptionKey: "그림을 생성하지 못했습니다. 다시 시도해 주세요."])
+        }
+
+        _ = try await consumeAiTokens(amount: Self.fourCutTokenCost)
+        return (sceneUrls, Self.fourCutTokenCost)
+    }
+
+    /// 사진 4컷 원본 사진들을 Storage에 업로드한다 (스트립 합성 전 단계). 토큰을 쓰지 않는다.
+    func uploadPhotoFourCutSources(date: String, photos: [Data]) async throws -> [String] {
+        guard !photos.isEmpty else {
+            throw NSError(domain: "SupabaseService", code: -4,
+                          userInfo: [NSLocalizedDescriptionKey: "사진을 1장 이상 선택해 주세요."])
+        }
+        let timestamp = Int(Date().timeIntervalSince1970)
+        var photoUrls: [String] = []
+        for (index, data) in photos.prefix(4).enumerated() {
+            let url = try await uploadImageData(data, folder: "diaries", fileName: "\(date)-photo\(index + 1)-\(timestamp).jpg", contentType: "image/jpeg")
+            photoUrls.append(url)
+        }
+        return photoUrls
+    }
+
+    /// 4컷(AI/사진 공통) 최종 저장: 이미 합성·업로드된 스트립 URL과 장면 URL들을 diaries 행에 반영한다.
+    func finalizeFourCutDiary(
+        date: String, content: String,
+        sceneUrls: [String], stripUrl: String,
+        attachedImages: [String]? = nil,
+        existingCoverImageUrl: String?
+    ) async throws -> (item: DiaryItem, awarded: Int) {
+        var fields: [String: Any] = [
+            "date": date,
+            "content": content,
+            "image_url": sceneUrls[0],
+            "four_cut_url": stripUrl,
+            "four_cut_scene_urls": sceneUrls,
+        ]
+        if let attachedImages {
+            fields["attached_images"] = attachedImages
+        }
+        if existingCoverImageUrl == nil || existingCoverImageUrl?.isEmpty == true {
+            fields["cover_image_url"] = sceneUrls[0]
+        }
+
+        let item = try await upsertDiary(fields)
+        let awarded = try await awardJellyForDiary(date: date)
+        return (item, awarded)
     }
 
     // MARK: - 카테고리 조회 (웹과 동일)

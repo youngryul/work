@@ -52,7 +52,7 @@ struct MainTabView: View {
                 }
                 .tag(1)
 
-            DiaryListView()
+            DiaryCalendarView()
                 .tabItem {
                     Label("일기", systemImage: "book.fill")
                 }

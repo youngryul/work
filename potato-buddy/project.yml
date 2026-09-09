@@ -88,6 +88,7 @@ targets:
       - path: PotatoBuddyiOS/summer.png
       - path: PotatoBuddyiOS/toeicNorangiVocab.json
       - path: PotatoBuddyiOS/Assets.xcassets
+      - path: PotatoBuddyiOS/Fonts/Hakgyoansim_BoardmarkerR.ttf
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.youngryul.potatobuddy.ios
@@ -112,6 +113,9 @@ targets:
               - potatobuddy
         NSMotionUsageDescription: 오늘 걸음 수를 만보기처럼 확인하기 위해 동작 및 피트니스 데이터가 필요합니다.
         NSLocationWhenInUseUsageDescription: 현재 위치의 날씨 위젯을 보여주기 위해 위치 정보가 필요합니다.
+        NSPhotoLibraryAddUsageDescription: 그림일기 이미지를 사진 앱에 저장하기 위해 접근 권한이 필요합니다.
+        UIAppFonts:
+          - Hakgyoansim_BoardmarkerR.ttf
     entitlements:
       path: PotatoBuddyiOS/PotatoBuddyiOS.entitlements
       properties:
