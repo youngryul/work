@@ -532,3 +532,74 @@ export const graduateNotes = pgTable('graduate_notes', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
+
+/**
+ * officetel_purchase_records — 오피스텔 매매 기록 (매매가, 매물 정보)
+ */
+export const officetelPurchaseRecords = pgTable('officetel_purchase_records', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  propertyName: text('property_name').notNull(),
+  address: text('address'),
+  purchaseDate: date('purchase_date'),
+  salePrice: numeric('sale_price').default('0').notNull(),
+  memo: text('memo'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * officetel_purchase_payers — 오피스텔 매매 분담 내역 (누가 얼마 냈는지)
+ */
+export const officetelPurchasePayers = pgTable('officetel_purchase_payers', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  purchaseId: uuid('purchase_id').notNull(),
+  userId: uuid('user_id').notNull(),
+  payerName: text('payer_name').notNull(),
+  amount: numeric('amount').default('0').notNull(),
+  memo: text('memo'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+/**
+ * officetel_purchase_costs — 오피스텔 매매 기타 비용 (중개수수료(복비), 법무사비 등)
+ */
+export const officetelPurchaseCosts = pgTable('officetel_purchase_costs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  purchaseId: uuid('purchase_id').notNull(),
+  userId: uuid('user_id').notNull(),
+  category: text('category').notNull(),
+  amount: numeric('amount').default('0').notNull(),
+  memo: text('memo'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+/**
+ * officetel_tenants — 오피스텔 임차인 (계약기간, 보증금, 월세)
+ */
+export const officetelTenants = pgTable('officetel_tenants', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  purchaseId: uuid('purchase_id').notNull(),
+  userId: uuid('user_id').notNull(),
+  tenantName: text('tenant_name').notNull(),
+  contractStartDate: date('contract_start_date').notNull(),
+  contractEndDate: date('contract_end_date').notNull(),
+  deposit: numeric('deposit').default('0').notNull(),
+  monthlyRent: numeric('monthly_rent').default('0').notNull(),
+  memo: text('memo'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * officetel_tenant_rent_payments — 임차인 월별 월세 수령 체크 (체크된 달만 행 존재)
+ */
+export const officetelTenantRentPayments = pgTable('officetel_tenant_rent_payments', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').notNull(),
+  userId: uuid('user_id').notNull(),
+  payMonth: text('pay_month').notNull(), // 'YYYY-MM'
+  paidDate: date('paid_date'),
+  memo: text('memo'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
