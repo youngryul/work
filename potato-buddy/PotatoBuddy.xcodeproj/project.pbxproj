@@ -191,6 +191,8 @@
 		0DFAFDD1DF4B7C785A8DEDD0 /* ToeicVocabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToeicVocabView.swift; sourceTree = "<group>"; };
 		0E657A0D9E4754BC918AD21C /* WidgetWeatherModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetWeatherModels.swift; sourceTree = "<group>"; };
 		0FD17E57252F9B177B544AD9 /* PotatoBuddyiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PotatoBuddyiOS.entitlements; sourceTree = "<group>"; };
+		B7B5A001E2C74E1D9A8F6D31 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		B7B5A002E2C74E1D9A8F6D32 /* Secrets.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig.example; sourceTree = "<group>"; };
 		1135FADE4C8DF6A8508C291E /* PotatoBuddyiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotatoBuddyiOSApp.swift; sourceTree = "<group>"; };
 		12DF9FBB4D85C2F270AAC672 /* 모바일배경.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "모바일배경.png"; sourceTree = "<group>"; };
 		12EDE4D2B4BB5A8A8CCF1EAA /* StudyTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyTimeView.swift; sourceTree = "<group>"; };
@@ -376,6 +378,8 @@
 				7707A38521008641F0613304 /* 포실이뽀모도로.png */,
 				6BEEDF33B6BA4C250F262C91 /* 포실이(투명).png */,
 				8F49F0B8E56A2EE8BFC84E43 /* ActivityShareSheet.swift */,
+				B7B5A001E2C74E1D9A8F6D31 /* Secrets.xcconfig */,
+				B7B5A002E2C74E1D9A8F6D32 /* Secrets.xcconfig.example */,
 				DA69A7AC454A59D4370CA0AA /* Assets.xcassets */,
 				1D826A844BE6F7D286ED09B9 /* BacklogView.swift */,
 				70E0F19BC75F1A6C397BBE1C /* ContentView.swift */,
@@ -851,6 +855,7 @@
 		};
 		43CCA6676C7F54BE70E111DF /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B7B5A001E2C74E1D9A8F6D31 /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
@@ -1011,6 +1016,7 @@
 		};
 		D4E5F243164FCA5179CB9764 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B7B5A001E2C74E1D9A8F6D31 /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;

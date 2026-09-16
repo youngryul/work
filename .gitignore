@@ -31,3 +31,6 @@ dist-ssr
 .env.local
 .env.production.local
 
+# iOS 로컬 시크릿 (API 키 등) — 커밋 금지
+potato-buddy/PotatoBuddyiOS/Secrets.xcconfig
+
