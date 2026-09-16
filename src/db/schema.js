@@ -592,6 +592,17 @@ export const officetelTenants = pgTable('officetel_tenants', {
 })
 
 /**
+ * monthly_stats_popups — 매월 1일 지난 달 통계(타이머·할일) 팝업 표시 이력
+ * 한 번 표시된 달(period_month)은 다시 표시하지 않기 위한 기록용
+ */
+export const monthlyStatsPopups = pgTable('monthly_stats_popups', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  periodMonth: text('period_month').notNull(), // 'YYYY-MM' (통계 대상이 된 지난 달)
+  shownAt: timestamp('shown_at').defaultNow().notNull(),
+})
+
+/**
  * officetel_tenant_rent_payments — 임차인 월별 월세 수령 체크 (체크된 달만 행 존재)
  */
 export const officetelTenantRentPayments = pgTable('officetel_tenant_rent_payments', {

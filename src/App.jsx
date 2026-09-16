@@ -57,9 +57,15 @@ import DiaryCalendarBalanceBar from './components/DiaryCalendarBalanceBar.jsx'
 import TokenDepositRequestModal from './components/TokenDepositRequestModal.jsx'
 import ExcelThemeHeader from './components/ExcelThemeHeader.jsx'
 import AdSenseBanner from './components/AdSenseBanner.jsx'
+import MonthlyStatsPopupModal from './components/MonthlyStatsPopupModal.jsx'
 import { useNotifications } from './hooks/useNotifications.js'
-import { markWeeklyReminderShown, markMonthlyReminderShown } from './utils/summaryReminder.js'
+import { markWeeklyReminderShown, markMonthlyReminderShown, isFirstDayOfMonth, getLastMonthInfo } from './utils/summaryReminder.js'
 import { markBacklogStaleReminderShown } from './services/backlogStaleReminderService.js'
+import {
+  hasSeenMonthlyStatsPopup,
+  markMonthlyStatsPopupSeen,
+  fetchMonthlyStatsSummary,
+} from './services/monthlyStatsPopupService.js'
 import { applyDailyRoutinesToToday } from './services/routineService.js'
 import { getThemeWrapperClass, APP_THEMES } from './constants/appThemes.js'
 import { useAiTokenInfo } from './hooks/useAiTokenInfo.js'
@@ -221,7 +227,16 @@ function AppContent() {
   const [review2026Tab, setReview2026Tab] = useState(null) // 2026 회고록 탭 상태
   const [review2026Params, setReview2026Params] = useState(null) // 2026 회고록 파라미터
   const [showCategorySettingsModal, setShowCategorySettingsModal] = useState(false) // 카테고리 설정 모달 표시 여부
-  
+
+  // 매월 1일 지난 달 통계(타이머·할일) 회고 팝업 상태
+  const [monthlyStatsPopup, setMonthlyStatsPopup] = useState({
+    isOpen: false,
+    periodMonth: '',
+    period: '',
+    totalSeconds: 0,
+    totalCompletedTasks: 0,
+  })
+
   // 알림 상태 관리
   const {
     weeklySummaryReminder,
@@ -331,6 +346,52 @@ function AppContent() {
       delete window.showTestNotification
     }
   }, [setWeeklySummaryReminder, setMonthlySummaryReminder, refreshNotifications])
+
+  // 매월 1일, 지난 달 타이머·할일 통계 회고 팝업 확인 (한 번 본 달은 다시 표시하지 않음)
+  useEffect(() => {
+    if (!user?.id || loading) return
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        if (!isFirstDayOfMonth()) return
+        const { year, month, period } = getLastMonthInfo()
+        const periodMonth = `${year}-${String(month).padStart(2, '0')}`
+
+        const alreadySeen = await hasSeenMonthlyStatsPopup(periodMonth, user.id)
+        if (alreadySeen || cancelled) return
+
+        const { totalSeconds, totalCompletedTasks } = await fetchMonthlyStatsSummary(year, month)
+        if (cancelled) return
+
+        setMonthlyStatsPopup({
+          isOpen: true,
+          periodMonth,
+          period,
+          totalSeconds,
+          totalCompletedTasks,
+        })
+      } catch (error) {
+        console.error('월간 통계 팝업 확인 오류:', error)
+      }
+    })()
+
+    window.showTestMonthlyStatsPopup = () => {
+      const { year, month, period } = getLastMonthInfo()
+      setMonthlyStatsPopup({
+        isOpen: true,
+        periodMonth: `${year}-${String(month).padStart(2, '0')}`,
+        period,
+        totalSeconds: 12345,
+        totalCompletedTasks: 42,
+      })
+    }
+
+    return () => {
+      cancelled = true
+      delete window.showTestMonthlyStatsPopup
+    }
+  }, [user?.id, loading])
 
   useEffect(() => {
     if (!user?.id || loading) return
@@ -519,6 +580,22 @@ function AppContent() {
       {currentView === 'study-timer' && (
         <StudyTimerView onClose={() => setCurrentView('today')} />
       )}
+
+      {/* 매월 1일 지난 달 통계 회고 팝업 (모든 사용자 공통) */}
+      <MonthlyStatsPopupModal
+        isOpen={monthlyStatsPopup.isOpen}
+        period={monthlyStatsPopup.period}
+        totalSeconds={monthlyStatsPopup.totalSeconds}
+        totalCompletedTasks={monthlyStatsPopup.totalCompletedTasks}
+        onClose={async () => {
+          setMonthlyStatsPopup((prev) => ({ ...prev, isOpen: false }))
+          try {
+            await markMonthlyStatsPopupSeen(monthlyStatsPopup.periodMonth)
+          } catch (error) {
+            console.error('월간 통계 팝업 기록 실패:', error)
+          }
+        }}
+      />
 
       {/* 알림 센터 (모든 페이지에서 표시) */}
       {canUseNotifications && (
