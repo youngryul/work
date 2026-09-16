@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
 import { recordUserActivity } from './services/userActivityService.js'
 import LandingPage from './components/LandingPage.jsx'
 import LoginForm from './components/LoginForm.jsx'
+import ResetPasswordView from './components/ResetPasswordView.jsx'
 import TodayView from './components/TodayView.jsx'
 import BacklogView from './components/BacklogView.jsx'
 import TodoCalendarView from './components/TodoCalendarView.jsx'
@@ -70,7 +71,7 @@ import { showToast, TOAST_TYPES } from './components/Toast.jsx'
  * 메인 앱 컨텐츠 컴포넌트 (인증 필요)
  */
 function AppContent() {
-  const { user, loading, isAdmin, isSuperuser } = useAuth()
+  const { user, loading, isAdmin, isSuperuser, isPasswordRecovery } = useAuth()
   const canUseNotifications = isAdmin || isSuperuser
   const [showLogin, setShowLogin] = useState(() => {
     const params = new URLSearchParams(window.location.search)
@@ -354,6 +355,11 @@ function AppContent() {
         </div>
       </div>
     )
+  }
+
+  // 비밀번호 재설정 링크로 진입: 로그인 여부와 무관하게 새 비밀번호 설정 화면 우선 표시
+  if (isPasswordRecovery) {
+    return <ResetPasswordView />
   }
 
   // 비로그인: 랜딩 → 로그인 폼
