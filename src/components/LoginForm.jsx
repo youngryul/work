@@ -6,10 +6,11 @@ import { supabase } from '../config/supabase.js'
  * 로그인/회원가입 폼 (이메일 + Google)
  */
 export default function LoginForm() {
-  const { signIn, signUp, signInWithGoogle } = useAuth()
+  const { signIn, signUp, signInWithGoogle, resetPasswordForEmail } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
+  const [isForgotPassword, setIsForgotPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -47,6 +48,22 @@ export default function LoginForm() {
     }
   }
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault()
+    setError(null)
+    setMessage(null)
+    setLoading(true)
+
+    try {
+      await resetPasswordForEmail(email)
+      setMessage('비밀번호 재설정 링크를 이메일로 보냈습니다. 메일함을 확인해주세요.')
+    } catch (err) {
+      setError(err.message || '비밀번호 재설정 이메일 발송에 실패했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleGoogleLogin = async () => {
     setError(null)
     setMessage(null)
@@ -67,96 +84,169 @@ export default function LoginForm() {
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-xl border border-gray-200">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-900 font-sans">
-            {isSignUp ? '회원가입' : '로그인'}
+            {isForgotPassword ? '비밀번호 찾기' : isSignUp ? '회원가입' : '로그인'}
           </h2>
           <p className="mt-2 text-sm text-gray-600 font-sans">
-            {isSignUp ? '새 계정을 만들어 시작하세요' : '계정에 로그인하세요'}
+            {isForgotPassword
+              ? '가입한 이메일로 재설정 링크를 보내드려요'
+              : isSignUp
+                ? '새 계정을 만들어 시작하세요'
+                : '계정에 로그인하세요'}
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          disabled={busy}
-          className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg border-2 border-gray-200 bg-white text-gray-800 text-base font-medium font-sans shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <GoogleIcon />
-          {googleLoading ? 'Google로 이동 중...' : 'Google로 계속하기'}
-        </button>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center" aria-hidden="true">
-            <div className="w-full border-t border-gray-200" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-3 text-gray-500 font-sans">또는</span>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 font-sans mb-2">
-              이메일
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="your@email.com"
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base font-sans"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 font-sans mb-2">
-              비밀번호
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              placeholder="최소 6자 이상"
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base font-sans"
-            />
-          </div>
-
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm font-sans">
-              {error}
+        {isForgotPassword ? (
+          <form onSubmit={handleForgotPassword} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 font-sans mb-2">
+                이메일
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="your@email.com"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base font-sans"
+              />
             </div>
-          )}
 
-          {message && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm font-sans">
-              {message}
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm font-sans">
+                {error}
+              </div>
+            )}
+
+            {message && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm font-sans">
+                {message}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={busy}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-700 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-sans"
+            >
+              {loading ? '전송 중...' : '재설정 링크 보내기'}
+            </button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsForgotPassword(false)
+                  setError(null)
+                  setMessage(null)
+                }}
+                className="text-sm text-green-700 hover:text-green-500 font-medium font-sans transition-colors duration-200"
+              >
+                로그인으로 돌아가기
+              </button>
             </div>
-          )}
+          </form>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={busy}
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg border-2 border-gray-200 bg-white text-gray-800 text-base font-medium font-sans shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <GoogleIcon />
+              {googleLoading ? 'Google로 이동 중...' : 'Google로 계속하기'}
+            </button>
 
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-700 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-sans"
-          >
-            {loading ? '처리 중...' : isSignUp ? '회원가입' : '로그인'}
-          </button>
-        </form>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-3 text-gray-500 font-sans">또는</span>
+              </div>
+            </div>
 
-        <div className="text-center">
-          <button
-            type="button"
-            onClick={() => {
-              setIsSignUp(!isSignUp)
-              setError(null)
-              setMessage(null)
-            }}
-            className="text-sm text-green-700 hover:text-green-500 font-medium font-sans transition-colors duration-200"
-          >
-            {isSignUp ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입'}
-          </button>
-        </div>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 font-sans mb-2">
+                  이메일
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="your@email.com"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base font-sans"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700 font-sans">
+                    비밀번호
+                  </label>
+                  {!isSignUp && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsForgotPassword(true)
+                        setError(null)
+                        setMessage(null)
+                      }}
+                      className="text-xs text-gray-500 hover:text-green-700 font-sans transition-colors duration-200"
+                    >
+                      비밀번호를 잊으셨나요?
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  placeholder="최소 6자 이상"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base font-sans"
+                />
+              </div>
+
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm font-sans">
+                  {error}
+                </div>
+              )}
+
+              {message && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm font-sans">
+                  {message}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={busy}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-700 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-sans"
+              >
+                {loading ? '처리 중...' : isSignUp ? '회원가입' : '로그인'}
+              </button>
+            </form>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(!isSignUp)
+                  setError(null)
+                  setMessage(null)
+                }}
+                className="text-sm text-green-700 hover:text-green-500 font-medium font-sans transition-colors duration-200"
+              >
+                {isSignUp ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

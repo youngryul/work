@@ -7,6 +7,8 @@ import {
   signOut,
   signInWithGoogle,
   migrateExistingData,
+  resetPasswordForEmail,
+  updatePassword,
 } from '../services/authService.js'
 import { getUserRole } from '../services/userRoleService.js'
 import {
@@ -38,6 +40,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [userRole, setUserRole] = useState('regular')
   const [adsEnabled, setAdsEnabled] = useState(true)
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
 
   const applyAuthUser = useCallback((u) => {
     syncAuthUserId(u?.id ?? null)
@@ -115,6 +118,11 @@ export function AuthProvider({ children }) {
       finishLoading()
       runUserSideEffects(u)
 
+      // 비밀번호 재설정 링크로 진입 시 새 비밀번호 설정 화면으로 전환
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecovery(true)
+      }
+
       // Google OAuth 등 외부 로그인 직후에도 기존 null user_id 데이터 이전
       if (event === 'SIGNED_IN' && u?.id) {
         runAfterAuthCallback(async () => {
@@ -152,6 +160,7 @@ export function AuthProvider({ children }) {
       applyAuthUser(null)
       setUserRole('regular')
       setAdsEnabled(true)
+      setIsPasswordRecovery(false)
     }
   }, [applyAuthUser])
 
@@ -167,6 +176,10 @@ export function AuthProvider({ children }) {
     signUp,
     signInWithGoogle,
     signOut: handleSignOut,
+    isPasswordRecovery,
+    clearPasswordRecovery: () => setIsPasswordRecovery(false),
+    resetPasswordForEmail,
+    updatePassword,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -2,18 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { uploadImage } from '../../services/imageService.js'
 import { updateNote } from '../../services/graduateService.js'
 
-/**
- * 블록 타입 정의
- * h1, h2, paragraph, image, divider
- */
-const BLOCK_TYPES = [
-  { type: 'h1', label: '제목1 (H1)' },
-  { type: 'h2', label: '제목2 (H2)' },
-  { type: 'paragraph', label: '본문' },
-  { type: 'image', label: '이미지' },
-  { type: 'divider', label: '구분선' },
-]
-
 /** 카테고리 라벨 */
 const CATEGORY_LABELS = {
   preview: '예습',
@@ -64,7 +52,6 @@ export default function GraduateNoteModal({ note, onClose, onSaved, onDelete }) 
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState(null)
   const [uploadingBlockId, setUploadingBlockId] = useState(null)
-  const [addMenuOpenId, setAddMenuOpenId] = useState(null) // 블록 추가 메뉴 열린 블록 ID
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   const saveTimerRef = useRef(null)
@@ -171,19 +158,6 @@ export default function GraduateNoteModal({ note, onClose, onSaved, onDelete }) 
       const final = updated.length === 0 ? [createBlock('paragraph')] : updated
       scheduleSave(title, noteDate, final)
       return final
-    })
-  }
-
-  // 특정 블록 뒤에 새 블록 삽입
-  const handleAddBlock = (afterId, type) => {
-    setAddMenuOpenId(null)
-    const newBlock = createBlock(type)
-    setBlocks((prev) => {
-      const idx = prev.findIndex((b) => b.id === afterId)
-      const updated = [...prev]
-      updated.splice(idx + 1, 0, newBlock)
-      scheduleSave(title, noteDate, updated)
-      return updated
     })
   }
 
@@ -303,9 +277,6 @@ export default function GraduateNoteModal({ note, onClose, onSaved, onDelete }) 
                 key={block.id}
                 block={block}
                 isUploading={uploadingBlockId === block.id}
-                addMenuOpen={addMenuOpenId === block.id}
-                onAddMenuToggle={(id) => setAddMenuOpenId((prev) => (prev === id ? null : id))}
-                onAddBlock={handleAddBlock}
                 onDeleteBlock={handleDeleteBlock}
                 onBlockChange={handleBlockChange}
                 onImageUpload={handleImageUpload}
@@ -340,9 +311,6 @@ export default function GraduateNoteModal({ note, onClose, onSaved, onDelete }) 
 function BlockRow({
   block,
   isUploading,
-  addMenuOpen,
-  onAddMenuToggle,
-  onAddBlock,
   onDeleteBlock,
   onBlockChange,
   onImageUpload,
@@ -351,31 +319,6 @@ function BlockRow({
 
   return (
     <div className="group relative flex items-start gap-1">
-      {/* 블록 추가(+) 버튼 */}
-      <div className="relative shrink-0 mt-1">
-        <button
-          onClick={() => onAddMenuToggle(block.id)}
-          className="w-5 h-5 flex items-center justify-center text-gray-300 hover:text-gray-500 hover:bg-gray-100 rounded opacity-0 group-hover:opacity-100 transition-opacity text-sm leading-none"
-          title="블록 추가"
-        >
-          +
-        </button>
-        {/* 블록 타입 선택 드롭다운 */}
-        {addMenuOpen && (
-          <div className="absolute left-0 top-6 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px]">
-            {BLOCK_TYPES.map((bt) => (
-              <button
-                key={bt.type}
-                onClick={() => onAddBlock(block.id, bt.type)}
-                className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-              >
-                {bt.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* 블록 본체 */}
       <div className="flex-1 min-w-0">
         <BlockContent

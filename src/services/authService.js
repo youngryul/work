@@ -144,6 +144,40 @@ export async function signInWithGoogle() {
 }
 
 /**
+ * 비밀번호 재설정 이메일 발송
+ * 이메일의 링크를 클릭하면 앱으로 돌아와 PASSWORD_RECOVERY 이벤트가 발생합니다.
+ */
+export async function resetPasswordForEmail(email) {
+  try {
+    const redirectTo = import.meta.env.VITE_APP_URL || 'https://work-sable-one.vercel.app/'
+
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo,
+    })
+
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('비밀번호 재설정 이메일 발송 오류:', error)
+    throw error
+  }
+}
+
+/**
+ * 새 비밀번호로 변경 (비밀번호 재설정 링크로 진입한 복구 세션에서 호출)
+ */
+export async function updatePassword(newPassword) {
+  try {
+    const { data, error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) throw error
+    return data
+  } catch (error) {
+    console.error('비밀번호 변경 오류:', error)
+    throw error
+  }
+}
+
+/**
  * AuthSessionMissingError 여부 (세션이 이미 없는 경우)
  * @param {unknown} error
  * @returns {boolean}
