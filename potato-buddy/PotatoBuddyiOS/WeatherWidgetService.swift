@@ -9,6 +9,7 @@ final class WeatherWidgetService: NSObject, CLLocationManagerDelegate {
 
     private let manager = CLLocationManager()
     private var continuation: CheckedContinuation<CLLocation?, Never>?
+    private var isRefreshing = false
 
     private override init() {
         super.init()
@@ -17,6 +18,13 @@ final class WeatherWidgetService: NSObject, CLLocationManagerDelegate {
     }
 
     func refreshWeatherWidget() async {
+        // 앱 시작 시 .task / onChange(isLoggedIn) / onChange(scenePhase)에서
+        // 거의 동시에 호출될 수 있는데, 겹쳐서 들어오면 이전 continuation이
+        // 새 continuation에 덮어써져 영원히 resume되지 않고 leak되어 버린다.
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        defer { isRefreshing = false }
+
         let location = await requestLocationIfPossible()
         if let location {
             WidgetWeatherStore.saveLocation(

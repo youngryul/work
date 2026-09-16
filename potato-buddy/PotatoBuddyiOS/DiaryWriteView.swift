@@ -148,6 +148,7 @@ struct DiaryWriteView: View {
                     TextEditor(text: $content)
                         .font(.sketchbook(16))
                         .foregroundStyle(SketchbookStyle.ink)
+                        .scrollContentBackground(.hidden)
                         .frame(height: 150)
                         .padding(10)
                         .background(Color.white)
