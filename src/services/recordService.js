@@ -345,6 +345,76 @@ export async function unarchiveProject(projectName) {
 }
 
 /**
+ * 프로젝트명(대제목) 변경
+ * 해당 프로젝트의 모든 기록과 보관 상태를 새 이름으로 옮긴다.
+ * @param {string} oldName - 기존 프로젝트명
+ * @param {string} newName - 새 프로젝트명
+ * @returns {Promise<string>} 적용된 새 프로젝트명 (공백 제거 후)
+ */
+export async function renameProject(oldName, newName) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  const trimmedName = (newName || '').trim()
+  if (!oldName || !trimmedName) {
+    throw new Error('프로젝트명을 입력해주세요.')
+  }
+  if (trimmedName === oldName) {
+    return oldName
+  }
+
+  // 이미 존재하는 프로젝트명이면 메인 기록이 겹치므로 변경 불가
+  const { data: existing, error: existingError } = await supabase
+    .from('project_records')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('projectname', trimmedName)
+    .limit(1)
+
+  if (existingError) {
+    console.error('프로젝트명 중복 확인 오류:', existingError)
+    throw existingError
+  }
+  if (existing && existing.length > 0) {
+    throw new Error('이미 같은 이름의 프로젝트가 있습니다.')
+  }
+
+  const { error } = await supabase
+    .from('project_records')
+    .update({ projectname: trimmedName })
+    .eq('user_id', userId)
+    .eq('projectname', oldName)
+
+  if (error) {
+    console.error('프로젝트명 변경 오류:', error)
+    throw new Error(error.message || '프로젝트명 변경에 실패했습니다.')
+  }
+
+  // 보관 상태 이전 (보관한 프로젝트가 아니면 영향 없음)
+  const localNames = readLocalArchivedNames(userId)
+  if (localNames.includes(oldName)) {
+    writeLocalArchivedNames(
+      userId,
+      localNames.map((name) => (name === oldName ? trimmedName : name)),
+    )
+  }
+
+  const { error: archiveError } = await supabase
+    .from(ARCHIVED_PROJECTS_TABLE)
+    .update({ project_name: trimmedName })
+    .eq('user_id', userId)
+    .eq('project_name', oldName)
+
+  if (archiveError && !isArchiveTableMissing(archiveError)) {
+    console.error('보관 프로젝트명 변경 오류:', archiveError)
+  }
+
+  return trimmedName
+}
+
+/**
  * 프로젝트별 메인 기록 조회
  * @param {string} projectName - 프로젝트명
  * @returns {Promise<Object|null>} 메인 기록 데이터

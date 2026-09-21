@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { PROJECT_ARCHIVE_LABELS } from '../constants/projectArchive.js'
 
 /**
@@ -7,6 +8,7 @@ import { PROJECT_ARCHIVE_LABELS } from '../constants/projectArchive.js'
  * @param {Function} onSelect - 프로젝트 선택 핸들러
  * @param {Function} onArchive - 프로젝트 보관 핸들러
  * @param {Function} onUnarchive - 프로젝트 보관 해제 핸들러
+ * @param {Function} onRename - 프로젝트명 변경 핸들러 (oldName, newName) => Promise<boolean>
  * @param {boolean} isArchiveView - 보관함 목록 여부
  */
 export default function ProjectList({
@@ -15,8 +17,33 @@ export default function ProjectList({
   onSelect,
   onArchive,
   onUnarchive,
+  onRename,
   isArchiveView = false,
 }) {
+  const [editingName, setEditingName] = useState(null) // 이름 변경 중인 프로젝트명
+  const [draftName, setDraftName] = useState('')
+
+  const startEdit = (projectName) => {
+    setEditingName(projectName)
+    setDraftName(projectName)
+  }
+
+  const cancelEdit = () => {
+    setEditingName(null)
+    setDraftName('')
+  }
+
+  // 변경 성공 시에만 편집 종료 (실패하면 입력값 유지)
+  const submitEdit = async () => {
+    const trimmed = draftName.trim()
+    if (!trimmed || trimmed === editingName) {
+      cancelEdit()
+      return
+    }
+    const ok = await onRename?.(editingName, trimmed)
+    if (ok) cancelEdit()
+  }
+
   if (projects.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500 text-base font-sans">
@@ -41,6 +68,7 @@ export default function ProjectList({
     <div className="space-y-2">
       {projects.map((project) => {
         const isSelected = selectedProject === project.projectName
+        const isEditing = editingName === project.projectName
         return (
           <div
             key={project.projectName}
@@ -50,21 +78,60 @@ export default function ProjectList({
                 : 'bg-white/60 border-green-200 hover:border-green-300 hover:shadow-sm hover:bg-white/80'
             }`}
           >
-            <button
-              type="button"
-              onClick={() => onSelect?.(project.projectName)}
-              className="w-full px-4 pt-4 pb-2 text-left font-sans"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-base font-semibold text-gray-800 font-sans break-all">
-                  {project.projectName}
-                </span>
-                <span className="shrink-0 text-sm text-gray-600 bg-green-50 px-2 py-1 rounded-full font-sans">
-                  {project.count}개
-                </span>
+            {isEditing ? (
+              <div className="px-4 pt-4 pb-2 flex items-center gap-2">
+                <input
+                  type="text"
+                  value={draftName}
+                  autoFocus
+                  onChange={(e) => setDraftName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) submitEdit()
+                    if (e.key === 'Escape') cancelEdit()
+                  }}
+                  className="min-w-0 flex-1 px-2 py-1 text-base border border-green-300 rounded focus:outline-none focus:ring-2 focus:ring-green-300 font-sans"
+                />
+                <button
+                  type="button"
+                  onClick={submitEdit}
+                  className="shrink-0 text-xs px-2 py-1 rounded bg-green-400 text-white hover:bg-green-500 transition-colors font-sans"
+                >
+                  저장
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="shrink-0 text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors font-sans"
+                >
+                  취소
+                </button>
               </div>
-            </button>
-            <div className="px-4 pb-3 flex justify-end">
+            ) : (
+              <button
+                type="button"
+                onClick={() => onSelect?.(project.projectName)}
+                className="w-full px-4 pt-4 pb-2 text-left font-sans"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-base font-semibold text-gray-800 font-sans break-all">
+                    {project.projectName}
+                  </span>
+                  <span className="shrink-0 text-sm text-gray-600 bg-green-50 px-2 py-1 rounded-full font-sans">
+                    {project.count}개
+                  </span>
+                </div>
+              </button>
+            )}
+            <div className="px-4 pb-3 flex justify-end gap-2">
+              {!isEditing && onRename && (
+                <button
+                  type="button"
+                  onClick={() => startEdit(project.projectName)}
+                  className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors font-sans"
+                >
+                  이름 변경
+                </button>
+              )}
               {isArchiveView ? (
                 <button
                   type="button"
