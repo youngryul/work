@@ -38,6 +38,9 @@
 		310E2FEAB88A3E62E14EC700 /* HabitTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F13D6503838960444F2CA0B6 /* HabitTrackerView.swift */; };
 		312F5DA73545D2D908165DE6 /* StudySessionItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A85FD45DEA3E16AA58CB2CD /* StudySessionItem.swift */; };
 		320A2B29AC7268ACFD8EE350 /* GraduateTimetableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D04CD6B09739AA5CCFEFDF6D /* GraduateTimetableView.swift */; };
+		3C30BD9558B7ABAB8887C727 /* GraduateNoteEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF3CB3B872E11A5C95F48329 /* GraduateNoteEditorView.swift */; };
+		CE62C555663BCADF3CDDFE72 /* GraduateNotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1626754C7A9125A635E7745F /* GraduateNotesView.swift */; };
+		4D95AADA5476A1DCC587B7B5 /* GraduateNoteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A908561061B4C01552C3E5E /* GraduateNoteService.swift */; };
 		38481147F76D2A124AC8FF5A /* timer-exercise.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 0560E090212CE20E96E17F0F /* timer-exercise.jpg */; };
 		395ED4F51127F437671E11B5 /* DiaryWriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 547F99007C6FCE58B7F29335 /* DiaryWriteView.swift */; };
 		39B7E96394D42F33CF7764AD /* TimerHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BB2F61DEE70BBB4A496E152 /* TimerHubView.swift */; };
@@ -292,6 +295,9 @@
 		CAF8CFD6FA783D2983A84C42 /* PlaceSearchCompleter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceSearchCompleter.swift; sourceTree = "<group>"; };
 		CF0CA9CF9A6A323934F91997 /* SummerClockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SummerClockView.swift; sourceTree = "<group>"; };
 		D04CD6B09739AA5CCFEFDF6D /* GraduateTimetableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraduateTimetableView.swift; sourceTree = "<group>"; };
+		BF3CB3B872E11A5C95F48329 /* GraduateNoteEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraduateNoteEditorView.swift; sourceTree = "<group>"; };
+		1626754C7A9125A635E7745F /* GraduateNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraduateNotesView.swift; sourceTree = "<group>"; };
+		3A908561061B4C01552C3E5E /* GraduateNoteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraduateNoteService.swift; sourceTree = "<group>"; };
 		D1B88F6523F4D3F6B6C7F914 /* timer-book.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "timer-book.jpg"; sourceTree = "<group>"; };
 		D2C694A851AB63F042A05AC1 /* DiaryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryItem.swift; sourceTree = "<group>"; };
 		D39AAC1A8BF6E487B9ED6FEE /* TravelAbroadModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelAbroadModels.swift; sourceTree = "<group>"; };
@@ -399,6 +405,9 @@
 				4AC17C8AAB3CDBF52B250907 /* FridgeMenuRecommendView.swift */,
 				B9EED10CF3B80975BDD7DC58 /* FridgeShelfView.swift */,
 				D04CD6B09739AA5CCFEFDF6D /* GraduateTimetableView.swift */,
+				BF3CB3B872E11A5C95F48329 /* GraduateNoteEditorView.swift */,
+				1626754C7A9125A635E7745F /* GraduateNotesView.swift */,
+				3A908561061B4C01552C3E5E /* GraduateNoteService.swift */,
 				9AA6CB30D85668CDA815DE41 /* HabitTrackerCardView.swift */,
 				E7916200BAF477DE717FF740 /* HabitTrackerFormView.swift */,
 				F13D6503838960444F2CA0B6 /* HabitTrackerView.swift */,
@@ -766,6 +775,9 @@
 				DDB234BF8C8CCA6B99DDF1E6 /* FridgeMenuRecommendView.swift in Sources */,
 				B87FD67E5578B3E053CF0D83 /* FridgeShelfView.swift in Sources */,
 				320A2B29AC7268ACFD8EE350 /* GraduateTimetableView.swift in Sources */,
+				3C30BD9558B7ABAB8887C727 /* GraduateNoteEditorView.swift in Sources */,
+				CE62C555663BCADF3CDDFE72 /* GraduateNotesView.swift in Sources */,
+				4D95AADA5476A1DCC587B7B5 /* GraduateNoteService.swift in Sources */,
 				01882407C87EE8CD8545AD3A /* HabitTrackerCardView.swift in Sources */,
 				108351B7AC1351E3A723006B /* HabitTrackerFormView.swift in Sources */,
 				D8B31DB54794DFAA42FE92A2 /* HabitTrackerItem.swift in Sources */,

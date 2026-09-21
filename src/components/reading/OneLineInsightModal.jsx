@@ -20,9 +20,11 @@ export default function OneLineInsightModal({ book, onSave, onCancel }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+    // iOS 키보드/주소창으로 화면이 가려져도 저장 버튼까지 스크롤할 수 있도록 오버레이 자체를 스크롤 가능하게 한다
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 overflow-y-auto overscroll-contain">
+      <div className="min-h-full flex items-start sm:items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-3xl font-bold text-gray-800">한줄 인사이트</h2>
             <button
@@ -68,19 +70,22 @@ export default function OneLineInsightModal({ book, onSave, onCancel }) {
 
           <div className="flex items-center justify-end gap-3">
             <button
+              type="button"
               onClick={onCancel}
-              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-200 text-lg font-medium"
+              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-200 text-lg font-medium touch-manipulation"
             >
               취소
             </button>
             <button
+              type="button"
               onClick={handleSave}
-              className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 text-lg font-medium"
+              className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 text-lg font-medium touch-manipulation"
             >
               저장
             </button>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )
