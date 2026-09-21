@@ -226,7 +226,8 @@ final class SupabaseService {
             URLQueryItem(name: "completed", value: "eq.false"),
             URLQueryItem(name: "user_id",   value: "eq.\(userId)"),
             URLQueryItem(name: "select",    value: "id,title,category,priority,createdat"),
-            URLQueryItem(name: "order",     value: "priority.asc,createdat.asc"),
+            // 작성 순서대로 (가장 최근에 작성한 항목이 맨 아래)
+            URLQueryItem(name: "order",     value: "createdat.asc"),
         ]
 
         var request = URLRequest(url: components.url!)

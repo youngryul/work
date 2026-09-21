@@ -85,6 +85,7 @@ targets:
       - path: PotatoBuddyiOS/timer-study.png
       - path: PotatoBuddyiOS/timer-book.jpg
       - path: PotatoBuddyiOS/timer-exercise.jpg
+      - path: PotatoBuddyiOS/timer-coding.jpg
       - path: PotatoBuddyiOS/summer.png
       - path: PotatoBuddyiOS/toeicNorangiVocab.json
       - path: PotatoBuddyiOS/Assets.xcassets

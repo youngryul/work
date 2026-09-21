@@ -61,7 +61,7 @@
 		4F5194A182679CBCC20151E6 /* CategoryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0987064D68A1DF4DD6756AF6 /* CategoryItem.swift */; };
 		51DF8B94BE030B25BDFABE60 /* 모바일배경.png in Resources */ = {isa = PBXBuildFile; fileRef = 12DF9FBB4D85C2F270AAC672 /* 모바일배경.png */; };
 		52949332A075AC22A6D74643 /* DownwardBubbleShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D55F9D7FCCE9503B15B63A5 /* DownwardBubbleShape.swift */; };
-		52CA2C793F9B3E4B3C7A7148 /* timer-coding.png in Resources */ = {isa = PBXBuildFile; fileRef = 6B4E4C8444233615DA63208C /* timer-coding.png */; };
+		52CA2C793F9B3E4B3C7A7148 /* timer-coding.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6B4E4C8444233615DA63208C /* timer-coding.jpg */; };
 		53051C295875E02B85336103 /* TodoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DD29BCF03B4DCC1F72234C3 /* TodoViewModel.swift */; };
 		56378A51AD80B9925F13CE24 /* MenuRecommendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B45FCAA20C8F2C48939F72F /* MenuRecommendService.swift */; };
 		5650D71C9E845350766EFD05 /* ReadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDF2BF6C21FE205E5DE55CBD /* ReadingView.swift */; };
@@ -239,7 +239,7 @@
 		677026DF5D7BCBF839975C58 /* DiaryShareCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryShareCardView.swift; sourceTree = "<group>"; };
 		687C3B2D7029A9D36927DA24 /* StepCounterCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCounterCardView.swift; sourceTree = "<group>"; };
 		68FFB9D50D2473DC4EA80FC2 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
-		6B4E4C8444233615DA63208C /* timer-coding.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "timer-coding.png"; sourceTree = "<group>"; };
+		6B4E4C8444233615DA63208C /* timer-coding.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "timer-coding.jpg"; sourceTree = "<group>"; };
 		6BEEDF33B6BA4C250F262C91 /* 포실이(투명).png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이(투명).png"; sourceTree = "<group>"; };
 		6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingWindow.swift; sourceTree = "<group>"; };
 		6EC4808FE02D6272C60A42FA /* OverlayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayRootView.swift; sourceTree = "<group>"; };
@@ -433,7 +433,7 @@
 				CF0CA9CF9A6A323934F91997 /* SummerClockView.swift */,
 				96749DCBF60CC35730DDA5F7 /* timer-bgm.mp3 */,
 				D1B88F6523F4D3F6B6C7F914 /* timer-book.jpg */,
-				6B4E4C8444233615DA63208C /* timer-coding.png */,
+				6B4E4C8444233615DA63208C /* timer-coding.jpg */,
 				0560E090212CE20E96E17F0F /* timer-exercise.jpg */,
 				739BD6AB90804BA18146B1A6 /* timer-study.png */,
 				D64D91FB4F9441E3D614A378 /* TimerBgmPlayer.swift */,
@@ -637,7 +637,7 @@
 				D05ACB77F8057E8AD16BD17C /* summer.png in Resources */,
 				DD8541835BC47F627984832D /* timer-bgm.mp3 in Resources */,
 				AD71B326C8EBD12C45A07C1C /* timer-book.jpg in Resources */,
-				52CA2C793F9B3E4B3C7A7148 /* timer-coding.png in Resources */,
+				52CA2C793F9B3E4B3C7A7148 /* timer-coding.jpg in Resources */,
 				38481147F76D2A124AC8FF5A /* timer-exercise.jpg in Resources */,
 				2B037424402D59ED5066CCA3 /* timer-study.png in Resources */,
 				51DF8B94BE030B25BDFABE60 /* 모바일배경.png in Resources */,
