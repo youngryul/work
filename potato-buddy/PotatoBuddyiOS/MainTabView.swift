@@ -5,6 +5,7 @@ struct MainTabView: View {
     static let stepsTabTag = 11
     static let clockTabTag = 9
     static let moreTabTag = 14
+    static let farmTabTag = 16
 
     /// 예전 토익 탭 tag. 커스텀 더보기에도 넣지 않는다.
     private static let removedToeicTabTag = 7
@@ -103,6 +104,8 @@ struct MainTabView: View {
             moreDestination(TravelItineraryView())
         case 8:
             moreDestination(FridgeInventoryView())
+        case Self.farmTabTag:
+            moreDestination(FarmView())
         case 15:
             moreDestination(GraduateTimetableView())
         case 10:
@@ -138,6 +141,7 @@ private struct MoreMenuView: View {
     @Binding var selectedTab: Int
 
     private let items: [(tag: Int, title: String, systemImage: String)] = [
+        (MainTabView.farmTabTag, "포실이 성장", "leaf.fill"),
         (4, "타이머", "timer"),
         (5, "습관", "chart.bar.fill"),
         (12, "독서", "books.vertical.fill"),

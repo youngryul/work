@@ -157,6 +157,9 @@
 		FCE237435B2D654EEE2A4100 /* FloatingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */; };
 		FEC7106BC26FF1ED93A540ED /* ScheduleCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CC56B1102F36D279C196D42 /* ScheduleCalendarView.swift */; };
 		FF74424E45EA20EB5325E1A0 /* ProjectRecordFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E71472EE86304CA2D6A5CBB3 /* ProjectRecordFormView.swift */; };
+		E1AB91A6736216B64AB5DF9D /* FarmModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4100FCD8E5F3765E07F34488 /* FarmModels.swift */; };
+		649D96B0DE95FE455AE71457 /* FarmService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EAD6E46FEC469CE0FFB2602 /* FarmService.swift */; };
+		A26DF718812F113EC183C5A2 /* FarmView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7611A2C619BBABA244251FA0 /* FarmView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -315,6 +318,9 @@
 		FE439661AA11BAB52C599244 /* TravelItinerarySouvenirListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelItinerarySouvenirListView.swift; sourceTree = "<group>"; };
 		FE7618036880053779773CE5 /* ChatBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBubbleView.swift; sourceTree = "<group>"; };
 		FF34EBDB67FA4CE34766FF1E /* WeatherWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherWidget.swift; sourceTree = "<group>"; };
+		4100FCD8E5F3765E07F34488 /* FarmModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmModels.swift; sourceTree = "<group>"; };
+		0EAD6E46FEC469CE0FFB2602 /* FarmService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmService.swift; sourceTree = "<group>"; };
+		7611A2C619BBABA244251FA0 /* FarmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -397,6 +403,9 @@
 				E7916200BAF477DE717FF740 /* HabitTrackerFormView.swift */,
 				F13D6503838960444F2CA0B6 /* HabitTrackerView.swift */,
 				16ED2268DFB8CD43F90BC3BA /* Info.plist */,
+				4100FCD8E5F3765E07F34488 /* FarmModels.swift */,
+				0EAD6E46FEC469CE0FFB2602 /* FarmService.swift */,
+				7611A2C619BBABA244251FA0 /* FarmView.swift */,
 				9AC0637A6BBD34447E7A0DA2 /* JellyBalanceBadgeView.swift */,
 				852B8983CE9BC8617F83ECBD /* LoginView.swift */,
 				47CB4229136599A8BA65F44C /* MainTabView.swift */,
@@ -761,6 +770,9 @@
 				108351B7AC1351E3A723006B /* HabitTrackerFormView.swift in Sources */,
 				D8B31DB54794DFAA42FE92A2 /* HabitTrackerItem.swift in Sources */,
 				310E2FEAB88A3E62E14EC700 /* HabitTrackerView.swift in Sources */,
+				E1AB91A6736216B64AB5DF9D /* FarmModels.swift in Sources */,
+				649D96B0DE95FE455AE71457 /* FarmService.swift in Sources */,
+				A26DF718812F113EC183C5A2 /* FarmView.swift in Sources */,
 				97576556E3490B072A46AEEB /* JellyBalanceBadgeView.swift in Sources */,
 				7AC55FC3AE10ADE27CEEFDC4 /* JellyBalanceStore.swift in Sources */,
 				4BE217685FD4FE9ECC03341B /* JellyRewardConstants.swift in Sources */,

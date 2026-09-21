@@ -6,13 +6,13 @@ final class SupabaseService {
 
     // MARK: - 인증 정보 (MainActor에서 가져오기)
 
-    private func authInfo() async -> (userId: String, token: String) {
+    func authInfo() async -> (userId: String, token: String) {
         await MainActor.run {
             (AuthService.shared.userId, AuthService.shared.accessToken)
         }
     }
 
-    private func headers(token: String) -> [String: String] {
+    func headers(token: String) -> [String: String] {
         [
             "apikey":        Config.anonKey,
             "Authorization": "Bearer \(token)",
@@ -21,7 +21,7 @@ final class SupabaseService {
     }
 
     /// HTTP 응답 상태코드 확인 후 에러 메시지 throw
-    private func checkResponse(_ data: Data, _ response: URLResponse) throws {
+    func checkResponse(_ data: Data, _ response: URLResponse) throws {
         guard let http = response as? HTTPURLResponse else { return }
         guard (200..<300).contains(http.statusCode) else {
             let msg = (try? JSONDecoder().decode(SupabaseError.self, from: data))?.message
@@ -59,7 +59,7 @@ final class SupabaseService {
     }
 
     /// JWT 만료 시 자동 갱신 후 1회 재시도
-    private func fetch(_ request: URLRequest) async throws -> (Data, URLResponse) {
+    func fetch(_ request: URLRequest) async throws -> (Data, URLResponse) {
         let (data, response) = try await URLSession.shared.data(for: request)
 
         if let http = response as? HTTPURLResponse, http.statusCode == 401 {
