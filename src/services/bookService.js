@@ -318,6 +318,62 @@ export async function updateBookCompletion(bookId, isCompleted, oneLineInsight =
 }
 
 /**
+ * 책 읽는 중 여부 변경
+ * @param {string} bookId - 책 ID
+ * @param {boolean} isReading - 읽는 중 여부
+ * @returns {Promise<Object>} 업데이트된 책 정보
+ */
+export async function updateBookReading(bookId, isReading) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  const { data, error } = await supabase
+    .from('books')
+    .update({ is_reading: isReading, updated_at: new Date().toISOString() })
+    .eq('id', bookId)
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('책 읽는 중 상태 변경 오류:', error)
+    throw error
+  }
+
+  return normalizeBook(data)
+}
+
+/**
+ * 책 현재 읽은 페이지 저장
+ * @param {string} bookId - 책 ID
+ * @param {number} currentPage - 현재까지 읽은 페이지 (0 이상)
+ * @returns {Promise<Object>} 업데이트된 책 정보
+ */
+export async function updateBookProgress(bookId, currentPage) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  const { data, error } = await supabase
+    .from('books')
+    .update({ current_page: currentPage, updated_at: new Date().toISOString() })
+    .eq('id', bookId)
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('책 읽은 페이지 저장 오류:', error)
+    throw error
+  }
+
+  return normalizeBook(data)
+}
+
+/**
  * 데이터베이스 컬럼명을 camelCase로 변환
  */
 function normalizeBook(book) {
@@ -330,6 +386,8 @@ function normalizeBook(book) {
     apiSource: book.api_source ?? book.apiSource,
     apiId: book.api_id ?? book.apiId,
     isCompleted: book.is_completed ?? book.isCompleted ?? false,
+    isReading: book.is_reading ?? book.isReading ?? false,
+    currentPage: book.current_page ?? book.currentPage ?? 0,
     oneLineInsight: book.one_line_insight ?? book.oneLineInsight ?? null,
     completedAt: book.completed_at ?? book.completedAt ?? null,
     createdAt: book.created_at ?? book.createdAt,

@@ -592,6 +592,19 @@ export const officetelTenants = pgTable('officetel_tenants', {
 })
 
 /**
+ * officetel_tenant_deposit_shares — 임차인 보증금을 누가 얼마 가져갔는지
+ */
+export const officetelTenantDepositShares = pgTable('officetel_tenant_deposit_shares', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').notNull(),
+  userId: uuid('user_id').notNull(),
+  holderName: text('holder_name').notNull(),
+  amount: numeric('amount').default('0').notNull(),
+  memo: text('memo'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+/**
  * monthly_stats_popups — 매월 1일 지난 달 통계(타이머·할일) 팝업 표시 이력
  * 한 번 표시된 달(period_month)은 다시 표시하지 않기 위한 기록용
  */

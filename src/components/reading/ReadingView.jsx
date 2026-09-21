@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react'
-import { getAllBooks, updateBookCompletion } from '../../services/bookService.js'
+import {
+  getAllBooks,
+  updateBookCompletion,
+  updateBookReading,
+  updateBookProgress,
+} from '../../services/bookService.js'
 import { getReadingRecordsByBook, getMonthlyReadingStats, deleteReadingRecord } from '../../services/readingService.js'
 import BookSearch from './BookSearch.jsx'
 import ReadingRecordForm from './ReadingRecordForm.jsx'
 import ReadingBookStack from './ReadingBookStack.jsx'
+import BookProgress from './BookProgress.jsx'
 import OneLineInsightModal from './OneLineInsightModal.jsx'
 import CompletedReadingNotesModal from './CompletedReadingNotesModal.jsx'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
@@ -18,6 +24,29 @@ function formatCompletedDate(dateStr) {
   const [year, month, day] = dateStr.split('-').map(Number)
   if (!year || !month || !day) return dateStr
   return `${year}년 ${month}월 ${day}일`
+}
+
+/** 등록된 책 구분 탭 */
+const BOOK_TABS = [
+  { id: 'reading', label: '읽는 중' },
+  { id: 'idle', label: '읽기 전' },
+  { id: 'completed', label: '완료' },
+]
+
+const BOOK_TAB_EMPTY_MESSAGES = {
+  reading: '현재 읽고 있는 책이 없습니다.',
+  idle: '읽기 전인 책이 없습니다.',
+  completed: '완료한 책이 없습니다.',
+}
+
+/**
+ * 책이 속한 구분 (완료가 우선)
+ * @param {Object} book
+ * @returns {'reading' | 'idle' | 'completed'}
+ */
+function getBookGroup(book) {
+  if (book.isCompleted) return 'completed'
+  return book.isReading ? 'reading' : 'idle'
 }
 
 /**
@@ -37,6 +66,16 @@ export default function ReadingView() {
   const [showInsightModal, setShowInsightModal] = useState(false)
   const [bookToComplete, setBookToComplete] = useState(null)
   const [notesBook, setNotesBook] = useState(null)
+  const [bookTab, setBookTab] = useState('reading')
+
+  const bookGroups = {
+    reading: books.filter((book) => getBookGroup(book) === 'reading'),
+    idle: books.filter((book) => getBookGroup(book) === 'idle'),
+    completed: books
+      .filter((book) => getBookGroup(book) === 'completed')
+      .sort((a, b) => (b.completedAt || '').localeCompare(a.completedAt || '')),
+  }
+  const visibleBooks = bookGroups[bookTab]
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth() + 1
@@ -123,6 +162,31 @@ export default function ReadingView() {
 
     setBookToComplete(book)
     setShowInsightModal(true)
+  }
+
+  /**
+   * 읽는 중 ↔ 읽기 전 전환
+   */
+  const handleToggleReading = async (book) => {
+    try {
+      await updateBookReading(book.id, !book.isReading)
+      await loadBooks()
+      showToast(
+        book.isReading ? '읽기 전 목록으로 옮겼습니다.' : '읽는 중 목록으로 옮겼습니다.',
+        TOAST_TYPES.SUCCESS,
+      )
+    } catch (error) {
+      console.error('읽는 중 상태 변경 오류:', error)
+      showToast('상태 변경에 실패했습니다.', TOAST_TYPES.ERROR)
+    }
+  }
+
+  /**
+   * 현재 읽은 페이지 저장 (실패 시 BookProgress에서 토스트 처리)
+   */
+  const handleSaveProgress = async (book, page) => {
+    await updateBookProgress(book.id, page)
+    await loadBooks()
   }
 
   /**
@@ -240,13 +304,29 @@ export default function ReadingView() {
         {/* 책 목록 */}
         <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
           <h2 className="text-3xl font-bold text-gray-800 mb-4">등록된 책</h2>
-          {books.length === 0 ? (
+          <div className="flex gap-2 mb-4">
+            {BOOK_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setBookTab(tab.id)}
+                className={`px-4 py-2 rounded-lg text-base font-medium transition-colors ${
+                  bookTab === tab.id
+                    ? 'bg-blue-500 text-white shadow-sm'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {tab.label} {bookGroups[tab.id].length}
+              </button>
+            ))}
+          </div>
+          {visibleBooks.length === 0 ? (
             <div className="text-center py-8 text-gray-400 text-xl">
-              등록된 책이 없습니다.
+              {books.length === 0 ? '등록된 책이 없습니다.' : BOOK_TAB_EMPTY_MESSAGES[bookTab]}
             </div>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {books.map((book) => (
+              {visibleBooks.map((book) => (
                 <div
                   key={book.id}
                   onClick={() => setSelectedBook(book)}
@@ -274,19 +354,36 @@ export default function ReadingView() {
                             <span className="ml-2 text-green-600 text-base">✓ 완료</span>
                           )}
                         </h3>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleCompleteBook(book)
-                          }}
-                          className={`px-3 py-1 text-sm rounded-lg transition-colors duration-200 ${
-                            book.isCompleted
-                              ? 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                              : 'bg-green-500 text-white hover:bg-green-600'
-                          }`}
-                        >
-                          {book.isCompleted ? '완료 해제' : '완료'}
-                        </button>
+                        <div className="flex shrink-0 items-center gap-2 ml-2">
+                          {!book.isCompleted && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleToggleReading(book)
+                              }}
+                              className={`px-3 py-1 text-sm rounded-lg transition-colors duration-200 ${
+                                book.isReading
+                                  ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                              }`}
+                            >
+                              {book.isReading ? '읽기 중단' : '읽기 시작'}
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleCompleteBook(book)
+                            }}
+                            className={`px-3 py-1 text-sm rounded-lg transition-colors duration-200 ${
+                              book.isCompleted
+                                ? 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                                : 'bg-green-500 text-white hover:bg-green-600'
+                            }`}
+                          >
+                            {book.isCompleted ? '완료 해제' : '완료'}
+                          </button>
+                        </div>
                       </div>
                       <p className="text-gray-600 text-sm">저자: {book.author || '알 수 없음'}</p>
                       {book.isCompleted && book.completedAt && (
@@ -296,6 +393,12 @@ export default function ReadingView() {
                       )}
                       {book.pageCount > 0 && (
                         <p className="text-gray-600 text-sm">페이지: {book.pageCount}페이지</p>
+                      )}
+                      {!book.isCompleted && (
+                        <BookProgress
+                          book={book}
+                          onSave={(page) => handleSaveProgress(book, page)}
+                        />
                       )}
                       {book.isCompleted && book.oneLineInsight && (
                         <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-gray-700">

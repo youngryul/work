@@ -85,6 +85,97 @@ export async function deleteOfficetelTenant(tenantId) {
 }
 
 /**
+ * 여러 임차인의 보증금 수령 내역을 한번에 조회
+ * @param {string[]} tenantIds
+ * @returns {Promise<Record<string, Array>>} tenantId -> 수령 내역 배열
+ */
+export async function getOfficetelTenantDepositSharesMap(tenantIds) {
+  if (!tenantIds || tenantIds.length === 0) return {}
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('로그인이 필요합니다.')
+
+  const { data, error } = await supabase
+    .from('officetel_tenant_deposit_shares')
+    .select('*')
+    .eq('user_id', user.id)
+    .in('tenant_id', tenantIds)
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+
+  return (data || []).reduce((map, row) => {
+    if (!map[row.tenant_id]) map[row.tenant_id] = []
+    map[row.tenant_id].push(row)
+    return map
+  }, {})
+}
+
+/**
+ * 보증금 수령 내역 추가
+ * @param {string} tenantId
+ * @param {Object} shareData - { holder_name, amount, memo }
+ * @returns {Promise<Object>}
+ */
+export async function saveOfficetelTenantDepositShare(tenantId, shareData) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('로그인이 필요합니다.')
+
+  const { data, error } = await supabase
+    .from('officetel_tenant_deposit_shares')
+    .insert({
+      user_id: user.id,
+      tenant_id: tenantId,
+      ...shareData,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * 보증금 수령 내역 수정
+ * @param {string} shareId
+ * @param {Object} updates
+ * @returns {Promise<Object>}
+ */
+export async function updateOfficetelTenantDepositShare(shareId, updates) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('로그인이 필요합니다.')
+
+  const { data, error } = await supabase
+    .from('officetel_tenant_deposit_shares')
+    .update(updates)
+    .eq('id', shareId)
+    .eq('user_id', user.id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * 보증금 수령 내역 삭제
+ * @param {string} shareId
+ * @returns {Promise<void>}
+ */
+export async function deleteOfficetelTenantDepositShare(shareId) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('로그인이 필요합니다.')
+
+  const { error } = await supabase
+    .from('officetel_tenant_deposit_shares')
+    .delete()
+    .eq('id', shareId)
+    .eq('user_id', user.id)
+
+  if (error) throw error
+}
+
+/**
  * 여러 임차인의 월별 월세 수령 체크 내역을 한번에 조회
  * @param {string[]} tenantIds
  * @returns {Promise<Record<string, string[]>>} tenantId -> 수령 완료된 'YYYY-MM' 배열
