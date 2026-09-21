@@ -8,7 +8,12 @@ import {
   getOfficetelTenantRentPaymentsMap,
   markOfficetelTenantRentPaid,
   unmarkOfficetelTenantRentPaid,
+  getOfficetelTenantDepositSharesMap,
+  saveOfficetelTenantDepositShare,
+  updateOfficetelTenantDepositShare,
+  deleteOfficetelTenantDepositShare,
 } from '../../services/officetelTenantService.js'
+import { getOfficetelPurchasePayers } from '../../services/officetelPurchaseService.js'
 import LedgerAmountInput from '../ledger/LedgerAmountInput.jsx'
 import { toLedgerAmountNumber } from '../../constants/ledger.js'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
@@ -21,6 +26,8 @@ const EMPTY_TENANT_FORM = {
   monthly_rent: '',
   memo: '',
 }
+
+const EMPTY_SHARE_FORM = { holder_name: '', amount: '', memo: '' }
 
 /**
  * 계약기간(YYYY-MM-DD ~ YYYY-MM-DD) 내 월 목록 ('YYYY-MM')
@@ -47,6 +54,11 @@ export default function OfficetelTenantTab({ purchaseId }) {
   const [showForm, setShowForm] = useState(false)
   const [editingTenant, setEditingTenant] = useState(null)
   const [formData, setFormData] = useState(EMPTY_TENANT_FORM)
+  const [sharesMap, setSharesMap] = useState({}) // tenantId -> 보증금 수령 내역[]
+  const [holderSuggestions, setHolderSuggestions] = useState([]) // 매매 분담자 이름 (입력 추천)
+  const [shareTenantId, setShareTenantId] = useState(null) // 보증금 수령 폼이 열린 임차인
+  const [editingShareId, setEditingShareId] = useState(null)
+  const [shareForm, setShareForm] = useState(EMPTY_SHARE_FORM)
 
   useEffect(() => {
     loadAll()
@@ -60,6 +72,11 @@ export default function OfficetelTenantTab({ purchaseId }) {
       setTenants(tenantData)
       const paymentsMap = await getOfficetelTenantRentPaymentsMap(tenantData.map((t) => t.id))
       setPaidMonthsMap(paymentsMap)
+      setSharesMap(await getOfficetelTenantDepositSharesMap(tenantData.map((t) => t.id)))
+      // 분담자 이름은 입력 편의용이므로 실패해도 무시
+      getOfficetelPurchasePayers(purchaseId)
+        .then((payers) => setHolderSuggestions([...new Set(payers.map((p) => p.payer_name))]))
+        .catch(() => {})
     } catch (error) {
       console.error('임차인 목록 로드 실패:', error)
       showToast('임차인 목록을 불러오는데 실패했습니다.', TOAST_TYPES.ERROR)
@@ -137,6 +154,73 @@ export default function OfficetelTenantTab({ purchaseId }) {
     } catch (error) {
       console.error('임차인 삭제 실패:', error)
       showToast('임차인 삭제에 실패했습니다.', TOAST_TYPES.ERROR)
+    }
+  }
+
+  const resetShareForm = () => {
+    setShareForm(EMPTY_SHARE_FORM)
+    setEditingShareId(null)
+    setShareTenantId(null)
+  }
+
+  const handleOpenShareForm = (tenantId) => {
+    setShareForm(EMPTY_SHARE_FORM)
+    setEditingShareId(null)
+    setShareTenantId(tenantId)
+  }
+
+  const handleEditShare = (tenantId, share) => {
+    setShareTenantId(tenantId)
+    setEditingShareId(share.id)
+    setShareForm({
+      holder_name: share.holder_name,
+      amount: String(share.amount),
+      memo: share.memo || '',
+    })
+  }
+
+  const handleSaveShare = async (e) => {
+    e.preventDefault()
+    if (!shareForm.holder_name.trim()) {
+      showToast('가져간 사람 이름을 입력해주세요.', TOAST_TYPES.ERROR)
+      return
+    }
+    const amount = toLedgerAmountNumber(shareForm.amount)
+    if (amount <= 0) {
+      showToast('금액을 올바르게 입력해주세요.', TOAST_TYPES.ERROR)
+      return
+    }
+
+    try {
+      const dataToSave = {
+        holder_name: shareForm.holder_name.trim(),
+        amount,
+        memo: shareForm.memo || null,
+      }
+      if (editingShareId) {
+        await updateOfficetelTenantDepositShare(editingShareId, dataToSave)
+        showToast('보증금 수령 내역이 수정되었습니다.', TOAST_TYPES.SUCCESS)
+      } else {
+        await saveOfficetelTenantDepositShare(shareTenantId, dataToSave)
+        showToast('보증금 수령 내역이 추가되었습니다.', TOAST_TYPES.SUCCESS)
+      }
+      resetShareForm()
+      await loadAll()
+    } catch (error) {
+      console.error('보증금 수령 내역 저장 실패:', error)
+      showToast('보증금 수령 내역 저장에 실패했습니다.', TOAST_TYPES.ERROR)
+    }
+  }
+
+  const handleDeleteShare = async (shareId) => {
+    if (!window.confirm('이 보증금 수령 내역을 삭제하시겠습니까?')) return
+    try {
+      await deleteOfficetelTenantDepositShare(shareId)
+      showToast('보증금 수령 내역이 삭제되었습니다.', TOAST_TYPES.SUCCESS)
+      await loadAll()
+    } catch (error) {
+      console.error('보증금 수령 내역 삭제 실패:', error)
+      showToast('보증금 수령 내역 삭제에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 
@@ -272,6 +356,9 @@ export default function OfficetelTenantTab({ purchaseId }) {
             const paidMonths = paidMonthsMap[tenant.id] || []
             const paidCount = months.filter((m) => paidMonths.includes(m)).length
             const monthlyRent = Number(tenant.monthly_rent)
+            const shares = sharesMap[tenant.id] || []
+            const sharedTotal = shares.reduce((sum, share) => sum + Number(share.amount), 0)
+            const depositRemaining = Number(tenant.deposit) - sharedTotal
 
             return (
               <div key={tenant.id} className="p-4 bg-white rounded-lg border border-gray-200 space-y-3">
@@ -297,6 +384,98 @@ export default function OfficetelTenantTab({ purchaseId }) {
                     <button onClick={() => handleEdit(tenant)} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-sans text-sm">수정</button>
                     <button onClick={() => handleDelete(tenant.id)} className="px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-sans text-sm">삭제</button>
                   </div>
+                </div>
+
+                {/* 보증금 수령 내역 (누가 얼마 가져갔는지) */}
+                <div className="p-3 bg-amber-50/60 rounded-lg border border-amber-100 space-y-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="text-sm font-sans font-semibold text-gray-700">
+                      보증금 수령 내역
+                      <span className="ml-2 font-normal text-gray-600">
+                        합계 <b className="text-gray-800">{sharedTotal.toLocaleString()}원</b>
+                        {' / '}
+                        {depositRemaining === 0 ? (
+                          <b className="text-green-600">전액 배분됨</b>
+                        ) : depositRemaining > 0 ? (
+                          <>남은 금액 <b className="text-amber-700">{depositRemaining.toLocaleString()}원</b></>
+                        ) : (
+                          <b className="text-red-600">보증금보다 {Math.abs(depositRemaining).toLocaleString()}원 초과</b>
+                        )}
+                      </span>
+                    </div>
+                    {shareTenantId !== tenant.id && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenShareForm(tenant.id)}
+                        className="px-3 py-1 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors font-sans text-xs font-medium"
+                      >
+                        + 수령 내역 추가
+                      </button>
+                    )}
+                  </div>
+
+                  {shares.length > 0 && (
+                    <ul className="space-y-1">
+                      {shares.map((share) => (
+                        <li key={share.id} className="flex items-center justify-between gap-2 text-sm font-sans">
+                          <span className="min-w-0 break-all">
+                            <span className="font-semibold text-gray-800">{share.holder_name}</span>
+                            <span className="ml-2 text-gray-700">{Number(share.amount).toLocaleString()}원</span>
+                            {share.memo && <span className="ml-2 text-gray-500">{share.memo}</span>}
+                          </span>
+                          <span className="flex gap-1 shrink-0">
+                            <button type="button" onClick={() => handleEditShare(tenant.id, share)} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs">수정</button>
+                            <button type="button" onClick={() => handleDeleteShare(share.id)} className="px-2 py-0.5 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs">삭제</button>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {shareTenantId === tenant.id && (
+                    <form onSubmit={handleSaveShare} className="space-y-2 pt-1">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1 font-sans">가져간 사람 *</label>
+                          <input
+                            type="text"
+                            list={`deposit-holders-${tenant.id}`}
+                            value={shareForm.holder_name}
+                            onChange={(e) => setShareForm({ ...shareForm, holder_name: e.target.value })}
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-amber-500 text-sm font-sans bg-white"
+                            placeholder="예: 홍길동"
+                          />
+                          <datalist id={`deposit-holders-${tenant.id}`}>
+                            {holderSuggestions.map((name) => (
+                              <option key={name} value={name} />
+                            ))}
+                          </datalist>
+                        </div>
+                        <LedgerAmountInput
+                          label="금액 *"
+                          value={shareForm.amount}
+                          onChange={(digits) => setShareForm({ ...shareForm, amount: digits })}
+                          showQuickAdd={false}
+                          inputClassName="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-amber-500 text-sm font-sans bg-white"
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        value={shareForm.memo}
+                        onChange={(e) => setShareForm({ ...shareForm, memo: e.target.value })}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-amber-500 text-sm font-sans bg-white"
+                        placeholder="메모 (선택 입력)"
+                      />
+                      <div className="flex gap-2">
+                        <button type="submit" className="px-4 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-sans font-medium text-sm">
+                          {editingShareId ? '수정' : '저장'}
+                        </button>
+                        <button type="button" onClick={resetShareForm} className="px-4 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-sans font-medium text-sm">
+                          취소
+                        </button>
+                      </div>
+                    </form>
+                  )}
                 </div>
 
                 {/* 월별 월세 수령 체크 */}

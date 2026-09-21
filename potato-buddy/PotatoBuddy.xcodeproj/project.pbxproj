@@ -38,6 +38,9 @@
 		310E2FEAB88A3E62E14EC700 /* HabitTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F13D6503838960444F2CA0B6 /* HabitTrackerView.swift */; };
 		312F5DA73545D2D908165DE6 /* StudySessionItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A85FD45DEA3E16AA58CB2CD /* StudySessionItem.swift */; };
 		320A2B29AC7268ACFD8EE350 /* GraduateTimetableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D04CD6B09739AA5CCFEFDF6D /* GraduateTimetableView.swift */; };
+		3C30BD9558B7ABAB8887C727 /* GraduateNoteEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF3CB3B872E11A5C95F48329 /* GraduateNoteEditorView.swift */; };
+		CE62C555663BCADF3CDDFE72 /* GraduateNotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1626754C7A9125A635E7745F /* GraduateNotesView.swift */; };
+		4D95AADA5476A1DCC587B7B5 /* GraduateNoteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A908561061B4C01552C3E5E /* GraduateNoteService.swift */; };
 		38481147F76D2A124AC8FF5A /* timer-exercise.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 0560E090212CE20E96E17F0F /* timer-exercise.jpg */; };
 		395ED4F51127F437671E11B5 /* DiaryWriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 547F99007C6FCE58B7F29335 /* DiaryWriteView.swift */; };
 		39B7E96394D42F33CF7764AD /* TimerHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BB2F61DEE70BBB4A496E152 /* TimerHubView.swift */; };
@@ -61,7 +64,7 @@
 		4F5194A182679CBCC20151E6 /* CategoryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0987064D68A1DF4DD6756AF6 /* CategoryItem.swift */; };
 		51DF8B94BE030B25BDFABE60 /* 모바일배경.png in Resources */ = {isa = PBXBuildFile; fileRef = 12DF9FBB4D85C2F270AAC672 /* 모바일배경.png */; };
 		52949332A075AC22A6D74643 /* DownwardBubbleShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D55F9D7FCCE9503B15B63A5 /* DownwardBubbleShape.swift */; };
-		52CA2C793F9B3E4B3C7A7148 /* timer-coding.png in Resources */ = {isa = PBXBuildFile; fileRef = 6B4E4C8444233615DA63208C /* timer-coding.png */; };
+		52CA2C793F9B3E4B3C7A7148 /* timer-coding.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 6B4E4C8444233615DA63208C /* timer-coding.jpg */; };
 		53051C295875E02B85336103 /* TodoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DD29BCF03B4DCC1F72234C3 /* TodoViewModel.swift */; };
 		56378A51AD80B9925F13CE24 /* MenuRecommendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B45FCAA20C8F2C48939F72F /* MenuRecommendService.swift */; };
 		5650D71C9E845350766EFD05 /* ReadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDF2BF6C21FE205E5DE55CBD /* ReadingView.swift */; };
@@ -157,6 +160,9 @@
 		FCE237435B2D654EEE2A4100 /* FloatingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */; };
 		FEC7106BC26FF1ED93A540ED /* ScheduleCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CC56B1102F36D279C196D42 /* ScheduleCalendarView.swift */; };
 		FF74424E45EA20EB5325E1A0 /* ProjectRecordFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E71472EE86304CA2D6A5CBB3 /* ProjectRecordFormView.swift */; };
+		E1AB91A6736216B64AB5DF9D /* FarmModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4100FCD8E5F3765E07F34488 /* FarmModels.swift */; };
+		649D96B0DE95FE455AE71457 /* FarmService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EAD6E46FEC469CE0FFB2602 /* FarmService.swift */; };
+		A26DF718812F113EC183C5A2 /* FarmView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7611A2C619BBABA244251FA0 /* FarmView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -238,7 +244,7 @@
 		677026DF5D7BCBF839975C58 /* DiaryShareCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryShareCardView.swift; sourceTree = "<group>"; };
 		687C3B2D7029A9D36927DA24 /* StepCounterCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCounterCardView.swift; sourceTree = "<group>"; };
 		68FFB9D50D2473DC4EA80FC2 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
-		6B4E4C8444233615DA63208C /* timer-coding.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "timer-coding.png"; sourceTree = "<group>"; };
+		6B4E4C8444233615DA63208C /* timer-coding.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "timer-coding.jpg"; sourceTree = "<group>"; };
 		6BEEDF33B6BA4C250F262C91 /* 포실이(투명).png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "포실이(투명).png"; sourceTree = "<group>"; };
 		6DE144137C6E052E6256E8A2 /* FloatingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingWindow.swift; sourceTree = "<group>"; };
 		6EC4808FE02D6272C60A42FA /* OverlayRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayRootView.swift; sourceTree = "<group>"; };
@@ -291,6 +297,9 @@
 		CAF8CFD6FA783D2983A84C42 /* PlaceSearchCompleter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceSearchCompleter.swift; sourceTree = "<group>"; };
 		CF0CA9CF9A6A323934F91997 /* SummerClockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SummerClockView.swift; sourceTree = "<group>"; };
 		D04CD6B09739AA5CCFEFDF6D /* GraduateTimetableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraduateTimetableView.swift; sourceTree = "<group>"; };
+		BF3CB3B872E11A5C95F48329 /* GraduateNoteEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraduateNoteEditorView.swift; sourceTree = "<group>"; };
+		1626754C7A9125A635E7745F /* GraduateNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraduateNotesView.swift; sourceTree = "<group>"; };
+		3A908561061B4C01552C3E5E /* GraduateNoteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraduateNoteService.swift; sourceTree = "<group>"; };
 		D1B88F6523F4D3F6B6C7F914 /* timer-book.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "timer-book.jpg"; sourceTree = "<group>"; };
 		D2C694A851AB63F042A05AC1 /* DiaryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryItem.swift; sourceTree = "<group>"; };
 		D39AAC1A8BF6E487B9ED6FEE /* TravelAbroadModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelAbroadModels.swift; sourceTree = "<group>"; };
@@ -317,6 +326,9 @@
 		FE439661AA11BAB52C599244 /* TravelItinerarySouvenirListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelItinerarySouvenirListView.swift; sourceTree = "<group>"; };
 		FE7618036880053779773CE5 /* ChatBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBubbleView.swift; sourceTree = "<group>"; };
 		FF34EBDB67FA4CE34766FF1E /* WeatherWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherWidget.swift; sourceTree = "<group>"; };
+		4100FCD8E5F3765E07F34488 /* FarmModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmModels.swift; sourceTree = "<group>"; };
+		0EAD6E46FEC469CE0FFB2602 /* FarmService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmService.swift; sourceTree = "<group>"; };
+		7611A2C619BBABA244251FA0 /* FarmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -397,10 +409,16 @@
 				4AC17C8AAB3CDBF52B250907 /* FridgeMenuRecommendView.swift */,
 				B9EED10CF3B80975BDD7DC58 /* FridgeShelfView.swift */,
 				D04CD6B09739AA5CCFEFDF6D /* GraduateTimetableView.swift */,
+				BF3CB3B872E11A5C95F48329 /* GraduateNoteEditorView.swift */,
+				1626754C7A9125A635E7745F /* GraduateNotesView.swift */,
+				3A908561061B4C01552C3E5E /* GraduateNoteService.swift */,
 				9AA6CB30D85668CDA815DE41 /* HabitTrackerCardView.swift */,
 				E7916200BAF477DE717FF740 /* HabitTrackerFormView.swift */,
 				F13D6503838960444F2CA0B6 /* HabitTrackerView.swift */,
 				16ED2268DFB8CD43F90BC3BA /* Info.plist */,
+				4100FCD8E5F3765E07F34488 /* FarmModels.swift */,
+				0EAD6E46FEC469CE0FFB2602 /* FarmService.swift */,
+				7611A2C619BBABA244251FA0 /* FarmView.swift */,
 				9AC0637A6BBD34447E7A0DA2 /* JellyBalanceBadgeView.swift */,
 				852B8983CE9BC8617F83ECBD /* LoginView.swift */,
 				47CB4229136599A8BA65F44C /* MainTabView.swift */,
@@ -428,7 +446,7 @@
 				CF0CA9CF9A6A323934F91997 /* SummerClockView.swift */,
 				96749DCBF60CC35730DDA5F7 /* timer-bgm.mp3 */,
 				D1B88F6523F4D3F6B6C7F914 /* timer-book.jpg */,
-				6B4E4C8444233615DA63208C /* timer-coding.png */,
+				6B4E4C8444233615DA63208C /* timer-coding.jpg */,
 				0560E090212CE20E96E17F0F /* timer-exercise.jpg */,
 				739BD6AB90804BA18146B1A6 /* timer-study.png */,
 				D64D91FB4F9441E3D614A378 /* TimerBgmPlayer.swift */,
@@ -632,7 +650,7 @@
 				D05ACB77F8057E8AD16BD17C /* summer.png in Resources */,
 				DD8541835BC47F627984832D /* timer-bgm.mp3 in Resources */,
 				AD71B326C8EBD12C45A07C1C /* timer-book.jpg in Resources */,
-				52CA2C793F9B3E4B3C7A7148 /* timer-coding.png in Resources */,
+				52CA2C793F9B3E4B3C7A7148 /* timer-coding.jpg in Resources */,
 				38481147F76D2A124AC8FF5A /* timer-exercise.jpg in Resources */,
 				2B037424402D59ED5066CCA3 /* timer-study.png in Resources */,
 				51DF8B94BE030B25BDFABE60 /* 모바일배경.png in Resources */,
@@ -761,10 +779,16 @@
 				DDB234BF8C8CCA6B99DDF1E6 /* FridgeMenuRecommendView.swift in Sources */,
 				B87FD67E5578B3E053CF0D83 /* FridgeShelfView.swift in Sources */,
 				320A2B29AC7268ACFD8EE350 /* GraduateTimetableView.swift in Sources */,
+				3C30BD9558B7ABAB8887C727 /* GraduateNoteEditorView.swift in Sources */,
+				CE62C555663BCADF3CDDFE72 /* GraduateNotesView.swift in Sources */,
+				4D95AADA5476A1DCC587B7B5 /* GraduateNoteService.swift in Sources */,
 				01882407C87EE8CD8545AD3A /* HabitTrackerCardView.swift in Sources */,
 				108351B7AC1351E3A723006B /* HabitTrackerFormView.swift in Sources */,
 				D8B31DB54794DFAA42FE92A2 /* HabitTrackerItem.swift in Sources */,
 				310E2FEAB88A3E62E14EC700 /* HabitTrackerView.swift in Sources */,
+				E1AB91A6736216B64AB5DF9D /* FarmModels.swift in Sources */,
+				649D96B0DE95FE455AE71457 /* FarmService.swift in Sources */,
+				A26DF718812F113EC183C5A2 /* FarmView.swift in Sources */,
 				97576556E3490B072A46AEEB /* JellyBalanceBadgeView.swift in Sources */,
 				7AC55FC3AE10ADE27CEEFDC4 /* JellyBalanceStore.swift in Sources */,
 				4BE217685FD4FE9ECC03341B /* JellyRewardConstants.swift in Sources */,

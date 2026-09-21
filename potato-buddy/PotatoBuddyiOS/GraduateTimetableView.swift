@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - 데이터 모델
 
-private struct GraduatePeriod: Identifiable {
+struct GraduatePeriod: Identifiable {
     let id: String
     let startTime: String
     let endTime: String
@@ -22,19 +22,19 @@ private struct GraduatePeriod: Identifiable {
     }
 }
 
-private struct GraduateCourse {
+struct GraduateCourse {
     let name: String
     let classroom: String
 }
 
-private struct GraduateDay: Identifiable {
+struct GraduateDay: Identifiable {
     let id: String
     let swiftWeekday: Int  // Calendar.weekday: 2=월, 5=목
     let label: String
     let classes: [String: GraduateCourse]
 }
 
-private struct GraduateSemester: Identifiable {
+struct GraduateSemester: Identifiable {
     let id: String
     let label: String
     let periods: [GraduatePeriod]
@@ -48,7 +48,8 @@ private let eveningPeriods: [GraduatePeriod] = [
     GraduatePeriod(id: "period-2", startTime: "20:30", endTime: "22:00"),
 ]
 
-private let semesters: [GraduateSemester] = [
+/// 대학원 시간표 데이터 (시간표·기록 화면 공용)
+let graduateSemesters: [GraduateSemester] = [
     GraduateSemester(
         id: "2026-2",
         label: "2026년 2학기",
@@ -84,13 +85,13 @@ struct GraduateTimetableView: View {
     @State private var now = Date()
     @State private var selectedSemesterId: String = {
         let saved = UserDefaults.standard.string(forKey: semesterStorageKey) ?? ""
-        return semesters.contains(where: { $0.id == saved }) ? saved : semesters.first?.id ?? ""
+        return graduateSemesters.contains(where: { $0.id == saved }) ? saved : graduateSemesters.first?.id ?? ""
     }()
 
     private let ticker = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
     private var selectedSemester: GraduateSemester? {
-        semesters.first { $0.id == selectedSemesterId } ?? semesters.first
+        graduateSemesters.first { $0.id == selectedSemesterId } ?? graduateSemesters.first
     }
 
     private var todayWeekday: Int {
@@ -115,9 +116,9 @@ struct GraduateTimetableView: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
 
-                    if semesters.count > 1 {
+                    if graduateSemesters.count > 1 {
                         Picker("학기", selection: $selectedSemesterId) {
-                            ForEach(semesters) { semester in
+                            ForEach(graduateSemesters) { semester in
                                 Text(semester.label).tag(semester.id)
                             }
                         }

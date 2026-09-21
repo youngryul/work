@@ -10,6 +10,7 @@ import {
   getProjectCountsByArchiveState,
   archiveProject,
   unarchiveProject,
+  renameProject,
   getMainRecordByProject,
   setMainRecord,
   unsetMainRecord
@@ -213,6 +214,23 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
     }
   }
 
+  // 프로젝트명(대제목) 변경
+  const handleRenameProject = async (oldName, newName) => {
+    try {
+      const appliedName = await renameProject(oldName, newName)
+      await loadProjects()
+      if (selectedProject === oldName) {
+        setSelectedProject(appliedName)
+      }
+      showToast(`프로젝트명을 「${appliedName}」(으)로 변경했습니다.`, TOAST_TYPES.SUCCESS)
+      return true
+    } catch (error) {
+      console.error('프로젝트명 변경 실패:', error)
+      showToast(error?.message || '프로젝트명 변경에 실패했습니다.', TOAST_TYPES.ERROR)
+      return false
+    }
+  }
+
   // 보관함 ↔ 프로젝트 목록 전환 (전환한 목록의 첫 프로젝트를 선택)
   const handleToggleArchiveView = () => {
     const nextIsArchiveView = !isArchiveView
@@ -280,6 +298,7 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
                 onSelect={handleProjectSelect}
                 onArchive={handleArchiveProject}
                 onUnarchive={handleUnarchiveProject}
+                onRename={handleRenameProject}
                 isArchiveView={isArchiveView}
               />
             )}
