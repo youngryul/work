@@ -199,14 +199,14 @@ function AppContent() {
     />
   )
 
-  // 배경 이미지: posily 테마 + 오늘 할일 아닌 경우에만 적용
+  // 배경 이미지: posily 테마이면 모든 화면에 적용
   useEffect(() => {
-    const showBg = appTheme === APP_THEMES.POSILY && currentView !== 'today'
-    document.body.style.backgroundImage = showBg ? 'url(/images/심플배경화면.png)' : ''
+    const showBg = appTheme === APP_THEMES.POSILY
+    document.body.style.backgroundImage = showBg ? 'url(/images/todo.png)' : ''
     document.body.style.backgroundSize = showBg ? 'cover' : ''
     document.body.style.backgroundPosition = showBg ? 'center' : ''
     document.body.style.backgroundAttachment = showBg ? 'fixed' : ''
-  }, [appTheme, currentView])
+  }, [appTheme])
 
   // 젤리 획득 토스트
   useEffect(() => {

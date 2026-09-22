@@ -6,7 +6,7 @@ import { getWeekStart, getWeekEnd } from '../services/workReportService.js'
 import { getWeeksWithWorkReports, getWeeksWithDiaries } from '../services/workReportService.js'
 import { getDiariesByMonth } from '../services/diaryService.js'
 import { MENU_ICON_PATHS } from '../constants/navigationMenu.js'
-import { APP_THEMES, shouldShowTodayBackgroundImage, shouldShowTodayExcelGrid } from '../constants/appThemes.js'
+import { APP_THEMES, shouldShowTodayExcelGrid } from '../constants/appThemes.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 import ViewPageTitle from './ViewPageTitle.jsx'
 
@@ -333,12 +333,6 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
 
   return (
     <>
-      {shouldShowTodayBackgroundImage(appTheme) && (
-        <div
-          className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/images/todo.png')" }}
-        />
-      )}
       {shouldShowTodayExcelGrid(appTheme) && (
         <div className="fixed inset-0 -z-10 excel-grid-bg" />
       )}

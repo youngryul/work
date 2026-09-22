@@ -35,15 +35,6 @@ export function getThemeWrapperClass(theme) {
 }
 
 /**
- * 오늘 페이지 배경 이미지(todo.png) 표시 여부
- * @param {string} theme
- * @returns {boolean}
- */
-export function shouldShowTodayBackgroundImage(theme) {
-  return theme === APP_THEMES.POSILY
-}
-
-/**
  * 오늘 페이지 엑셀 격자 배경 표시 여부
  * @param {string} theme
  * @returns {boolean}
