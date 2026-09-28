@@ -1,0 +1,8 @@
+Target dependency graph (4 targets)
+Target 'PotatoBuddyiOS' in project 'PotatoBuddy'
+➜ Explicit dependency on target 'ScheduleWidgetExtension' in project 'PotatoBuddy'
+➜ Explicit dependency on target 'PotatoBuddyWatch' in project 'PotatoBuddy'
+Target 'PotatoBuddyWatch' in project 'PotatoBuddy'
+➜ Explicit dependency on target 'PotatoBuddyWatchWidgetExtension' in project 'PotatoBuddy'
+Target 'PotatoBuddyWatchWidgetExtension' in project 'PotatoBuddy' (no dependencies)
+Target 'ScheduleWidgetExtension' in project 'PotatoBuddy' (no dependencies)

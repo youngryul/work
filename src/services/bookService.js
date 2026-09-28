@@ -374,6 +374,47 @@ export async function updateBookProgress(bookId, currentPage) {
 }
 
 /**
+ * 책 삭제 (해당 책의 독서 기록도 함께 삭제)
+ * @param {string} bookId - 책 ID
+ * @returns {Promise<void>}
+ */
+export async function deleteBook(bookId) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  // FK cascade 설정 여부와 무관하게 동작하도록 독서 기록을 먼저 삭제
+  const { error: recordsError } = await supabase
+    .from('reading_records')
+    .delete()
+    .eq('book_id', bookId)
+    .eq('user_id', userId)
+
+  if (recordsError) {
+    console.error('책 독서 기록 삭제 오류:', recordsError)
+    throw recordsError
+  }
+
+  const { data, error } = await supabase
+    .from('books')
+    .delete()
+    .eq('id', bookId)
+    .eq('user_id', userId)
+    .select('id')
+
+  if (error) {
+    console.error('책 삭제 오류:', error)
+    throw error
+  }
+
+  // RLS 정책으로 삭제가 막히면 에러 없이 0건이 반환됨
+  if (!data || data.length === 0) {
+    throw new Error('책을 삭제하지 못했습니다. (삭제 권한 확인 필요)')
+  }
+}
+
+/**
  * 데이터베이스 컬럼명을 camelCase로 변환
  */
 function normalizeBook(book) {

@@ -3,7 +3,8 @@
 /// 웹 ReadingView와 대응 — 책 목록, 검색 등록, 기록 CRUD, 월 통계, 완독
 struct ReadingView: View {
     @State private var books: [BookItem] = []
-    @State private var selectedBook: BookItem?
+    /// 상세 화면 네비게이션은 id 로만 추적 — BookItem 값(완독 여부 등)이 바뀌어도 상세 화면이 재생성되지 않도록
+    @State private var selectedBookId: String?
     @State private var records: [ReadingRecordItem] = []
     @State private var yearMonth = Date()
     @State private var stats = MonthlyReadingStats(totalBooks: 0, totalSessions: 0, totalMinutes: 0)
@@ -16,6 +17,13 @@ struct ReadingView: View {
     @State private var showInsightAlert = false
     @State private var insightText = ""
     @State private var bookToComplete: BookItem?
+    @State private var bookToDelete: BookItem?
+
+    /// 현재 선택된 책 (항상 최신 books 목록에서 조회)
+    private var selectedBook: BookItem? {
+        guard let selectedBookId else { return nil }
+        return books.first { $0.id == selectedBookId }
+    }
 
     private var year: Int { Calendar.current.component(.year, from: yearMonth) }
     private var month: Int { Calendar.current.component(.month, from: yearMonth) }
@@ -45,8 +53,12 @@ struct ReadingView: View {
                     }
                 }
             }
-            .navigationDestination(item: $selectedBook) { book in
-                bookDetail(book)
+            .navigationDestination(item: $selectedBookId) { bookId in
+                if let book = books.first(where: { $0.id == bookId }) {
+                    bookDetail(book)
+                } else {
+                    ProgressView()
+                }
             }
             .task { await reloadAll() }
             .refreshable { await reloadAll() }
@@ -93,17 +105,21 @@ struct ReadingView: View {
                     }
                 }
             }
-            .alert("한줄 인사이트", isPresented: $showInsightAlert) {
-                TextField("이 책을 한 문장으로", text: $insightText)
-                Button("완독 처리") {
-                    Task { await completeWithInsight() }
+            .confirmationDialog(
+                "책을 삭제할까요?",
+                isPresented: Binding(
+                    get: { bookToDelete != nil && selectedBookId == nil },
+                    set: { if !$0 { bookToDelete = nil } }
+                ),
+                titleVisibility: .visible,
+                presenting: bookToDelete
+            ) { book in
+                Button("삭제", role: .destructive) {
+                    Task { await deleteBook(book) }
                 }
-                Button("취소", role: .cancel) {
-                    bookToComplete = nil
-                    insightText = ""
-                }
-            } message: {
-                Text("완독 시 남길 한줄 메모를 적어주세요. (선택)")
+                Button("취소", role: .cancel) {}
+            } message: { book in
+                Text("'\(book.title)'의 독서 기록도 모두 삭제됩니다.")
             }
             .alert("오류", isPresented: Binding(
                 get: { !errorMessage.isEmpty },
@@ -162,6 +178,13 @@ struct ReadingView: View {
                         bookRow(book)
                     }
                     .buttonStyle(.plain)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            bookToDelete = book
+                        } label: {
+                            Label("삭제", systemImage: "trash")
+                        }
+                    }
                 }
                 .listStyle(.plain)
             }
@@ -299,9 +322,45 @@ struct ReadingView: View {
                     Image(systemName: "plus.circle")
                 }
             }
+            ToolbarItem(placement: .secondaryAction) {
+                Button(role: .destructive) {
+                    bookToDelete = book
+                } label: {
+                    Label("책 삭제", systemImage: "trash")
+                }
+            }
         }
         .task {
             await loadRecords(for: book.id)
+        }
+        // 알럿은 push 된 상세 화면에 붙여야 정상적으로 표시됨 (루트에 붙이면 상세 화면에서 뜨지 않음)
+        .alert("한줄 인사이트", isPresented: $showInsightAlert) {
+            TextField("이 책을 한 문장으로", text: $insightText)
+            Button("완독 처리") {
+                Task { await completeWithInsight() }
+            }
+            Button("취소", role: .cancel) {
+                bookToComplete = nil
+                insightText = ""
+            }
+        } message: {
+            Text("완독 시 남길 한줄 메모를 적어주세요. (선택)")
+        }
+        .confirmationDialog(
+            "책을 삭제할까요?",
+            isPresented: Binding(
+                get: { bookToDelete != nil && selectedBookId != nil },
+                set: { if !$0 { bookToDelete = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: bookToDelete
+        ) { target in
+            Button("삭제", role: .destructive) {
+                Task { await deleteBook(target) }
+            }
+            Button("취소", role: .cancel) {}
+        } message: { target in
+            Text("'\(target.title)'의 독서 기록도 모두 삭제됩니다.")
         }
     }
 
@@ -357,10 +416,14 @@ struct ReadingView: View {
             async let statsTask = SupabaseService.shared.fetchMonthlyReadingStats(year: year, month: month)
             books = try await booksTask
             stats = try await statsTask
-            if let selected = selectedBook,
-               let refreshed = books.first(where: { $0.id == selected.id }) {
-                selectedBook = refreshed
-                records = try await SupabaseService.shared.fetchReadingRecords(bookId: refreshed.id)
+            if let selectedBookId {
+                if books.contains(where: { $0.id == selectedBookId }) {
+                    records = try await SupabaseService.shared.fetchReadingRecords(bookId: selectedBookId)
+                } else {
+                    // 다른 기기에서 삭제된 경우 상세 화면 닫기
+                    self.selectedBookId = nil
+                    records = []
+                }
             }
         } catch {
             if !error.isCancellation { errorMessage = error.localizedDescription }
@@ -376,7 +439,8 @@ struct ReadingView: View {
     }
 
     private func selectBook(_ book: BookItem) async {
-        selectedBook = book
+        records = []
+        selectedBookId = book.id
         await loadRecords(for: book.id)
     }
 
@@ -457,9 +521,8 @@ struct ReadingView: View {
             )
             bookToComplete = nil
             insightText = ""
+            replaceBook(updated)
             await reloadAll()
-            selectedBook = updated
-            records = try await SupabaseService.shared.fetchReadingRecords(bookId: updated.id)
         } catch {
             if !error.isCancellation { errorMessage = error.localizedDescription }
         }
@@ -472,8 +535,30 @@ struct ReadingView: View {
                 isCompleted: false,
                 oneLineInsight: nil
             )
+            replaceBook(updated)
             await reloadAll()
-            selectedBook = updated
+        } catch {
+            if !error.isCancellation { errorMessage = error.localizedDescription }
+        }
+    }
+
+    /// 서버 응답으로 받은 책을 목록에 즉시 반영
+    private func replaceBook(_ updated: BookItem) {
+        if let index = books.firstIndex(where: { $0.id == updated.id }) {
+            books[index] = updated
+        }
+    }
+
+    private func deleteBook(_ book: BookItem) async {
+        bookToDelete = nil
+        do {
+            try await SupabaseService.shared.deleteBook(bookId: book.id)
+            if selectedBookId == book.id {
+                selectedBookId = nil
+                records = []
+            }
+            books.removeAll { $0.id == book.id }
+            await reloadAll()
         } catch {
             if !error.isCancellation { errorMessage = error.localizedDescription }
         }

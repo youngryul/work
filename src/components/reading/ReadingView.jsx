@@ -4,6 +4,7 @@ import {
   updateBookCompletion,
   updateBookReading,
   updateBookProgress,
+  deleteBook,
 } from '../../services/bookService.js'
 import { getReadingRecordsByBook, getMonthlyReadingStats, deleteReadingRecord } from '../../services/readingService.js'
 import BookSearch from './BookSearch.jsx'
@@ -204,6 +205,27 @@ export default function ReadingView() {
   }
 
   /**
+   * 책 삭제 (독서 기록 포함)
+   */
+  const handleDeleteBook = async (book) => {
+    if (!confirm(`'${book.title}' 책을 삭제할까요?\n이 책의 독서 기록도 모두 삭제됩니다.`)) return
+
+    try {
+      await deleteBook(book.id)
+      if (selectedBook?.id === book.id) {
+        setSelectedBook(null)
+        setReadingRecords([])
+      }
+      await loadBooks()
+      await loadMonthlyStats()
+      showToast('책이 삭제되었습니다.', TOAST_TYPES.SUCCESS)
+    } catch (error) {
+      console.error('책 삭제 오류:', error)
+      showToast('책 삭제에 실패했습니다.', TOAST_TYPES.ERROR)
+    }
+  }
+
+  /**
    * 한줄 인사이트 저장
    */
   const handleSaveInsight = async (oneLineInsight) => {
@@ -382,6 +404,15 @@ export default function ReadingView() {
                             }`}
                           >
                             {book.isCompleted ? '완료 해제' : '완료'}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteBook(book)
+                            }}
+                            className="px-3 py-1 text-sm rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition-colors duration-200"
+                          >
+                            삭제
                           </button>
                         </div>
                       </div>

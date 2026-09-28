@@ -2771,6 +2771,34 @@ final class SupabaseService {
         return item
     }
 
+    /// 책 삭제 — FK cascade 여부와 무관하게 독서 기록을 먼저 지운 뒤 책 삭제 (웹과 동일)
+    func deleteBook(bookId: String) async throws {
+        let (userId, token) = await authInfo()
+
+        let recordsURL = URL(string: "\(Config.supabaseURL)/rest/v1/reading_records?book_id=eq.\(bookId)&user_id=eq.\(userId)")!
+        var recordsRequest = URLRequest(url: recordsURL)
+        recordsRequest.httpMethod = "DELETE"
+        headers(token: token).forEach { recordsRequest.addValue($1, forHTTPHeaderField: $0) }
+        recordsRequest.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+        let (recordsData, recordsResponse) = try await fetch(recordsRequest)
+        try checkResponse(recordsData, recordsResponse)
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/books?id=eq.\(bookId)&user_id=eq.\(userId)&select=id")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+
+        // RLS 로 막히면 에러 없이 빈 배열이 반환됨
+        struct DeletedRow: Decodable { let id: String }
+        let deleted = (try? JSONDecoder().decode([DeletedRow].self, from: data)) ?? []
+        if deleted.isEmpty {
+            throw NSError(domain: "SupabaseService", code: 0, userInfo: [NSLocalizedDescriptionKey: "책을 삭제하지 못했습니다. (삭제 권한 확인 필요)"])
+        }
+    }
+
     func fetchReadingRecords(bookId: String) async throws -> [ReadingRecordItem] {
         let (userId, token) = await authInfo()
         var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/reading_records")!

@@ -1,0 +1,178 @@
+{
+  "" : {
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/PotatoBuddyWatch-master.dia",
+    "emit-module-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/PotatoBuddyWatch-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/PotatoBuddyWatch-master-emit-module.dia",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/PotatoBuddyWatch-master.swiftdeps"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/PotatoBuddyWatch/Connectivity/WatchSessionManager.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchSessionManager.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchSessionManager.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchSessionManager.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchSessionManager.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchSessionManager.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchSessionManager.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchSessionManager.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchSessionManager~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/PotatoBuddyWatch/Features/Tasks/TodayTasksView.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksView.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksView.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksView.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksView.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksView.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksView.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksView.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksView~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/PotatoBuddyWatch/Features/Tasks/TodayTasksViewModel.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksViewModel.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksViewModel.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksViewModel.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksViewModel.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksViewModel.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksViewModel.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksViewModel.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksViewModel~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/PotatoBuddyWatch/Home/WatchFeature.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchFeature.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchFeature.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchFeature.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchFeature.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchFeature.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchFeature.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchFeature.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchFeature~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/PotatoBuddyWatch/Home/WatchHomeView.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchHomeView.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchHomeView.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchHomeView.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchHomeView.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchHomeView.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchHomeView.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchHomeView.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchHomeView~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/PotatoBuddyWatch/PotatoBuddyWatchApp.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/PotatoBuddyWatchApp.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/PotatoBuddyWatchApp.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/PotatoBuddyWatchApp.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/PotatoBuddyWatchApp.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/PotatoBuddyWatchApp.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/PotatoBuddyWatchApp.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/PotatoBuddyWatchApp.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/PotatoBuddyWatchApp~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/PotatoBuddyWatchShared/TaskAPI.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TaskAPI.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TaskAPI.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TaskAPI.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TaskAPI.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TaskAPI.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TaskAPI.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TaskAPI.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TaskAPI~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/PotatoBuddyWatchShared/TodayTasksSnapshotStore.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksSnapshotStore.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksSnapshotStore.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksSnapshotStore.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksSnapshotStore.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksSnapshotStore.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksSnapshotStore.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksSnapshotStore.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TodayTasksSnapshotStore~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/PotatoBuddyWatchShared/WatchAPIClient.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchAPIClient.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchAPIClient.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchAPIClient.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchAPIClient.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchAPIClient.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchAPIClient.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchAPIClient.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchAPIClient~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/PotatoBuddyWatchShared/WatchConstants.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchConstants.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchConstants.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchConstants.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchConstants.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchConstants.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchConstants.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchConstants.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchConstants~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/PotatoBuddyWatchShared/WatchCredentialStore.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchCredentialStore.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchCredentialStore.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchCredentialStore.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchCredentialStore.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchCredentialStore.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchCredentialStore.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchCredentialStore.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchCredentialStore~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/Shared/Config.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/Config.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/Config.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/Config.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/Config.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/Config.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/Config.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/Config.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/Config~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/Shared/Error+Cancellation.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/Error+Cancellation.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/Error+Cancellation.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/Error+Cancellation.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/Error+Cancellation.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/Error+Cancellation.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/Error+Cancellation.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/Error+Cancellation.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/Error+Cancellation~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/Shared/JellyRewardConstants.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/JellyRewardConstants.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/JellyRewardConstants.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/JellyRewardConstants.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/JellyRewardConstants.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/JellyRewardConstants.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/JellyRewardConstants.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/JellyRewardConstants.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/JellyRewardConstants~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/Shared/TaskItem.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TaskItem.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TaskItem.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TaskItem.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TaskItem.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TaskItem.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TaskItem.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TaskItem.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/TaskItem~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/Shared/WatchSyncMessage.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchSyncMessage.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchSyncMessage.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchSyncMessage.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchSyncMessage.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchSyncMessage.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchSyncMessage.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchSyncMessage.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/PotatoBuddyWatch.build/Objects-normal/arm64/WatchSyncMessage~partial.swiftmodule"
+  }
+}

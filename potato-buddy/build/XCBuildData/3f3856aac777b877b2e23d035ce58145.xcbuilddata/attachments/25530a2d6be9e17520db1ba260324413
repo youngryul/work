@@ -1,0 +1,68 @@
+{
+  "" : {
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetExtension-master.dia",
+    "emit-module-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetExtension-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetExtension-master-emit-module.dia",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetExtension-master.swiftdeps"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/ScheduleWidgetBundle.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetBundle.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetBundle.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetBundle.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetBundle.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetBundle.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetBundle.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetBundle.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/ScheduleWidgetBundle~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/WeatherWidget.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WeatherWidget.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WeatherWidget.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WeatherWidget.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WeatherWidget.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WeatherWidget.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WeatherWidget.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WeatherWidget.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WeatherWidget~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/Shared/StudyTimerLiveActivityAttributes.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/StudyTimerLiveActivityAttributes.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/StudyTimerLiveActivityAttributes.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/StudyTimerLiveActivityAttributes.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/StudyTimerLiveActivityAttributes.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/StudyTimerLiveActivityAttributes.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/StudyTimerLiveActivityAttributes.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/StudyTimerLiveActivityAttributes.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/StudyTimerLiveActivityAttributes~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/Shared/WidgetScheduleStore.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetScheduleStore.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetScheduleStore.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetScheduleStore.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetScheduleStore.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetScheduleStore.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetScheduleStore.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetScheduleStore.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetScheduleStore~partial.swiftmodule"
+  },
+  "/Users/youngryul/IdeaProjects/work/potato-buddy/Shared/WidgetWeatherModels.swift" : {
+    "const-values" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetWeatherModels.swiftconstvalues",
+    "dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetWeatherModels.d",
+    "diagnostics" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetWeatherModels.dia",
+    "index-unit-output-path" : "/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetWeatherModels.o",
+    "llvm-bc" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetWeatherModels.bc",
+    "object" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetWeatherModels.o",
+    "swift-dependencies" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetWeatherModels.swiftdeps",
+    "swiftmodule" : "/Users/youngryul/IdeaProjects/work/potato-buddy/build/PotatoBuddy.build/Debug-iphonesimulator/ScheduleWidgetExtension.build/Objects-normal/x86_64/WidgetWeatherModels~partial.swiftmodule"
+  }
+}
