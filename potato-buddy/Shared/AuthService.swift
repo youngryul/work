@@ -55,6 +55,7 @@ final class AuthService: ObservableObject {
         if let rt = decoded.refreshToken {
             defaults.set(rt, forKey: refreshTokenKey)
         }
+        NotificationCenter.default.post(name: .authSessionUpdated, object: nil)
     }
 
     // MARK: - 회원가입
@@ -122,6 +123,7 @@ final class AuthService: ObservableObject {
         if let rt = decoded.refreshToken {
             defaults.set(rt, forKey: refreshTokenKey)
         }
+        NotificationCenter.default.post(name: .authSessionUpdated, object: nil)
     }
 
     // MARK: - 외부 세션 저장 (웹 로그인 콜백)
@@ -132,6 +134,7 @@ final class AuthService: ObservableObject {
         self.isLoggedIn  = true
         defaults.set(accessToken, forKey: tokenKey)
         defaults.set(userId, forKey: userIdKey)
+        NotificationCenter.default.post(name: .authSessionUpdated, object: nil)
     }
 
     // MARK: - 로그아웃
@@ -143,6 +146,7 @@ final class AuthService: ObservableObject {
         defaults.removeObject(forKey: tokenKey)
         defaults.removeObject(forKey: refreshTokenKey)
         defaults.removeObject(forKey: userIdKey)
+        NotificationCenter.default.post(name: .authSessionUpdated, object: nil)
     }
 }
 
