@@ -1,7 +1,8 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { EXCHANGE_RATE_ITEMS } from './src/constants/exchangeRates.js'
 import { normalizeNaverExchangeResponse } from './src/utils/exchangeRate.js'
+import { searchAladinBooks } from './src/utils/aladinBook.js'
 
 const NAVER_EXCHANGE_API = 'https://api.stock.naver.com/marketindex/exchange'
 
@@ -121,9 +122,53 @@ function koreanExchangeRatesDevPlugin() {
   }
 }
 
+/** 로컬 dev — 책 검색 API (Vercel 함수 api/book-search.js와 동일 동작) */
+function bookSearchDevPlugin() {
+  return {
+    name: 'book-search-dev',
+    configureServer(server) {
+      const env = loadEnv(server.config.mode, process.cwd(), '')
+
+      server.middlewares.use('/api/book-search', async (req, res) => {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+        res.setHeader('Cache-Control', 'no-store')
+
+        if (req.method !== 'GET') {
+          res.statusCode = 405
+          res.end(JSON.stringify({ error: 'Method not allowed' }))
+          return
+        }
+
+        const url = new URL(req.url || '/', 'http://localhost')
+        const q = (url.searchParams.get('q') || '').trim()
+        if (!q) {
+          res.end(JSON.stringify({ books: [] }))
+          return
+        }
+
+        const ttbKey = env.ALADIN_TTB_KEY
+        if (!ttbKey) {
+          res.statusCode = 500
+          res.end(JSON.stringify({ error: 'ALADIN_TTB_KEY가 설정되지 않았습니다.' }))
+          return
+        }
+
+        try {
+          const books = await searchAladinBooks(q, ttbKey)
+          res.end(JSON.stringify({ books }))
+        } catch (error) {
+          console.error('book-search dev error:', error)
+          res.statusCode = 502
+          res.end(JSON.stringify({ error: '책 검색 중 오류가 발생했습니다.' }))
+        }
+      })
+    },
+  }
+}
+
 // Tauri + Vite: https://v2.tauri.app/start/frontend/vite/
 export default defineConfig({
-  plugins: [react(), koreanExchangeRatesDevPlugin()],
+  plugins: [react(), koreanExchangeRatesDevPlugin(), bookSearchDevPlugin()],
   clearScreen: false,
   envPrefix: ['VITE_', 'TAURI_ENV_*'],
   server: {

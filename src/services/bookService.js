@@ -1,33 +1,9 @@
 /**
  * 책 검색 및 관리 서비스
- * Google Books API를 활용한 책 검색 및 등록
+ * 알라딘 Open API(서버 프록시 /api/book-search)를 활용한 책 검색 및 등록
  */
 import { supabase } from '../config/supabase.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
-
-/**
- * Google Books volume 항목을 앱 공통 책 형식으로 변환
- * @param {Array} items - Google Books API items
- * @returns {Array<Object>}
- */
-function mapGoogleBooksItems(items) {
-  return items.map((item) => {
-    const volumeInfo = item.volumeInfo || {}
-    return {
-      apiId: item.id,
-      title: volumeInfo.title || '',
-      author: volumeInfo.authors ? volumeInfo.authors.join(', ') : '',
-      publisher: volumeInfo.publisher || '',
-      isbn: volumeInfo.industryIdentifiers?.find(id => id.type === 'ISBN_13')?.identifier ||
-        volumeInfo.industryIdentifiers?.find(id => id.type === 'ISBN_10')?.identifier || '',
-      thumbnailUrl: volumeInfo.imageLinks?.thumbnail || volumeInfo.imageLinks?.smallThumbnail || '',
-      description: volumeInfo.description || '',
-      pageCount: volumeInfo.pageCount || 0,
-      publishedDate: volumeInfo.publishedDate || '',
-      apiSource: 'google_books',
-    }
-  })
-}
 
 /**
  * Open Library 검색 문서를 앱 공통 책 형식으로 변환
@@ -56,37 +32,27 @@ function mapOpenLibraryDoc(doc) {
 }
 
 /**
- * Google Books API 검색 (선택: VITE_GOOGLE_BOOKS_API_KEY)
- * 키 없이 호출 시 공용 할당량 초과(429)가 자주 나므로, 실패 시 빈 배열을 반환합니다.
+ * 알라딘 책 검색 (서버 프록시 /api/book-search 경유, CORS 미지원으로 직접 호출 불가)
  * @param {string} q - trim된 검색어
  * @returns {Promise<Array>}
  */
-async function searchBooksGoogle(q) {
+async function searchBooksAladin(q) {
   try {
-    const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY
-    const keyParam = apiKey ? `&key=${encodeURIComponent(apiKey)}` : ''
-    const url =
-      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=20&langRestrict=ko${keyParam}`
-
-    const response = await fetch(url)
+    const response = await fetch(`/api/book-search?q=${encodeURIComponent(q)}`)
     const data = await response.json().catch(() => ({}))
-
-    if (data.error) {
-      console.warn('[책 검색] Google Books:', data.error.message || data.error.status || '오류')
+    if (!response.ok) {
+      console.warn('[책 검색] 알라딘:', data.error || response.status)
       return []
     }
-    if (!response.ok || !data.items?.length) {
-      return []
-    }
-    return mapGoogleBooksItems(data.items)
+    return data.books || []
   } catch (e) {
-    console.warn('[책 검색] Google Books 요청 실패:', e)
+    console.warn('[책 검색] 알라딘 요청 실패:', e)
     return []
   }
 }
 
 /**
- * Open Library 검색 (API 키 불필요, Google 할당량 문제 시 대체)
+ * Open Library 검색 (API 키 불필요, 알라딘 실패 시 대체)
  * 검색어는 최소 3자여야 합니다.
  * @param {string} q - trim된 검색어
  * @returns {Promise<Array>}
@@ -118,7 +84,7 @@ async function searchBooksOpenLibrary(q) {
 }
 
 /**
- * 책 검색 (Google Books 우선, 실패·결과 없음 시 Open Library)
+ * 책 검색 (알라딘 우선, 실패·결과 없음 시 Open Library)
  * @param {string} query - 검색어 (책 제목)
  * @returns {Promise<Array>} 검색된 책 목록
  */
@@ -128,9 +94,9 @@ export async function searchBooks(query) {
     return []
   }
 
-  const fromGoogle = await searchBooksGoogle(q)
-  if (fromGoogle.length > 0) {
-    return fromGoogle
+  const fromAladin = await searchBooksAladin(q)
+  if (fromAladin.length > 0) {
+    return fromAladin
   }
 
   const fromOl = await searchBooksOpenLibrary(q)

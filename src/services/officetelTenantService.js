@@ -67,11 +67,12 @@ export async function updateOfficetelTenant(tenantId, updates) {
 }
 
 /**
- * 임차인 삭제 (월세 수령 기록도 함께 삭제됨)
+ * 임차인 삭제 (월세 수령 기록 + 사업자등록증 파일도 함께 삭제됨)
  * @param {string} tenantId
+ * @param {string|null} businessLicensePath - 첨부된 사업자등록증 경로 (있으면 Storage에서도 삭제)
  * @returns {Promise<void>}
  */
-export async function deleteOfficetelTenant(tenantId) {
+export async function deleteOfficetelTenant(tenantId, businessLicensePath = null) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('로그인이 필요합니다.')
 
@@ -82,6 +83,107 @@ export async function deleteOfficetelTenant(tenantId) {
     .eq('user_id', user.id)
 
   if (error) throw error
+
+  if (businessLicensePath) {
+    await removeOfficetelDocument(businessLicensePath)
+  }
+}
+
+// 사업자등록증 등 임차인 문서용 비공개 버킷
+const DOCUMENT_BUCKET = 'officetel-documents'
+const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024 // 10MB
+const ALLOWED_DOCUMENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'application/pdf']
+
+/**
+ * 임차인 사업자등록증 업로드
+ * 기존 파일이 있으면 교체 후 이전 파일 삭제
+ * @param {Object} tenant - 임차인 행 (id, business_license_path 사용)
+ * @param {File} file - 이미지 또는 PDF
+ * @returns {Promise<Object>} 업데이트된 임차인
+ */
+export async function uploadOfficetelTenantBusinessLicense(tenant, file) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('로그인이 필요합니다.')
+
+  if (!ALLOWED_DOCUMENT_TYPES.includes(file.type)) {
+    throw new Error('이미지(JPG, PNG, WEBP, HEIC) 또는 PDF 파일만 첨부할 수 있습니다.')
+  }
+  if (file.size > MAX_DOCUMENT_SIZE) {
+    throw new Error('파일 크기는 10MB 이하여야 합니다.')
+  }
+
+  // Storage 정책상 첫 폴더는 반드시 본인 user_id
+  const fileExt = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : 'bin'
+  const filePath = `${user.id}/tenants/${tenant.id}/business-license-${Date.now()}.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from(DOCUMENT_BUCKET)
+    .upload(filePath, file, { contentType: file.type, upsert: false })
+
+  if (uploadError) {
+    const message = uploadError.message || ''
+    if (message.includes('Bucket not found') || message.includes('not found')) {
+      throw new Error('Storage 버킷이 없습니다. supabase-officetel-tenant-business-license.sql을 실행해주세요.')
+    }
+    throw new Error(`파일 업로드 실패: ${message || '알 수 없는 오류'}`)
+  }
+
+  try {
+    const updated = await updateOfficetelTenant(tenant.id, {
+      business_license_path: filePath,
+      business_license_name: file.name,
+    })
+    if (tenant.business_license_path) {
+      await removeOfficetelDocument(tenant.business_license_path)
+    }
+    return updated
+  } catch (error) {
+    // DB 반영 실패 시 방금 올린 파일 정리
+    await removeOfficetelDocument(filePath)
+    throw error
+  }
+}
+
+/**
+ * 임차인 사업자등록증 첨부 삭제
+ * @param {Object} tenant - 임차인 행 (id, business_license_path 사용)
+ * @returns {Promise<Object>} 업데이트된 임차인
+ */
+export async function deleteOfficetelTenantBusinessLicense(tenant) {
+  const updated = await updateOfficetelTenant(tenant.id, {
+    business_license_path: null,
+    business_license_name: null,
+  })
+  if (tenant.business_license_path) {
+    await removeOfficetelDocument(tenant.business_license_path)
+  }
+  return updated
+}
+
+/**
+ * 사업자등록증 열람용 임시 URL 생성 (비공개 버킷이므로 서명 URL 사용)
+ * @param {string} path - Storage 경로
+ * @param {number} expiresIn - 유효 시간(초), 기본 5분
+ * @returns {Promise<string>}
+ */
+export async function getOfficetelDocumentUrl(path, expiresIn = 300) {
+  const { data, error } = await supabase.storage
+    .from(DOCUMENT_BUCKET)
+    .createSignedUrl(path, expiresIn)
+
+  if (error) throw error
+  return data.signedUrl
+}
+
+/**
+ * Storage 파일 삭제 (실패해도 본 작업은 유지되도록 로그만 남김)
+ * @param {string} path
+ */
+async function removeOfficetelDocument(path) {
+  const { error } = await supabase.storage.from(DOCUMENT_BUCKET).remove([path])
+  if (error) {
+    console.warn('임차인 문서 파일 삭제 실패:', error)
+  }
 }
 
 /**

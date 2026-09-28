@@ -587,6 +587,10 @@ export const officetelTenants = pgTable('officetel_tenants', {
   deposit: numeric('deposit').default('0').notNull(),
   monthlyRent: numeric('monthly_rent').default('0').notNull(),
   memo: text('memo'),
+  email: text('email'),
+  // 사업자등록증 파일 (비공개 버킷 officetel-documents 내 경로 / 원본 파일명)
+  businessLicensePath: text('business_license_path'),
+  businessLicenseName: text('business_license_name'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
