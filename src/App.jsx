@@ -32,6 +32,7 @@ import FoodCalorieCalculator from './components/FoodCalorieCalculator.jsx'
 import WeightTrackingView from './components/weight/WeightTrackingView.jsx'
 import CongratulatoryMoneyView from './components/CongratulatoryMoneyView.jsx'
 import LedgerView from './components/ledger/LedgerView.jsx'
+import SideIncomeView from './components/SideIncomeView.jsx'
 import OfficetelPurchaseView from './components/officetel/OfficetelPurchaseView.jsx'
 import FridgeInventoryView from './components/FridgeInventoryView.jsx'
 import RecipeView from './components/recipe/RecipeView.jsx'
@@ -553,6 +554,7 @@ function AppContent() {
         {currentView === 'weight-tracking' && <WeightTrackingView />}
         {currentView === 'congratulatory-money' && <CongratulatoryMoneyView />}
         {currentView === 'ledger' && <LedgerView />}
+        {currentView === 'side-income' && <SideIncomeView />}
         {currentView === 'officetel-purchase' && <OfficetelPurchaseView />}
         {currentView === 'fridge-inventory' && <FridgeInventoryView />}
         {currentView === 'recipes' && <RecipeView />}

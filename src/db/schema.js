@@ -631,3 +631,16 @@ export const officetelTenantRentPayments = pgTable('officetel_tenant_rent_paymen
   memo: text('memo'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
+
+/**
+ * side_incomes — 부수입 (월급 이외 수입) 내역
+ */
+export const sideIncomes = pgTable('side_incomes', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  incomeDate: date('income_date').defaultNow().notNull(),
+  title: text('title').notNull(),
+  amount: bigint('amount', { mode: 'number' }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})

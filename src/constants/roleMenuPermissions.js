@@ -130,6 +130,7 @@ export const ROLE_MENU_CONFIG_GROUPS = [
       'weight-tracking',
       'congratulatory-money',
       'ledger',
+      'side-income',
       'officetel-purchase',
       'fridge-inventory',
       'recipes',

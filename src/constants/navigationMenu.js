@@ -54,6 +54,7 @@ const LIFE_MENU_ITEMS = [
   { id: 'weight-tracking', label: '몸무게 기록', icon: '⚖️' },
   { id: 'congratulatory-money', label: '경조사 기록', icon: '💐' },
   { id: 'ledger', label: '가계부', icon: '💰' },
+  { id: 'side-income', label: '부수입', icon: '💵' },
   { id: 'officetel-purchase', label: '오피스텔 매매 기록', icon: '🏢' },
   { id: 'fridge-inventory', label: '냉장고 관리', icon: '🧊' },
   { id: 'recipes', label: '레시피', icon: '🍳' },
