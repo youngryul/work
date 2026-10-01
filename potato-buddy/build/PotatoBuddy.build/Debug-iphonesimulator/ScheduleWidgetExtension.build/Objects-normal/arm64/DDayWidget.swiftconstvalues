@@ -1,0 +1,810 @@
+[
+  {
+    "typeName": "ScheduleWidgetExtension.DDayAccentColor",
+    "mangledTypeName": "23ScheduleWidgetExtension15DDayAccentColorO",
+    "kind": "enum",
+    "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+    "line": 7,
+    "conformances": [
+      "Swift.Equatable",
+      "Swift.Hashable",
+      "Swift.RawRepresentable",
+      "AppIntents.AppEnum",
+      "AppIntents.AppValue",
+      "AppIntents.StaticDisplayRepresentable",
+      "AppIntents.PersistentlyIdentifiable",
+      "AppIntents.TypeDisplayRepresentable",
+      "AppIntents._IntentValue",
+      "Swift.Sendable",
+      "AppIntents.CaseDisplayRepresentable",
+      "Foundation.CustomLocalizedStringResourceConvertible",
+      "Swift.CaseIterable",
+      "Swift.BitwiseCopyable"
+    ],
+    "associatedTypeAliases": [
+      {
+        "typeAliasName": "RawValue",
+        "substitutedTypeName": "Swift.String",
+        "substitutedMangledTypeName": "SS"
+      },
+      {
+        "typeAliasName": "ValueType",
+        "substitutedTypeName": "ScheduleWidgetExtension.DDayAccentColor",
+        "substitutedMangledTypeName": "23ScheduleWidgetExtension15DDayAccentColorO"
+      },
+      {
+        "typeAliasName": "UnwrappedType",
+        "substitutedTypeName": "ScheduleWidgetExtension.DDayAccentColor",
+        "substitutedMangledTypeName": "23ScheduleWidgetExtension15DDayAccentColorO"
+      },
+      {
+        "typeAliasName": "Specification",
+        "substitutedTypeName": "some AppIntents.ResolverSpecification",
+        "substitutedMangledTypeName": "10AppIntents0A4EnumPAAE28defaultResolverSpecificationQrvpZQOy23ScheduleWidgetExtension15DDayAccentColorO_Qo_",
+        "opaqueTypeProtocolRequirements": [
+          "AppIntents.ResolverSpecification"
+        ],
+        "opaqueTypeSameTypeRequirements": []
+      },
+      {
+        "typeAliasName": "AllCases",
+        "substitutedTypeName": "Swift.Array<ScheduleWidgetExtension.DDayAccentColor>",
+        "substitutedMangledTypeName": "Say23ScheduleWidgetExtension15DDayAccentColorOG"
+      }
+    ],
+    "properties": [
+      {
+        "label": "typeDisplayRepresentation",
+        "type": "AppIntents.TypeDisplayRepresentation",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 10,
+        "valueKind": "RawLiteral",
+        "value": "색상"
+      },
+      {
+        "label": "caseDisplayRepresentations",
+        "type": "Swift.Dictionary<ScheduleWidgetExtension.DDayAccentColor, AppIntents.DisplayRepresentation>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 11,
+        "valueKind": "Dictionary",
+        "value": [
+          {
+            "key": {
+              "valueKind": "Enum",
+              "value": {
+                "name": "orange"
+              }
+            },
+            "value": {
+              "valueKind": "RawLiteral",
+              "value": "오렌지"
+            }
+          },
+          {
+            "key": {
+              "valueKind": "Enum",
+              "value": {
+                "name": "pink"
+              }
+            },
+            "value": {
+              "valueKind": "RawLiteral",
+              "value": "핑크"
+            }
+          },
+          {
+            "key": {
+              "valueKind": "Enum",
+              "value": {
+                "name": "blue"
+              }
+            },
+            "value": {
+              "valueKind": "RawLiteral",
+              "value": "블루"
+            }
+          },
+          {
+            "key": {
+              "valueKind": "Enum",
+              "value": {
+                "name": "green"
+              }
+            },
+            "value": {
+              "valueKind": "RawLiteral",
+              "value": "그린"
+            }
+          },
+          {
+            "key": {
+              "valueKind": "Enum",
+              "value": {
+                "name": "purple"
+              }
+            },
+            "value": {
+              "valueKind": "RawLiteral",
+              "value": "퍼플"
+            }
+          }
+        ]
+      },
+      {
+        "label": "color",
+        "type": "SwiftUICore.Color",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 19,
+        "valueKind": "Runtime"
+      },
+      {
+        "label": "allCases",
+        "type": "Swift.Array<ScheduleWidgetExtension.DDayAccentColor>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "true",
+        "valueKind": "Array",
+        "value": [
+          {
+            "valueKind": "Enum",
+            "value": {
+              "name": "orange"
+            }
+          },
+          {
+            "valueKind": "Enum",
+            "value": {
+              "name": "pink"
+            }
+          },
+          {
+            "valueKind": "Enum",
+            "value": {
+              "name": "blue"
+            }
+          },
+          {
+            "valueKind": "Enum",
+            "value": {
+              "name": "green"
+            }
+          },
+          {
+            "valueKind": "Enum",
+            "value": {
+              "name": "purple"
+            }
+          }
+        ]
+      },
+      {
+        "label": "rawValue",
+        "type": "Swift.String",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "valueKind": "Runtime"
+      }
+    ],
+    "cases": [
+      {
+        "name": "orange",
+        "rawValue": "orange"
+      },
+      {
+        "name": "pink",
+        "rawValue": "pink"
+      },
+      {
+        "name": "blue",
+        "rawValue": "blue"
+      },
+      {
+        "name": "green",
+        "rawValue": "green"
+      },
+      {
+        "name": "purple",
+        "rawValue": "purple"
+      }
+    ]
+  },
+  {
+    "typeName": "ScheduleWidgetExtension.DDayConfigurationIntent",
+    "mangledTypeName": "23ScheduleWidgetExtension23DDayConfigurationIntentV",
+    "kind": "struct",
+    "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+    "line": 30,
+    "conformances": [
+      "AppIntents.WidgetConfigurationIntent",
+      "AppIntents.AppIntent",
+      "AppIntents.PersistentlyIdentifiable",
+      "AppIntents._SupportsAppDependencies",
+      "Swift.Sendable"
+    ],
+    "associatedTypeAliases": [
+      {
+        "typeAliasName": "NeverResult",
+        "substitutedTypeName": "Swift.Never",
+        "substitutedMangledTypeName": "s5NeverO"
+      },
+      {
+        "typeAliasName": "PerformResult",
+        "substitutedTypeName": "Swift.Never",
+        "substitutedMangledTypeName": "s5NeverO"
+      },
+      {
+        "typeAliasName": "SummaryContent",
+        "substitutedTypeName": "some AppIntents.ParameterSummary",
+        "substitutedMangledTypeName": "10AppIntents0A6IntentPAAE16parameterSummaryQrvpZQOy23ScheduleWidgetExtension017DDayConfigurationC0V_Qo_",
+        "opaqueTypeProtocolRequirements": [
+          "AppIntents.ParameterSummary"
+        ],
+        "opaqueTypeSameTypeRequirements": []
+      }
+    ],
+    "properties": [
+      {
+        "label": "_title",
+        "type": "AppIntents.IntentParameter<Swift.String>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "false",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 35,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<Swift.String>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "이름"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "default",
+              "type": "Swift.Optional<Swift.String>",
+              "valueKind": "RawLiteral",
+              "value": "디데이"
+            },
+            {
+              "label": "inputOptions",
+              "type": "Swift.Optional<Swift.String.IntentInputOptions>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            }
+          ]
+        }
+      },
+      {
+        "label": "_targetDate",
+        "type": "AppIntents.IntentParameter<Swift.Optional<Foundation.Date>>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "false",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 38,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<Swift.Optional<Foundation.Date>>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "날짜"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "kind",
+              "type": "AppIntents.IntentParameter<Swift.Optional<Foundation.Date>>.DateKind",
+              "valueKind": "Runtime"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            }
+          ]
+        }
+      },
+      {
+        "label": "_countStartAsDayOne",
+        "type": "AppIntents.IntentParameter<Swift.Bool>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "false",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 42,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<Swift.Bool>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "시작일을 1일로 세기"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "default",
+              "type": "Swift.Optional<Swift.Bool>",
+              "valueKind": "RawLiteral",
+              "value": "false"
+            },
+            {
+              "label": "displayName",
+              "type": "Swift.Optional<Swift.Bool.IntentDisplayName>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            }
+          ]
+        }
+      },
+      {
+        "label": "_accent",
+        "type": "AppIntents.IntentParameter<ScheduleWidgetExtension.DDayAccentColor>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "false",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 45,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<ScheduleWidgetExtension.DDayAccentColor>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "색상"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "default",
+              "type": "Swift.Optional<ScheduleWidgetExtension.DDayAccentColor>",
+              "valueKind": "Enum",
+              "value": {
+                "name": "orange"
+              }
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "requestDisambiguationDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            },
+            {
+              "label": "supportedValues",
+              "type": "Swift.Array<ScheduleWidgetExtension.DDayAccentColor>",
+              "valueKind": "Runtime"
+            }
+          ]
+        }
+      },
+      {
+        "label": "title",
+        "type": "Foundation.LocalizedStringResource",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 31,
+        "valueKind": "RawLiteral",
+        "value": "디데이"
+      },
+      {
+        "label": "description",
+        "type": "AppIntents.IntentDescription",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 32,
+        "valueKind": "RawLiteral",
+        "value": "디데이로 표시할 이름과 날짜를 설정합니다."
+      },
+      {
+        "label": "title",
+        "type": "Swift.String",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 35,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<Swift.String>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "이름"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "default",
+              "type": "Swift.Optional<Swift.String>",
+              "valueKind": "RawLiteral",
+              "value": "디데이"
+            },
+            {
+              "label": "inputOptions",
+              "type": "Swift.Optional<Swift.String.IntentInputOptions>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            }
+          ]
+        },
+        "propertyWrappers": [
+          {
+            "type": "AppIntents.IntentParameter",
+            "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+            "line": 34,
+            "arguments": [
+              {
+                "label": "title",
+                "type": "Foundation.LocalizedStringResource",
+                "valueKind": "RawLiteral",
+                "value": "이름"
+              },
+              {
+                "label": "default",
+                "type": "Swift.Optional<Swift.String>",
+                "valueKind": "RawLiteral",
+                "value": "디데이"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "$title",
+        "type": "AppIntents.IntentParameter<Swift.String>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 35,
+        "valueKind": "Runtime"
+      },
+      {
+        "label": "targetDate",
+        "type": "Swift.Optional<Foundation.Date>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 38,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<Swift.Optional<Foundation.Date>>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "날짜"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "kind",
+              "type": "AppIntents.IntentParameter<Swift.Optional<Foundation.Date>>.DateKind",
+              "valueKind": "Runtime"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            }
+          ]
+        },
+        "propertyWrappers": [
+          {
+            "type": "AppIntents.IntentParameter",
+            "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+            "line": 37,
+            "arguments": [
+              {
+                "label": "title",
+                "type": "Foundation.LocalizedStringResource",
+                "valueKind": "RawLiteral",
+                "value": "날짜"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "$targetDate",
+        "type": "AppIntents.IntentParameter<Swift.Optional<Foundation.Date>>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 38,
+        "valueKind": "Runtime"
+      },
+      {
+        "label": "countStartAsDayOne",
+        "type": "Swift.Bool",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 42,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<Swift.Bool>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "시작일을 1일로 세기"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "default",
+              "type": "Swift.Optional<Swift.Bool>",
+              "valueKind": "RawLiteral",
+              "value": "false"
+            },
+            {
+              "label": "displayName",
+              "type": "Swift.Optional<Swift.Bool.IntentDisplayName>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            }
+          ]
+        },
+        "propertyWrappers": [
+          {
+            "type": "AppIntents.IntentParameter",
+            "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+            "line": 41,
+            "arguments": [
+              {
+                "label": "title",
+                "type": "Foundation.LocalizedStringResource",
+                "valueKind": "RawLiteral",
+                "value": "시작일을 1일로 세기"
+              },
+              {
+                "label": "default",
+                "type": "Swift.Optional<Swift.Bool>",
+                "valueKind": "RawLiteral",
+                "value": "false"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "$countStartAsDayOne",
+        "type": "AppIntents.IntentParameter<Swift.Bool>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 42,
+        "valueKind": "Runtime"
+      },
+      {
+        "label": "accent",
+        "type": "ScheduleWidgetExtension.DDayAccentColor",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 45,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<ScheduleWidgetExtension.DDayAccentColor>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "색상"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "default",
+              "type": "Swift.Optional<ScheduleWidgetExtension.DDayAccentColor>",
+              "valueKind": "Enum",
+              "value": {
+                "name": "orange"
+              }
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "requestDisambiguationDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "RawLiteral",
+              "value": "nil"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            },
+            {
+              "label": "supportedValues",
+              "type": "Swift.Array<ScheduleWidgetExtension.DDayAccentColor>",
+              "valueKind": "Runtime"
+            }
+          ]
+        },
+        "propertyWrappers": [
+          {
+            "type": "AppIntents.IntentParameter",
+            "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+            "line": 44,
+            "arguments": [
+              {
+                "label": "title",
+                "type": "Foundation.LocalizedStringResource",
+                "valueKind": "RawLiteral",
+                "value": "색상"
+              },
+              {
+                "label": "default",
+                "type": "Swift.Optional<ScheduleWidgetExtension.DDayAccentColor>",
+                "valueKind": "Enum",
+                "value": {
+                  "name": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "$accent",
+        "type": "AppIntents.IntentParameter<ScheduleWidgetExtension.DDayAccentColor>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 45,
+        "valueKind": "Runtime"
+      },
+      {
+        "label": "preview",
+        "type": "ScheduleWidgetExtension.DDayConfigurationIntent",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "true",
+        "file": "/Users/youngryul/IdeaProjects/work/potato-buddy/ScheduleWidget/DDayWidget.swift",
+        "line": 81,
+        "valueKind": "Runtime"
+      }
+    ]
+  }
+]

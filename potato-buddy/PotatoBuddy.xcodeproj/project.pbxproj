@@ -50,6 +50,7 @@
 		38481147F76D2A124AC8FF5A /* timer-exercise.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 0560E090212CE20E96E17F0F /* timer-exercise.jpg */; };
 		395ED4F51127F437671E11B5 /* DiaryWriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 547F99007C6FCE58B7F29335 /* DiaryWriteView.swift */; };
 		39B7E96394D42F33CF7764AD /* TimerHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BB2F61DEE70BBB4A496E152 /* TimerHubView.swift */; };
+		3A9821ACF341594314C8A01A /* DDayWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B5802B90B5E7C54304B55C /* DDayWidget.swift */; };
 		3C139AFE68DCE619848DCB71 /* DiaryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C694A851AB63F042A05AC1 /* DiaryItem.swift */; };
 		3EC67E34991A9E1E85726F5E /* BacklogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D826A844BE6F7D286ED09B9 /* BacklogView.swift */; };
 		3F0DD50F26CD83E796E2C65B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AE7513E3FD57D8E1244BB566 /* Assets.xcassets */; };
@@ -303,6 +304,7 @@
 		4D55F9D7FCCE9503B15B63A5 /* DownwardBubbleShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownwardBubbleShape.swift; sourceTree = "<group>"; };
 		4DB62C661A6851F204ED6358 /* Secrets.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text; path = Secrets.xcconfig.example; sourceTree = "<group>"; };
 		4F1661D7992556DAFA92CAD5 /* StepCounterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCounterViewModel.swift; sourceTree = "<group>"; };
+		52B5802B90B5E7C54304B55C /* DDayWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DDayWidget.swift; sourceTree = "<group>"; };
 		541FF1C427BD52922B298737 /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
 		547F99007C6FCE58B7F29335 /* DiaryWriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryWriteView.swift; sourceTree = "<group>"; };
 		54EDB3C2C08A77BC61DD895B /* GraduateNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraduateNotesView.swift; sourceTree = "<group>"; };
@@ -615,6 +617,7 @@
 			isa = PBXGroup;
 			children = (
 				E15764114ADA5B9E60AFC5BC /* Assets.xcassets */,
+				52B5802B90B5E7C54304B55C /* DDayWidget.swift */,
 				8BFFADCA528934985EE8E602 /* Info.plist */,
 				DA3A098CD3E5E0FDEDA0DE5D /* ScheduleWidget.entitlements */,
 				CAB43CB7FED3699D0B1A7E1C /* ScheduleWidgetBundle.swift */,
@@ -984,6 +987,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3A9821ACF341594314C8A01A /* DDayWidget.swift in Sources */,
 				FA02ED3C589CF9E19E54ECDC /* ScheduleWidgetBundle.swift in Sources */,
 				1AF7B2D42BFD0AA855D17B46 /* StudyTimerLiveActivityAttributes.swift in Sources */,
 				0DECF5D61A1CFE470099902B /* WeatherWidget.swift in Sources */,
