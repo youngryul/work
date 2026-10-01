@@ -151,6 +151,13 @@ export const EXTERNAL_LINKS = [
     target: '_blank',
   },
   {
+    id: 'blog-ai',
+    label: '블로그 생성',
+    icon: '✍️',
+    href: 'https://blog-ai-gold.vercel.app/',
+    target: '_blank',
+  },
+  {
     id: 'coding-mate',
     label: '코딩메이트',
     icon: '💻',
