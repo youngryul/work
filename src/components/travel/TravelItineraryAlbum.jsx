@@ -8,6 +8,7 @@ import {
   updateAbroadAlbumPhoto,
 } from '../../services/travelItineraryService.js'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
+import TravelAlbumShareModal from './TravelAlbumShareModal.jsx'
 
 /** 폴라로이드 기울기 (id 기반 고정) */
 const POLAROID_ROTATIONS = [-7, -4, -2, 1, 3, 5, -5, 2, -1, 6]
@@ -44,6 +45,7 @@ export default function TravelItineraryAlbum({
   const [editingId, setEditingId] = useState(null)
   const [editingCaption, setEditingCaption] = useState('')
   const [savingId, setSavingId] = useState(null)
+  const [showShareModal, setShowShareModal] = useState(false)
   const fileInputRef = useRef(null)
   const previewUrlsRef = useRef([])
 
@@ -242,6 +244,14 @@ export default function TravelItineraryAlbum({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowShareModal(true)}
+            disabled={isUploading || photos.filter((photo) => !photo.isLocal).length === 0}
+            className="px-3 py-2 rounded-lg border border-rose-300 text-rose-600 text-sm font-semibold hover:bg-rose-50 disabled:opacity-50"
+          >
+            이미지 저장·공유
+          </button>
           <input
             ref={fileInputRef}
             type="file"
@@ -410,6 +420,15 @@ export default function TravelItineraryAlbum({
 
           <div className="pointer-events-none mt-8 h-4 rounded-b-2xl bg-gradient-to-r from-emerald-700/30 via-lime-600/25 to-emerald-800/30" />
         </div>
+      )}
+
+      {showShareModal && (
+        <TravelAlbumShareModal
+          onClose={() => setShowShareModal(false)}
+          title={albumTitle}
+          periodLabel={periodLabel}
+          photos={photos}
+        />
       )}
     </div>
   )
