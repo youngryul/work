@@ -38,6 +38,7 @@ import FridgeInventoryView from './components/FridgeInventoryView.jsx'
 import RecipeView from './components/recipe/RecipeView.jsx'
 import ToeicVocabView from './components/ToeicVocabView.jsx'
 import AnnouncementView from './components/AnnouncementView.jsx'
+import FeedbackView from './components/feedback/FeedbackView.jsx'
 import SettingsView from './components/SettingsView.jsx'
 import AdminDashboard from './components/admin/AdminDashboard.jsx'
 import NonogramView from './components/NonogramView.jsx'
@@ -566,6 +567,7 @@ function AppContent() {
           />
         )}
         {currentView === 'announcements' && <AnnouncementView />}
+        {currentView === 'feedback' && <FeedbackView />}
         {currentView === 'nonogram' && <NonogramView />}
         {currentView === 'sudoku' && <SudokuView />}
         {currentView === 'admin' && <AdminDashboard />}

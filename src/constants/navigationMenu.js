@@ -102,6 +102,7 @@ const POSILY_MENU_ITEMS = [
 /** 하단 고정 메뉴 */
 export const NAVIGATION_FOOTER_ITEMS = [
   { id: 'announcements', label: '공지사항', icon: '📢' },
+  { id: 'feedback', label: '피드백', icon: '💌', alwaysVisible: true },
   { id: 'my-page', label: '마이페이지', icon: '👤' },
   { id: 'settings', label: '설정', icon: '⚙️' },
 ]

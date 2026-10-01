@@ -8,6 +8,7 @@ import AiTokenManagement from './AiTokenManagement.jsx'
 import TokenPurchaseRequestManagement from './TokenPurchaseRequestManagement.jsx'
 import GachaCharacterManagement from './GachaCharacterManagement.jsx'
 import RoleMenuManagement from './RoleMenuManagement.jsx'
+import FeedbackManagement from './FeedbackManagement.jsx'
 
 /**
  * 관리자 대시보드 컴포넌트 (admin 역할만 접근 가능)
@@ -42,7 +43,7 @@ export default function AdminDashboard() {
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-4 text-gray-800 font-sans">🔐 관리자 대시보드</h1>
         <p className="text-base text-gray-600 font-sans mb-4">
-          공지사항, 사용자, 권한·메뉴·광고·토큰·젤리·충전 신청·포실이 가챠를 관리할 수 있습니다.
+          공지사항, 피드백, 사용자, 권한·메뉴·광고·토큰·젤리·충전 신청·포실이 가챠를 관리할 수 있습니다.
         </p>
 
         {/* 탭 */}
@@ -56,6 +57,16 @@ export default function AdminDashboard() {
             }`}
           >
             공지사항 관리
+          </button>
+          <button
+            onClick={() => setActiveTab('feedback')}
+            className={`px-6 py-2 rounded-lg font-semibold transition-colors font-sans ${
+              activeTab === 'feedback'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            피드백
           </button>
           <button
             onClick={() => setActiveTab('users')}
@@ -132,6 +143,7 @@ export default function AdminDashboard() {
 
       {/* 탭 컨텐츠 */}
       {activeTab === 'announcements' && <AnnouncementManagement />}
+      {activeTab === 'feedback' && <FeedbackManagement />}
       {activeTab === 'users' && <UserStatistics />}
       {activeTab === 'roles' && <UserRoleManagement />}
       {activeTab === 'menus' && <RoleMenuManagement />}

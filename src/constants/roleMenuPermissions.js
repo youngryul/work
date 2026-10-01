@@ -50,14 +50,14 @@ export function buildMenuLabelMap() {
 
 /** 관리자·슈퍼유저 기본: 사이드바에 노출 가능한 전체 메뉴 */
 const FULL_MAIN_MENU_IDS = NAVIGATION_MENU_ITEMS.filter(
-  (item) => !['announcements', 'my-page', 'settings'].includes(item.id),
+  (item) => !['announcements', 'feedback', 'my-page', 'settings'].includes(item.id),
 ).flatMap((item) => {
   const ids = [item.id]
   if (item.children) ids.push(...item.children.map((c) => c.id))
   return ids
 })
 
-const DEFAULT_FOOTER_MENU_IDS = ['announcements', 'my-page', 'settings']
+const DEFAULT_FOOTER_MENU_IDS = ['announcements', 'feedback', 'my-page', 'settings']
 const DEFAULT_EXTERNAL_LINK_IDS = EXTERNAL_LINKS.map((l) => l.id)
 
 /**

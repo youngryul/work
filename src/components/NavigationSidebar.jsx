@@ -275,7 +275,7 @@ export default function NavigationSidebar({
 
               {NAVIGATION_FOOTER_ITEMS.filter(
                 (item) =>
-                  allowedFooterMenuIds.has(item.id) &&
+                  (item.alwaysVisible || allowedFooterMenuIds.has(item.id)) &&
                   (item.id !== 'my-page' || farmStage >= 3),
               ).map((item) => (
                 <button

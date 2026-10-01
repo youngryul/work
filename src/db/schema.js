@@ -644,3 +644,19 @@ export const sideIncomes = pgTable('side_incomes', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
+
+/**
+ * feedbacks — 사용자 피드백 (기능 제안·버그 제보 등, 관리자만 전체 조회)
+ */
+export const feedbacks = pgTable('feedbacks', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  userEmail: text('user_email'),
+  category: text('category').notNull(), // feature | bug | improvement | other
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  status: text('status').default('pending').notNull(), // pending | reviewing | done | rejected
+  adminReply: text('admin_reply'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
