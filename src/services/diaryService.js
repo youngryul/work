@@ -1,11 +1,9 @@
 import { supabase } from '../config/supabase.js'
 import {
-  assertSufficientTokensForImageGeneration,
   assertSufficientTokensForFourCutGeneration,
-  consumeTokensForImageGeneration,
   consumeTokensForFourCutGeneration,
 } from './aiTokenService.js'
-import { generateDiaryImageFree, generateDiaryFourCutScenes } from './freeImageService.js'
+import { generateDiaryFourCutScenes } from './freeImageService.js'
 import { uploadImageFromUrl, uploadImageBlob } from './imageService.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
 import { awardJellyForDiaryWrite } from './jellyService.js'
@@ -42,12 +40,13 @@ function normalizeDiaryRow(data) {
     attachedImages: data.attached_images || [],
     fourCutUrl: data.four_cut_url || null,
     fourCutSceneUrls: parseSceneUrls(data.four_cut_scene_urls),
+    photoFourCutUrl: data.photo_four_cut_url || null,
     coverImageUrl: data.cover_image_url || null,
   }
 }
 
 /**
- * 달력 대문 후보 (장면 + 스트립 등, 최대 5장)
+ * 달력 대문 후보 (AI 4컷 장면·스트립 + 사진 4컷 사진·스트립)
  * @param {object|null} diary
  * @returns {string[]}
  */
@@ -62,6 +61,7 @@ export function getDiaryCoverCandidates(diary) {
   ;(diary.fourCutSceneUrls || []).forEach(push)
   push(diary.fourCutUrl)
   ;(diary.attachedImages || []).forEach(push)
+  push(diary.photoFourCutUrl)
   push(diary.imageUrl)
   return urls
 }
@@ -73,38 +73,13 @@ export function getDiaryCoverCandidates(diary) {
  */
 export function getDiaryThumbUrl(diary) {
   if (!diary) return null
-  return diary.coverImageUrl || diary.imageUrl || diary.fourCutSceneUrls?.[0] || diary.fourCutUrl || null
-}
-
-/**
- * AI 일기 이미지 생성 후 토큰 차감 (신규 생성·재생성 동일)
- */
-async function generateDiaryImageWithTokenCharge(content, date, { isRegenerate = false } = {}) {
-  await assertSufficientTokensForImageGeneration(1)
-  const { imageUrl: generatedUrl, prompt, emotion } = await generateDiaryImageFree(content)
-
-  let imageUrl = generatedUrl
-  try {
-    const fileName = isRegenerate
-      ? `${date}-${Date.now()}.png`
-      : `${date}.png`
-    const permanentUrl = await uploadImageFromUrl(generatedUrl, 'diaries', fileName)
-    if (permanentUrl && permanentUrl !== generatedUrl) {
-      imageUrl = permanentUrl
-    } else {
-      console.warn('Edge Function을 사용할 수 없습니다. 임시 URL을 사용합니다. (만료될 수 있음)')
-    }
-  } catch (uploadError) {
-    console.error('이미지 업로드 실패, 임시 URL 사용:', uploadError)
-  }
-
-  const remainingBalance = await consumeTokensForImageGeneration(1)
-  return {
-    imageUrl,
-    imagePrompt: prompt,
-    remainingBalance,
-    emotion,
-  }
+  return diary.coverImageUrl
+    || diary.imageUrl
+    || diary.fourCutSceneUrls?.[0]
+    || diary.fourCutUrl
+    || diary.attachedImages?.[0]
+    || diary.photoFourCutUrl
+    || null
 }
 
 /**
@@ -124,8 +99,8 @@ export async function uploadFourCutStrip(imageUrls, date) {
  * 일기 저장
  * @param {string} date
  * @param {string} content
- * @param {boolean} regenerateImage
- * @param {Array<string>} attachedImages
+ * @param {boolean} _regenerateImage - 미사용 (AI 1컷 기능 제거)
+ * @param {Array<string>} attachedImages - 사진 4컷 원본 사진
  * @param {{
  *   skipImageGeneration?: boolean,
  *   mode?: string,
@@ -135,7 +110,7 @@ export async function uploadFourCutStrip(imageUrls, date) {
 export async function saveDiary(
   date,
   content,
-  regenerateImage = false,
+  _regenerateImage = false,
   attachedImages = [],
   options = {},
 ) {
@@ -158,6 +133,7 @@ export async function saveDiary(
     let emotion = null
     let fourCutUrl = existing?.fourCutUrl || existing?.four_cut_url || null
     let fourCutSceneUrls = existing?.fourCutSceneUrls || []
+    let photoFourCutUrl = existing?.photoFourCutUrl || null
     let coverImageUrl = existing?.coverImageUrl || existing?.cover_image_url || null
     let tokensConsumedCount = 0
     let tokensUsed = 0
@@ -214,27 +190,10 @@ export async function saveDiary(
       if (photos.length === 0) {
         throw new Error('사진 4컷 모드에서는 사진을 1장 이상 첨부해주세요.')
       }
-      fourCutSceneUrls = photos
-      fourCutUrl = await uploadFourCutStrip(photos, date)
-      if (!coverImageUrl || !photos.includes(coverImageUrl)) {
-        coverImageUrl = photos[0] || fourCutUrl
-      }
-    } else if (!skipImageGeneration && (!imageUrl || regenerateImage)) {
-      try {
-        const generated = await generateDiaryImageWithTokenCharge(content, date, {
-          isRegenerate: regenerateImage,
-        })
-        imageUrl = generated.imageUrl
-        imagePrompt = generated.imagePrompt
-        remainingBalance = generated.remainingBalance
-        emotion = generated.emotion
-        tokensConsumedCount = 1
-        coverImageUrl = generated.imageUrl
-      } catch (error) {
-        console.error('이미지 생성 실패:', error)
-        if (regenerateImage) {
-          throw error
-        }
+      // 사진 4컷은 AI 4컷(four_cut_*)과 별도 컬럼에 저장해 서로 덮어쓰지 않음
+      photoFourCutUrl = await uploadFourCutStrip(photos, date)
+      if (!coverImageUrl) {
+        coverImageUrl = photos[0] || photoFourCutUrl
       }
     }
 
@@ -251,6 +210,7 @@ export async function saveDiary(
     if (emotion !== null) upsertData.emotion = emotion
     if (fourCutUrl !== null) upsertData.four_cut_url = fourCutUrl
     if (fourCutSceneUrls) upsertData.four_cut_scene_urls = fourCutSceneUrls
+    if (photoFourCutUrl !== null) upsertData.photo_four_cut_url = photoFourCutUrl
     if (coverImageUrl !== null) upsertData.cover_image_url = coverImageUrl
 
     const { data, error } = await supabase

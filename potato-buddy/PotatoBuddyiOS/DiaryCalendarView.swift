@@ -152,7 +152,6 @@ struct DiaryCalendarView: View {
 
             VStack(spacing: 14) {
                 HStack(spacing: 14) {
-                    Text("AI 1컷 · \(countByKind(.oneCut))")
                     Text("AI 4컷 · \(countByKind(.aiFourCut))")
                     Text("사진 4컷 · \(countByKind(.photoFourCut))")
                 }
@@ -241,14 +240,13 @@ struct DiaryCalendarView: View {
 
     // MARK: - 데이터
 
-    private enum DiaryKind { case oneCut, aiFourCut, photoFourCut }
+    private enum DiaryKind { case aiFourCut, photoFourCut }
 
     private func countByKind(_ kind: DiaryKind) -> Int {
         diariesByDate.values.filter { item in
             switch kind {
-            case .oneCut: return !item.hasFourCut && item.imageUrl != nil
-            case .aiFourCut: return item.hasFourCut && !item.isPhotoFourCut
-            case .photoFourCut: return item.isPhotoFourCut
+            case .aiFourCut: return item.hasAiFourCut
+            case .photoFourCut: return item.hasPhotoFourCut
             }
         }.count
     }

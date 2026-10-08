@@ -48,7 +48,8 @@ export default function DiaryCalendar({ onDateClick, initialDate = null }) {
   const [selectedDiary, setSelectedDiary] = useState(null)
   const [focusedDate, setFocusedDate] = useState(initialDate || null)
   const [imageErrors, setImageErrors] = useState({})
-  const [showFourCutModal, setShowFourCutModal] = useState(false)
+  /** 열려 있는 4컷 모달 종류: null | 'ai' | 'photo' */
+  const [fourCutBooth, setFourCutBooth] = useState(null)
   const [isUpdatingCover, setIsUpdatingCover] = useState(false)
 
   const getThumbUrl = (diary) => getDiaryThumbUrl(diary)
@@ -338,15 +339,26 @@ export default function DiaryCalendar({ onDateClick, initialDate = null }) {
                     <h4 className="text-sm font-medium text-gray-600 font-sans">
                       대문 이미지 선택 ({coverCandidates.length}장)
                     </h4>
-                    {selectedDiary.fourCutUrl && (
-                      <button
-                        type="button"
-                        onClick={() => setShowFourCutModal(true)}
-                        className="rounded-lg bg-stone-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-stone-700"
-                      >
-                        4컷 보기
-                      </button>
-                    )}
+                    <div className="flex gap-2">
+                      {selectedDiary.fourCutUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setFourCutBooth('ai')}
+                          className="rounded-lg bg-stone-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-stone-700"
+                        >
+                          AI 4컷 보기
+                        </button>
+                      )}
+                      {selectedDiary.photoFourCutUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setFourCutBooth('photo')}
+                          className="rounded-lg bg-stone-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-stone-700"
+                        >
+                          사진 4컷 보기
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <p className="mb-3 text-xs text-gray-500 font-sans">
                     달력에 보일 대표 사진을 골라 주세요. (장면 + 4컷 스트립 포함)
@@ -354,7 +366,7 @@ export default function DiaryCalendar({ onDateClick, initialDate = null }) {
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                     {coverCandidates.map((url, index) => {
                       const isSelected = currentCover === url
-                      const isStrip = url === selectedDiary.fourCutUrl
+                      const isStrip = url === selectedDiary.fourCutUrl || url === selectedDiary.photoFourCutUrl
                       return (
                         <button
                           key={`${url}-${index}`}
@@ -409,11 +421,17 @@ export default function DiaryCalendar({ onDateClick, initialDate = null }) {
       )}
 
       <FourCutDispenserModal
-        isOpen={showFourCutModal}
-        sceneUrls={selectedDiary?.fourCutSceneUrls || selectedDiary?.attachedImages || []}
-        fourCutUrl={selectedDiary?.fourCutUrl || null}
+        isOpen={Boolean(fourCutBooth)}
+        sceneUrls={
+          fourCutBooth === 'photo'
+            ? (selectedDiary?.attachedImages || [])
+            : (selectedDiary?.fourCutSceneUrls || [])
+        }
+        fourCutUrl={
+          (fourCutBooth === 'photo' ? selectedDiary?.photoFourCutUrl : selectedDiary?.fourCutUrl) || null
+        }
         dateLabel={selectedDate || ''}
-        onClose={() => setShowFourCutModal(false)}
+        onClose={() => setFourCutBooth(null)}
       />
     </div>
   )

@@ -321,7 +321,7 @@ final class SupabaseService {
 
     // MARK: - 월별 일기 목록 조회
 
-    private static let diarySelectColumns = "id,date,content,image_url,image_prompt,emotion,four_cut_url,four_cut_scene_urls,cover_image_url,attached_images"
+    private static let diarySelectColumns = "id,date,content,image_url,image_prompt,emotion,four_cut_url,four_cut_scene_urls,photo_four_cut_url,cover_image_url,attached_images"
 
     func fetchDiaries(year: Int, month: Int) async throws -> [DiaryItem] {
         let (userId, token) = await authInfo()
@@ -517,39 +517,6 @@ final class SupabaseService {
         return prompt + ", no text, no letters, no numbers, no watermark"
     }
 
-    /// AI 1컷: 일기 본문을 그대로 넘겨 이미지 1장을 생성한다.
-    func generateOneCutImage(date: String, content: String, isRegenerate: Bool, existingCoverImageUrl: String?) async throws -> (item: DiaryItem, tokensUsed: Int, awarded: Int) {
-        let tokenInfo = try await getMyAiTokenInfo()
-        guard tokenInfo.balance >= tokenInfo.generationCost else {
-            throw NSError(domain: "SupabaseService", code: -2,
-                          userInfo: [NSLocalizedDescriptionKey: "AI 토큰이 부족합니다. (필요 \(tokenInfo.generationCost), 보유 \(tokenInfo.balance))"])
-        }
-
-        let responseData = try await callGenerateImageFunction(["diaryContent": content])
-        let generated = try JSONDecoder().decode(GeneratedImageResponse.self, from: responseData)
-
-        let timestamp = Int(Date().timeIntervalSince1970)
-        let fileName = isRegenerate ? "\(date)-\(timestamp).png" : "\(date).png"
-        let storedUrl = try await downloadAndStoreRemoteImage(urlString: generated.imageUrl, folder: "diaries", fileName: fileName)
-
-        _ = try await consumeAiTokens(amount: tokenInfo.generationCost)
-
-        var fields: [String: Any] = [
-            "date": date,
-            "content": content,
-            "image_url": storedUrl,
-        ]
-        if let prompt = generated.prompt { fields["image_prompt"] = prompt }
-        if let emotion = generated.emotion { fields["emotion"] = emotion }
-        if existingCoverImageUrl == nil || existingCoverImageUrl?.isEmpty == true {
-            fields["cover_image_url"] = storedUrl
-        }
-
-        let item = try await upsertDiary(fields)
-        let awarded = try await awardJellyForDiary(date: date)
-        return (item, tokenInfo.generationCost, awarded)
-    }
-
     static let fourCutTokenCost = 10
 
     /// AI 4컷 장면 4장을 생성해 Storage에 저장하고 토큰을 소비한다.
@@ -629,11 +596,11 @@ final class SupabaseService {
         return photoUrls
     }
 
-    /// 4컷(AI/사진 공통) 최종 저장: 이미 합성·업로드된 스트립 URL과 장면 URL들을 diaries 행에 반영한다.
+    /// AI 4컷 최종 저장: 이미 합성·업로드된 스트립 URL과 장면 URL들을 diaries 행에 반영한다.
+    /// 사진 4컷(photo_four_cut_url, attached_images)은 건드리지 않는다.
     func finalizeFourCutDiary(
         date: String, content: String,
         sceneUrls: [String], stripUrl: String,
-        attachedImages: [String]? = nil,
         existingCoverImageUrl: String?
     ) async throws -> (item: DiaryItem, awarded: Int) {
         var fields: [String: Any] = [
@@ -643,11 +610,30 @@ final class SupabaseService {
             "four_cut_url": stripUrl,
             "four_cut_scene_urls": sceneUrls,
         ]
-        if let attachedImages {
-            fields["attached_images"] = attachedImages
-        }
         if existingCoverImageUrl == nil || existingCoverImageUrl?.isEmpty == true {
             fields["cover_image_url"] = sceneUrls[0]
+        }
+
+        let item = try await upsertDiary(fields)
+        let awarded = try await awardJellyForDiary(date: date)
+        return (item, awarded)
+    }
+
+    /// 사진 4컷 최종 저장: 스트립은 photo_four_cut_url, 원본 사진은 attached_images에 저장한다.
+    /// AI 4컷(four_cut_url, four_cut_scene_urls)은 건드리지 않아 서로 덮어쓰지 않는다.
+    func finalizePhotoFourCutDiary(
+        date: String, content: String,
+        photoUrls: [String], stripUrl: String,
+        existingCoverImageUrl: String?
+    ) async throws -> (item: DiaryItem, awarded: Int) {
+        var fields: [String: Any] = [
+            "date": date,
+            "content": content,
+            "photo_four_cut_url": stripUrl,
+            "attached_images": photoUrls,
+        ]
+        if existingCoverImageUrl == nil || existingCoverImageUrl?.isEmpty == true {
+            fields["cover_image_url"] = photoUrls[0]
         }
 
         let item = try await upsertDiary(fields)

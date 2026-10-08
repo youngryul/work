@@ -3,11 +3,10 @@ import PhotosUI
 import UIKit
 
 private enum DiaryWriteMode: CaseIterable {
-    case oneCut, aiFourCut, photoFourCut
+    case aiFourCut, photoFourCut
 
     var label: String {
         switch self {
-        case .oneCut: return "AI 1컷"
         case .aiFourCut: return "AI 4컷"
         case .photoFourCut: return "사진 4컷"
         }
@@ -15,9 +14,8 @@ private enum DiaryWriteMode: CaseIterable {
 
     var note: String {
         switch self {
-        case .oneCut: return "일기를 읽고 그림 한 장을 그려 줍니다."
         case .aiFourCut: return "일기를 네 장면으로 나눠 시간 흐름이 보이게 그립니다."
-        case .photoFourCut: return "사진 네 장을 붙여 4컷으로 만듭니다. 토큰이 들지 않아요."
+        case .photoFourCut: return "사진 네 장을 붙여 4컷으로 만듭니다. AI 4컷과 따로 보관되고 토큰이 들지 않아요."
         }
     }
 }
@@ -37,7 +35,6 @@ struct DiaryWriteView: View {
     @State private var progressDone = 0
     @State private var progressTotal = 4
     @State private var errorMessage = ""
-    @State private var tokenInfo: SupabaseService.AiTokenInfo?
 
     init(date: String, existingDiary: DiaryItem?, onCancel: @escaping () -> Void, onSaved: @escaping (DiaryItem) -> Void) {
         self.date = date
@@ -45,10 +42,8 @@ struct DiaryWriteView: View {
         self.onCancel = onCancel
         self.onSaved = onSaved
         _content = State(initialValue: existingDiary?.content ?? "")
-        if let existing = existingDiary {
-            if existing.isPhotoFourCut { _mode = State(initialValue: .photoFourCut) }
-            else if existing.hasFourCut { _mode = State(initialValue: .aiFourCut) }
-            else { _mode = State(initialValue: .oneCut) }
+        if let existing = existingDiary, !existing.hasAiFourCut, existing.hasPhotoFourCut {
+            _mode = State(initialValue: .photoFourCut)
         } else {
             _mode = State(initialValue: .aiFourCut)
         }
@@ -76,7 +71,6 @@ struct DiaryWriteView: View {
 
     private var saveLabel: String {
         switch mode {
-        case .oneCut: return "저장 (\(tokenInfo?.generationCost ?? 3)토큰)"
         case .aiFourCut: return "4컷 저장 (\(SupabaseService.fourCutTokenCost)토큰)"
         case .photoFourCut: return "4컷 만들어 저장"
         }
@@ -202,16 +196,13 @@ struct DiaryWriteView: View {
                 generatingOverlay
             }
         }
-        .task { tokenInfo = try? await SupabaseService.shared.getMyAiTokenInfo() }
     }
 
     private var drawingBox: some View {
         VStack {
             switch mode {
-            case .oneCut:
-                oneCutPreview
             case .aiFourCut:
-                fourCutPreviewGrid(urls: existingDiary?.hasFourCut == true ? existingDiary?.fourCutSceneUrls ?? [] : [])
+                fourCutPreviewGrid(urls: existingDiary?.hasAiFourCut == true ? existingDiary?.fourCutSceneUrls ?? [] : [])
             case .photoFourCut:
                 photoPickerGrid
             }
@@ -219,27 +210,6 @@ struct DiaryWriteView: View {
         .padding(9)
         .background(Color.white)
         .overlay(RoundedRectangle(cornerRadius: 3).stroke(SketchbookStyle.ink, lineWidth: 3))
-    }
-
-    private var oneCutPreview: some View {
-        ZStack {
-            Color(white: 0.95)
-            if let urlString = existingDiary?.imageUrl, let url = URL(string: urlString), existingDiary?.hasFourCut != true {
-                AsyncImage(url: url) { phase in
-                    if case .success(let image) = phase {
-                        image.resizable().aspectRatio(contentMode: .fill)
-                    }
-                }
-                .clipped()
-            } else {
-                VStack(spacing: 9) {
-                    Text("AI 1컷 · 그림 자리").font(.system(size: 11)).foregroundStyle(.black.opacity(0.42))
-                    Text("저장하면 그려져요").font(.system(size: 13)).foregroundStyle(SketchbookStyle.ink)
-                }
-            }
-        }
-        .aspectRatio(4.0 / 3.0, contentMode: .fit)
-        .clipped()
     }
 
     private func fourCutPreviewGrid(urls: [String]) -> some View {
@@ -264,6 +234,10 @@ struct DiaryWriteView: View {
         }
     }
 
+    private var savedPhotoUrls: [String] {
+        existingDiary?.hasPhotoFourCut == true ? existingDiary?.attachedImages ?? [] : []
+    }
+
     private var photoPickerGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 7), GridItem(.flexible(), spacing: 7)], spacing: 7) {
             ForEach(0..<4, id: \.self) { i in
@@ -271,6 +245,13 @@ struct DiaryWriteView: View {
                     Color(white: 0.95)
                     if i < photoDatas.count, let uiImage = UIImage(data: photoDatas[i]) {
                         Image(uiImage: uiImage).resizable().aspectRatio(contentMode: .fill)
+                    } else if photoDatas.isEmpty, i < savedPhotoUrls.count, let url = URL(string: savedPhotoUrls[i]) {
+                        // 새로 고르기 전에는 저장된 사진 4컷 원본을 보여 준다
+                        AsyncImage(url: url) { phase in
+                            if case .success(let image) = phase {
+                                image.resizable().aspectRatio(contentMode: .fill)
+                            }
+                        }
                     } else {
                         Text("+ 사진 넣기").font(.system(size: 10, design: .monospaced)).foregroundStyle(.black.opacity(0.42))
                     }
@@ -338,14 +319,6 @@ struct DiaryWriteView: View {
         progressDone = 0
         do {
             switch mode {
-            case .oneCut:
-                isGeneratingText = "그림을 그리고 있어요…"
-                let isRegenerate = existingDiary?.imageUrl != nil
-                let result = try await SupabaseService.shared.generateOneCutImage(
-                    date: date, content: content, isRegenerate: isRegenerate,
-                    existingCoverImageUrl: existingDiary?.coverImageUrl
-                )
-                onSaved(result.item)
             case .aiFourCut:
                 isGeneratingText = "장면을 하나씩 그리고 있어요…"
                 let result = try await SupabaseService.shared.generateFourCutDiary(

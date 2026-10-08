@@ -35,12 +35,12 @@ extension SupabaseService {
         let strip = DiarySketchImageComposer.composeFourCutStrip(images: images, dateLabel: date)
         let stripData = strip.pngData() ?? Data()
         let timestamp = Int(Date().timeIntervalSince1970)
-        let stripUrl = try await uploadImageData(stripData, folder: "diaries", fileName: "\(date)-fourcut-\(timestamp).png")
+        let stripUrl = try await uploadImageData(stripData, folder: "diaries", fileName: "\(date)-photofourcut-\(timestamp).png")
 
-        return try await finalizeFourCutDiary(
+        // AI 4컷과 별도 컬럼(photo_four_cut_url)에 저장
+        return try await finalizePhotoFourCutDiary(
             date: date, content: content,
-            sceneUrls: photoUrls, stripUrl: stripUrl,
-            attachedImages: photoUrls,
+            photoUrls: photoUrls, stripUrl: stripUrl,
             existingCoverImageUrl: existingCoverImageUrl
         )
     }

@@ -387,8 +387,9 @@ export const diaries = pgTable('diaries', {
   imageUrl: text('image_url'), // 생성된 이미지 URL
   imagePrompt: text('image_prompt'), // 사용된 프롬프트
   emotion: text('emotion'), // 감정 분석 결과
-  fourCutUrl: text('four_cut_url'), // 4컷 스트립 이미지 URL
-  fourCutSceneUrls: text('four_cut_scene_urls'), // jsonb 배열 (개별 장면 URL)
+  fourCutUrl: text('four_cut_url'), // AI 4컷 스트립 이미지 URL
+  fourCutSceneUrls: text('four_cut_scene_urls'), // jsonb 배열 (AI 4컷 개별 장면 URL)
+  photoFourCutUrl: text('photo_four_cut_url'), // 사진 4컷 스트립 이미지 URL (원본은 attached_images)
   coverImageUrl: text('cover_image_url'), // 달력 대문 이미지 URL
   createdAt: timestamp('createdat').defaultNow().notNull(),
   updatedAt: timestamp('updatedat').defaultNow().notNull(),

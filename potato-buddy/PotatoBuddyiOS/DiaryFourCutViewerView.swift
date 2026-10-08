@@ -2,7 +2,8 @@ import SwiftUI
 import UIKit
 
 struct DiaryFourCutViewerView: View {
-    let diary: DiaryItem
+    let title: String
+    let stripUrl: String?
 
     @Environment(\.dismiss) private var dismiss
     @State private var image: UIImage?
@@ -16,7 +17,7 @@ struct DiaryFourCutViewerView: View {
 
             VStack(spacing: 16) {
                 HStack {
-                    Text("4컷 그림일기").font(.system(size: 21)).foregroundStyle(SketchbookStyle.ink)
+                    Text(title).font(.system(size: 21)).foregroundStyle(SketchbookStyle.ink)
                     Spacer()
                     Button {
                         dismiss()
@@ -92,7 +93,7 @@ struct DiaryFourCutViewerView: View {
 
     private func loadImage() async {
         isLoading = true
-        if let urlString = diary.fourCutUrl, let url = URL(string: urlString) {
+        if let urlString = stripUrl, let url = URL(string: urlString) {
             if let (data, _) = try? await URLSession.shared.data(from: url), let uiImage = UIImage(data: data) {
                 image = uiImage
             }

@@ -7,9 +7,7 @@ import { uploadImage } from '../services/imageService.js'
 import { markDiaryReminderShown } from '../services/diaryReminderService.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import AiTokenBalanceBadge from './AiTokenBalanceBadge.jsx'
-import AiTokenGenerationCostNote from './AiTokenGenerationCostNote.jsx'
 import TokenDepositRequestModal from './TokenDepositRequestModal.jsx'
-import DiaryShareButton from './DiaryShareButton.jsx'
 import FourCutDispenserModal from './FourCutDispenserModal.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 import { DIARY_EMOTION_LABELS, getDiaryEmotionLabel } from '../constants/diaryEmotions.js'
@@ -45,21 +43,18 @@ export default function DiaryForm({
   tokenRefreshDep,
   onOpenDepositModal,
 }) {
-  const { user, isAdmin } = useAuth()
+  const { user } = useAuth()
   const [content, setContent] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [error, setError] = useState(null)
   const [existingDiary, setExistingDiary] = useState(null)
-  const [imageLoadError, setImageLoadError] = useState(false) // 이미지 로드 실패 상태
-  const [diaryEmotion, setDiaryEmotion] = useState(null) // 저장/재생성 후 감정
-  const [showPrompt, setShowPrompt] = useState(false) // 프롬프트 표시 여부
+  const [diaryEmotion, setDiaryEmotion] = useState(null) // 저장 후 감정
   const [attachedImages, setAttachedImages] = useState([]) // 첨부된 이미지 URL 목록
   const [uploadingImages, setUploadingImages] = useState({}) // 업로드 중인 이미지 상태
   const fileInputRef = useRef(null)
   const [showDepositModal, setShowDepositModal] = useState(false)
   const [isSavingWithoutImage, setIsSavingWithoutImage] = useState(false)
-  const [diaryMode, setDiaryMode] = useState(DIARY_MODE.NORMAL)
+  const [diaryMode, setDiaryMode] = useState(DIARY_MODE.AI_FOUR_CUT)
   const [fourCutProgress, setFourCutProgress] = useState(null)
   const [showFourCutModal, setShowFourCutModal] = useState(false)
   const [liveSceneUrls, setLiveSceneUrls] = useState([])
@@ -76,7 +71,6 @@ export default function DiaryForm({
   const aiFourCutCost = AI_FOUR_CUT_TOKEN_COST
   const isPhotoFourCut = diaryMode === DIARY_MODE.PHOTO_FOUR_CUT
   const isAiFourCut = diaryMode === DIARY_MODE.AI_FOUR_CUT
-  const isAiOneCut = diaryMode === DIARY_MODE.NORMAL
 
   // 기존 일기 로드
   useEffect(() => {
@@ -86,7 +80,6 @@ export default function DiaryForm({
     setLiveFourCutUrl(null)
     setShowFourCutModal(false)
     setFourCutProgress(null)
-    setShowPrompt(false)
     loadExistingDiary()
   }, [selectedDate])
 
@@ -96,24 +89,21 @@ export default function DiaryForm({
       if (diary) {
         setContent(diary.content)
         setExistingDiary(diary)
-        setImageLoadError(false)
         setAttachedImages(diary.attachedImages || [])
         setDiaryEmotion(getDiaryEmotionLabel(diary.emotion) ?? null)
-        if (diary.fourCutUrl && (diary.attachedImages || []).length > 0) {
-          setDiaryMode(DIARY_MODE.PHOTO_FOUR_CUT)
-        } else if (diary.fourCutUrl || (diary.fourCutSceneUrls || []).length > 0) {
-          setDiaryMode(DIARY_MODE.AI_FOUR_CUT)
-        } else {
-          setDiaryMode(DIARY_MODE.NORMAL)
-        }
+        const hasAiFourCut = Boolean(diary.fourCutUrl) || (diary.fourCutSceneUrls || []).length > 0
+        setDiaryMode(
+          !hasAiFourCut && diary.photoFourCutUrl
+            ? DIARY_MODE.PHOTO_FOUR_CUT
+            : DIARY_MODE.AI_FOUR_CUT,
+        )
         setFormStep('write')
       } else {
         setContent('')
         setExistingDiary(null)
-        setImageLoadError(false)
         setAttachedImages([])
         setDiaryEmotion(null)
-        setDiaryMode(DIARY_MODE.NORMAL)
+        setDiaryMode(DIARY_MODE.AI_FOUR_CUT)
         setFormStep('write')
       }
     } catch (error) {
@@ -121,13 +111,8 @@ export default function DiaryForm({
     }
   }
 
-  const hasInsufficientTokens =
-    tokenBalance !== null && tokenBalance < generationCost
   const hasInsufficientTokensForAiFourCut =
     tokenBalance !== null && tokenBalance < aiFourCutCost
-  // 미디어 단계 AI 1컷은 생성/재생성 모두 토큰 필요
-  const needsNewImageOnSave = isAiOneCut
-  const needsTokensForAiFourCutSubmit = isAiFourCut
 
   const openDepositModal = () => {
     if (onOpenDepositModal) {
@@ -140,9 +125,16 @@ export default function DiaryForm({
   const isTokenError = (message) =>
     typeof message === 'string' && (message.includes('토큰') || message.includes('token'))
 
+  /** 4컷 디스펜서 모달 열기 (AI 4컷 / 사진 4컷 공용) */
+  const openFourCutBooth = (sceneUrls, stripUrl) => {
+    setLiveSceneUrls(sceneUrls || [])
+    setLiveFourCutUrl(stripUrl || null)
+    setShowFourCutModal(true)
+  }
+
   const runAfterDiarySaved = async (
     saved,
-    { withImage = true, openBooth = false, closeAfter = true } = {},
+    { withImage = true, booth = null, closeAfter = true } = {},
   ) => {
     if (saved?.emotion) setDiaryEmotion(EMOTION_LABELS[saved.emotion] ?? saved.emotion)
 
@@ -159,10 +151,8 @@ export default function DiaryForm({
     showToast(saveMsg, TOAST_TYPES.SUCCESS)
     setShowDepositModal(false)
 
-    if (openBooth || saved?.fourCutUrl) {
-      setLiveSceneUrls(saved?.fourCutSceneUrls || [])
-      setLiveFourCutUrl(saved?.fourCutUrl || null)
-      setShowFourCutModal(true)
+    if (booth) {
+      openFourCutBooth(booth.sceneUrls, booth.stripUrl)
     }
 
     const today = new Date()
@@ -222,7 +212,7 @@ export default function DiaryForm({
   }
 
   /**
-   * AI 1컷 / AI 4컷 / 사진 4컷 저장
+   * AI 4컷 / 사진 4컷 저장
    * @param {string} mode
    */
   const saveDiaryWithMode = async (mode) => {
@@ -233,15 +223,9 @@ export default function DiaryForm({
 
     const isPhoto = mode === DIARY_MODE.PHOTO_FOUR_CUT
     const isAiFour = mode === DIARY_MODE.AI_FOUR_CUT
-    const isAiOne = mode === DIARY_MODE.NORMAL
 
     if (isPhoto && attachedImages.length === 0) {
       showToast('사진 4컷 모드에서는 사진을 1장 이상 첨부해주세요.', TOAST_TYPES.ERROR)
-      return
-    }
-
-    if (isAiOne && hasInsufficientTokens) {
-      openDepositModal()
       return
     }
 
@@ -252,7 +236,6 @@ export default function DiaryForm({
 
     setDiaryMode(mode)
     setIsLoading(true)
-    setIsGeneratingImage(isAiOne)
     setError(null)
 
     if (isAiFour) {
@@ -264,9 +247,9 @@ export default function DiaryForm({
     }
 
     try {
-      const imagesForSave = isPhoto ? attachedImages : []
-      const regenerateOneCut = isAiOne && Boolean(existingDiary?.imageUrl)
-      const saved = await saveDiary(selectedDate, content, regenerateOneCut, imagesForSave, {
+      // AI 4컷 저장 시에도 기존 사진 4컷 원본을 유지
+      const imagesForSave = isPhoto ? attachedImages : (existingDiary?.attachedImages || [])
+      const saved = await saveDiary(selectedDate, content, false, imagesForSave, {
         mode,
         skipImageGeneration: isPhoto,
         onFourCutProgress: isAiFour
@@ -291,14 +274,10 @@ export default function DiaryForm({
       if (isPhoto) {
         setAttachedImages(saved?.attachedImages || attachedImages)
       }
-      if (saved?.fourCutSceneUrls?.length) {
-        setLiveSceneUrls(saved.fourCutSceneUrls)
-      }
-      if (saved?.fourCutUrl) {
-        setLiveFourCutUrl(saved.fourCutUrl)
-      }
       await runAfterDiarySaved(saved, {
-        openBooth: isAiFour || isPhoto,
+        booth: isPhoto
+          ? { sceneUrls: saved?.attachedImages || attachedImages, stripUrl: saved?.photoFourCutUrl }
+          : { sceneUrls: saved?.fourCutSceneUrls, stripUrl: saved?.fourCutUrl },
         closeAfter: false,
       })
     } catch (error) {
@@ -315,7 +294,6 @@ export default function DiaryForm({
       }
     } finally {
       setIsLoading(false)
-      setIsGeneratingImage(false)
       setIsCreatingAiFourCut(false)
       setFourCutProgress(null)
     }
@@ -437,69 +415,6 @@ export default function DiaryForm({
     setAttachedImages(prev => prev.filter((_, i) => i !== index))
   }
 
-  // 이미지 재생성
-  const handleRegenerateImage = async () => {
-    if (!content.trim()) {
-      showToast('일기 내용을 먼저 입력해주세요.', TOAST_TYPES.ERROR)
-      return
-    }
-
-    if (hasInsufficientTokens) {
-      openDepositModal()
-      return
-    }
-
-    setIsGeneratingImage(true)
-    setError(null)
-
-    try {
-      // 재생성된 일기 데이터를 받아옴
-      const updatedDiary = await saveDiary(selectedDate, content, true, [], {
-        mode: DIARY_MODE.NORMAL,
-      })
-      
-      // 반환된 데이터로 즉시 상태 업데이트
-      if (updatedDiary) {
-        setExistingDiary({
-          ...updatedDiary,
-          // 브라우저 캐시 방지를 위해 이미지 URL에 타임스탬프 추가
-          imageUrl: updatedDiary.imageUrl ? `${updatedDiary.imageUrl}?t=${Date.now()}` : null
-        })
-        setImageLoadError(false) // 이미지 로드 상태 초기화
-        setShowPrompt(false) // 프롬프트 숨기기 (새 이미지 생성 시)
-        if (updatedDiary.emotion) setDiaryEmotion(EMOTION_LABELS[updatedDiary.emotion] ?? updatedDiary.emotion)
-      }
-      
-      // 데이터베이스에서 최신 데이터 다시 로드
-      await loadExistingDiary()
-      
-      // 이미지가 성공적으로 생성되었는지 확인
-      if (updatedDiary?.imageUrl) {
-        const costMsg = updatedDiary.tokensConsumed
-          ? ` (${generationCost}토큰 사용, 잔여 ${updatedDiary.remainingBalance ?? tokenBalance}개)`
-          : ''
-        showToast(`이미지가 재생성되었습니다.${costMsg}`, TOAST_TYPES.SUCCESS)
-      } else {
-        showToast('이미지 생성에 실패했습니다. 일기는 저장되었습니다.', TOAST_TYPES.ERROR)
-      }
-    } catch (error) {
-      console.error('이미지 재생성 실패:', error)
-      const errorMessage = error.message || '이미지 재생성에 실패했습니다.'
-      setError(errorMessage)
-      
-      // 사용자 친화적인 에러 메시지 표시
-      if (isTokenError(errorMessage)) {
-        openDepositModal()
-      } else if (errorMessage.includes('결제 한도') || errorMessage.includes('크레딧') || errorMessage.includes('billing')) {
-        showToast(`⚠️ ${errorMessage}\n일기는 저장되었지만 이미지는 생성되지 않았습니다.`, TOAST_TYPES.ERROR)
-      } else {
-        showToast(`이미지 재생성 실패: ${errorMessage}`, TOAST_TYPES.ERROR)
-      }
-    } finally {
-      setIsGeneratingImage(false)
-    }
-  }
-
   const formatDate = (dateString) => {
     try {
       return format(new Date(dateString + 'T00:00:00'), 'yyyy년 MM월 dd일 (EEE)', { locale: ko })
@@ -531,36 +446,45 @@ export default function DiaryForm({
   )
 
   const fourCutScenes = existingDiary?.fourCutSceneUrls || []
+  const savedPhotos = existingDiary?.attachedImages || []
+  const photoFourCutUrl = existingDiary?.photoFourCutUrl || null
+  const hasAiFourCut = Boolean(existingDiary?.fourCutUrl) || fourCutScenes.length > 0
   const currentCoverUrl =
     existingDiary?.coverImageUrl
     || fourCutScenes[0]
+    || savedPhotos[0]
     || null
 
-  const fourCutCoverPicker = fourCutScenes.length > 0 && (
+  /**
+   * 대문 사진 선택 그리드
+   * @param {string} title
+   * @param {string[]} urls
+   * @param {Array<{ label: string, onClick: () => void }>} [actions]
+   */
+  const renderCoverPicker = (title, urls, actions = []) => urls.length > 0 && (
     <div>
       <div className="mb-2 flex items-center justify-between gap-2">
         <h4 className="text-sm font-medium text-gray-600 font-sans">
-          대문 사진 선택 ({fourCutScenes.length}컷)
+          {title} ({urls.length}장)
         </h4>
-        {existingDiary?.fourCutUrl && (
-          <button
-            type="button"
-            onClick={() => {
-              setLiveSceneUrls(fourCutScenes)
-              setLiveFourCutUrl(existingDiary.fourCutUrl)
-              setShowFourCutModal(true)
-            }}
-            className="rounded-lg bg-stone-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-stone-700"
-          >
-            4컷 보기
-          </button>
-        )}
+        <div className="flex gap-2">
+          {actions.map((action) => (
+            <button
+              key={action.label}
+              type="button"
+              onClick={action.onClick}
+              className="rounded-lg bg-stone-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-stone-700"
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
       </div>
       <p className="mb-3 text-xs text-gray-500 font-sans">
-        달력에 보일 대표 사진을 4컷 중에서 골라 주세요.
+        달력에 보일 대표 사진을 골라 주세요.
       </p>
       <div className="grid grid-cols-4 gap-2">
-        {fourCutScenes.map((url, index) => {
+        {urls.map((url, index) => {
           const isSelected = currentCoverUrl === url
           return (
             <button
@@ -576,7 +500,7 @@ export default function DiaryForm({
             >
               <img
                 src={url}
-                alt={`${index + 1}컷`}
+                alt={`${index + 1}번째 사진`}
                 className="h-24 w-full object-cover"
               />
               {isSelected && (
@@ -589,6 +513,24 @@ export default function DiaryForm({
         })}
       </div>
     </div>
+  )
+
+  const aiFourCutBoothAction = existingDiary?.fourCutUrl
+    ? { label: 'AI 4컷 보기', onClick: () => openFourCutBooth(fourCutScenes, existingDiary.fourCutUrl) }
+    : null
+  const photoFourCutBoothAction = photoFourCutUrl
+    ? { label: '사진 4컷 보기', onClick: () => openFourCutBooth(savedPhotos, photoFourCutUrl) }
+    : null
+
+  const aiFourCutCoverPicker = renderCoverPicker(
+    'AI 4컷 대문 선택',
+    fourCutScenes,
+    [aiFourCutBoothAction].filter(Boolean),
+  )
+  const photoFourCutCoverPicker = photoFourCutUrl && renderCoverPicker(
+    '사진 4컷 대문 선택',
+    savedPhotos,
+    [photoFourCutBoothAction].filter(Boolean),
   )
 
   const stepTabs = (
@@ -650,7 +592,8 @@ export default function DiaryForm({
           />
         </div>
 
-        {fourCutCoverPicker}
+        {aiFourCutCoverPicker}
+        {photoFourCutCoverPicker}
 
         {error && formStep === 'write' && (
           <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
@@ -705,7 +648,7 @@ export default function DiaryForm({
           >
             {isCreatingAiFourCut
               ? 'AI 4컷 생성 중...'
-              : existingDiary?.fourCutUrl || fourCutScenes.length > 0
+              : hasAiFourCut
                 ? `AI 4컷 다시 만들기 (${aiFourCutCost}토큰)`
                 : `AI 4컷 저장 (${aiFourCutCost}토큰)`}
           </button>
@@ -728,10 +671,7 @@ export default function DiaryForm({
             <button
               key={mode}
               type="button"
-              onClick={() => {
-                setDiaryMode(mode)
-                if (mode !== DIARY_MODE.PHOTO_FOUR_CUT) setAttachedImages([])
-              }}
+              onClick={() => setDiaryMode(mode)}
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors font-sans ${
                 diaryMode === mode
                   ? 'bg-stone-800 text-white'
@@ -743,9 +683,6 @@ export default function DiaryForm({
           ))}
         </div>
 
-        {isAiOneCut && (
-          <AiTokenGenerationCostNote cost={generationCost} className="mt-2" />
-        )}
         {isAiFourCut && (
           <p className="mt-2 text-sm text-amber-800 font-sans">
             생성 전 일기를 4줄로 요약한 뒤 시간 흐름이 보이게 만듭니다. 1회 {aiFourCutCost}토큰이 소모됩니다.
@@ -753,92 +690,12 @@ export default function DiaryForm({
         )}
         {isPhotoFourCut && (
           <p className="mt-2 text-sm text-green-800 font-sans">
-            사진 최대 {PHOTO_FOUR_CUT_MAX}장을 첨부하면 4컷 스트립으로 저장됩니다. (AI 토큰 없음)
+            사진 최대 {PHOTO_FOUR_CUT_MAX}장을 첨부하면 4컷 스트립으로 저장됩니다. AI 4컷과 따로 보관됩니다. (AI 토큰 없음)
           </p>
         )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6" onPaste={handlePaste}>
-        {/* AI 1컷: 한 장만 */}
-        {isAiOneCut && (
-          <div>
-            <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
-              AI 1컷 이미지
-            </label>
-            {isGeneratingImage ? (
-              <div className="w-full max-w-md h-64 bg-gray-100 rounded-lg border-2 border-green-200 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto mb-2"></div>
-                  <p className="text-sm text-gray-600 font-sans">이미지 생성 중...</p>
-                </div>
-              </div>
-            ) : existingDiary?.imageUrl && !imageLoadError ? (
-              <div>
-                <img
-                  key={existingDiary.imageUrl}
-                  src={existingDiary.imageUrl}
-                  alt="일기 이미지"
-                  className="w-full max-w-md rounded-lg border-2 border-green-200"
-                  onError={() => {
-                    console.error('이미지 로드 실패:', existingDiary.imageUrl)
-                    setImageLoadError(true)
-                  }}
-                />
-                {diaryEmotion && (
-                  <p className="mt-2 text-sm text-gray-500 font-sans">
-                    오늘의 감정: <span className="font-semibold text-green-600">{diaryEmotion}</span>
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-2 mt-2">
-                  <DiaryShareButton
-                    imageUrl={existingDiary.imageUrl}
-                    dateString={selectedDate}
-                    emotionLabel={diaryEmotion || undefined}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleRegenerateImage}
-                    disabled={isGeneratingImage || hasInsufficientTokens}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium font-sans disabled:opacity-50"
-                  >
-                    {isGeneratingImage
-                      ? '재생성 중...'
-                      : `🔄 이미지 재생성 (${generationCost}토큰)`}
-                  </button>
-                  {isAdmin && existingDiary?.imagePrompt && (
-                    <button
-                      type="button"
-                      onClick={() => setShowPrompt(!showPrompt)}
-                      className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium font-sans"
-                    >
-                      {showPrompt ? '📝 프롬프트 숨기기' : '📝 프롬프트 보기'}
-                    </button>
-                  )}
-                </div>
-                {isAdmin && showPrompt && existingDiary?.imagePrompt && (
-                  <div className="mt-3 p-4 bg-gray-50 border-2 border-gray-200 rounded-lg">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-2 font-sans">생성된 프롬프트:</h4>
-                    <p className="text-xs text-gray-600 font-mono whitespace-pre-wrap break-words font-sans">
-                      {existingDiary.imagePrompt}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ) : existingDiary?.imageUrl && imageLoadError ? (
-              <div className="w-full max-w-md h-64 bg-gray-100 rounded-lg border-2 border-green-200 flex items-center justify-center">
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 font-sans mb-2">⚠️ 이미지를 불러올 수 없습니다</p>
-                  <p className="text-xs text-gray-500 font-sans">이미지가 만료되었거나 삭제되었을 수 있습니다</p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 font-sans">
-                아직 생성된 1컷 이미지가 없습니다. 아래 버튼으로 만들어 보세요.
-              </p>
-            )}
-          </div>
-        )}
-
         {/* AI 4컷: 4컷만 */}
         {isAiFourCut && (
           <div className="space-y-4">
@@ -856,9 +713,9 @@ export default function DiaryForm({
               </div>
             )}
 
-            {existingDiary?.fourCutUrl || fourCutScenes.length > 0 ? (
+            {hasAiFourCut ? (
               <div className="space-y-4">
-                {fourCutCoverPicker}
+                {aiFourCutCoverPicker}
                 {existingDiary?.fourCutUrl && (
                   <div>
                     <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
@@ -870,6 +727,11 @@ export default function DiaryForm({
                       className="w-40 rounded-lg border-2 border-green-200 bg-white object-contain shadow"
                     />
                   </div>
+                )}
+                {diaryEmotion && (
+                  <p className="text-sm text-gray-500 font-sans">
+                    오늘의 감정: <span className="font-semibold text-green-600">{diaryEmotion}</span>
+                  </p>
                 )}
               </div>
             ) : (
@@ -945,26 +807,22 @@ export default function DiaryForm({
               </div>
             )}
 
-            {existingDiary?.fourCutUrl && (existingDiary?.attachedImages || []).length > 0 && (
+            {photoFourCutUrl && (
               <div className="space-y-4">
-                {fourCutCoverPicker}
+                {photoFourCutCoverPicker}
                 <div>
                   <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
                     저장된 사진 4컷
                   </label>
                   <div className="flex flex-wrap items-start gap-3">
                     <img
-                      src={existingDiary.fourCutUrl}
+                      src={photoFourCutUrl}
                       alt="사진 4컷"
                       className="w-40 rounded-lg border-2 border-green-200 bg-white object-contain shadow"
                     />
                     <button
                       type="button"
-                      onClick={() => {
-                        setLiveSceneUrls(existingDiary?.fourCutSceneUrls || existingDiary?.attachedImages || [])
-                        setLiveFourCutUrl(existingDiary?.fourCutUrl || null)
-                        setShowFourCutModal(true)
-                      }}
+                      onClick={() => openFourCutBooth(savedPhotos, photoFourCutUrl)}
                       className="px-4 py-2 bg-stone-800 text-white rounded-lg text-sm font-medium font-sans hover:bg-stone-700"
                     >
                       4컷 보기 (애니메이션)
@@ -979,19 +837,6 @@ export default function DiaryForm({
         {error && (
           <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
             <p className="text-sm text-red-700 font-sans">{error}</p>
-          </div>
-        )}
-
-        {isAiOneCut && hasInsufficientTokens && (
-          <div className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 font-sans">
-            <p className="font-semibold">AI 그림 생성에 토큰이 부족합니다.</p>
-            <button
-              type="button"
-              onClick={openDepositModal}
-              className="mt-2 text-sm font-semibold text-amber-700 underline hover:text-amber-900"
-            >
-              토큰 충전 신청하기 →
-            </button>
           </div>
         )}
 
@@ -1027,29 +872,21 @@ export default function DiaryForm({
             type="submit"
             disabled={
               isLoading
-              || isGeneratingImage
               || isSavingWithoutImage
               || isCreatingAiFourCut
-              || (needsTokensForAiFourCutSubmit && hasInsufficientTokensForAiFourCut)
-              || (needsNewImageOnSave && hasInsufficientTokens)
+              || (isAiFourCut && hasInsufficientTokensForAiFourCut)
             }
             className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
           >
             {isCreatingAiFourCut
               ? 'AI 4컷 생성 중...'
-              : isGeneratingImage
-                ? '이미지 생성 중...'
-                : isLoading
-                  ? '저장 중...'
-                  : isAiFourCut
-                    ? existingDiary?.fourCutUrl
-                      ? `AI 4컷 다시 만들기 (${aiFourCutCost}토큰)`
-                      : `AI 4컷 만들기 (${aiFourCutCost}토큰)`
-                    : isPhotoFourCut
-                      ? '사진 4컷 저장'
-                      : existingDiary?.imageUrl
-                        ? `이미지 재생성 (${generationCost}토큰)`
-                        : `이미지 생성 (${generationCost}토큰)`}
+              : isLoading
+                ? '저장 중...'
+                : isPhotoFourCut
+                  ? '사진 4컷 저장'
+                  : hasAiFourCut
+                    ? `AI 4컷 다시 만들기 (${aiFourCutCost}토큰)`
+                    : `AI 4컷 만들기 (${aiFourCutCost}토큰)`}
           </button>
         </div>
       </form>
