@@ -386,7 +386,8 @@ final class SupabaseService {
     private func upsertDiary(_ fields: [String: Any]) async throws -> DiaryItem {
         let (userId, token) = await authInfo()
 
-        let url = URL(string: "\(Config.supabaseURL)/rest/v1/diaries")!
+        // 웹(onConflict: 'date,user_id')과 같은 기준으로 upsert. 없으면 이미 저장된 일기에서 중복 키 오류가 난다.
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/diaries?on_conflict=date,user_id")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
@@ -428,7 +429,29 @@ final class SupabaseService {
     // MARK: - 대문 이미지 선택 변경
 
     func updateDiaryCoverImage(date: String, coverImageUrl: String) async throws -> DiaryItem {
-        try await upsertDiary(["date": date, "cover_image_url": coverImageUrl])
+        // 기존 일기 행만 수정한다 (upsert는 content 없이 보내면 NOT NULL 제약에 걸릴 수 있음)
+        let (userId, token) = await authInfo()
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/diaries")!
+        components.queryItems = [
+            URLQueryItem(name: "date", value: "eq.\(date)"),
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+        ]
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = "PATCH"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+        request.httpBody = try JSONSerialization.data(withJSONObject: [
+            "cover_image_url": coverImageUrl,
+            "updated_at": ISO8601DateFormatter().string(from: Date()),
+        ])
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        guard let item = try JSONDecoder().decode([DiaryItem].self, from: data).first else {
+            throw NSError(domain: "SupabaseService", code: -5,
+                          userInfo: [NSLocalizedDescriptionKey: "일기를 먼저 저장해 주세요."])
+        }
+        return item
     }
 
     // MARK: - Storage 업로드
@@ -483,7 +506,6 @@ final class SupabaseService {
     }
 
     private struct FourCutPanel: Decodable {
-        let beat: String?
         let timeLabel: String?
         let summary: String?
         let setting: String?
@@ -504,6 +526,7 @@ final class SupabaseService {
         request.addValue(Config.anonKey, forHTTPHeaderField: "apikey")
         request.addValue("Bearer \(Config.anonKey)", forHTTPHeaderField: "Authorization")
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 180 // 이미지 생성은 기본 60초를 넘길 수 있다
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await fetch(request)
@@ -511,74 +534,102 @@ final class SupabaseService {
         return data
     }
 
-    private func finalizedPrompt(_ prompt: String) -> String {
-        let lower = prompt.lowercased()
-        if lower.contains("no text") { return prompt }
-        return prompt + ", no text, no letters, no numbers, no watermark"
+    // MARK: AI 4컷 프롬프트 (웹 freeImageService.js와 동일)
+
+    private static let posiliStyleFallback =
+        "Consistent art style: colorful crayon colored-pencil illustration, thick black outlines, soft paper texture. Main character is always the same Posili — a cute chubby round potato with a warm smile and tiny arms/legs, identical in every panel."
+
+    private static let fallbackSceneHints = [
+        "chronological beat 1 — beginning of the day from the diary, avoid food/books unless diary says so",
+        "chronological beat 2 — developing moment, different setting from beat 1",
+        "chronological beat 3 — emotional peak or key event, diverse everyday situation",
+        "chronological beat 4 — ending wrap-up of the day, consistent Posili crayon style",
+    ]
+
+    private static func buildFourCutPanelPrompt(styleLock: String, panel: FourCutPanel, index: Int) -> String {
+        [
+            styleLock,
+            "Panel \(index + 1) of 4 in a chronological photo-booth story (\(panel.timeLabel ?? "moment")).",
+            "Story beat: \(panel.summary ?? "Diary moment \(index + 1)").",
+            "Setting: \(panel.setting ?? "everyday place").",
+            "Action: \(panel.action ?? "Posili living this moment").",
+            "Keep Posili design, proportions, face, and crayon style identical to other panels.",
+            "Do not default to food, meals, books, or studying unless this beat explicitly requires it.",
+            "Show clear passage of time compared to other panels. Single clear composition, no collage.",
+        ].joined(separator: " ")
     }
 
     static let fourCutTokenCost = 10
 
-    /// AI 4컷 장면 4장을 생성해 Storage에 저장하고 토큰을 소비한다.
+    /// AI 4컷 장면 4장을 생성해 Storage에 저장하고 토큰을 소비한다. (웹 generateDiaryFourCutScenes와 동일한 흐름)
+    /// 1) 일기를 시간순 4줄로 요약(plan) 2) 공통 포실이 그림체 잠금 3) 패널별 이미지 생성
     /// 스트립 합성(UIKit 필요)과 최종 diaries 저장은 호출부(iOS UI 레이어)의 몫이다 — 이 파일은 macOS 타겟에도 공유되므로 UIKit에 의존하지 않는다.
     func generateFourCutSceneUrls(
         date: String, content: String,
         onProgress: @escaping (Int, Int) -> Void
-    ) async throws -> (sceneUrls: [String], tokenCost: Int) {
+    ) async throws -> (sceneUrls: [String], tokenCost: Int, emotion: String?, prompts: [String]) {
         let tokenInfo = try await getMyAiTokenInfo()
         guard tokenInfo.balance >= Self.fourCutTokenCost else {
             throw NSError(domain: "SupabaseService", code: -2,
                           userInfo: [NSLocalizedDescriptionKey: "AI 토큰이 부족합니다. (필요 \(Self.fourCutTokenCost), 보유 \(tokenInfo.balance))"])
         }
 
-        var panelPrompts: [String] = []
-        if let planData = try? await callGenerateImageFunction(["action": "plan_four_cut", "diaryContent": content]),
-           let plan = try? JSONDecoder().decode(FourCutPlanResponse.self, from: planData),
-           !plan.panels.isEmpty {
-            let styleLock = plan.styleLock ?? "Posili the same cute round bear character every panel, crayon and colored-pencil style, thick black outlines, soft pastel palette"
-            for (index, panel) in plan.panels.prefix(4).enumerated() {
-                let timeLabel = panel.timeLabel ?? "장면 \(index + 1)"
-                let summary = panel.summary ?? panel.beat ?? "오늘 하루의 한 장면"
-                let setting = panel.setting ?? ""
-                let action = panel.action ?? ""
-                panelPrompts.append(finalizedPrompt(
-                    "\(styleLock). Panel \(index + 1) of 4 in a chronological photo-booth diary story (\(timeLabel))." +
-                    " Scene: \(summary). Setting: \(setting). Action: \(action)." +
-                    " Keep the same character and art style consistent across all 4 panels. Single scene only, no collage, no grid, no multiple panels within one image."
-                ))
-            }
+        let total = 4
+        var plan: FourCutPlanResponse?
+        do {
+            let planData = try await callGenerateImageFunction(["action": "plan_four_cut", "diaryContent": content])
+            let decoded = try JSONDecoder().decode(FourCutPlanResponse.self, from: planData)
+            if !decoded.panels.isEmpty { plan = decoded }
+        } catch {
+            print("4컷 요약 계획 실패, 힌트 폴백 사용:", error)
         }
-        if panelPrompts.isEmpty {
-            // 기획(plan) 호출 실패 시 시간 흐름을 나타내는 고정 4장면으로 대체
-            let fallbackHints = ["아침, 하루의 시작", "낮, 하루 동안의 일", "저녁, 그날의 감정", "밤, 하루를 마무리"]
-            for hint in fallbackHints {
-                panelPrompts.append(finalizedPrompt(
-                    "Posili the same cute round bear character, crayon and colored-pencil style, thick black outlines, soft pastel palette." +
-                    " A single scene representing: \(hint), inspired by this diary: \(String(content.prefix(300)))." +
-                    " Single scene only, no collage, no grid, no multiple panels within one image."
-                ))
-            }
-        }
+        var emotion = plan?.emotion
+        let styleLock = plan?.styleLock ?? Self.posiliStyleFallback
 
         var sceneUrls: [String] = []
+        var prompts: [String] = []
+        var lastError: Error?
         let timestamp = Int(Date().timeIntervalSince1970)
-        for (index, prompt) in panelPrompts.enumerated() {
-            let responseData = try await callGenerateImageFunction(["imagePrompt": prompt])
-            let generated = try JSONDecoder().decode(GeneratedImageResponse.self, from: responseData)
-            let storedUrl = try await downloadAndStoreRemoteImage(
-                urlString: generated.imageUrl, folder: "diaries",
-                fileName: "\(date)-scene\(index + 1)-\(timestamp).png"
-            )
-            sceneUrls.append(storedUrl)
-            onProgress(sceneUrls.count, panelPrompts.count)
+
+        for index in 0..<total {
+            do {
+                let body: [String: Any]
+                var builtPrompt: String?
+                if let panels = plan?.panels, index < panels.count {
+                    let prompt = Self.buildFourCutPanelPrompt(styleLock: styleLock, panel: panels[index], index: index)
+                    builtPrompt = prompt
+                    body = ["imagePrompt": prompt]
+                } else {
+                    // plan이 없으면 일기 본문 + 장면 힌트로 Edge Function이 포실이 프롬프트를 직접 만든다
+                    let hint = "Frame \(index + 1) of 4 — \(Self.fallbackSceneHints[index]). Same Posili crayon style in every frame."
+                    body = ["diaryContent": "\(content)\n\n[Four-cut frame focus: \(hint)]"]
+                }
+
+                let responseData = try await callGenerateImageFunction(body)
+                let generated = try JSONDecoder().decode(GeneratedImageResponse.self, from: responseData)
+                if let prompt = generated.prompt ?? builtPrompt { prompts.append(prompt) }
+                if emotion == nil { emotion = generated.emotion }
+
+                let storedUrl = try await downloadAndStoreRemoteImage(
+                    urlString: generated.imageUrl, folder: "diaries",
+                    fileName: "\(date)-scene\(index + 1)-\(timestamp).png"
+                )
+                sceneUrls.append(storedUrl)
+            } catch {
+                // 한 장 실패해도 나머지 장면은 계속 생성 (웹과 동일)
+                print("AI 4컷 \(index + 1)번째 장면 생성 실패:", error)
+                lastError = error
+            }
+            onProgress(index + 1, total)
         }
+
         guard !sceneUrls.isEmpty else {
-            throw NSError(domain: "SupabaseService", code: -3,
-                          userInfo: [NSLocalizedDescriptionKey: "그림을 생성하지 못했습니다. 다시 시도해 주세요."])
+            throw lastError ?? NSError(domain: "SupabaseService", code: -3,
+                                       userInfo: [NSLocalizedDescriptionKey: "AI 4컷 이미지를 하나도 생성하지 못했습니다."])
         }
 
         _ = try await consumeAiTokens(amount: Self.fourCutTokenCost)
-        return (sceneUrls, Self.fourCutTokenCost)
+        return (sceneUrls, Self.fourCutTokenCost, emotion, prompts)
     }
 
     /// 일기 첨부 사진들을 Storage에 업로드한다. 토큰을 쓰지 않는다.
@@ -601,6 +652,7 @@ final class SupabaseService {
     func finalizeFourCutDiary(
         date: String, content: String,
         sceneUrls: [String], stripUrl: String,
+        emotion: String? = nil, prompts: [String] = [],
         existingCoverImageUrl: String?
     ) async throws -> (item: DiaryItem, awarded: Int) {
         var fields: [String: Any] = [
@@ -610,12 +662,15 @@ final class SupabaseService {
             "four_cut_url": stripUrl,
             "four_cut_scene_urls": sceneUrls,
         ]
+        if let emotion { fields["emotion"] = emotion }
+        if !prompts.isEmpty { fields["image_prompt"] = prompts.joined(separator: "\n---\n") }
         if existingCoverImageUrl == nil || existingCoverImageUrl?.isEmpty == true {
             fields["cover_image_url"] = sceneUrls[0]
         }
 
         let item = try await upsertDiary(fields)
-        let awarded = try await awardJellyForDiary(date: date)
+        // 토큰 차감·저장이 끝난 뒤이므로 젤리 지급 실패는 무시한다
+        let awarded = (try? await awardJellyForDiary(date: date)) ?? 0
         return (item, awarded)
     }
 

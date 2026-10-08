@@ -9,7 +9,7 @@ extension SupabaseService {
         date: String, content: String, existingCoverImageUrl: String?,
         onProgress: @escaping (Int, Int) -> Void
     ) async throws -> (item: DiaryItem, tokensUsed: Int, awarded: Int) {
-        let (sceneUrls, tokenCost) = try await generateFourCutSceneUrls(date: date, content: content, onProgress: onProgress)
+        let (sceneUrls, tokenCost, emotion, prompts) = try await generateFourCutSceneUrls(date: date, content: content, onProgress: onProgress)
 
         let images = try await Self.downloadImages(urls: sceneUrls)
         let strip = DiarySketchImageComposer.composeFourCutStrip(images: images, dateLabel: date)
@@ -20,6 +20,7 @@ extension SupabaseService {
         let (item, awarded) = try await finalizeFourCutDiary(
             date: date, content: content,
             sceneUrls: sceneUrls, stripUrl: stripUrl,
+            emotion: emotion, prompts: prompts,
             existingCoverImageUrl: existingCoverImageUrl
         )
         return (item, tokenCost, awarded)
