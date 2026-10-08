@@ -93,7 +93,7 @@ export function useNotifications() {
       }
 
       const alreadyShownBacklogStale = await hasBacklogStaleReminderToday(user.id)
-      if (!alreadyShownBacklogStale) {
+      if (notificationSettings.backlogStaleEnabled && !alreadyShownBacklogStale) {
         const { tasks, message } = await fetchBacklogStaleReminderPayload()
         if (tasks.length > 0) {
           setBacklogStaleReminder({ isOpen: true, tasks, message })

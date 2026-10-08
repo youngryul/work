@@ -13,6 +13,7 @@ export default function SettingsView({ currentTheme = 'posily', onThemeChange })
   const [settings, setSettings] = useState({
     weeklySummaryEnabled: true,
     monthlySummaryEnabled: true,
+    backlogStaleEnabled: true,
   })
   const [activeTab, setActiveTab] = useState(canUseNotifications ? 'notification' : 'theme')
   const [isLoading, setIsLoading] = useState(true)
@@ -50,6 +51,8 @@ export default function SettingsView({ currentTheme = 'posily', onThemeChange })
     try {
       await saveNotificationSettings(newSettings)
       showToast('설정이 저장되었습니다.', TOAST_TYPES.SUCCESS)
+      // 알림 센터에 바뀐 설정을 바로 반영
+      window.dispatchEvent(new CustomEvent('refreshNotifications'))
     } catch (error) {
       console.error('설정 저장 오류:', error)
       showToast('설정 저장에 실패했습니다.', TOAST_TYPES.ERROR)
@@ -130,6 +133,24 @@ export default function SettingsView({ currentTheme = 'posily', onThemeChange })
                 type="checkbox"
                 checked={settings.monthlySummaryEnabled}
                 onChange={() => handleToggle('monthlySummaryEnabled')}
+                disabled={isSaving}
+                className="sr-only peer"
+              />
+              <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+
+          {/* 백로그 알림 */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-800 mb-1">백로그 알림</h3>
+              <p className="text-sm text-gray-600">2주 이상 지난 백로그 할 일을 알려줍니다</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.backlogStaleEnabled}
+                onChange={() => handleToggle('backlogStaleEnabled')}
                 disabled={isSaving}
                 className="sr-only peer"
               />
