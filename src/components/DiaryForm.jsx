@@ -2,7 +2,12 @@ import { useState, useEffect, useRef } from 'react'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { useAiTokenInfo } from '../hooks/useAiTokenInfo.js'
-import { saveDiary, getDiaryByDate, updateDiaryCoverImage } from '../services/diaryService.js'
+import {
+  saveDiary,
+  saveDiaryAttachedImages,
+  getDiaryByDate,
+  updateDiaryCoverImage,
+} from '../services/diaryService.js'
 import { uploadImage } from '../services/imageService.js'
 import { markDiaryReminderShown } from '../services/diaryReminderService.js'
 import { useAuth } from '../contexts/AuthContext.jsx'
@@ -17,7 +22,7 @@ import {
   DIARY_FORM_MODES,
   DIARY_MODE,
   DIARY_MODE_LABELS,
-  PHOTO_FOUR_CUT_MAX,
+  PHOTO_ATTACH_MAX,
 } from '../constants/diaryModes.js'
 
 const EMOTION_LABELS = DIARY_EMOTION_LABELS
@@ -51,6 +56,9 @@ export default function DiaryForm({
   const [diaryEmotion, setDiaryEmotion] = useState(null) // 저장 후 감정
   const [attachedImages, setAttachedImages] = useState([]) // 첨부된 이미지 URL 목록
   const [uploadingImages, setUploadingImages] = useState({}) // 업로드 중인 이미지 상태
+  const [isSavingPhotos, setIsSavingPhotos] = useState(false) // 첨부 사진 자동 저장 중
+  // 연속 업로드·삭제 시 최신 목록을 기준으로 저장하기 위한 ref
+  const attachedImagesRef = useRef([])
   const fileInputRef = useRef(null)
   const [showDepositModal, setShowDepositModal] = useState(false)
   const [isSavingWithoutImage, setIsSavingWithoutImage] = useState(false)
@@ -69,7 +77,7 @@ export default function DiaryForm({
   )
 
   const aiFourCutCost = AI_FOUR_CUT_TOKEN_COST
-  const isPhotoFourCut = diaryMode === DIARY_MODE.PHOTO_FOUR_CUT
+  const isPhotoMode = diaryMode === DIARY_MODE.PHOTO
   const isAiFourCut = diaryMode === DIARY_MODE.AI_FOUR_CUT
 
   // 기존 일기 로드
@@ -90,11 +98,12 @@ export default function DiaryForm({
         setContent(diary.content)
         setExistingDiary(diary)
         setAttachedImages(diary.attachedImages || [])
+        attachedImagesRef.current = diary.attachedImages || []
         setDiaryEmotion(getDiaryEmotionLabel(diary.emotion) ?? null)
         const hasAiFourCut = Boolean(diary.fourCutUrl) || (diary.fourCutSceneUrls || []).length > 0
         setDiaryMode(
-          !hasAiFourCut && diary.photoFourCutUrl
-            ? DIARY_MODE.PHOTO_FOUR_CUT
+          !hasAiFourCut && (diary.attachedImages || []).length > 0
+            ? DIARY_MODE.PHOTO
             : DIARY_MODE.AI_FOUR_CUT,
         )
         setFormStep('write')
@@ -102,6 +111,7 @@ export default function DiaryForm({
         setContent('')
         setExistingDiary(null)
         setAttachedImages([])
+        attachedImagesRef.current = []
         setDiaryEmotion(null)
         setDiaryMode(DIARY_MODE.AI_FOUR_CUT)
         setFormStep('write')
@@ -125,7 +135,7 @@ export default function DiaryForm({
   const isTokenError = (message) =>
     typeof message === 'string' && (message.includes('토큰') || message.includes('token'))
 
-  /** 4컷 디스펜서 모달 열기 (AI 4컷 / 사진 4컷 공용) */
+  /** AI 4컷 디스펜서 모달 열기 */
   const openFourCutBooth = (sceneUrls, stripUrl) => {
     setLiveSceneUrls(sceneUrls || [])
     setLiveFourCutUrl(stripUrl || null)
@@ -176,12 +186,9 @@ export default function DiaryForm({
     }
   }
 
-  /** 텍스트만 저장 (첨부·4컷 데이터 유지) */
+  /** 텍스트만 저장 (첨부 사진·4컷 데이터 유지) */
   const saveTextOnly = async () => {
-    const preservedImages = attachedImages.length > 0
-      ? attachedImages
-      : (existingDiary?.attachedImages || [])
-    return saveDiary(selectedDate, content, false, preservedImages, {
+    return saveDiary(selectedDate, content, false, attachedImagesRef.current, {
       skipImageGeneration: true,
       mode: DIARY_MODE.NORMAL,
     })
@@ -211,82 +218,56 @@ export default function DiaryForm({
     }
   }
 
-  /**
-   * AI 4컷 / 사진 4컷 저장
-   * @param {string} mode
-   */
-  const saveDiaryWithMode = async (mode) => {
+  /** AI 4컷 생성 후 저장 (첨부 사진은 그대로 유지) */
+  const saveAiFourCut = async () => {
     if (!content.trim()) {
       showToast('일기 내용을 입력해주세요.', TOAST_TYPES.ERROR)
       return
     }
 
-    const isPhoto = mode === DIARY_MODE.PHOTO_FOUR_CUT
-    const isAiFour = mode === DIARY_MODE.AI_FOUR_CUT
-
-    if (isPhoto && attachedImages.length === 0) {
-      showToast('사진 4컷 모드에서는 사진을 1장 이상 첨부해주세요.', TOAST_TYPES.ERROR)
-      return
-    }
-
-    if (isAiFour && hasInsufficientTokensForAiFourCut) {
+    if (hasInsufficientTokensForAiFourCut) {
       openDepositModal()
       return
     }
 
-    setDiaryMode(mode)
+    setDiaryMode(DIARY_MODE.AI_FOUR_CUT)
     setIsLoading(true)
     setError(null)
-
-    if (isAiFour) {
-      setIsCreatingAiFourCut(true)
-      setLiveSceneUrls([])
-      setLiveFourCutUrl(null)
-      setFourCutProgress({ done: 0, total: AI_FOUR_CUT_SCENE_COUNT, phase: 'planning' })
-      setShowFourCutModal(true)
-    }
+    setIsCreatingAiFourCut(true)
+    setLiveSceneUrls([])
+    setLiveFourCutUrl(null)
+    setFourCutProgress({ done: 0, total: AI_FOUR_CUT_SCENE_COUNT, phase: 'planning' })
+    setShowFourCutModal(true)
 
     try {
-      // AI 4컷 저장 시에도 기존 사진 4컷 원본을 유지
-      const imagesForSave = isPhoto ? attachedImages : (existingDiary?.attachedImages || [])
-      const saved = await saveDiary(selectedDate, content, false, imagesForSave, {
-        mode,
-        skipImageGeneration: isPhoto,
-        onFourCutProgress: isAiFour
-          ? (info) => {
-              setFourCutProgress({
-                done: info.done,
-                total: info.total,
-                phase: info.phase,
-              })
-              if (info.imageUrl) {
-                setLiveSceneUrls((prev) => (
-                  prev.includes(info.imageUrl) ? prev : [...prev, info.imageUrl]
-                ))
-              }
-              if (info.fourCutUrl) {
-                setLiveFourCutUrl(info.fourCutUrl)
-              }
-            }
-          : undefined,
+      const saved = await saveDiary(selectedDate, content, false, attachedImagesRef.current, {
+        mode: DIARY_MODE.AI_FOUR_CUT,
+        onFourCutProgress: (info) => {
+          setFourCutProgress({
+            done: info.done,
+            total: info.total,
+            phase: info.phase,
+          })
+          if (info.imageUrl) {
+            setLiveSceneUrls((prev) => (
+              prev.includes(info.imageUrl) ? prev : [...prev, info.imageUrl]
+            ))
+          }
+          if (info.fourCutUrl) {
+            setLiveFourCutUrl(info.fourCutUrl)
+          }
+        },
       })
       setExistingDiary(saved)
-      if (isPhoto) {
-        setAttachedImages(saved?.attachedImages || attachedImages)
-      }
       await runAfterDiarySaved(saved, {
-        booth: isPhoto
-          ? { sceneUrls: saved?.attachedImages || attachedImages, stripUrl: saved?.photoFourCutUrl }
-          : { sceneUrls: saved?.fourCutSceneUrls, stripUrl: saved?.fourCutUrl },
+        booth: { sceneUrls: saved?.fourCutSceneUrls, stripUrl: saved?.fourCutUrl },
         closeAfter: false,
       })
     } catch (error) {
       console.error('일기 저장 실패:', error)
       const message = error.message || '일기 저장에 실패했습니다.'
       setError(message)
-      if (isAiFour) {
-        setShowFourCutModal(false)
-      }
+      setShowFourCutModal(false)
       if (isTokenError(message)) {
         openDepositModal()
       } else {
@@ -301,10 +282,10 @@ export default function DiaryForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    await saveDiaryWithMode(diaryMode)
+    if (isAiFourCut) await saveAiFourCut()
   }
 
-  const handleSaveAiFourCut = () => saveDiaryWithMode(DIARY_MODE.AI_FOUR_CUT)
+  const handleSaveAiFourCut = () => saveAiFourCut()
 
   const handleSelectCover = async (imageUrl) => {
     if (!selectedDate || !imageUrl || isUpdatingCover) return
@@ -324,29 +305,57 @@ export default function DiaryForm({
   }
 
   /**
-   * 파일 업로드 핸들러
+   * 첨부 사진 목록을 바로 DB에 저장 (사진 추가·삭제 시 자동 저장)
+   * @param {string[]} nextImages
    */
-  const handleFileUpload = async (e) => {
-    if (!isPhotoFourCut) return
+  const persistAttachedImages = async (nextImages) => {
+    if (!content.trim()) {
+      showToast('먼저 일기 글을 작성해 주세요.', TOAST_TYPES.ERROR)
+      return
+    }
 
-    const files = Array.from(e.target.files)
+    const previousImages = attachedImagesRef.current
+    attachedImagesRef.current = nextImages
+    setAttachedImages(nextImages)
+    setIsSavingPhotos(true)
+
+    try {
+      const saved = await saveDiaryAttachedImages(selectedDate, content, nextImages)
+      setExistingDiary(saved)
+      showToast('사진이 저장되었습니다.', TOAST_TYPES.SUCCESS)
+    } catch (error) {
+      console.error('첨부 사진 저장 실패:', error)
+      attachedImagesRef.current = previousImages
+      setAttachedImages(previousImages)
+      showToast(error.message || '사진 저장에 실패했습니다.', TOAST_TYPES.ERROR)
+    } finally {
+      setIsSavingPhotos(false)
+    }
+  }
+
+  /**
+   * 이미지 파일들을 업로드한 뒤 첨부 목록에 추가하고 자동 저장
+   * @param {File[]} files
+   */
+  const addPhotoFiles = async (files) => {
     if (files.length === 0) return
 
-    for (const file of files) {
-      if (attachedImages.length >= PHOTO_FOUR_CUT_MAX) {
-        showToast(`사진은 최대 ${PHOTO_FOUR_CUT_MAX}장까지 첨부할 수 있습니다.`, TOAST_TYPES.ERROR)
-        break
-      }
+    const room = PHOTO_ATTACH_MAX - attachedImagesRef.current.length
+    if (room <= 0) {
+      showToast(`사진은 최대 ${PHOTO_ATTACH_MAX}장까지 첨부할 수 있습니다.`, TOAST_TYPES.ERROR)
+      return
+    }
+    if (files.length > room) {
+      showToast(`사진은 최대 ${PHOTO_ATTACH_MAX}장까지 첨부할 수 있어 ${room}장만 추가합니다.`, TOAST_TYPES.ERROR)
+    }
 
+    const uploadedUrls = []
+    for (const file of files.slice(0, room)) {
       const fileId = `${Date.now()}-${Math.random().toString(36).substring(2)}`
       setUploadingImages(prev => ({ ...prev, [fileId]: true }))
 
       try {
-        const imageUrl = await uploadImage(file, 'diaries')
-        setAttachedImages(prev => {
-          if (prev.length >= PHOTO_FOUR_CUT_MAX) return prev
-          return [...prev, imageUrl]
-        })
+        uploadedUrls.push(await uploadImage(file, 'diaries'))
       } catch (error) {
         console.error('이미지 업로드 실패:', error)
         showToast(`이미지 업로드 실패: ${error.message || '알 수 없는 오류'}`, TOAST_TYPES.ERROR)
@@ -359,60 +368,45 @@ export default function DiaryForm({
       }
     }
 
+    if (uploadedUrls.length > 0) {
+      await persistAttachedImages(
+        [...attachedImagesRef.current, ...uploadedUrls].slice(0, PHOTO_ATTACH_MAX),
+      )
+    }
+  }
+
+  /**
+   * 파일 선택 핸들러
+   */
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files || [])
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
+    await addPhotoFiles(files)
   }
 
   /**
-   * 클립보드에서 이미지 붙여넣기 (사진 4컷만)
+   * 클립보드에서 이미지 붙여넣기 (사진 첨부 모드만)
    */
   const handlePaste = async (e) => {
-    if (!isPhotoFourCut) return
+    if (!isPhotoMode) return
 
-    const items = e.clipboardData?.items
-    if (!items) return
+    const files = Array.from(e.clipboardData?.items || [])
+      .filter((item) => item.type.startsWith('image/'))
+      .map((item) => item.getAsFile())
+      .filter(Boolean)
+    if (files.length === 0) return
 
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i]
-      if (item.type.startsWith('image/')) {
-        e.preventDefault()
-        if (attachedImages.length >= PHOTO_FOUR_CUT_MAX) {
-          showToast(`사진은 최대 ${PHOTO_FOUR_CUT_MAX}장까지 첨부할 수 있습니다.`, TOAST_TYPES.ERROR)
-          return
-        }
-
-        const file = item.getAsFile()
-        if (!file) continue
-
-        const fileId = `${Date.now()}-${Math.random().toString(36).substring(2)}`
-        setUploadingImages(prev => ({ ...prev, [fileId]: true }))
-
-        try {
-          const imageUrl = await uploadImage(file, 'diaries')
-          setAttachedImages(prev => {
-            if (prev.length >= PHOTO_FOUR_CUT_MAX) return prev
-            return [...prev, imageUrl]
-          })
-        } catch (error) {
-          console.error('이미지 업로드 실패:', error)
-          showToast(`이미지 업로드 실패: ${error.message || '알 수 없는 오류'}`, TOAST_TYPES.ERROR)
-        } finally {
-          setUploadingImages(prev => {
-            const newState = { ...prev }
-            delete newState[fileId]
-            return newState
-          })
-        }
-      }
-    }
+    e.preventDefault()
+    await addPhotoFiles(files)
   }
 
   /**
-   * 첨부 이미지 삭제
+   * 첨부 사진 삭제 (자동 저장)
    */
-  const handleRemoveImage = (index) => {
-    setAttachedImages(prev => prev.filter((_, i) => i !== index))
+  const handleRemoveImage = async (index) => {
+    await persistAttachedImages(attachedImagesRef.current.filter((_, i) => i !== index))
   }
 
   const formatDate = (dateString) => {
@@ -447,7 +441,6 @@ export default function DiaryForm({
 
   const fourCutScenes = existingDiary?.fourCutSceneUrls || []
   const savedPhotos = existingDiary?.attachedImages || []
-  const photoFourCutUrl = existingDiary?.photoFourCutUrl || null
   const hasAiFourCut = Boolean(existingDiary?.fourCutUrl) || fourCutScenes.length > 0
   const currentCoverUrl =
     existingDiary?.coverImageUrl
@@ -518,19 +511,17 @@ export default function DiaryForm({
   const aiFourCutBoothAction = existingDiary?.fourCutUrl
     ? { label: 'AI 4컷 보기', onClick: () => openFourCutBooth(fourCutScenes, existingDiary.fourCutUrl) }
     : null
-  const photoFourCutBoothAction = photoFourCutUrl
-    ? { label: '사진 4컷 보기', onClick: () => openFourCutBooth(savedPhotos, photoFourCutUrl) }
-    : null
 
   const aiFourCutCoverPicker = renderCoverPicker(
     'AI 4컷 대문 선택',
     fourCutScenes,
     [aiFourCutBoothAction].filter(Boolean),
   )
-  const photoFourCutCoverPicker = photoFourCutUrl && renderCoverPicker(
-    '사진 4컷 대문 선택',
-    savedPhotos,
-    [photoFourCutBoothAction].filter(Boolean),
+  // 글 쓰기 단계: AI 4컷 장면 + 첨부 사진 전체에서 대표 사진 선택
+  const allCoverPicker = renderCoverPicker(
+    '대표 사진 선택',
+    [...fourCutScenes, ...savedPhotos],
+    [aiFourCutBoothAction].filter(Boolean),
   )
 
   const stepTabs = (
@@ -575,7 +566,7 @@ export default function DiaryForm({
         {datePicker}
         {stepTabs}
         <p className="mt-3 text-sm text-gray-500 font-sans">
-          글을 쓴 뒤 글만 저장하거나 AI 4컷을 만들 수 있습니다.
+          글을 쓴 뒤 글만 저장하거나 AI 4컷을 만들 수 있습니다. 사진은 2단계에서 첨부하면 바로 저장됩니다.
         </p>
       </div>
 
@@ -592,8 +583,7 @@ export default function DiaryForm({
           />
         </div>
 
-        {aiFourCutCoverPicker}
-        {photoFourCutCoverPicker}
+        {allCoverPicker}
 
         {error && formStep === 'write' && (
           <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
@@ -688,9 +678,9 @@ export default function DiaryForm({
             생성 전 일기를 4줄로 요약한 뒤 시간 흐름이 보이게 만듭니다. 1회 {aiFourCutCost}토큰이 소모됩니다.
           </p>
         )}
-        {isPhotoFourCut && (
+        {isPhotoMode && (
           <p className="mt-2 text-sm text-green-800 font-sans">
-            사진 최대 {PHOTO_FOUR_CUT_MAX}장을 첨부하면 4컷 스트립으로 저장됩니다. AI 4컷과 따로 보관됩니다. (AI 토큰 없음)
+            사진을 첨부하면 바로 저장됩니다. 사진을 눌러 달력 대표 사진으로 고를 수 있어요. (최대 {PHOTO_ATTACH_MAX}장)
           </p>
         )}
       </div>
@@ -742,94 +732,86 @@ export default function DiaryForm({
           </div>
         )}
 
-        {/* 사진 4컷: 첨부 + 스트립만 */}
-        {isPhotoFourCut && (
+        {/* 사진 첨부: 첨부하면 자동 저장, 클릭해서 대표 사진 선택 */}
+        {isPhotoMode && (
           <div className="space-y-4">
-            <div>
-              <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
-                사진 첨부 ({attachedImages.length}/{PHOTO_FOUR_CUT_MAX})
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileUpload}
+                className="hidden"
+                id="diary-image-upload"
+              />
+              <label
+                htmlFor="diary-image-upload"
+                className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium cursor-pointer font-sans"
+              >
+                📷 사진 선택
               </label>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    id="diary-image-upload"
-                  />
-                  <label
-                    htmlFor="diary-image-upload"
-                    className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium cursor-pointer font-sans"
-                  >
-                    📷 사진 선택
-                  </label>
-                  <p className="text-xs text-gray-500 font-sans">
-                    최대 {PHOTO_FOUR_CUT_MAX}장 · Ctrl+V로 붙여넣기
-                  </p>
+              <p className="text-xs text-gray-500 font-sans">
+                {attachedImages.length}/{PHOTO_ATTACH_MAX}장 · Ctrl+V로 붙여넣기
+              </p>
+              {(Object.keys(uploadingImages).length > 0 || isSavingPhotos) && (
+                <div className="flex items-center gap-2 text-sm text-gray-600 font-sans">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-400"></div>
+                  <span>{Object.keys(uploadingImages).length > 0 ? '사진 업로드 중...' : '저장 중...'}</span>
                 </div>
-
-                {Object.keys(uploadingImages).length > 0 && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 font-sans">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-400"></div>
-                    <span>이미지 업로드 중...</span>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
 
-            {attachedImages.length > 0 && (
+            {attachedImages.length > 0 ? (
               <div>
-                <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
-                  첨부된 사진 ({attachedImages.length}개)
-                </label>
+                <p className="mb-2 text-xs text-gray-500 font-sans">
+                  사진을 누르면 달력 대표 사진으로 지정됩니다.
+                </p>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {attachedImages.map((imageUrl, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={imageUrl}
-                        alt={`첨부 이미지 ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border-2 border-gray-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage(index)}
-                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors text-xs font-bold opacity-0 group-hover:opacity-100"
-                        title="삭제"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
+                  {attachedImages.map((imageUrl, index) => {
+                    const isCover = currentCoverUrl === imageUrl
+                    return (
+                      <div key={`${imageUrl}-${index}`} className="relative group">
+                        <button
+                          type="button"
+                          disabled={isUpdatingCover || isSavingPhotos}
+                          onClick={() => handleSelectCover(imageUrl)}
+                          className={`block w-full overflow-hidden rounded-lg border-2 transition-all ${
+                            isCover
+                              ? 'border-green-500 ring-2 ring-green-300'
+                              : 'border-gray-200 hover:border-green-300'
+                          } disabled:opacity-60`}
+                          title="대표 사진으로 지정"
+                        >
+                          <img
+                            src={imageUrl}
+                            alt={`첨부 사진 ${index + 1}`}
+                            className="w-full h-32 object-cover"
+                          />
+                        </button>
+                        {isCover && (
+                          <span className="absolute bottom-1 left-1 rounded bg-green-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                            대표
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          disabled={isSavingPhotos}
+                          className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors text-xs font-bold opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                          title="삭제"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
-            )}
-
-            {photoFourCutUrl && (
-              <div className="space-y-4">
-                {photoFourCutCoverPicker}
-                <div>
-                  <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
-                    저장된 사진 4컷
-                  </label>
-                  <div className="flex flex-wrap items-start gap-3">
-                    <img
-                      src={photoFourCutUrl}
-                      alt="사진 4컷"
-                      className="w-40 rounded-lg border-2 border-green-200 bg-white object-contain shadow"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => openFourCutBooth(savedPhotos, photoFourCutUrl)}
-                      className="px-4 py-2 bg-stone-800 text-white rounded-lg text-sm font-medium font-sans hover:bg-stone-700"
-                    >
-                      4컷 보기 (애니메이션)
-                    </button>
-                  </div>
-                </div>
-              </div>
+            ) : (
+              <p className="text-sm text-gray-500 font-sans">
+                아직 첨부한 사진이 없습니다.
+              </p>
             )}
           </div>
         )}
@@ -868,26 +850,26 @@ export default function DiaryForm({
           >
             완료
           </button>
-          <button
-            type="submit"
-            disabled={
-              isLoading
-              || isSavingWithoutImage
-              || isCreatingAiFourCut
-              || (isAiFourCut && hasInsufficientTokensForAiFourCut)
-            }
-            className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
-          >
-            {isCreatingAiFourCut
-              ? 'AI 4컷 생성 중...'
-              : isLoading
-                ? '저장 중...'
-                : isPhotoFourCut
-                  ? '사진 4컷 저장'
+          {isAiFourCut && (
+            <button
+              type="submit"
+              disabled={
+                isLoading
+                || isSavingWithoutImage
+                || isCreatingAiFourCut
+                || hasInsufficientTokensForAiFourCut
+              }
+              className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
+            >
+              {isCreatingAiFourCut
+                ? 'AI 4컷 생성 중...'
+                : isLoading
+                  ? '저장 중...'
                   : hasAiFourCut
                     ? `AI 4컷 다시 만들기 (${aiFourCutCost}토큰)`
                     : `AI 4컷 만들기 (${aiFourCutCost}토큰)`}
-          </button>
+            </button>
+          )}
         </div>
       </form>
     </>

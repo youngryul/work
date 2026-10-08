@@ -8,8 +8,7 @@ struct DiaryDetailView: View {
     var onNextDay: () -> Void
     var onCoverUpdated: (DiaryItem) -> Void
 
-    /// 열려 있는 4컷 뷰어 종류 (AI / 사진)
-    @State private var fourCutViewer: FourCutViewerKind?
+    @State private var showFourCutViewer = false
     @State private var showShareCard = false
     @State private var isUpdatingCover = false
     @State private var errorMessage = ""
@@ -92,15 +91,17 @@ struct DiaryDetailView: View {
                     coverImageView
                         .padding(.bottom, 9)
 
-                    if diary.hasAiFourCut || diary.hasPhotoFourCut {
-                        HStack(spacing: 8) {
-                            if diary.hasAiFourCut {
-                                fourCutViewerButton("AI 4컷 보기 →", kind: .ai)
-                            }
-                            if diary.hasPhotoFourCut {
-                                fourCutViewerButton("사진 4컷 보기 →", kind: .photo)
-                            }
+                    if diary.hasAiFourCut {
+                        Button {
+                            showFourCutViewer = true
+                        } label: {
+                            Text("AI 4컷 보기 →").font(.system(size: 14))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .foregroundStyle(SketchbookStyle.ink)
+                                .overlay(RoundedRectangle(cornerRadius: 4).stroke(SketchbookStyle.ink.opacity(0.45), style: StrokeStyle(lineWidth: 2, dash: [4, 4])))
                         }
+                        .buttonStyle(.plain)
                         .padding(.bottom, 12)
                     }
 
@@ -136,35 +137,12 @@ struct DiaryDetailView: View {
             .padding(.horizontal, 18)
             .padding(.top, 36)
         }
-        .sheet(item: $fourCutViewer) { kind in
-            switch kind {
-            case .ai:
-                DiaryFourCutViewerView(title: "AI 4컷 그림일기", stripUrl: diary.fourCutUrl)
-            case .photo:
-                DiaryFourCutViewerView(title: "사진 4컷", stripUrl: diary.photoFourCutUrl)
-            }
+        .sheet(isPresented: $showFourCutViewer) {
+            DiaryFourCutViewerView(title: "AI 4컷 그림일기", stripUrl: diary.fourCutUrl)
         }
         .sheet(isPresented: $showShareCard) {
             DiaryShareCardView(diary: diary)
         }
-    }
-
-    private enum FourCutViewerKind: String, Identifiable {
-        case ai, photo
-        var id: String { rawValue }
-    }
-
-    private func fourCutViewerButton(_ label: String, kind: FourCutViewerKind) -> some View {
-        Button {
-            fourCutViewer = kind
-        } label: {
-            Text(label).font(.system(size: 14))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-                .foregroundStyle(SketchbookStyle.ink)
-                .overlay(RoundedRectangle(cornerRadius: 4).stroke(SketchbookStyle.ink.opacity(0.45), style: StrokeStyle(lineWidth: 2, dash: [4, 4])))
-        }
-        .buttonStyle(.plain)
     }
 
     private var coverImageView: some View {

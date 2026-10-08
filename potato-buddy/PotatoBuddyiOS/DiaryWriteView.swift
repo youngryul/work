@@ -3,19 +3,19 @@ import PhotosUI
 import UIKit
 
 private enum DiaryWriteMode: CaseIterable {
-    case aiFourCut, photoFourCut
+    case aiFourCut, photos
 
     var label: String {
         switch self {
         case .aiFourCut: return "AI 4컷"
-        case .photoFourCut: return "사진 4컷"
+        case .photos: return "사진 첨부"
         }
     }
 
     var note: String {
         switch self {
         case .aiFourCut: return "일기를 네 장면으로 나눠 시간 흐름이 보이게 그립니다."
-        case .photoFourCut: return "사진 네 장을 붙여 4컷으로 만듭니다. AI 4컷과 따로 보관되고 토큰이 들지 않아요."
+        case .photos: return "사진을 넣으면 바로 저장돼요. 사진을 누르면 달력 대표 사진이 됩니다."
         }
     }
 }
@@ -25,25 +25,40 @@ struct DiaryWriteView: View {
     let existingDiary: DiaryItem?
     var onCancel: () -> Void
     var onSaved: (DiaryItem) -> Void
+    /// 사진 자동 저장 시 호출 (작성 화면은 유지)
+    var onAutoSaved: (DiaryItem) -> Void
+
+    /// 첨부 사진 최대 장수 (웹과 동일)
+    private static let photoAttachMax = 10
 
     @State private var content: String
     @State private var mode: DiaryWriteMode
     @State private var photoItems: [PhotosPickerItem] = []
-    @State private var photoDatas: [Data] = []
+    @State private var attachedUrls: [String]
+    /// 사진 자동 저장·대표 사진 변경 후 최신 일기
+    @State private var latestDiary: DiaryItem?
+    @State private var isSavingPhotos = false
     @State private var isSaving = false
     @State private var isGeneratingText = ""
     @State private var progressDone = 0
     @State private var progressTotal = 4
     @State private var errorMessage = ""
 
-    init(date: String, existingDiary: DiaryItem?, onCancel: @escaping () -> Void, onSaved: @escaping (DiaryItem) -> Void) {
+    init(
+        date: String, existingDiary: DiaryItem?,
+        onCancel: @escaping () -> Void,
+        onSaved: @escaping (DiaryItem) -> Void,
+        onAutoSaved: @escaping (DiaryItem) -> Void = { _ in }
+    ) {
         self.date = date
         self.existingDiary = existingDiary
         self.onCancel = onCancel
         self.onSaved = onSaved
+        self.onAutoSaved = onAutoSaved
         _content = State(initialValue: existingDiary?.content ?? "")
-        if let existing = existingDiary, !existing.hasAiFourCut, existing.hasPhotoFourCut {
-            _mode = State(initialValue: .photoFourCut)
+        _attachedUrls = State(initialValue: existingDiary?.attachedImages ?? [])
+        if let existing = existingDiary, !existing.hasAiFourCut, existing.hasPhotos {
+            _mode = State(initialValue: .photos)
         } else {
             _mode = State(initialValue: .aiFourCut)
         }
@@ -72,14 +87,21 @@ struct DiaryWriteView: View {
     private var saveLabel: String {
         switch mode {
         case .aiFourCut: return "4컷 저장 (\(SupabaseService.fourCutTokenCost)토큰)"
-        case .photoFourCut: return "4컷 만들어 저장"
+        case .photos: return "완료"
         }
     }
 
+    private var hasContent: Bool {
+        !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     private var canSave: Bool {
-        guard !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
-        if mode == .photoFourCut { return !photoDatas.isEmpty }
-        return true
+        hasContent && !isSavingPhotos
+    }
+
+    /// 자동 저장 결과가 있으면 그것을, 없으면 처음 받은 일기를 기준으로 쓴다
+    private var currentDiary: DiaryItem? {
+        latestDiary ?? existingDiary
     }
 
     var body: some View {
@@ -202,9 +224,9 @@ struct DiaryWriteView: View {
         VStack {
             switch mode {
             case .aiFourCut:
-                fourCutPreviewGrid(urls: existingDiary?.hasAiFourCut == true ? existingDiary?.fourCutSceneUrls ?? [] : [])
-            case .photoFourCut:
-                photoPickerGrid
+                fourCutPreviewGrid(urls: currentDiary?.hasAiFourCut == true ? currentDiary?.fourCutSceneUrls ?? [] : [])
+            case .photos:
+                photoAttachGrid
             }
         }
         .padding(9)
@@ -234,48 +256,87 @@ struct DiaryWriteView: View {
         }
     }
 
-    private var savedPhotoUrls: [String] {
-        existingDiary?.hasPhotoFourCut == true ? existingDiary?.attachedImages ?? [] : []
+    private var photoAttachGrid: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 7), count: 3), spacing: 7) {
+                ForEach(Array(attachedUrls.enumerated()), id: \.element) { index, urlString in
+                    attachedPhotoCell(index: index, urlString: urlString)
+                }
+                if attachedUrls.count < Self.photoAttachMax {
+                    PhotosPicker(
+                        selection: $photoItems,
+                        maxSelectionCount: Self.photoAttachMax - attachedUrls.count,
+                        matching: .images
+                    ) {
+                        ZStack {
+                            Color(white: 0.95)
+                            Text("+ 사진 넣기").font(.system(size: 10, design: .monospaced)).foregroundStyle(.black.opacity(0.42))
+                        }
+                        .aspectRatio(1, contentMode: .fit)
+                    }
+                    .disabled(isSavingPhotos)
+                }
+            }
+
+            HStack(spacing: 6) {
+                if isSavingPhotos {
+                    ProgressView().controlSize(.small)
+                    Text("사진 저장 중…")
+                } else {
+                    Text("사진을 누르면 대표 사진이 돼요 · \(attachedUrls.count)/\(Self.photoAttachMax)장")
+                }
+            }
+            .font(.system(size: 12))
+            .foregroundStyle(SketchbookStyle.muted)
+        }
+        .onChange(of: photoItems) { _, items in
+            guard !items.isEmpty else { return }
+            Task { await addPhotos(items) }
+        }
     }
 
-    private var photoPickerGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 7), GridItem(.flexible(), spacing: 7)], spacing: 7) {
-            ForEach(0..<4, id: \.self) { i in
-                ZStack {
+    private func attachedPhotoCell(index: Int, urlString: String) -> some View {
+        let isCover = currentDiary?.thumbnailUrl == urlString
+        return ZStack(alignment: .topTrailing) {
+            Button {
+                Task { await selectCover(urlString) }
+            } label: {
+                ZStack(alignment: .bottomLeading) {
                     Color(white: 0.95)
-                    if i < photoDatas.count, let uiImage = UIImage(data: photoDatas[i]) {
-                        Image(uiImage: uiImage).resizable().aspectRatio(contentMode: .fill)
-                    } else if photoDatas.isEmpty, i < savedPhotoUrls.count, let url = URL(string: savedPhotoUrls[i]) {
-                        // 새로 고르기 전에는 저장된 사진 4컷 원본을 보여 준다
-                        AsyncImage(url: url) { phase in
-                            if case .success(let image) = phase {
-                                image.resizable().aspectRatio(contentMode: .fill)
-                            }
+                    AsyncImage(url: URL(string: urlString)) { phase in
+                        if case .success(let image) = phase {
+                            image.resizable().aspectRatio(contentMode: .fill)
                         }
-                    } else {
-                        Text("+ 사진 넣기").font(.system(size: 10, design: .monospaced)).foregroundStyle(.black.opacity(0.42))
+                    }
+                    if isCover {
+                        Text("대표")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(SketchbookStyle.greenDark)
+                            .padding(4)
                     }
                 }
                 .aspectRatio(1, contentMode: .fit)
                 .clipped()
+                .overlay(
+                    Rectangle().stroke(isCover ? SketchbookStyle.greenDark : Color.clear, lineWidth: 3)
+                )
             }
-        }
-        .overlay(
-            PhotosPicker(selection: $photoItems, maxSelectionCount: 4, matching: .images) {
-                Color.clear
+            .buttonStyle(.plain)
+            .disabled(isSavingPhotos)
+
+            Button {
+                Task { await removePhoto(at: index) }
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.white, .red)
+                    .padding(4)
             }
-            .allowsHitTesting(true)
-        )
-        .onChange(of: photoItems) { _, items in
-            Task {
-                var datas: [Data] = []
-                for item in items.prefix(4) {
-                    if let data = try? await item.loadTransferable(type: Data.self) {
-                        datas.append(data)
-                    }
-                }
-                photoDatas = datas
-            }
+            .buttonStyle(.plain)
+            .disabled(isSavingPhotos)
         }
     }
 
@@ -314,6 +375,11 @@ struct DiaryWriteView: View {
     }
 
     private func save() async {
+        if mode == .photos {
+            // 사진은 이미 자동 저장됨: 글만 한 번 더 저장하고 닫는다
+            await saveTextOnly()
+            return
+        }
         isSaving = true
         errorMessage = ""
         progressDone = 0
@@ -322,7 +388,7 @@ struct DiaryWriteView: View {
             case .aiFourCut:
                 isGeneratingText = "장면을 하나씩 그리고 있어요…"
                 let result = try await SupabaseService.shared.generateFourCutDiary(
-                    date: date, content: content, existingCoverImageUrl: existingDiary?.coverImageUrl,
+                    date: date, content: content, existingCoverImageUrl: currentDiary?.coverImageUrl,
                     onProgress: { done, total in
                         Task { @MainActor in
                             progressDone = done
@@ -331,17 +397,79 @@ struct DiaryWriteView: View {
                     }
                 )
                 onSaved(result.item)
-            case .photoFourCut:
-                isGeneratingText = "4컷을 만들고 있어요…"
-                let result = try await SupabaseService.shared.savePhotoFourCutDiary(
-                    date: date, content: content, photos: photoDatas,
-                    existingCoverImageUrl: existingDiary?.coverImageUrl
-                )
-                onSaved(result.item)
+            case .photos:
+                break
             }
         } catch {
             if !error.isCancellation { errorMessage = error.localizedDescription }
         }
         isSaving = false
+    }
+
+    // MARK: - 사진 자동 저장
+
+    /// 고른 사진을 업로드하고 바로 첨부 목록에 저장한다
+    private func addPhotos(_ items: [PhotosPickerItem]) async {
+        photoItems = []
+        guard hasContent else {
+            errorMessage = "먼저 일기 글을 작성해 주세요."
+            return
+        }
+        let room = Self.photoAttachMax - attachedUrls.count
+        guard room > 0 else { return }
+
+        isSavingPhotos = true
+        errorMessage = ""
+        defer { isSavingPhotos = false }
+        do {
+            var datas: [Data] = []
+            for item in items.prefix(room) {
+                guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
+                // HEIC·PNG 등도 JPEG로 맞춰 업로드 (Storage contentType과 일치)
+                datas.append(UIImage(data: data)?.jpegData(compressionQuality: 0.85) ?? data)
+            }
+            guard !datas.isEmpty else { return }
+            let urls = try await SupabaseService.shared.uploadDiaryPhotos(date: date, photos: datas)
+            try await persistPhotos(attachedUrls + urls)
+        } catch {
+            if !error.isCancellation { errorMessage = error.localizedDescription }
+        }
+    }
+
+    private func removePhoto(at index: Int) async {
+        guard attachedUrls.indices.contains(index) else { return }
+        isSavingPhotos = true
+        errorMessage = ""
+        defer { isSavingPhotos = false }
+        var next = attachedUrls
+        next.remove(at: index)
+        do {
+            try await persistPhotos(next)
+        } catch {
+            if !error.isCancellation { errorMessage = error.localizedDescription }
+        }
+    }
+
+    private func persistPhotos(_ next: [String]) async throws {
+        let saved = try await SupabaseService.shared.saveDiaryAttachedImages(
+            date: date, content: content, attachedImages: next, existing: currentDiary
+        )
+        latestDiary = saved
+        attachedUrls = saved.attachedImages
+        onAutoSaved(saved)
+    }
+
+    private func selectCover(_ url: String) async {
+        guard currentDiary != nil, currentDiary?.thumbnailUrl != url else { return }
+        isSavingPhotos = true
+        errorMessage = ""
+        defer { isSavingPhotos = false }
+        do {
+            let updated = try await SupabaseService.shared.updateDiaryCoverImage(date: date, coverImageUrl: url)
+            latestDiary = updated
+            onAutoSaved(updated)
+        } catch {
+            if !error.isCancellation { errorMessage = error.localizedDescription }
+        }
     }
 }

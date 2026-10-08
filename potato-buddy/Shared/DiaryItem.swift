@@ -9,8 +9,6 @@ struct DiaryItem: Codable, Identifiable {
     let emotion: String?
     let fourCutUrl: String?
     let fourCutSceneUrls: [String]
-    /// 사진 4컷 스트립 URL (원본 사진은 attachedImages). AI 4컷(fourCut*)과 별도로 저장된다.
-    let photoFourCutUrl: String?
     let coverImageUrl: String?
     let attachedImages: [String]
 
@@ -20,7 +18,6 @@ struct DiaryItem: Codable, Identifiable {
         case imagePrompt = "image_prompt"
         case fourCutUrl = "four_cut_url"
         case fourCutSceneUrls = "four_cut_scene_urls"
-        case photoFourCutUrl = "photo_four_cut_url"
         case coverImageUrl = "cover_image_url"
         case attachedImages = "attached_images"
     }
@@ -35,7 +32,6 @@ struct DiaryItem: Codable, Identifiable {
         emotion = try c.decodeIfPresent(String.self, forKey: .emotion)
         fourCutUrl = try c.decodeIfPresent(String.self, forKey: .fourCutUrl)
         fourCutSceneUrls = try c.decodeIfPresent([String].self, forKey: .fourCutSceneUrls) ?? []
-        photoFourCutUrl = try c.decodeIfPresent(String.self, forKey: .photoFourCutUrl)
         coverImageUrl = try c.decodeIfPresent(String.self, forKey: .coverImageUrl)
         attachedImages = try c.decodeIfPresent([String].self, forKey: .attachedImages) ?? []
     }
@@ -44,7 +40,6 @@ struct DiaryItem: Codable, Identifiable {
         id: String, date: String, content: String,
         imageUrl: String? = nil, imagePrompt: String? = nil, emotion: String? = nil,
         fourCutUrl: String? = nil, fourCutSceneUrls: [String] = [],
-        photoFourCutUrl: String? = nil,
         coverImageUrl: String? = nil, attachedImages: [String] = []
     ) {
         self.id = id
@@ -55,34 +50,43 @@ struct DiaryItem: Codable, Identifiable {
         self.emotion = emotion
         self.fourCutUrl = fourCutUrl
         self.fourCutSceneUrls = fourCutSceneUrls
-        self.photoFourCutUrl = photoFourCutUrl
         self.coverImageUrl = coverImageUrl
         self.attachedImages = attachedImages
     }
 
-    /// 달력 셀 등에 쓸 대표 썸네일. 우선순위: 대문 지정 > 기존 1컷 이미지 > AI 4컷 첫 장면 > AI 4컷 스트립 > 사진 4컷 첫 사진 > 사진 4컷 스트립
+    /// 달력 셀 등에 쓸 대표 썸네일. 우선순위: 대문 지정 > 기존 1컷 이미지 > AI 4컷 첫 장면 > AI 4컷 스트립 > 첫 첨부 사진
     var thumbnailUrl: String? {
-        coverImageUrl ?? imageUrl ?? fourCutSceneUrls.first ?? fourCutUrl ?? attachedImages.first ?? photoFourCutUrl
+        coverImageUrl ?? imageUrl ?? fourCutSceneUrls.first ?? fourCutUrl ?? attachedImages.first
     }
 
-    /// 대문 이미지로 고를 수 있는 후보 목록 (중복 제거, 최대 10개: AI 장면 4 + AI 스트립 + 사진 4 + 사진 스트립)
+    /// 대문 이미지로 고를 수 있는 후보 목록 (AI 4컷 장면·스트립 + 첨부 사진)
     var coverCandidates: [String] {
+        Self.coverCandidates(
+            fourCutSceneUrls: fourCutSceneUrls, fourCutUrl: fourCutUrl,
+            attachedImages: attachedImages, imageUrl: imageUrl
+        )
+    }
+
+    /// 대문 후보 계산 (중복 제거, 최대 15개: AI 장면 4 + AI 스트립 + 첨부 사진 10)
+    static func coverCandidates(
+        fourCutSceneUrls: [String], fourCutUrl: String?,
+        attachedImages: [String], imageUrl: String?
+    ) -> [String] {
         var seen = Set<String>()
         var result: [String] = []
         var ordered = fourCutSceneUrls
         if let fourCutUrl { ordered.append(fourCutUrl) }
         ordered.append(contentsOf: attachedImages)
-        if let photoFourCutUrl { ordered.append(photoFourCutUrl) }
         if let imageUrl { ordered.append(imageUrl) }
         for url in ordered where !url.isEmpty {
             if seen.insert(url).inserted {
                 result.append(url)
             }
-            if result.count >= 10 { break }
+            if result.count >= 15 { break }
         }
         return result
     }
 
     var hasAiFourCut: Bool { fourCutUrl != nil && !fourCutSceneUrls.isEmpty }
-    var hasPhotoFourCut: Bool { photoFourCutUrl != nil && !attachedImages.isEmpty }
+    var hasPhotos: Bool { !attachedImages.isEmpty }
 }

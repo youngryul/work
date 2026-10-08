@@ -25,26 +25,6 @@ extension SupabaseService {
         return (item, tokenCost, awarded)
     }
 
-    /// 사진 4컷: 사용자가 고른 1~4장의 사진 업로드 → 스트립 합성 → 저장까지 한 번에 수행한다. 토큰을 쓰지 않는다.
-    func savePhotoFourCutDiary(
-        date: String, content: String, photos: [Data], existingCoverImageUrl: String?
-    ) async throws -> (item: DiaryItem, awarded: Int) {
-        let photoUrls = try await uploadPhotoFourCutSources(date: date, photos: photos)
-
-        let images = photos.prefix(4).compactMap { UIImage(data: $0) }
-        let strip = DiarySketchImageComposer.composeFourCutStrip(images: images, dateLabel: date)
-        let stripData = strip.pngData() ?? Data()
-        let timestamp = Int(Date().timeIntervalSince1970)
-        let stripUrl = try await uploadImageData(stripData, folder: "diaries", fileName: "\(date)-photofourcut-\(timestamp).png")
-
-        // AI 4컷과 별도 컬럼(photo_four_cut_url)에 저장
-        return try await finalizePhotoFourCutDiary(
-            date: date, content: content,
-            photoUrls: photoUrls, stripUrl: stripUrl,
-            existingCoverImageUrl: existingCoverImageUrl
-        )
-    }
-
     private static func downloadImages(urls: [String]) async throws -> [UIImage] {
         var images: [UIImage] = []
         for urlString in urls {

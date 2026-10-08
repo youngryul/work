@@ -63,6 +63,10 @@ struct DiaryCalendarView: View {
                                 onSaved: { saved in
                                     diariesByDate[saved.date] = saved
                                     screen = .detail(date: saved.date)
+                                },
+                                onAutoSaved: { saved in
+                                    // 사진 자동 저장: 작성 화면은 유지하고 달력 데이터만 갱신
+                                    diariesByDate[saved.date] = saved
                                 }
                             )
                         case .detail(let date):
@@ -153,7 +157,7 @@ struct DiaryCalendarView: View {
             VStack(spacing: 14) {
                 HStack(spacing: 14) {
                     Text("AI 4컷 · \(countByKind(.aiFourCut))")
-                    Text("사진 4컷 · \(countByKind(.photoFourCut))")
+                    Text("사진 · \(countByKind(.photos))")
                 }
                 .font(.system(size: 12))
                 .foregroundStyle(SketchbookStyle.muted)
@@ -240,13 +244,13 @@ struct DiaryCalendarView: View {
 
     // MARK: - 데이터
 
-    private enum DiaryKind { case aiFourCut, photoFourCut }
+    private enum DiaryKind { case aiFourCut, photos }
 
     private func countByKind(_ kind: DiaryKind) -> Int {
         diariesByDate.values.filter { item in
             switch kind {
             case .aiFourCut: return item.hasAiFourCut
-            case .photoFourCut: return item.hasPhotoFourCut
+            case .photos: return item.hasPhotos
             }
         }.count
     }

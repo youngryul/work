@@ -321,7 +321,7 @@ final class SupabaseService {
 
     // MARK: - 월별 일기 목록 조회
 
-    private static let diarySelectColumns = "id,date,content,image_url,image_prompt,emotion,four_cut_url,four_cut_scene_urls,photo_four_cut_url,cover_image_url,attached_images"
+    private static let diarySelectColumns = "id,date,content,image_url,image_prompt,emotion,four_cut_url,four_cut_scene_urls,cover_image_url,attached_images"
 
     func fetchDiaries(year: Int, month: Int) async throws -> [DiaryItem] {
         let (userId, token) = await authInfo()
@@ -581,15 +581,15 @@ final class SupabaseService {
         return (sceneUrls, Self.fourCutTokenCost)
     }
 
-    /// 사진 4컷 원본 사진들을 Storage에 업로드한다 (스트립 합성 전 단계). 토큰을 쓰지 않는다.
-    func uploadPhotoFourCutSources(date: String, photos: [Data]) async throws -> [String] {
+    /// 일기 첨부 사진들을 Storage에 업로드한다. 토큰을 쓰지 않는다.
+    func uploadDiaryPhotos(date: String, photos: [Data]) async throws -> [String] {
         guard !photos.isEmpty else {
             throw NSError(domain: "SupabaseService", code: -4,
                           userInfo: [NSLocalizedDescriptionKey: "사진을 1장 이상 선택해 주세요."])
         }
         let timestamp = Int(Date().timeIntervalSince1970)
         var photoUrls: [String] = []
-        for (index, data) in photos.prefix(4).enumerated() {
+        for (index, data) in photos.enumerated() {
             let url = try await uploadImageData(data, folder: "diaries", fileName: "\(date)-photo\(index + 1)-\(timestamp).jpg", contentType: "image/jpeg")
             photoUrls.append(url)
         }
@@ -597,7 +597,7 @@ final class SupabaseService {
     }
 
     /// AI 4컷 최종 저장: 이미 합성·업로드된 스트립 URL과 장면 URL들을 diaries 행에 반영한다.
-    /// 사진 4컷(photo_four_cut_url, attached_images)은 건드리지 않는다.
+    /// 첨부 사진(attached_images)은 건드리지 않는다.
     func finalizeFourCutDiary(
         date: String, content: String,
         sceneUrls: [String], stripUrl: String,
@@ -619,26 +619,30 @@ final class SupabaseService {
         return (item, awarded)
     }
 
-    /// 사진 4컷 최종 저장: 스트립은 photo_four_cut_url, 원본 사진은 attached_images에 저장한다.
-    /// AI 4컷(four_cut_url, four_cut_scene_urls)은 건드리지 않아 서로 덮어쓰지 않는다.
-    func finalizePhotoFourCutDiary(
-        date: String, content: String,
-        photoUrls: [String], stripUrl: String,
-        existingCoverImageUrl: String?
-    ) async throws -> (item: DiaryItem, awarded: Int) {
+    /// 첨부 사진 자동 저장 (사진을 추가·삭제할 때마다 호출).
+    /// 대표 사진이 없거나 삭제된 사진이었다면 남은 후보 중 첫 장으로 바꾼다.
+    func saveDiaryAttachedImages(
+        date: String, content: String, attachedImages: [String], existing: DiaryItem?
+    ) async throws -> DiaryItem {
+        let candidates = DiaryItem.coverCandidates(
+            fourCutSceneUrls: existing?.fourCutSceneUrls ?? [], fourCutUrl: existing?.fourCutUrl,
+            attachedImages: attachedImages, imageUrl: existing?.imageUrl
+        )
         var fields: [String: Any] = [
             "date": date,
             "content": content,
-            "photo_four_cut_url": stripUrl,
-            "attached_images": photoUrls,
+            "attached_images": attachedImages,
         ]
-        if existingCoverImageUrl == nil || existingCoverImageUrl?.isEmpty == true {
-            fields["cover_image_url"] = photoUrls[0]
+        if let cover = existing?.coverImageUrl, candidates.contains(cover) {
+            // 기존 대표 사진 유지
+        } else {
+            fields["cover_image_url"] = candidates.first ?? NSNull()
         }
 
         let item = try await upsertDiary(fields)
-        let awarded = try await awardJellyForDiary(date: date)
-        return (item, awarded)
+        // 젤리는 날짜당 1회만 지급됨
+        _ = try? await awardJellyForDiary(date: date)
+        return item
     }
 
     // MARK: - 카테고리 조회 (웹과 동일)
