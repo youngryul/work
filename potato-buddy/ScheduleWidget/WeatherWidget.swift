@@ -50,12 +50,20 @@ struct WeatherWidgetProvider: TimelineProvider {
 struct WeatherWidgetView: View {
     let entry: WeatherWidgetEntry
 
+    /// 날씨별 이미지에는 이미 한글 날씨명이 그려져 있어, 그 이미지가 있을 때는 텍스트를 다시 그리지 않는다
+    private var hasConditionImage: Bool {
+        entry.snapshot.condition != .unknown
+            && UIImage(named: entry.snapshot.condition.assetName) != nil
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(entry.snapshot.conditionLabel)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.95))
-                .shadow(color: .black.opacity(0.35), radius: 2, x: 0, y: 1)
+            if !hasConditionImage {
+                Text(entry.snapshot.conditionLabel)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.95))
+                    .shadow(color: .black.opacity(0.35), radius: 2, x: 0, y: 1)
+            }
 
             Spacer(minLength: 0)
 
