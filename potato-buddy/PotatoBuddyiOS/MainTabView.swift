@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct MainTabView: View {
+    static let backlogTabTag = 1
     static let scheduleTabTag = 3
     static let stepsTabTag = 11
     static let clockTabTag = 9
@@ -11,7 +12,7 @@ struct MainTabView: View {
     /// 예전 토익 탭 tag. 커스텀 더보기에도 넣지 않는다.
     private static let removedToeicTabTag = 7
 
-    private static let primaryTabTags: Set<Int> = [0, 1, 2, scheduleTabTag, moreTabTag]
+    private static let primaryTabTags: Set<Int> = [0, backlogTabTag, 2, scheduleTabTag, moreTabTag]
 
     @Binding var selectedTab: Int
     @ObservedObject private var auth = AuthService.shared
@@ -52,7 +53,7 @@ struct MainTabView: View {
                 .tabItem {
                     Label("백로그", systemImage: "tray.fill")
                 }
-                .tag(1)
+                .tag(Self.backlogTabTag)
 
             DiaryCalendarView()
                 .tabItem {

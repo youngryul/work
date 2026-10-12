@@ -2,6 +2,7 @@
 import PencilKit
 
 struct BacklogView: View {
+    @ObservedObject private var quickAddRouter = QuickAddRouter.shared
     @State private var tasks: [TaskItem] = []
     @State private var categories: [CategoryItem] = []
     @State private var selectedCategoryName: String = CategoryConstants.fallbackDefaultName
@@ -100,9 +101,7 @@ struct BacklogView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        newTaskTitle = ""
-                        newTaskDrawing = PKDrawing()
-                        showAddSheet = true
+                        openAddSheet()
                     } label: {
                         Image(systemName: "plus.circle.fill")
                             .symbolRenderingMode(.palette)
@@ -126,6 +125,28 @@ struct BacklogView: View {
             async let tasksLoad: Void = loadTasks()
             async let categoriesLoad: Void = loadCategories()
             _ = await (tasksLoad, categoriesLoad)
+        }
+        // 잠금화면 버튼(딥링크)으로 들어온 추가 요청 처리
+        .onAppear {
+            handleQuickAddRequest()
+        }
+        .onChange(of: quickAddRouter.backlogAddRequested) { _, _ in
+            handleQuickAddRequest()
+        }
+    }
+
+    private func openAddSheet() {
+        newTaskTitle = ""
+        newTaskDrawing = PKDrawing()
+        showAddSheet = true
+    }
+
+    private func handleQuickAddRequest() {
+        guard quickAddRouter.backlogAddRequested else { return }
+        quickAddRouter.backlogAddRequested = false
+        // 이미 추가 화면이 열려 있으면 작성 중인 내용을 유지한다
+        if !showAddSheet {
+            openAddSheet()
         }
     }
 

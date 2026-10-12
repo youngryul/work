@@ -51,8 +51,24 @@ struct ContentView: View {
         switch url.host {
         case "schedule":
             selectedTab = MainTabView.scheduleTabTag
+        case "backlog":
+            selectedTab = MainTabView.backlogTabTag
+            // potatobuddy://backlog/add → 백로그 추가 화면 열기 (잠금화면 버튼)
+            if url.path == "/add" {
+                QuickAddRouter.shared.backlogAddRequested = true
+            }
         default:
             break
         }
     }
+}
+
+/// 딥링크로 들어온 "추가 화면 열기" 요청 전달
+/// - 탭 전환 직후 BacklogView가 아직 만들어지지 않았을 수 있어, 요청을 보관했다가 화면이 나타날 때 처리한다.
+@MainActor
+final class QuickAddRouter: ObservableObject {
+    static let shared = QuickAddRouter()
+    private init() {}
+
+    @Published var backlogAddRequested = false
 }
