@@ -391,5 +391,5 @@ struct DDayWidget: Widget {
 #Preview(as: .systemMedium) {
     DDayWidget()
 } timeline: {
-    DDayWidgetEntry(date: .now, configuration: .preview)
+    DDayWidgetEntry(date: .now, event: .preview)
 }

@@ -7,67 +7,73 @@ struct DDayManagerView: View {
     @State private var editingEvent: DDayEvent?
 
     var body: some View {
-        NavigationStack {
-            List {
-                if events.isEmpty {
-                    Section {
-                        VStack(spacing: 8) {
-                            Text("아직 디데이가 없어요")
-                                .font(.headline)
-                            Text("+ 버튼으로 디데이를 추가해보세요")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 24)
-                    }
-                } else {
-                    Section {
-                        ForEach(events) { event in
-                            Button {
-                                editingEvent = event
-                            } label: {
-                                DDayRow(event: event)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .onDelete(perform: deleteEvents)
-                    }
-                }
-
-                Section {
-                    Text("홈 화면이나 잠금화면에 '디데이' 위젯을 추가한 뒤, 위젯을 길게 눌러 '위젯 편집'에서 표시할 디데이를 고르세요.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .navigationTitle("디데이")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+        // 더보기 상단 커스텀 바(safeAreaInset)와 내비게이션 바 툴바가 겹쳐 + 버튼이 가려지므로
+        // NavigationStack/툴바 대신 목록 상단 헤더에 제목과 추가 버튼을 둔다.
+        List {
+            Section {
+                HStack(spacing: 8) {
+                    Text("디데이")
+                        .font(.title2.bold())
+                    Spacer()
                     Button {
                         editingEvent = DDayEvent(title: "", date: Date())
                     } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title3)
+                        Label("추가", systemImage: "plus.circle.fill")
+                            .font(.headline)
                     }
+                    .buttonStyle(.borderless)
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+            }
+
+            if events.isEmpty {
+                Section {
+                    VStack(spacing: 8) {
+                        Text("아직 디데이가 없어요")
+                            .font(.headline)
+                        Text("추가 버튼으로 디데이를 추가해보세요")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+                }
+            } else {
+                Section {
+                    ForEach(events) { event in
+                        Button {
+                            editingEvent = event
+                        } label: {
+                            DDayRow(event: event)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .onDelete(perform: deleteEvents)
                 }
             }
-            .sheet(item: $editingEvent) { event in
-                DDayEditSheet(
-                    event: event,
-                    isNew: !events.contains { $0.id == event.id },
-                    onSave: { saved in
-                        DDayStore.upsert(saved)
-                        reload()
-                    },
-                    onDelete: { deleted in
-                        DDayStore.delete(id: deleted.id)
-                        reload()
-                    }
-                )
+
+            Section {
+                Text("홈 화면이나 잠금화면에 '디데이' 위젯을 추가한 뒤, 위젯을 길게 눌러 '위젯 편집'에서 표시할 디데이를 고르세요.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
-            .onAppear(perform: reload)
         }
+        .sheet(item: $editingEvent) { event in
+            DDayEditSheet(
+                event: event,
+                isNew: !events.contains { $0.id == event.id },
+                onSave: { saved in
+                    DDayStore.upsert(saved)
+                    reload()
+                },
+                onDelete: { deleted in
+                    DDayStore.delete(id: deleted.id)
+                    reload()
+                }
+            )
+        }
+        .onAppear(perform: reload)
     }
 
     private func reload() {
