@@ -256,6 +256,8 @@ targets:
       path: ScheduleWidget/Info.plist
       properties:
         CFBundleDisplayName: 오늘 일정
+        UIAppFonts:
+          - Hakgyoansim_BoardmarkerR.ttf
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:

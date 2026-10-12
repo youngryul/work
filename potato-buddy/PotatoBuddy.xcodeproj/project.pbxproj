@@ -28,6 +28,7 @@
 		1AFDEA8299A4A0CA294CB69D /* MenstrualItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E22CB2A26C939DAFA03960 /* MenstrualItem.swift */; };
 		1B20A10E1FD42DE2DAD38071 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68FFB9D50D2473DC4EA80FC2 /* Config.swift */; };
 		1DCDF7FD4411937AE13138F7 /* TravelItineraryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57C79908BA24A75EEB51BD6D /* TravelItineraryDetailView.swift */; };
+		1EC1538578F8D7E1B30BEAD4 /* Hakgyoansim_BoardmarkerR.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 903E5119025918F662AD1CB1 /* Hakgyoansim_BoardmarkerR.ttf */; };
 		1ED6C9243B38939DA4EB7857 /* WatchAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12C02656BDBAF5A551105B8A /* WatchAPIClient.swift */; };
 		25A4B1BB115DB0FBD55370C6 /* StepCounterConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FFBB4172FF64DBCCA30AD3C /* StepCounterConstants.swift */; };
 		25CC9222A71738597DE27F1F /* ToeicVocabData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD7E5050DED68E0DBBC2FF6 /* ToeicVocabData.swift */; };
@@ -351,6 +352,7 @@
 		8DD29BCF03B4DCC1F72234C3 /* TodoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoViewModel.swift; sourceTree = "<group>"; };
 		8F49F0B8E56A2EE8BFC84E43 /* ActivityShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityShareSheet.swift; sourceTree = "<group>"; };
 		8F9D0E8560A7E5AC45249F93 /* PotatoBuddyWatchWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotatoBuddyWatchWidgetBundle.swift; sourceTree = "<group>"; };
+		903E5119025918F662AD1CB1 /* Hakgyoansim_BoardmarkerR.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Hakgyoansim_BoardmarkerR.ttf; sourceTree = "<group>"; };
 		96749DCBF60CC35730DDA5F7 /* timer-bgm.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "timer-bgm.mp3"; sourceTree = "<group>"; };
 		97B324C9F1AB5D40D49B5E29 /* ScheduleWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ScheduleWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		99266B255C967357CCFE0B32 /* GraduateNoteEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraduateNoteEditorView.swift; sourceTree = "<group>"; };
@@ -623,6 +625,7 @@
 				CAB43CB7FED3699D0B1A7E1C /* ScheduleWidgetBundle.swift */,
 				F25B6F668CF86813AFAAED79 /* WEATHER_IMAGES_README.md */,
 				FF34EBDB67FA4CE34766FF1E /* WeatherWidget.swift */,
+				DE69A21B7019928977CEA8FD /* Fonts */,
 			);
 			path = ScheduleWidget;
 			sourceTree = "<group>";
@@ -649,6 +652,14 @@
 				A1BFEA26E9E32B8E425C9D4F /* PotatoClockApp.swift */,
 			);
 			path = PotatoClock;
+			sourceTree = "<group>";
+		};
+		DE69A21B7019928977CEA8FD /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				903E5119025918F662AD1CB1 /* Hakgyoansim_BoardmarkerR.ttf */,
+			);
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 		E1DEB7488353FCD1EA2C956E /* PotatoBuddy */ = {
@@ -901,6 +912,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5E20DDE97560E2B3AA0C2297 /* Assets.xcassets in Resources */,
+				1EC1538578F8D7E1B30BEAD4 /* Hakgyoansim_BoardmarkerR.ttf in Resources */,
 				DC7F1F04C985E175714DB0D6 /* WEATHER_IMAGES_README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

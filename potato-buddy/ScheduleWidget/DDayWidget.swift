@@ -18,11 +18,12 @@ enum DDayAccentColor: String, AppEnum {
 
     var color: Color {
         switch self {
-        case .orange: return .orange
-        case .pink: return .pink
-        case .blue: return .blue
-        case .green: return .green
-        case .purple: return .purple
+        // 크레용 느낌의 부드러운 색
+        case .orange: return Color(red: 0.95, green: 0.58, blue: 0.25)
+        case .pink: return Color(red: 0.94, green: 0.48, blue: 0.64)
+        case .blue: return Color(red: 0.22, green: 0.40, blue: 0.80)
+        case .green: return Color(red: 0.49, green: 0.76, blue: 0.33)
+        case .purple: return Color(red: 0.58, green: 0.46, blue: 0.82)
         }
     }
 }
@@ -126,6 +127,96 @@ struct DDayInfo {
     }
 }
 
+// MARK: - 크레용 손그림 스타일
+
+enum DDayCrayonStyle {
+    /// 종이 느낌 배경
+    static let paper = Color(red: 1.0, green: 0.992, blue: 0.972)
+    /// 크레용 검정 (글씨)
+    static let ink = Color(red: 0.16, green: 0.15, blue: 0.14)
+    static let subInk = Color(red: 0.45, green: 0.43, blue: 0.40)
+
+    /// 학교안심 보드마커 (앱과 같은 손글씨 폰트)
+    static func font(_ size: CGFloat) -> Font {
+        .custom("HakgyoansimBoadmarkerR", size: size)
+    }
+}
+
+/// 크레용으로 슥슥 칠한 듯한 지그재그 빗금 영역
+struct CrayonScribble: Shape {
+    var spacing: CGFloat = 5
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        // 위치마다 고정된 흔들림 (렌더링마다 바뀌지 않도록 결정적인 값 사용)
+        let jitter: [CGFloat] = [0, 1.5, -1, 2, -1.5, 0.5, -2, 1]
+        var x = rect.minX
+        var index = 0
+        path.move(to: CGPoint(x: x, y: rect.maxY))
+        while x < rect.maxX {
+            let wobble = jitter[index % jitter.count]
+            let top = CGPoint(x: min(x + spacing, rect.maxX), y: rect.minY + wobble)
+            let bottom = CGPoint(x: min(x + spacing * 1.6, rect.maxX), y: rect.maxY - wobble)
+            path.addLine(to: top)
+            path.addLine(to: bottom)
+            x += spacing * 1.6
+            index += 1
+        }
+        return path
+    }
+}
+
+/// 살짝 삐뚤빼뚤한 크레용 밑줄
+struct CrayonUnderline: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let midY = rect.midY
+        path.move(to: CGPoint(x: rect.minX, y: midY + 1))
+        path.addCurve(
+            to: CGPoint(x: rect.maxX, y: midY - 1),
+            control1: CGPoint(x: rect.minX + rect.width * 0.35, y: midY - 3),
+            control2: CGPoint(x: rect.minX + rect.width * 0.65, y: midY + 3)
+        )
+        return path
+    }
+}
+
+/// 디데이 숫자 뒤에 크레용 칠하기
+private struct CrayonHighlight: ViewModifier {
+    let color: Color
+
+    func body(content: Content) -> some View {
+        content
+            .padding(.horizontal, 4)
+            .background(alignment: .bottom) {
+                ZStack {
+                    CrayonScribble(spacing: 5)
+                        .stroke(color.opacity(0.32), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+                    CrayonScribble(spacing: 7)
+                        .stroke(color.opacity(0.2), style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                        .offset(x: 2, y: 1)
+                }
+                .frame(height: 13)
+                .offset(y: -2)
+            }
+    }
+}
+
+/// 가장자리에서 빼꼼 내다보는 포실이
+private struct PeekingPosil: View {
+    let size: CGFloat
+    let rotation: Double
+
+    var body: some View {
+        Image("posil-peek")
+            .resizable()
+            .scaledToFit()
+            .frame(width: size)
+            .rotationEffect(.degrees(rotation))
+            .accessibilityHidden(true)
+    }
+}
+
 // MARK: - 뷰
 
 struct DDayWidgetView: View {
@@ -152,67 +243,97 @@ struct DDayWidgetView: View {
         }
     }
 
-    // 홈 화면 - 작은 위젯
+    // 홈 화면 - 작은 위젯: 오른쪽 아래 모서리에서 포실이가 머리만 빼꼼
     private var smallView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(titleText)
-                .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
+        ZStack(alignment: .topLeading) {
+            PeekingPosil(size: 74, rotation: -14)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                .offset(x: 26, y: 34)
 
-            Spacer(minLength: 0)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(titleText)
+                    .font(DDayCrayonStyle.font(15))
+                    .foregroundStyle(DDayCrayonStyle.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                CrayonUnderline()
+                    .stroke(accent.opacity(0.7), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .frame(width: 44, height: 6)
 
-            if let info {
-                Text(info.label)
-                    .font(.system(size: 36, weight: .heavy, design: .rounded))
-                    .foregroundStyle(accent)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-                Text(info.dateText)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            } else {
-                emptyGuide
+                if let info {
+                    Text(info.label)
+                        .font(DDayCrayonStyle.font(38))
+                        .foregroundStyle(DDayCrayonStyle.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                        .modifier(CrayonHighlight(color: accent))
+                        .padding(.top, 6)
+
+                    Spacer(minLength: 0)
+
+                    Text(info.dateText)
+                        .font(DDayCrayonStyle.font(11))
+                        .foregroundStyle(DDayCrayonStyle.subInk)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .padding(.trailing, 46)
+                } else {
+                    emptyGuide
+                        .padding(.top, 10)
+                    Spacer(minLength: 0)
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    // 홈 화면 - 중간 위젯
+    // 홈 화면 - 중간 위젯: 참고 그림처럼 왼쪽 가장자리에서 포실이가 옆으로 빼꼼
     private var mediumView: some View {
-        HStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 6) {
+        HStack(spacing: 0) {
+            PeekingPosil(size: 118, rotation: 90)
+                .frame(width: 70)
+                .offset(x: -34)
+
+            VStack(alignment: .leading, spacing: 4) {
                 Text(titleText)
-                    .font(.system(.title3, design: .rounded).weight(.bold))
-                    .lineLimit(2)
+                    .font(DDayCrayonStyle.font(20))
+                    .foregroundStyle(DDayCrayonStyle.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                CrayonUnderline()
+                    .stroke(accent.opacity(0.7), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .frame(width: 60, height: 6)
+
+                Spacer(minLength: 0)
+
                 if let info {
+                    HStack(alignment: .lastTextBaseline, spacing: 10) {
+                        Text(info.label)
+                            .font(DDayCrayonStyle.font(44))
+                            .foregroundStyle(DDayCrayonStyle.ink)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                            .modifier(CrayonHighlight(color: accent))
+                        Text(info.caption)
+                            .font(DDayCrayonStyle.font(14))
+                            .foregroundStyle(accent)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .overlay(
+                                Capsule()
+                                    .stroke(accent.opacity(0.8), style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [14, 2]))
+                            )
+                    }
                     Text(info.dateText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(info.caption)
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(accent.opacity(0.15), in: Capsule())
-                        .foregroundStyle(accent)
+                        .font(DDayCrayonStyle.font(13))
+                        .foregroundStyle(DDayCrayonStyle.subInk)
+                        .lineLimit(1)
                 } else {
                     emptyGuide
                 }
-                Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            if let info {
-                Text(info.label)
-                    .font(.system(size: 44, weight: .heavy, design: .rounded))
-                    .foregroundStyle(accent)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     // 잠금 화면 - 원형
@@ -260,8 +381,8 @@ struct DDayWidgetView: View {
 
     private var emptyGuide: some View {
         Text("위젯을 길게 눌러\n날짜를 설정하세요")
-            .font(.caption2)
-            .foregroundStyle(.secondary)
+            .font(DDayCrayonStyle.font(12))
+            .foregroundStyle(DDayCrayonStyle.subInk)
             .lineLimit(2)
             .minimumScaleFactor(0.8)
     }
@@ -276,7 +397,7 @@ struct DDayWidget: Widget {
         AppIntentConfiguration(kind: kind, intent: DDayConfigurationIntent.self, provider: DDayWidgetProvider()) { entry in
             DDayWidgetView(entry: entry)
                 .containerBackground(for: .widget) {
-                    Color(.systemBackground)
+                    DDayCrayonStyle.paper
                 }
         }
         .configurationDisplayName("디데이")
@@ -292,6 +413,12 @@ struct DDayWidget: Widget {
 }
 
 #Preview(as: .systemSmall) {
+    DDayWidget()
+} timeline: {
+    DDayWidgetEntry(date: .now, configuration: .preview)
+}
+
+#Preview(as: .systemMedium) {
     DDayWidget()
 } timeline: {
     DDayWidgetEntry(date: .now, configuration: .preview)
