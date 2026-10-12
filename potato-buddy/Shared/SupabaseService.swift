@@ -122,6 +122,10 @@ final class SupabaseService {
     // MARK: - 오늘 할일 조회
 
     func fetchTodayTasks() async throws -> [TaskItem] {
+        // 날짜가 바뀌었으면 어제 이전에 오늘로 옮긴 할일을 먼저 백로그로 되돌린다 (웹과 동일)
+        // 실패해도 목록 조회는 계속한다
+        try? await resetStaleTodayTasks()
+
         let (userId, token) = await authInfo()
 
         var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/tasks")!
@@ -139,6 +143,34 @@ final class SupabaseService {
         let (data, response) = try await fetch(request)
         try checkResponse(data, response)
         return try JSONDecoder().decode([TaskItem].self, from: data)
+    }
+
+    // MARK: - 날짜 변경 시 오늘 할일 리셋
+
+    /// 오늘 00:00 이전에 오늘 할일로 옮긴(또는 만든) 항목을 백로그로 되돌린다.
+    /// - movedtotodayat이 없으면 createdat 기준 (웹 TodayView 리셋과 같은 기준)
+    func resetStaleTodayTasks() async throws {
+        let (userId, token) = await authInfo()
+        let todayStart = Int64(Calendar.current.startOfDay(for: Date()).timeIntervalSince1970 * 1000)
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/tasks")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "istoday", value: "eq.true"),
+            URLQueryItem(
+                name: "or",
+                value: "(movedtotodayat.lt.\(todayStart),and(movedtotodayat.is.null,createdat.lt.\(todayStart)))"
+            ),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = "PATCH"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["istoday": false])
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
     }
 
     // MARK: - 할일 완료 처리

@@ -139,7 +139,12 @@ struct TodayView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                Task { await jellyStore.refresh() }
+                Task {
+                    // 백그라운드에 있다가 날짜가 바뀐 경우를 위해 할일도 다시 불러온다
+                    async let tasksLoad: Void = loadTasks()
+                    async let jellyLoad: Void = jellyStore.refresh()
+                    _ = await (tasksLoad, jellyLoad)
+                }
             }
         }
     }
