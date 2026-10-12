@@ -226,7 +226,7 @@ export async function getBookById(id) {
  * 한국 시간 기준 오늘 날짜 (YYYY-MM-DD)
  * @returns {string}
  */
-function getTodayDateString() {
+export function getTodayDateString() {
   const now = new Date()
   const year = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, '0')
@@ -239,9 +239,10 @@ function getTodayDateString() {
  * @param {string} bookId - 책 ID
  * @param {boolean} isCompleted - 완료 여부
  * @param {string} oneLineInsight - 한줄 인사이트 (선택사항)
+ * @param {string|null} completedAt - 완료 일자 YYYY-MM-DD (미지정 시 오늘)
  * @returns {Promise<Object>} 업데이트된 책 정보
  */
-export async function updateBookCompletion(bookId, isCompleted, oneLineInsight = null) {
+export async function updateBookCompletion(bookId, isCompleted, oneLineInsight = null, completedAt = null) {
   const userId = await getCurrentUserId()
   if (!userId) {
     throw new Error('로그인이 필요합니다.')
@@ -254,7 +255,7 @@ export async function updateBookCompletion(bookId, isCompleted, oneLineInsight =
     }
 
     if (isCompleted) {
-      updateData.completed_at = getTodayDateString()
+      updateData.completed_at = completedAt || getTodayDateString()
     } else {
       updateData.completed_at = null
     }
@@ -281,6 +282,35 @@ export async function updateBookCompletion(bookId, isCompleted, oneLineInsight =
     console.error('책 완료 상태 업데이트 실패:', error)
     throw error
   }
+}
+
+/**
+ * 완료된 책의 완료 일자 변경
+ * @param {string} bookId - 책 ID
+ * @param {string} completedAt - 완료 일자 (YYYY-MM-DD)
+ * @returns {Promise<Object>} 업데이트된 책 정보
+ */
+export async function updateBookCompletedAt(bookId, completedAt) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  const { data, error } = await supabase
+    .from('books')
+    .update({ completed_at: completedAt, updated_at: new Date().toISOString() })
+    .eq('id', bookId)
+    .eq('user_id', userId)
+    .eq('is_completed', true)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('완료 일자 변경 오류:', error)
+    throw error
+  }
+
+  return normalizeBook(data)
 }
 
 /**
