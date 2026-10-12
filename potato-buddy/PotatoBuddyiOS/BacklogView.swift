@@ -1,4 +1,5 @@
 ﻿import SwiftUI
+import PencilKit
 
 struct BacklogView: View {
     @State private var tasks: [TaskItem] = []
@@ -10,6 +11,8 @@ struct BacklogView: View {
     @State private var errorMessage: String = ""
     @State private var showAddSheet: Bool = false
     @State private var newTaskTitle: String = ""
+    @State private var inputMode: TaskInputMode = .keyboard
+    @State private var newTaskDrawing = PKDrawing()
     @State private var isSaving: Bool = false
 
     var body: some View {
@@ -42,6 +45,7 @@ struct BacklogView: View {
                                             BoardStickyNoteCard(
                                                 id: task.id,
                                                 title: task.title,
+                                                handwritingImageUrl: task.handwritingImageUrl,
                                                 caption: backlogCaption(for: task),
                                                 captionColor: backlogCaptionColor(for: task),
                                                 noteColor: backlogNoteColor(for: task),
@@ -97,6 +101,7 @@ struct BacklogView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         newTaskTitle = ""
+                        newTaskDrawing = PKDrawing()
                         showAddSheet = true
                     } label: {
                         Image(systemName: "plus.circle.fill")
@@ -160,9 +165,7 @@ struct BacklogView: View {
     private var addBacklogSheet: some View {
         NavigationView {
             Form {
-                Section("할일") {
-                    TextField("할일 제목", text: $newTaskTitle)
-                }
+                TaskTitleInputSection(mode: $inputMode, title: $newTaskTitle, drawing: $newTaskDrawing)
 
                 Section("카테고리") {
                     if isLoadingCategories || (!didAttemptCategoryLoad && categories.isEmpty) {
@@ -199,7 +202,7 @@ struct BacklogView: View {
                         Task { await addBacklogTask() }
                     }
                     .disabled(
-                        newTaskTitle.trimmingCharacters(in: .whitespaces).isEmpty
+                        !TaskTitleInputSection.canSubmit(mode: inputMode, title: newTaskTitle, drawing: newTaskDrawing)
                             || selectedCategoryName.isEmpty
                             || isSaving
                             || isLoadingCategories
@@ -212,7 +215,7 @@ struct BacklogView: View {
                 await applyDefaultCategorySelection()
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents(inputMode == .handwriting ? [.large] : [.medium, .large])
     }
 
     @MainActor
@@ -287,19 +290,25 @@ struct BacklogView: View {
 
     @MainActor
     private func addBacklogTask() async {
-        let title = newTaskTitle.trimmingCharacters(in: .whitespaces)
-        guard !title.isEmpty else { return }
+        guard TaskTitleInputSection.canSubmit(mode: inputMode, title: newTaskTitle, drawing: newTaskDrawing) else { return }
 
         isSaving = true
         defer { isSaving = false }
 
         do {
+            let submission = try await TaskTitleInputSection.prepareSubmission(
+                mode: inputMode,
+                title: newTaskTitle,
+                drawing: newTaskDrawing
+            )
             try await SupabaseService.shared.addBacklogTask(
-                title: title,
-                category: selectedCategoryName
+                title: submission.title,
+                category: selectedCategoryName,
+                handwritingImageUrl: submission.handwritingImageUrl
             )
             showAddSheet = false
             newTaskTitle = ""
+            newTaskDrawing = PKDrawing()
             await loadTasks()
         } catch {
             if !error.isCancellation { errorMessage = error.localizedDescription }

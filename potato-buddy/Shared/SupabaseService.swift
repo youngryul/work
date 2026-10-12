@@ -129,7 +129,7 @@ final class SupabaseService {
             URLQueryItem(name: "istoday",   value: "eq.true"),
             URLQueryItem(name: "completed", value: "eq.false"),
             URLQueryItem(name: "user_id",   value: "eq.\(userId)"),
-            URLQueryItem(name: "select",    value: "id,title,category,priority,createdat"),
+            URLQueryItem(name: "select",    value: "id,title,category,priority,createdat,handwriting_image_url"),
             URLQueryItem(name: "order",     value: "priority.asc,movedtotodayat.asc,createdat.asc"),
         ]
 
@@ -193,7 +193,7 @@ final class SupabaseService {
 
     // MARK: - 할일 추가
 
-    func addTask(title: String) async throws {
+    func addTask(title: String, handwritingImageUrl: String? = nil) async throws {
         let (userId, token) = await authInfo()
 
         let url = URL(string: "\(Config.supabaseURL)/rest/v1/tasks")!
@@ -203,7 +203,7 @@ final class SupabaseService {
         request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
 
         let now = Int(Date().timeIntervalSince1970 * 1000)
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "title":     title,
             "istoday":   true,
             "completed": false,
@@ -211,6 +211,9 @@ final class SupabaseService {
             "createdat": now,
             "user_id":   userId,
         ]
+        if let handwritingImageUrl {
+            body["handwriting_image_url"] = handwritingImageUrl
+        }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         _ = try await fetch(request)
     }
@@ -225,7 +228,7 @@ final class SupabaseService {
             URLQueryItem(name: "istoday",   value: "eq.false"),
             URLQueryItem(name: "completed", value: "eq.false"),
             URLQueryItem(name: "user_id",   value: "eq.\(userId)"),
-            URLQueryItem(name: "select",    value: "id,title,category,priority,createdat"),
+            URLQueryItem(name: "select",    value: "id,title,category,priority,createdat,handwriting_image_url"),
             // 작성 순서대로 (가장 최근에 작성한 항목이 맨 아래)
             URLQueryItem(name: "order",     value: "createdat.asc"),
         ]
@@ -240,7 +243,7 @@ final class SupabaseService {
 
     // MARK: - 백로그에 할일 추가
 
-    func addBacklogTask(title: String, category: String) async throws {
+    func addBacklogTask(title: String, category: String, handwritingImageUrl: String? = nil) async throws {
         let (userId, token) = await authInfo()
 
         let url = URL(string: "\(Config.supabaseURL)/rest/v1/tasks")!
@@ -250,7 +253,7 @@ final class SupabaseService {
         request.addValue("return=minimal", forHTTPHeaderField: "Prefer")
 
         let now = Int(Date().timeIntervalSince1970 * 1000)
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "title":     title,
             "istoday":   false,
             "completed": false,
@@ -258,8 +261,20 @@ final class SupabaseService {
             "createdat": now,
             "user_id":   userId,
         ]
+        if let handwritingImageUrl {
+            body["handwriting_image_url"] = handwritingImageUrl
+        }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         _ = try await fetch(request)
+    }
+
+    // MARK: - 손글씨 이미지 업로드
+
+    /// 할일 손글씨 PNG를 Storage에 올리고 공개 URL을 반환한다.
+    func uploadTaskHandwriting(_ pngData: Data) async throws -> String {
+        let (userId, _) = await authInfo()
+        let fileName = "\(UUID().uuidString.lowercased()).png"
+        return try await uploadImageData(pngData, folder: "task-handwriting/\(userId)", fileName: fileName)
     }
 
     // MARK: - 백로그 → 오늘 이동

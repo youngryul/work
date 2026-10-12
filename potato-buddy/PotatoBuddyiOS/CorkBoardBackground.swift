@@ -158,11 +158,14 @@ struct BoardStickyNoteCard<Accessory: View>: View {
     let onCardTap: (() -> Void)?
     let primarySystemImage: String
     let primaryTint: Color
+    /// 손글씨 이미지 URL (있으면 제목 대신 손글씨를 표시)
+    let handwritingImageUrl: String?
     @ViewBuilder var accessory: () -> Accessory
 
     init(
         id: String,
         title: String,
+        handwritingImageUrl: String? = nil,
         caption: String? = nil,
         captionColor: Color = .secondary,
         noteColor: Color? = nil,
@@ -176,6 +179,7 @@ struct BoardStickyNoteCard<Accessory: View>: View {
     ) {
         self.id = id
         self.title = title
+        self.handwritingImageUrl = handwritingImageUrl
         self.caption = caption
         self.captionColor = captionColor
         self.noteColor = noteColor
@@ -193,15 +197,19 @@ struct BoardStickyNoteCard<Accessory: View>: View {
             accessory()
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(title)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundColor(
-                        isStruckThrough
-                            ? Color(red: 0.45, green: 0.42, blue: 0.38)
-                            : Color(red: 0.18, green: 0.16, blue: 0.14)
-                    )
-                    .strikethrough(isStruckThrough, color: Color(red: 0.35, green: 0.32, blue: 0.28))
-                    .fixedSize(horizontal: false, vertical: true)
+                if let handwritingImageUrl, let url = URL(string: handwritingImageUrl) {
+                    HandwritingTitleImage(url: url, fallbackTitle: title, isStruckThrough: isStruckThrough)
+                } else {
+                    Text(title)
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundColor(
+                            isStruckThrough
+                                ? Color(red: 0.45, green: 0.42, blue: 0.38)
+                                : Color(red: 0.18, green: 0.16, blue: 0.14)
+                        )
+                        .strikethrough(isStruckThrough, color: Color(red: 0.35, green: 0.32, blue: 0.28))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 if let caption, !caption.isEmpty {
                     Text(caption)
@@ -254,6 +262,7 @@ extension BoardStickyNoteCard where Accessory == EmptyView {
     init(
         id: String,
         title: String,
+        handwritingImageUrl: String? = nil,
         caption: String? = nil,
         captionColor: Color = .secondary,
         noteColor: Color? = nil,
@@ -267,6 +276,7 @@ extension BoardStickyNoteCard where Accessory == EmptyView {
         self.init(
             id: id,
             title: title,
+            handwritingImageUrl: handwritingImageUrl,
             caption: caption,
             captionColor: captionColor,
             noteColor: noteColor,

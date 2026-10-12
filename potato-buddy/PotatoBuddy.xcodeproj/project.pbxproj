@@ -53,6 +53,7 @@
 		3A9821ACF341594314C8A01A /* DDayWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B5802B90B5E7C54304B55C /* DDayWidget.swift */; };
 		3C139AFE68DCE619848DCB71 /* DiaryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C694A851AB63F042A05AC1 /* DiaryItem.swift */; };
 		3EC67E34991A9E1E85726F5E /* BacklogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D826A844BE6F7D286ED09B9 /* BacklogView.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* HandwritingPad.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5D /* HandwritingPad.swift */; };
 		3F0DD50F26CD83E796E2C65B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AE7513E3FD57D8E1244BB566 /* Assets.xcassets */; };
 		3FBDAC36601F0701A52E9D90 /* 앱이미지.png in Resources */ = {isa = PBXBuildFile; fileRef = 9A049AA85E6EC1B1FD764A2E /* 앱이미지.png */; };
 		4097606B7934AE11A0295484 /* MenuRecommendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B45FCAA20C8F2C48939F72F /* MenuRecommendService.swift */; };
@@ -277,6 +278,7 @@
 		190A1D03682FC74D860AEC01 /* TravelItineraryCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelItineraryCreateView.swift; sourceTree = "<group>"; };
 		1D4CB9DF5D919291809D0613 /* Font+Sketchbook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+Sketchbook.swift"; sourceTree = "<group>"; };
 		1D826A844BE6F7D286ED09B9 /* BacklogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BacklogView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5D /* HandwritingPad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingPad.swift; sourceTree = "<group>"; };
 		1DE77FB5D9475DD11222A20C /* TodayTasksViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayTasksViewModel.swift; sourceTree = "<group>"; };
 		1F38DC95AC1E797AF29D0752 /* TravelItineraryPackingListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelItineraryPackingListView.swift; sourceTree = "<group>"; };
 		1F8BAEABB166C05237A1FE98 /* ToeicCompletionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToeicCompletionViewModel.swift; sourceTree = "<group>"; };
@@ -534,6 +536,7 @@
 				8F49F0B8E56A2EE8BFC84E43 /* ActivityShareSheet.swift */,
 				DA69A7AC454A59D4370CA0AA /* Assets.xcassets */,
 				1D826A844BE6F7D286ED09B9 /* BacklogView.swift */,
+				A1B2C3D4E5F60718293A4B5D /* HandwritingPad.swift */,
 				70E0F19BC75F1A6C397BBE1C /* ContentView.swift */,
 				7464AC9BA45E00EF6E7C1FD8 /* CorkBoardBackground.swift */,
 				649A812AC54ACA91CE4BF2D1 /* CorkBoardTheme.swift */,
@@ -1003,6 +1006,7 @@
 				BE3036CEDED7F90E0BB62156 /* ActivityShareSheet.swift in Sources */,
 				D159B7C3FCC77C25D462E9FE /* AuthService.swift in Sources */,
 				3EC67E34991A9E1E85726F5E /* BacklogView.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* HandwritingPad.swift in Sources */,
 				49C4D7D0195075F8BFC6E2D5 /* BookItem.swift in Sources */,
 				45F8E451826FCC1F2C488AE8 /* CategoryItem.swift in Sources */,
 				1B20A10E1FD42DE2DAD38071 /* Config.swift in Sources */,
