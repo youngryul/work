@@ -1,4 +1,5 @@
 ﻿import SwiftUI
+import PencilKit
 
 struct TodayView: View {
     private static let completeDelayNanoseconds: UInt64 = 1_000_000_000
@@ -12,8 +13,11 @@ struct TodayView: View {
     @State private var isLoading: Bool = false
     @State private var errorMessage: String = ""
     @State private var jellyEarnedMessage: String = ""
-    @State private var showAddAlert: Bool = false
+    @State private var showAddSheet: Bool = false
     @State private var newTaskTitle: String = ""
+    @State private var inputMode: TaskInputMode = .keyboard
+    @State private var newTaskDrawing = PKDrawing()
+    @State private var isSaving: Bool = false
 
     private var dateSubtitle: String {
         let formatter = DateFormatter()
@@ -53,6 +57,7 @@ struct TodayView: View {
                                             BoardStickyNoteCard(
                                                 id: task.id,
                                                 title: task.title,
+                                                handwritingImageUrl: task.handwritingImageUrl,
                                                 caption: task.category.flatMap { cat in
                                                     (cat != "작업" && !cat.isEmpty) ? cat : nil
                                                 },
@@ -100,7 +105,8 @@ struct TodayView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         newTaskTitle = ""
-                        showAddAlert = true
+                        newTaskDrawing = PKDrawing()
+                        showAddSheet = true
                     } label: {
                         Image(systemName: "plus.circle.fill")
                             .symbolRenderingMode(.palette)
@@ -111,16 +117,8 @@ struct TodayView: View {
             }
             .toolbarBackground(CorkBoardTheme.corkBase.opacity(0.92), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .alert("할일 추가", isPresented: $showAddAlert) {
-                TextField("할일 제목", text: $newTaskTitle)
-                Button("추가") {
-                    if !newTaskTitle.trimmingCharacters(in: .whitespaces).isEmpty {
-                        Task { await addTask() }
-                    }
-                }
-                Button("취소", role: .cancel) {}
-            } message: {
-                Text("오늘 할일로 추가됩니다")
+            .sheet(isPresented: $showAddSheet) {
+                addTaskSheet
             }
             .alert("오류", isPresented: Binding(get: { !errorMessage.isEmpty }, set: { _ in errorMessage = "" })) {
                 Button("확인") { errorMessage = "" }
@@ -141,9 +139,39 @@ struct TodayView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                Task { await jellyStore.refresh() }
+                Task {
+                    // 백그라운드에 있다가 날짜가 바뀐 경우를 위해 할일도 다시 불러온다
+                    async let tasksLoad: Void = loadTasks()
+                    async let jellyLoad: Void = jellyStore.refresh()
+                    _ = await (tasksLoad, jellyLoad)
+                }
             }
         }
+    }
+
+    private var addTaskSheet: some View {
+        NavigationView {
+            Form {
+                TaskTitleInputSection(mode: $inputMode, title: $newTaskTitle, drawing: $newTaskDrawing)
+            }
+            .navigationTitle("할일 추가")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("취소") { showAddSheet = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("추가") {
+                        Task { await addTask() }
+                    }
+                    .disabled(
+                        !TaskTitleInputSection.canSubmit(mode: inputMode, title: newTaskTitle, drawing: newTaskDrawing)
+                            || isSaving
+                    )
+                }
+            }
+        }
+        .presentationDetents(inputMode == .handwriting ? [.large] : [.medium, .large])
     }
 
     private var motivationBanner: some View {
@@ -221,10 +249,26 @@ struct TodayView: View {
         isLoading = false
     }
 
+    @MainActor
     private func addTask() async {
-        let title = newTaskTitle.trimmingCharacters(in: .whitespaces)
+        guard TaskTitleInputSection.canSubmit(mode: inputMode, title: newTaskTitle, drawing: newTaskDrawing) else { return }
+
+        isSaving = true
+        defer { isSaving = false }
+
         do {
-            try await SupabaseService.shared.addTask(title: title)
+            let submission = try await TaskTitleInputSection.prepareSubmission(
+                mode: inputMode,
+                title: newTaskTitle,
+                drawing: newTaskDrawing
+            )
+            try await SupabaseService.shared.addTask(
+                title: submission.title,
+                handwritingImageUrl: submission.handwritingImageUrl
+            )
+            showAddSheet = false
+            newTaskTitle = ""
+            newTaskDrawing = PKDrawing()
             await loadTasks()
         } catch {
             if !error.isCancellation { errorMessage = error.localizedDescription }

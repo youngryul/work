@@ -146,22 +146,25 @@ struct DiaryDetailView: View {
     }
 
     private var coverImageView: some View {
-        ZStack {
-            Color(red: 0.93, green: 0.96, blue: 0.97)
-            if let urlString = diary.thumbnailUrl, let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
-                    if case .success(let image) = phase {
-                        image.resizable().aspectRatio(contentMode: .fill)
+        // 4:3 영역을 먼저 고정하고 사진은 overlay로 얹어 잘라낸다 (세로 사진이어도 높이 일정)
+        Color(red: 0.93, green: 0.96, blue: 0.97)
+            .aspectRatio(4.0 / 3.0, contentMode: .fit)
+            .overlay {
+                if let urlString = diary.thumbnailUrl, let url = URL(string: urlString) {
+                    AsyncImage(url: url) { phase in
+                        if case .success(let image) = phase {
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        }
                     }
+                } else {
+                    Text("대문 그림").font(.system(size: 10, design: .monospaced)).foregroundStyle(.black.opacity(0.4))
                 }
-                .clipped()
-            } else {
-                Text("대문 그림").font(.system(size: 10, design: .monospaced)).foregroundStyle(.black.opacity(0.4))
             }
-        }
-        .aspectRatio(4.0 / 3.0, contentMode: .fit)
-        .clipped()
-        .overlay(RoundedRectangle(cornerRadius: 0).stroke(SketchbookStyle.ink, lineWidth: 2))
+            .clipped()
+            .contentShape(Rectangle())
+            .overlay(RoundedRectangle(cornerRadius: 0).stroke(SketchbookStyle.ink, lineWidth: 2))
     }
 
     private var coverCandidatePicker: some View {

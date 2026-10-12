@@ -20,6 +20,7 @@ function normalizeTask(task) {
     images: task.images ?? [],
     priority: task.priority ?? 0,
     scheduledDate: task.scheduled_date ?? task.scheduledDate ?? null,
+    handwritingImageUrl: task.handwriting_image_url ?? task.handwritingImageUrl ?? null,
   }
 }
 

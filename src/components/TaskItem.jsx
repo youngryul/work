@@ -422,7 +422,17 @@ export default function TaskItem({
               : 'text-gray-800'
           }`}
         >
-          {task.title}
+          {task.handwritingImageUrl ? (
+            // iOS 앱에서 손글씨로 쓴 할 일은 손글씨 이미지로 표시 (클릭 시 인식된 제목 수정)
+            <img
+              src={task.handwritingImageUrl}
+              alt={task.title}
+              title={task.title}
+              className="max-h-14 max-w-full object-contain object-left"
+            />
+          ) : (
+            task.title
+          )}
           {localCompleted && (
             <span
               className={`task-strike-line ${isLeaving ? 'task-strike-line--held' : ''}`}

@@ -49,6 +49,7 @@ targets:
       - path: Shared
         excludes:
           - WidgetScheduleStore.swift
+          - DDayStore.swift
     resources:
       - path: PotatoBuddy/Assets.xcassets
       - path: PotatoBuddy/물 주는 포실이.gif
@@ -243,6 +244,7 @@ targets:
     sources:
       - path: ScheduleWidget
       - path: Shared/WidgetScheduleStore.swift
+      - path: Shared/DDayStore.swift
       - path: Shared/WidgetWeatherModels.swift
       - path: Shared/StudyTimerLiveActivityAttributes.swift
     resources:

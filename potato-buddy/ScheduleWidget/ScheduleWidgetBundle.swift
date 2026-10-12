@@ -286,5 +286,8 @@ struct ScheduleWidgetBundle: WidgetBundle {
         if #available(iOS 16.1, *) {
             StudyTimerLiveActivityWidget()
         }
+        if #available(iOS 18.0, *) {
+            QuickAddBacklogControl()
+        }
     }
 }

@@ -1,17 +1,19 @@
 import SwiftUI
 
 struct MainTabView: View {
+    static let backlogTabTag = 1
     static let scheduleTabTag = 3
     static let stepsTabTag = 11
     static let clockTabTag = 9
     static let moreTabTag = 14
     static let farmTabTag = 16
     static let graduateNotesTabTag = 17
+    static let ddayTabTag = 18
 
     /// 예전 토익 탭 tag. 커스텀 더보기에도 넣지 않는다.
     private static let removedToeicTabTag = 7
 
-    private static let primaryTabTags: Set<Int> = [0, 1, 2, scheduleTabTag, moreTabTag]
+    private static let primaryTabTags: Set<Int> = [0, backlogTabTag, 2, scheduleTabTag, moreTabTag]
 
     @Binding var selectedTab: Int
     @ObservedObject private var auth = AuthService.shared
@@ -52,7 +54,7 @@ struct MainTabView: View {
                 .tabItem {
                     Label("백로그", systemImage: "tray.fill")
                 }
-                .tag(1)
+                .tag(Self.backlogTabTag)
 
             DiaryCalendarView()
                 .tabItem {
@@ -111,6 +113,8 @@ struct MainTabView: View {
             moreDestination(GraduateTimetableView())
         case Self.graduateNotesTabTag:
             moreDestination(GraduateNotesView())
+        case Self.ddayTabTag:
+            moreDestination(DDayManagerView())
         case 10:
             moreDestination(SettingsView(showLogoutConfirm: $showLogoutConfirm))
         default:
@@ -154,6 +158,7 @@ private struct MoreMenuView: View {
         (8, "냉장고", "refrigerator.fill"),
         (15, "시간표", "graduationcap.fill"),
         (MainTabView.graduateNotesTabTag, "대학원 기록", "note.text"),
+        (MainTabView.ddayTabTag, "디데이", "calendar.badge.clock"),
         (9, "시계", "clock.fill"),
         (10, "설정", "gearshape.fill"),
     ]

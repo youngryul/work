@@ -26,6 +26,7 @@ export const tasks = pgTable('tasks', {
   movedToTodayAt: bigint('movedtotodayat', { mode: 'number' }),
   memo: text('memo'),
   scheduledDate: text('scheduled_date'), // YYYY-MM-DD 형식, 해당 날짜에 오늘 할일로 자동 이동
+  handwritingImageUrl: text('handwriting_image_url'), // iOS 앱에서 손글씨로 작성한 경우 손글씨 이미지 URL
 })
 
 /**

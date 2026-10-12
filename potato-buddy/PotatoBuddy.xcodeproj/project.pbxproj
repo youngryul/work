@@ -52,8 +52,10 @@
 		395ED4F51127F437671E11B5 /* DiaryWriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 547F99007C6FCE58B7F29335 /* DiaryWriteView.swift */; };
 		39B7E96394D42F33CF7764AD /* TimerHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BB2F61DEE70BBB4A496E152 /* TimerHubView.swift */; };
 		3A9821ACF341594314C8A01A /* DDayWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B5802B90B5E7C54304B55C /* DDayWidget.swift */; };
+		B1C2D3E4F5A60718293A4B6C /* QuickAddBacklogControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5A60718293A4B6D /* QuickAddBacklogControl.swift */; };
 		3C139AFE68DCE619848DCB71 /* DiaryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C694A851AB63F042A05AC1 /* DiaryItem.swift */; };
 		3EC67E34991A9E1E85726F5E /* BacklogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D826A844BE6F7D286ED09B9 /* BacklogView.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* HandwritingPad.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5D /* HandwritingPad.swift */; };
 		3F0DD50F26CD83E796E2C65B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AE7513E3FD57D8E1244BB566 /* Assets.xcassets */; };
 		3FBDAC36601F0701A52E9D90 /* 앱이미지.png in Resources */ = {isa = PBXBuildFile; fileRef = 9A049AA85E6EC1B1FD764A2E /* 앱이미지.png */; };
 		4097606B7934AE11A0295484 /* MenuRecommendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B45FCAA20C8F2C48939F72F /* MenuRecommendService.swift */; };
@@ -87,6 +89,9 @@
 		65B79A32DCAC8B3893E13EA8 /* 타이머.png in Resources */ = {isa = PBXBuildFile; fileRef = 8B40DEFAD718CADC17E20AEA /* 타이머.png */; };
 		65C848E7EB8E555C266527FB /* StudyTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12EDE4D2B4BB5A8A8CCF1EAA /* StudyTimeView.swift */; };
 		674E1DDC6C3A3C05E535859C /* WidgetScheduleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB8B7BD1BEADE12B74909D2C /* WidgetScheduleStore.swift */; };
+		C1D2E3F4A5B60718293A4C02 /* DDayStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B60718293A4C01 /* DDayStore.swift */; };
+		C1D2E3F4A5B60718293A4C03 /* DDayStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B60718293A4C01 /* DDayStore.swift */; };
+		C1D2E3F4A5B60718293A4C05 /* DDayManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B60718293A4C04 /* DDayManagerView.swift */; };
 		67EC21AB52504545A10B4E25 /* FridgeItemIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5028470205B5D6852C07FE0 /* FridgeItemIcons.swift */; };
 		680B1FB46FFFBEB496161FC8 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CB4229136599A8BA65F44C /* MainTabView.swift */; };
 		6852538528FE21F5E7A86BC3 /* FridgeItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758A8A2B777A70B6D61AC077 /* FridgeItem.swift */; };
@@ -278,6 +283,7 @@
 		190A1D03682FC74D860AEC01 /* TravelItineraryCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelItineraryCreateView.swift; sourceTree = "<group>"; };
 		1D4CB9DF5D919291809D0613 /* Font+Sketchbook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+Sketchbook.swift"; sourceTree = "<group>"; };
 		1D826A844BE6F7D286ED09B9 /* BacklogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BacklogView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5D /* HandwritingPad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingPad.swift; sourceTree = "<group>"; };
 		1DE77FB5D9475DD11222A20C /* TodayTasksViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayTasksViewModel.swift; sourceTree = "<group>"; };
 		1F38DC95AC1E797AF29D0752 /* TravelItineraryPackingListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelItineraryPackingListView.swift; sourceTree = "<group>"; };
 		1F8BAEABB166C05237A1FE98 /* ToeicCompletionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToeicCompletionViewModel.swift; sourceTree = "<group>"; };
@@ -306,6 +312,7 @@
 		4DB62C661A6851F204ED6358 /* Secrets.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text; path = Secrets.xcconfig.example; sourceTree = "<group>"; };
 		4F1661D7992556DAFA92CAD5 /* StepCounterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepCounterViewModel.swift; sourceTree = "<group>"; };
 		52B5802B90B5E7C54304B55C /* DDayWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DDayWidget.swift; sourceTree = "<group>"; };
+		B1C2D3E4F5A60718293A4B6D /* QuickAddBacklogControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAddBacklogControl.swift; sourceTree = "<group>"; };
 		541FF1C427BD52922B298737 /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
 		547F99007C6FCE58B7F29335 /* DiaryWriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryWriteView.swift; sourceTree = "<group>"; };
 		54EDB3C2C08A77BC61DD895B /* GraduateNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraduateNotesView.swift; sourceTree = "<group>"; };
@@ -402,6 +409,8 @@
 		DA69A7AC454A59D4370CA0AA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		DB1A57CF4290277D1DB7841A /* TravelItineraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelItineraryView.swift; sourceTree = "<group>"; };
 		DB8B7BD1BEADE12B74909D2C /* WidgetScheduleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetScheduleStore.swift; sourceTree = "<group>"; };
+		C1D2E3F4A5B60718293A4C01 /* DDayStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DDayStore.swift; sourceTree = "<group>"; };
+		C1D2E3F4A5B60718293A4C04 /* DDayManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DDayManagerView.swift; sourceTree = "<group>"; };
 		DC39AB8BC8BEB8056A67FDB4 /* PotatoBuddyiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PotatoBuddyiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC6E6DDE62FCA0C4C9A856FF /* PotatoBuddyWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotatoBuddyWatchApp.swift; sourceTree = "<group>"; };
 		DDDA9374BFB496DC310B133F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -466,6 +475,7 @@
 				D39AAC1A8BF6E487B9ED6FEE /* TravelAbroadModels.swift */,
 				838D227C4D6A41CF7DB37258 /* WatchSyncMessage.swift */,
 				DB8B7BD1BEADE12B74909D2C /* WidgetScheduleStore.swift */,
+				C1D2E3F4A5B60718293A4C01 /* DDayStore.swift */,
 				0E657A0D9E4754BC918AD21C /* WidgetWeatherModels.swift */,
 			);
 			path = Shared;
@@ -536,6 +546,8 @@
 				8F49F0B8E56A2EE8BFC84E43 /* ActivityShareSheet.swift */,
 				DA69A7AC454A59D4370CA0AA /* Assets.xcassets */,
 				1D826A844BE6F7D286ED09B9 /* BacklogView.swift */,
+				A1B2C3D4E5F60718293A4B5D /* HandwritingPad.swift */,
+				C1D2E3F4A5B60718293A4C04 /* DDayManagerView.swift */,
 				70E0F19BC75F1A6C397BBE1C /* ContentView.swift */,
 				7464AC9BA45E00EF6E7C1FD8 /* CorkBoardBackground.swift */,
 				649A812AC54ACA91CE4BF2D1 /* CorkBoardTheme.swift */,
@@ -620,6 +632,7 @@
 			children = (
 				E15764114ADA5B9E60AFC5BC /* Assets.xcassets */,
 				52B5802B90B5E7C54304B55C /* DDayWidget.swift */,
+				B1C2D3E4F5A60718293A4B6D /* QuickAddBacklogControl.swift */,
 				8BFFADCA528934985EE8E602 /* Info.plist */,
 				DA3A098CD3E5E0FDEDA0DE5D /* ScheduleWidget.entitlements */,
 				CAB43CB7FED3699D0B1A7E1C /* ScheduleWidgetBundle.swift */,
@@ -1000,10 +1013,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				3A9821ACF341594314C8A01A /* DDayWidget.swift in Sources */,
+				B1C2D3E4F5A60718293A4B6C /* QuickAddBacklogControl.swift in Sources */,
 				FA02ED3C589CF9E19E54ECDC /* ScheduleWidgetBundle.swift in Sources */,
 				1AF7B2D42BFD0AA855D17B46 /* StudyTimerLiveActivityAttributes.swift in Sources */,
 				0DECF5D61A1CFE470099902B /* WeatherWidget.swift in Sources */,
 				92F16E8E33B86336DBB3B45E /* WidgetScheduleStore.swift in Sources */,
+				C1D2E3F4A5B60718293A4C03 /* DDayStore.swift in Sources */,
 				4C1A4C48D5CD003CABF38193 /* WidgetWeatherModels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1015,6 +1030,8 @@
 				BE3036CEDED7F90E0BB62156 /* ActivityShareSheet.swift in Sources */,
 				D159B7C3FCC77C25D462E9FE /* AuthService.swift in Sources */,
 				3EC67E34991A9E1E85726F5E /* BacklogView.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* HandwritingPad.swift in Sources */,
+				C1D2E3F4A5B60718293A4C05 /* DDayManagerView.swift in Sources */,
 				49C4D7D0195075F8BFC6E2D5 /* BookItem.swift in Sources */,
 				45F8E451826FCC1F2C488AE8 /* CategoryItem.swift in Sources */,
 				1B20A10E1FD42DE2DAD38071 /* Config.swift in Sources */,
@@ -1105,6 +1122,7 @@
 				ABACDE400E5C855F264F0856 /* WatchSyncMessage.swift in Sources */,
 				C1B74BCB5C8D75A271D60379 /* WeatherWidgetService.swift in Sources */,
 				674E1DDC6C3A3C05E535859C /* WidgetScheduleStore.swift in Sources */,
+				C1D2E3F4A5B60718293A4C02 /* DDayStore.swift in Sources */,
 				CD4884EDD4390FA331C751F7 /* WidgetWeatherModels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

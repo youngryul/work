@@ -1,22 +1,28 @@
 import { useState } from 'react'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
+import { getTodayDateString } from '../../services/bookService.js'
 
 /**
  * 한줄 인사이트 입력 모달
  * @param {Object} book - 책 정보
- * @param {Function} onSave - 저장 콜백 (oneLineInsight를 인자로 받음)
+ * @param {Function} onSave - 저장 콜백 (oneLineInsight, completedAt을 인자로 받음)
  * @param {Function} onCancel - 취소 콜백
  */
 export default function OneLineInsightModal({ book, onSave, onCancel }) {
   const [insight, setInsight] = useState('')
+  const [completedAt, setCompletedAt] = useState(getTodayDateString)
 
   const handleSave = () => {
     if (!insight.trim()) {
       showToast('한줄 인사이트를 입력해주세요.', TOAST_TYPES.ERROR)
       return
     }
+    if (!completedAt) {
+      showToast('완료 일자를 선택해주세요.', TOAST_TYPES.ERROR)
+      return
+    }
 
-    onSave(insight.trim())
+    onSave(insight.trim(), completedAt)
   }
 
   return (
@@ -49,6 +55,19 @@ export default function OneLineInsightModal({ book, onSave, onCancel }) {
                 <p className="text-gray-600 text-sm">저자: {book.author || '알 수 없음'}</p>
               </div>
             </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              완료 일자
+            </label>
+            <input
+              type="date"
+              value={completedAt}
+              max={getTodayDateString()}
+              onChange={(e) => setCompletedAt(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+            />
           </div>
 
           <div className="mb-6">

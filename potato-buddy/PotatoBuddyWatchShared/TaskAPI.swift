@@ -5,6 +5,9 @@ struct TaskAPI: Sendable {
     let client: WatchAPIClient
 
     func fetchTodayTasks() async throws -> [TaskItem] {
+        // 워치에서는 DB를 바꾸지 않고, 어제 이전에 오늘로 옮긴 할일만 목록에서 제외한다
+        // (실제 백로그 이동은 폰/웹에서 처리)
+        let todayStart = Int64(Calendar.current.startOfDay(for: Date()).timeIntervalSince1970 * 1000)
         let data = try await client.send { credentials in
             try WatchAPIClient.restRequest(
                 "tasks",
@@ -12,6 +15,10 @@ struct TaskAPI: Sendable {
                     URLQueryItem(name: "istoday",   value: "eq.true"),
                     URLQueryItem(name: "completed", value: "eq.false"),
                     URLQueryItem(name: "user_id",   value: "eq.\(credentials.userId)"),
+                    URLQueryItem(
+                        name: "or",
+                        value: "(movedtotodayat.gte.\(todayStart),and(movedtotodayat.is.null,createdat.gte.\(todayStart)))"
+                    ),
                     URLQueryItem(name: "select",    value: "id,title,category,priority,createdat"),
                     URLQueryItem(name: "order",     value: "priority.asc,movedtotodayat.asc,createdat.asc"),
                 ],

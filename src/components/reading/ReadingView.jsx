@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import {
   getAllBooks,
   updateBookCompletion,
+  updateBookCompletedAt,
   updateBookReading,
+  getTodayDateString,
   updateBookProgress,
   deleteBook,
 } from '../../services/bookService.js'
@@ -68,6 +70,9 @@ export default function ReadingView() {
   const [bookToComplete, setBookToComplete] = useState(null)
   const [notesBook, setNotesBook] = useState(null)
   const [bookTab, setBookTab] = useState('reading')
+  // 완료일 수정 중인 책 ID와 입력값
+  const [editingCompletedAtId, setEditingCompletedAtId] = useState(null)
+  const [completedAtDraft, setCompletedAtDraft] = useState('')
 
   const bookGroups = {
     reading: books.filter((book) => getBookGroup(book) === 'reading'),
@@ -205,6 +210,37 @@ export default function ReadingView() {
   }
 
   /**
+   * 완료일 수정 시작
+   */
+  const handleStartEditCompletedAt = (book) => {
+    setEditingCompletedAtId(book.id)
+    setCompletedAtDraft(book.completedAt || getTodayDateString())
+  }
+
+  /**
+   * 완료일 수정 저장
+   */
+  const handleSaveCompletedAt = async (book) => {
+    if (!completedAtDraft) {
+      showToast('완료 일자를 선택해주세요.', TOAST_TYPES.ERROR)
+      return
+    }
+
+    try {
+      const updatedBook = await updateBookCompletedAt(book.id, completedAtDraft)
+      await loadBooks()
+      if (selectedBook?.id === updatedBook.id) {
+        setSelectedBook(updatedBook)
+      }
+      setEditingCompletedAtId(null)
+      showToast('완료일이 수정되었습니다.', TOAST_TYPES.SUCCESS)
+    } catch (error) {
+      console.error('완료일 수정 오류:', error)
+      showToast('완료일 수정에 실패했습니다.', TOAST_TYPES.ERROR)
+    }
+  }
+
+  /**
    * 책 삭제 (독서 기록 포함)
    */
   const handleDeleteBook = async (book) => {
@@ -228,11 +264,11 @@ export default function ReadingView() {
   /**
    * 한줄 인사이트 저장
    */
-  const handleSaveInsight = async (oneLineInsight) => {
+  const handleSaveInsight = async (oneLineInsight, completedAt) => {
     if (!bookToComplete) return
 
     try {
-      const completedBook = await updateBookCompletion(bookToComplete.id, true, oneLineInsight)
+      const completedBook = await updateBookCompletion(bookToComplete.id, true, oneLineInsight, completedAt)
       await loadBooks()
       if (selectedBook?.id === completedBook.id) {
         setSelectedBook(completedBook)
@@ -417,10 +453,50 @@ export default function ReadingView() {
                         </div>
                       </div>
                       <p className="text-gray-600 text-sm">저자: {book.author || '알 수 없음'}</p>
-                      {book.isCompleted && book.completedAt && (
-                        <p className="text-green-700 text-sm font-medium">
-                          완료일: {formatCompletedDate(book.completedAt)}
-                        </p>
+                      {book.isCompleted && (
+                        editingCompletedAtId === book.id ? (
+                          <div
+                            className="flex flex-wrap items-center gap-2 mt-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <span className="text-green-700 text-sm font-medium">완료일:</span>
+                            <input
+                              type="date"
+                              value={completedAtDraft}
+                              max={getTodayDateString()}
+                              onChange={(e) => setCompletedAtDraft(e.target.value)}
+                              className="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleSaveCompletedAt(book)}
+                              className="px-2 py-1 text-xs rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                            >
+                              저장
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingCompletedAtId(null)}
+                              className="px-2 py-1 text-xs rounded bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+                            >
+                              취소
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="flex items-center gap-2 text-green-700 text-sm font-medium">
+                            완료일: {book.completedAt ? formatCompletedDate(book.completedAt) : '미지정'}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleStartEditCompletedAt(book)
+                              }}
+                              className="px-2 py-0.5 text-xs rounded border border-green-300 text-green-700 hover:bg-green-100 transition-colors"
+                            >
+                              수정
+                            </button>
+                          </p>
+                        )
                       )}
                       {book.pageCount > 0 && (
                         <p className="text-gray-600 text-sm">페이지: {book.pageCount}페이지</p>

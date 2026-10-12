@@ -301,25 +301,31 @@ struct DiaryWriteView: View {
             Button {
                 Task { await selectCover(urlString) }
             } label: {
-                ZStack(alignment: .bottomLeading) {
-                    Color(white: 0.95)
-                    AsyncImage(url: URL(string: urlString)) { phase in
-                        if case .success(let image) = phase {
-                            image.resizable().aspectRatio(contentMode: .fill)
+                // 정사각형 칸을 먼저 고정하고 사진은 overlay로 얹어 잘라낸다 (세로 사진이어도 칸 크기 일정)
+                Color(white: 0.95)
+                    .aspectRatio(1, contentMode: .fit)
+                    .overlay {
+                        AsyncImage(url: URL(string: urlString)) { phase in
+                            if case .success(let image) = phase {
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            }
                         }
                     }
-                    if isCover {
-                        Text("대표")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 2)
-                            .background(SketchbookStyle.greenDark)
-                            .padding(4)
+                    .clipped()
+                    .contentShape(Rectangle())
+                    .overlay(alignment: .bottomLeading) {
+                        if isCover {
+                            Text("대표")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 2)
+                                .background(SketchbookStyle.greenDark)
+                                .padding(4)
+                        }
                     }
-                }
-                .aspectRatio(1, contentMode: .fit)
-                .clipped()
                 .overlay(
                     Rectangle().stroke(isCover ? SketchbookStyle.greenDark : Color.clear, lineWidth: 3)
                 )

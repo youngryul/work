@@ -208,29 +208,46 @@ struct DiaryCalendarView: View {
             }
             _ = day
         } label: {
-            ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(cell.diary != nil ? Color.white : Color.white.opacity(0.4))
-                if let urlString = cell.diary?.thumbnailUrl, let url = URL(string: urlString) {
-                    AsyncImage(url: url) { phase in
-                        if case .success(let image) = phase {
-                            image.resizable().aspectRatio(contentMode: .fill)
+            // 칸 크기는 정사각형으로 고정하고, 사진은 overlay로 얹어 잘라낸다
+            // (ZStack에 .fill 이미지를 넣으면 세로/가로 사진 비율대로 칸이 늘어나 달력이 깨짐)
+            RoundedRectangle(cornerRadius: 2)
+                .fill(cell.diary != nil ? Color.white : Color.white.opacity(0.4))
+                .aspectRatio(1, contentMode: .fit)
+                .overlay {
+                    if let urlString = cell.diary?.thumbnailUrl, let url = URL(string: urlString) {
+                        AsyncImage(url: url) { phase in
+                            if case .success(let image) = phase {
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            }
                         }
                     }
-                    .clipped()
                 }
-                if let day = cell.day {
-                    Text("\(day)")
-                        .font(.system(size: 11))
-                        .foregroundStyle(cell.diary != nil ? SketchbookStyle.ink : SketchbookStyle.mutedLight)
-                        .padding(3)
+                .clipShape(RoundedRectangle(cornerRadius: 2))
+                // 잘려 나간 사진 영역이 옆 칸 터치를 가로채지 않도록 터치 영역도 칸 크기로 제한
+                .contentShape(RoundedRectangle(cornerRadius: 2))
+                .overlay(alignment: .topLeading) {
+                    if let day = cell.day {
+                        Text("\(day)")
+                            .font(.system(size: 11))
+                            .foregroundStyle(cell.diary != nil ? SketchbookStyle.ink : SketchbookStyle.mutedLight)
+                            .padding(.horizontal, cell.diary?.thumbnailUrl != nil ? 3 : 0)
+                            // 사진 위에서도 날짜가 보이도록 흰 배경
+                            .background {
+                                if cell.diary?.thumbnailUrl != nil {
+                                    RoundedRectangle(cornerRadius: 3).fill(Color.white.opacity(0.85))
+                                }
+                            }
+                            .padding(3)
+                    }
                 }
-                if cell.isToday {
-                    RoundedRectangle(cornerRadius: 3)
-                        .stroke(SketchbookStyle.greenDark, lineWidth: 2.5)
+                .overlay {
+                    if cell.isToday {
+                        RoundedRectangle(cornerRadius: 3)
+                            .stroke(SketchbookStyle.greenDark, lineWidth: 2.5)
+                    }
                 }
-            }
-            .aspectRatio(1, contentMode: .fit)
             .overlay(
                 RoundedRectangle(cornerRadius: 2)
                     .stroke(cell.diary != nil ? SketchbookStyle.ink : Color.black.opacity(0.18), style: StrokeStyle(lineWidth: cell.diary != nil ? 2 : 1.5, dash: cell.diary != nil ? [] : [3, 3]))
