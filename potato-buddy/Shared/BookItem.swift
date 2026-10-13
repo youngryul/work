@@ -16,6 +16,8 @@ struct BookItem: Codable, Identifiable, Hashable {
     let isCompleted: Bool?
     let oneLineInsight: String?
     let completedAt: String?
+    /// 현재까지 읽은 페이지 (웹 BookProgress 와 공유)
+    let currentPage: Int?
 
     enum CodingKeys: String, CodingKey {
         case id, title, author, publisher, isbn, description
@@ -27,9 +29,29 @@ struct BookItem: Codable, Identifiable, Hashable {
         case isCompleted = "is_completed"
         case oneLineInsight = "one_line_insight"
         case completedAt = "completed_at"
+        case currentPage = "current_page"
     }
 
     var completed: Bool { isCompleted == true }
+
+    /// 읽은 페이지 (미기록 시 0)
+    var readPage: Int { max(0, currentPage ?? 0) }
+
+    /// 전체 페이지 대비 진행률 0~100 (전체 페이지 정보가 없으면 nil)
+    var progressPercent: Int? {
+        guard let pageCount, pageCount > 0 else { return nil }
+        return min(100, Int((Double(readPage) / Double(pageCount) * 100).rounded()))
+    }
+
+    /// "120쪽까지 읽음 / 300쪽 (40%)" — 웹 BookProgress 표기와 동일
+    var progressLabel: String {
+        guard readPage > 0 else { return "읽은 위치를 기록해보세요" }
+        var label = "\(readPage)쪽까지 읽음"
+        if let pageCount, pageCount > 0, let progressPercent {
+            label += " / \(pageCount)쪽 (\(progressPercent)%)"
+        }
+        return label
+    }
 
     var authorLabel: String {
         let value = author?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

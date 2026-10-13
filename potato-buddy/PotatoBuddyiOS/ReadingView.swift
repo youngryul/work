@@ -18,6 +18,9 @@ struct ReadingView: View {
     @State private var insightText = ""
     @State private var bookToComplete: BookItem?
     @State private var bookToDelete: BookItem?
+    @State private var showProgressAlert = false
+    @State private var progressText = ""
+    @State private var progressErrorMessage = ""
 
     /// 현재 선택된 책 (항상 최신 books 목록에서 조회)
     private var selectedBook: BookItem? {
@@ -213,7 +216,9 @@ struct ReadingView: View {
                 Text(book.authorLabel)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                if !book.pageCountLabel.isEmpty {
+                if !book.completed && book.readPage > 0 {
+                    progressView(book, font: .caption2)
+                } else if !book.pageCountLabel.isEmpty {
                     Text(book.pageCountLabel)
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
@@ -257,6 +262,23 @@ struct ReadingView: View {
                         .buttonStyle(.bordered)
                         .tint(book.completed ? .orange : .green)
                     }
+                }
+            }
+
+            // 완독 전 책만 읽은 위치 표시 (웹 BookProgress 와 동일)
+            if !book.completed {
+                Section {
+                    HStack(alignment: .center, spacing: 12) {
+                        progressView(book, font: .subheadline)
+                        Button(book.readPage > 0 ? "위치 수정" : "위치 기록") {
+                            progressText = book.readPage > 0 ? String(book.readPage) : ""
+                            showProgressAlert = true
+                        }
+                        .buttonStyle(.bordered)
+                        .font(.caption.weight(.semibold))
+                    }
+                } header: {
+                    Text("읽은 위치")
                 }
             }
 
@@ -346,6 +368,26 @@ struct ReadingView: View {
         } message: {
             Text("완독 시 남길 한줄 메모를 적어주세요. (선택)")
         }
+        .alert("읽은 위치", isPresented: $showProgressAlert) {
+            TextField("페이지", text: $progressText)
+                .keyboardType(.numberPad)
+            Button("저장") {
+                Task { await saveProgress(book) }
+            }
+            Button("취소", role: .cancel) {}
+        } message: {
+            Text((book.pageCount ?? 0) > 0
+                 ? "몇 쪽까지 읽었나요? (전체 \(book.pageCount ?? 0)쪽)"
+                 : "몇 쪽까지 읽었나요?")
+        }
+        .alert("저장 실패", isPresented: Binding(
+            get: { !progressErrorMessage.isEmpty },
+            set: { if !$0 { progressErrorMessage = "" } }
+        )) {
+            Button("확인", role: .cancel) {}
+        } message: {
+            Text(progressErrorMessage)
+        }
         .confirmationDialog(
             "책을 삭제할까요?",
             isPresented: Binding(
@@ -365,6 +407,20 @@ struct ReadingView: View {
     }
 
     // MARK: - Helpers
+
+    /// 읽은 페이지 문구 + 진행 막대
+    private func progressView(_ book: BookItem, font: Font) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("📖 \(book.progressLabel)")
+                .font(font)
+                .foregroundStyle(book.readPage > 0 ? HierarchicalShapeStyle.secondary : HierarchicalShapeStyle.tertiary)
+            if book.readPage > 0, let percent = book.progressPercent {
+                ProgressView(value: Double(percent), total: 100)
+                    .tint(.blue)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
 
     @ViewBuilder
     private func bookThumbnail(url: String?, size: CGFloat) -> some View {
@@ -505,6 +561,31 @@ struct ReadingView: View {
             await loadStats()
         } catch {
             if !error.isCancellation { errorMessage = error.localizedDescription }
+        }
+    }
+
+    /// 읽은 위치 저장 — 웹과 동일하게 빈 값은 0, 음수·전체 페이지 초과는 거부
+    private func saveProgress(_ book: BookItem) async {
+        let trimmed = progressText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let page: Int
+        if trimmed.isEmpty {
+            page = 0
+        } else if let parsed = Int(trimmed), parsed >= 0 {
+            page = parsed
+        } else {
+            progressErrorMessage = "페이지는 0 이상의 숫자로 입력해주세요."
+            return
+        }
+        if let pageCount = book.pageCount, pageCount > 0, page > pageCount {
+            progressErrorMessage = "전체 \(pageCount)페이지를 넘을 수 없습니다."
+            return
+        }
+        do {
+            let updated = try await SupabaseService.shared.updateBookProgress(bookId: book.id, currentPage: page)
+            progressText = ""
+            replaceBook(updated)
+        } catch {
+            if !error.isCancellation { progressErrorMessage = "읽은 위치 저장에 실패했습니다." }
         }
     }
 
