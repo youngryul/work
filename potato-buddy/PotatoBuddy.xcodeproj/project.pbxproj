@@ -89,6 +89,8 @@
 		65B79A32DCAC8B3893E13EA8 /* 타이머.png in Resources */ = {isa = PBXBuildFile; fileRef = 8B40DEFAD718CADC17E20AEA /* 타이머.png */; };
 		65C848E7EB8E555C266527FB /* StudyTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12EDE4D2B4BB5A8A8CCF1EAA /* StudyTimeView.swift */; };
 		674E1DDC6C3A3C05E535859C /* WidgetScheduleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB8B7BD1BEADE12B74909D2C /* WidgetScheduleStore.swift */; };
+		D4A1B2C3E5F60718293A4D02 /* QuickAddBacklogIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A1B2C3E5F60718293A4D01 /* QuickAddBacklogIntent.swift */; };
+		D4A1B2C3E5F60718293A4D03 /* QuickAddBacklogIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A1B2C3E5F60718293A4D01 /* QuickAddBacklogIntent.swift */; };
 		C1D2E3F4A5B60718293A4C02 /* DDayStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B60718293A4C01 /* DDayStore.swift */; };
 		C1D2E3F4A5B60718293A4C03 /* DDayStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B60718293A4C01 /* DDayStore.swift */; };
 		C1D2E3F4A5B60718293A4C05 /* DDayManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B60718293A4C04 /* DDayManagerView.swift */; };
@@ -409,6 +411,7 @@
 		DA69A7AC454A59D4370CA0AA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		DB1A57CF4290277D1DB7841A /* TravelItineraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelItineraryView.swift; sourceTree = "<group>"; };
 		DB8B7BD1BEADE12B74909D2C /* WidgetScheduleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetScheduleStore.swift; sourceTree = "<group>"; };
+		D4A1B2C3E5F60718293A4D01 /* QuickAddBacklogIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAddBacklogIntent.swift; sourceTree = "<group>"; };
 		C1D2E3F4A5B60718293A4C01 /* DDayStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DDayStore.swift; sourceTree = "<group>"; };
 		C1D2E3F4A5B60718293A4C04 /* DDayManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DDayManagerView.swift; sourceTree = "<group>"; };
 		DC39AB8BC8BEB8056A67FDB4 /* PotatoBuddyiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PotatoBuddyiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -476,6 +479,7 @@
 				838D227C4D6A41CF7DB37258 /* WatchSyncMessage.swift */,
 				DB8B7BD1BEADE12B74909D2C /* WidgetScheduleStore.swift */,
 				C1D2E3F4A5B60718293A4C01 /* DDayStore.swift */,
+				D4A1B2C3E5F60718293A4D01 /* QuickAddBacklogIntent.swift */,
 				0E657A0D9E4754BC918AD21C /* WidgetWeatherModels.swift */,
 			);
 			path = Shared;
@@ -1019,6 +1023,7 @@
 				0DECF5D61A1CFE470099902B /* WeatherWidget.swift in Sources */,
 				92F16E8E33B86336DBB3B45E /* WidgetScheduleStore.swift in Sources */,
 				C1D2E3F4A5B60718293A4C03 /* DDayStore.swift in Sources */,
+				D4A1B2C3E5F60718293A4D03 /* QuickAddBacklogIntent.swift in Sources */,
 				4C1A4C48D5CD003CABF38193 /* WidgetWeatherModels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1123,6 +1128,7 @@
 				C1B74BCB5C8D75A271D60379 /* WeatherWidgetService.swift in Sources */,
 				674E1DDC6C3A3C05E535859C /* WidgetScheduleStore.swift in Sources */,
 				C1D2E3F4A5B60718293A4C02 /* DDayStore.swift in Sources */,
+				D4A1B2C3E5F60718293A4D02 /* QuickAddBacklogIntent.swift in Sources */,
 				CD4884EDD4390FA331C751F7 /* WidgetWeatherModels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

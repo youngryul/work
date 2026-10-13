@@ -18,6 +18,10 @@ struct ContentView: View {
         .onOpenURL { url in
             handleDeepLink(url)
         }
+        // 잠금화면/제어 센터 버튼(OpenBacklogAddIntent)으로 들어온 추가 요청
+        .onReceive(NotificationCenter.default.publisher(for: QuickAddBacklogRequest.notification)) { _ in
+            handlePendingQuickAdd()
+        }
         .onChange(of: auth.isLoggedIn) { _, newValue in
             if newValue {
                 Task {
@@ -29,6 +33,7 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active, auth.isLoggedIn else { return }
+            handlePendingQuickAdd()
             Task {
                 await ScheduleWidgetService.refreshTodayWidget()
                 await WeatherWidgetService.shared.refreshWeatherWidget()
@@ -38,11 +43,18 @@ struct ContentView: View {
         }
         .task {
             if auth.isLoggedIn {
+                handlePendingQuickAdd()
                 await ScheduleWidgetService.refreshTodayWidget()
                 await WeatherWidgetService.shared.refreshWeatherWidget()
                 await jellyStore.refresh()
             }
         }
+    }
+
+    private func handlePendingQuickAdd() {
+        guard auth.isLoggedIn, QuickAddBacklogRequest.consume() else { return }
+        selectedTab = MainTabView.backlogTabTag
+        QuickAddRouter.shared.backlogAddRequested = true
     }
 
     private func handleDeepLink(_ url: URL) {
