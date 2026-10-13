@@ -2777,7 +2777,7 @@ final class SupabaseService {
         var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/books")!
         components.queryItems = [
             URLQueryItem(name: "user_id", value: "eq.\(userId)"),
-            URLQueryItem(name: "select", value: "id,title,author,publisher,isbn,thumbnail_url,description,page_count,published_date,api_source,api_id,is_completed,one_line_insight,completed_at,current_page"),
+            URLQueryItem(name: "select", value: "id,title,author,publisher,isbn,thumbnail_url,description,page_count,published_date,api_source,api_id,is_completed,one_line_insight,completed_at,current_page,is_reading"),
             URLQueryItem(name: "order", value: "created_at.desc"),
         ]
         var request = URLRequest(url: components.url!)
@@ -2806,7 +2806,7 @@ final class SupabaseService {
             components.queryItems = [
                 URLQueryItem(name: "user_id", value: "eq.\(userId)"),
                 URLQueryItem(name: "isbn", value: "eq.\(isbn)"),
-                URLQueryItem(name: "select", value: "id,title,author,publisher,isbn,thumbnail_url,description,page_count,published_date,api_source,api_id,is_completed,one_line_insight,completed_at,current_page"),
+                URLQueryItem(name: "select", value: "id,title,author,publisher,isbn,thumbnail_url,description,page_count,published_date,api_source,api_id,is_completed,one_line_insight,completed_at,current_page,is_reading"),
                 URLQueryItem(name: "limit", value: "1"),
             ]
             var existingReq = URLRequest(url: components.url!)
@@ -2870,6 +2870,28 @@ final class SupabaseService {
         if let oneLineInsight {
             body["one_line_insight"] = oneLineInsight.isEmpty ? NSNull() : oneLineInsight
         }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        let items = try JSONDecoder().decode([BookItem].self, from: data)
+        guard let item = items.first else { throw URLError(.badServerResponse) }
+        return item
+    }
+
+    /// 읽는 중 ↔ 읽기 전 전환 (웹 updateBookReading 과 동일)
+    func updateBookReading(bookId: String, isReading: Bool) async throws -> BookItem {
+        let (userId, token) = await authInfo()
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/books?id=eq.\(bookId)&user_id=eq.\(userId)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.addValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        let body: [String: Any] = [
+            "is_reading": isReading,
+            "updated_at": ISO8601DateFormatter().string(from: Date()),
+        ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await fetch(request)

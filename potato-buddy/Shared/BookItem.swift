@@ -18,6 +18,8 @@ struct BookItem: Codable, Identifiable, Hashable {
     let completedAt: String?
     /// 현재까지 읽은 페이지 (웹 BookProgress 와 공유)
     let currentPage: Int?
+    /// 읽는 중 여부 (완독이 아니면 읽는 중 / 읽기 전 구분에 사용)
+    let isReading: Bool?
 
     enum CodingKeys: String, CodingKey {
         case id, title, author, publisher, isbn, description
@@ -30,9 +32,16 @@ struct BookItem: Codable, Identifiable, Hashable {
         case oneLineInsight = "one_line_insight"
         case completedAt = "completed_at"
         case currentPage = "current_page"
+        case isReading = "is_reading"
     }
 
     var completed: Bool { isCompleted == true }
+
+    /// 책 상태 구분 — 완료가 우선 (웹 getBookGroup 과 동일)
+    var status: BookStatus {
+        if completed { return .completed }
+        return isReading == true ? .reading : .idle
+    }
 
     /// 읽은 페이지 (미기록 시 0)
     var readPage: Int { max(0, currentPage ?? 0) }
@@ -61,6 +70,31 @@ struct BookItem: Codable, Identifiable, Hashable {
     var pageCountLabel: String {
         guard let pageCount, pageCount > 0 else { return "" }
         return "\(pageCount)쪽"
+    }
+}
+
+/// 책 상태 (웹 BOOK_TABS 와 동일한 3구분)
+enum BookStatus: String, CaseIterable, Identifiable {
+    case reading
+    case idle
+    case completed
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .reading: return "읽는 중"
+        case .idle: return "읽기 전"
+        case .completed: return "완료"
+        }
+    }
+
+    var emptyMessage: String {
+        switch self {
+        case .reading: return "현재 읽고 있는 책이 없습니다."
+        case .idle: return "읽기 전인 책이 없습니다."
+        case .completed: return "완료한 책이 없습니다."
+        }
     }
 }
 

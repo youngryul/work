@@ -12,6 +12,8 @@ struct ReadingView: View {
     @State private var errorMessage = ""
 
     @State private var showSearch = false
+    /// 책 목록 구분 탭 (웹 기본값과 동일하게 '읽는 중')
+    @State private var bookTab: BookStatus = .reading
     @State private var showCreateRecordForm = false  // 새 기록 작성용
     @State private var editingRecord: ReadingRecordItem?  // 기존 기록 수정용 (sheet(item:) 트리거)
     @State private var showInsightAlert = false
@@ -174,24 +176,65 @@ struct ReadingView: View {
                     description: Text("오른쪽 위 + 버튼으로 책을 검색해 추가하세요.")
                 )
             } else {
-                List(books) { book in
-                    Button {
-                        Task { await selectBook(book) }
-                    } label: {
-                        bookRow(book)
-                    }
-                    .buttonStyle(.plain)
-                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        Button(role: .destructive) {
-                            bookToDelete = book
-                        } label: {
-                            Label("삭제", systemImage: "trash")
+                VStack(spacing: 0) {
+                    Picker("책 상태", selection: $bookTab) {
+                        ForEach(BookStatus.allCases) { status in
+                            Text(verbatim: "\(status.label) \(booksWithStatus(status).count)").tag(status)
                         }
                     }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+
+                    let visibleBooks = booksWithStatus(bookTab)
+                    if visibleBooks.isEmpty {
+                        ContentUnavailableView(
+                            bookTab.emptyMessage,
+                            systemImage: "books.vertical"
+                        )
+                    } else {
+                        List(visibleBooks) { book in
+                            Button {
+                                Task { await selectBook(book) }
+                            } label: {
+                                bookRow(book)
+                            }
+                            .buttonStyle(.plain)
+                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                                // 완료 전 책만 읽는 중 ↔ 읽기 전 전환 (웹 '읽기 시작/중단' 버튼과 동일)
+                                if !book.completed {
+                                    Button {
+                                        Task { await toggleReading(book) }
+                                    } label: {
+                                        if book.isReading == true {
+                                            Label("읽기 중단", systemImage: "pause.circle")
+                                        } else {
+                                            Label("읽기 시작", systemImage: "book")
+                                        }
+                                    }
+                                    .tint(book.isReading == true ? .gray : .blue)
+                                }
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    bookToDelete = book
+                                } label: {
+                                    Label("삭제", systemImage: "trash")
+                                }
+                            }
+                        }
+                        .listStyle(.plain)
+                    }
                 }
-                .listStyle(.plain)
             }
         }
+    }
+
+    /// 상태별 책 목록 — 완료 책은 완료일 최신순 (웹과 동일)
+    private func booksWithStatus(_ status: BookStatus) -> [BookItem] {
+        let filtered = books.filter { $0.status == status }
+        guard status == .completed else { return filtered }
+        return filtered.sorted { ($0.completedAt ?? "") > ($1.completedAt ?? "") }
     }
 
     private func bookRow(_ book: BookItem) -> some View {
@@ -203,15 +246,7 @@ struct ReadingView: View {
                         .font(.body.weight(.semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(2)
-                    if book.completed {
-                        Text("완독")
-                            .font(.caption2.weight(.bold))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.green.opacity(0.15))
-                            .foregroundStyle(.green)
-                            .clipShape(Capsule())
-                    }
+                    statusBadge(book.status)
                 }
                 Text(book.authorLabel)
                     .font(.caption)
@@ -240,27 +275,42 @@ struct ReadingView: View {
                 HStack(alignment: .top, spacing: 14) {
                     bookThumbnail(url: book.thumbnailUrl, size: 72)
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(book.title).font(.title3.weight(.bold))
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(book.title).font(.title3.weight(.bold))
+                            statusBadge(book.status)
+                        }
                         Text(book.authorLabel).foregroundStyle(.secondary)
                         if let insight = book.oneLineInsight, !insight.isEmpty {
                             Text("“\(insight)”")
                                 .font(.callout)
                                 .foregroundStyle(.green)
                         }
-                        Button {
-                            if book.completed {
-                                Task { await uncomplete(book) }
-                            } else {
-                                bookToComplete = book
-                                insightText = book.oneLineInsight ?? ""
-                                showInsightAlert = true
+                        HStack(spacing: 8) {
+                            if !book.completed {
+                                Button {
+                                    Task { await toggleReading(book) }
+                                } label: {
+                                    Text(book.isReading == true ? "읽기 중단" : "읽기 시작")
+                                        .font(.subheadline.weight(.semibold))
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(book.isReading == true ? .gray : .blue)
                             }
-                        } label: {
-                            Text(book.completed ? "완독 해제" : "완독 처리")
-                                .font(.subheadline.weight(.semibold))
+                            Button {
+                                if book.completed {
+                                    Task { await uncomplete(book) }
+                                } else {
+                                    bookToComplete = book
+                                    insightText = book.oneLineInsight ?? ""
+                                    showInsightAlert = true
+                                }
+                            } label: {
+                                Text(book.completed ? "완독 해제" : "완독 처리")
+                                    .font(.subheadline.weight(.semibold))
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(book.completed ? .orange : .green)
                         }
-                        .buttonStyle(.bordered)
-                        .tint(book.completed ? .orange : .green)
                     }
                 }
             }
@@ -408,6 +458,31 @@ struct ReadingView: View {
 
     // MARK: - Helpers
 
+    /// 상태 배지 (읽는 중 / 읽기 전 / 완독)
+    private func statusBadge(_ status: BookStatus) -> some View {
+        let color: Color
+        let text: String
+        switch status {
+        case .reading:
+            color = .blue
+            text = "읽는 중"
+        case .idle:
+            color = .gray
+            text = "읽기 전"
+        case .completed:
+            color = .green
+            text = "완독"
+        }
+        return Text(text)
+            .font(.caption2.weight(.bold))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(color.opacity(0.15))
+            .foregroundStyle(color)
+            .clipShape(Capsule())
+            .fixedSize()
+    }
+
     /// 읽은 페이지 문구 + 진행 막대
     private func progressView(_ book: BookItem, font: Font) -> some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -523,6 +598,8 @@ struct ReadingView: View {
             apiId: result.apiId
         )
         showSearch = false
+        // 상세에서 돌아왔을 때 새 책이 보이도록 해당 상태 탭으로 이동
+        bookTab = book.status
         await reloadAll()
         await selectBook(book)
     }
@@ -561,6 +638,25 @@ struct ReadingView: View {
             await loadStats()
         } catch {
             if !error.isCancellation { errorMessage = error.localizedDescription }
+        }
+    }
+
+    /// 읽는 중 ↔ 읽기 전 전환
+    private func toggleReading(_ book: BookItem) async {
+        do {
+            let updated = try await SupabaseService.shared.updateBookReading(
+                bookId: book.id,
+                isReading: book.isReading != true
+            )
+            replaceBook(updated)
+        } catch {
+            guard !error.isCancellation else { return }
+            // 상세 화면에서는 루트 알럿이 뜨지 않으므로 상세 화면 알럿 사용
+            if selectedBookId != nil {
+                progressErrorMessage = "상태 변경에 실패했습니다."
+            } else {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 
