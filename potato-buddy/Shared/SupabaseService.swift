@@ -3036,74 +3036,68 @@ final class SupabaseService {
         return MonthlyReadingStats(totalBooks: books, totalSessions: rows.count, totalMinutes: minutes)
     }
 
-    /// Google Books → 실패 시 Open Library (웹과 동일)
+    /// 알라딘(웹 서버 프록시) → 결과 없음·실패 시 Open Library (웹 bookService.searchBooks 와 동일)
     func searchBooks(query: String) async throws -> [BookSearchResult] {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return [] }
 
-        let google = try await searchBooksGoogle(query: q)
-        if !google.isEmpty { return google }
+        let aladin = await searchBooksAladin(query: q)
+        if !aladin.isEmpty { return aladin }
         return try await searchBooksOpenLibrary(query: q)
     }
 
-    private func searchBooksGoogle(query: String) async throws -> [BookSearchResult] {
-        var components = URLComponents(string: "https://www.googleapis.com/books/v1/volumes")!
-        components.queryItems = [
-            URLQueryItem(name: "q", value: query),
-            URLQueryItem(name: "maxResults", value: "20"),
-            URLQueryItem(name: "langRestrict", value: "ko"),
-        ]
-        var request = URLRequest(url: components.url!)
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            return []
-        }
+    /// 알라딘 API는 TTB 키가 서버에만 있고 CORS 미지원이므로 웹의 /api/book-search 프록시를 경유
+    private func searchBooksAladin(query: String) async -> [BookSearchResult] {
+        guard var components = URLComponents(
+            url: Config.websiteURL.appendingPathComponent("api/book-search"),
+            resolvingAgainstBaseURL: false
+        ) else { return [] }
+        components.queryItems = [URLQueryItem(name: "q", value: query)]
+        guard let url = components.url else { return [] }
 
-        struct GoogleResponse: Decodable {
-            let items: [GoogleItem]?
-        }
-        struct GoogleItem: Decodable {
-            let id: String
-            let volumeInfo: VolumeInfo?
-        }
-        struct VolumeInfo: Decodable {
+        var request = URLRequest(url: url)
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        struct AladinResponse: Decodable { let books: [AladinBook]? }
+        struct AladinBook: Decodable {
+            let apiId: String?
             let title: String?
-            let authors: [String]?
+            let author: String?
             let publisher: String?
+            let isbn: String?
+            let thumbnailUrl: String?
             let description: String?
             let pageCount: Int?
             let publishedDate: String?
-            let imageLinks: ImageLinks?
-            let industryIdentifiers: [IndustryId]?
-        }
-        struct ImageLinks: Decodable {
-            let thumbnail: String?
-            let smallThumbnail: String?
-        }
-        struct IndustryId: Decodable {
-            let type: String?
-            let identifier: String?
+            let apiSource: String?
         }
 
-        let decoded = try? JSONDecoder().decode(GoogleResponse.self, from: data)
-        return (decoded?.items ?? []).map { item in
-            let info = item.volumeInfo
-            let isbn13 = info?.industryIdentifiers?.first(where: { $0.type == "ISBN_13" })?.identifier
-            let isbn10 = info?.industryIdentifiers?.first(where: { $0.type == "ISBN_10" })?.identifier
-            return BookSearchResult(
-                apiId: item.id,
-                title: info?.title ?? "",
-                author: info?.authors?.joined(separator: ", ") ?? "",
-                publisher: info?.publisher ?? "",
-                isbn: isbn13 ?? isbn10 ?? "",
-                thumbnailUrl: info?.imageLinks?.thumbnail ?? info?.imageLinks?.smallThumbnail ?? "",
-                description: info?.description ?? "",
-                pageCount: info?.pageCount ?? 0,
-                publishedDate: info?.publishedDate ?? "",
-                apiSource: "google_books"
-            )
-        }.filter { !$0.title.isEmpty }
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+                return []
+            }
+            let decoded = try JSONDecoder().decode(AladinResponse.self, from: data)
+            return (decoded.books ?? []).compactMap { book in
+                let title = book.title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                guard !title.isEmpty else { return nil }
+                let isbn = book.isbn ?? ""
+                return BookSearchResult(
+                    apiId: (book.apiId?.isEmpty == false ? book.apiId : nil) ?? (isbn.isEmpty ? title : isbn),
+                    title: title,
+                    author: book.author ?? "",
+                    publisher: book.publisher ?? "",
+                    isbn: isbn,
+                    thumbnailUrl: book.thumbnailUrl ?? "",
+                    description: book.description ?? "",
+                    pageCount: book.pageCount ?? 0,
+                    publishedDate: book.publishedDate ?? "",
+                    apiSource: book.apiSource ?? "aladin"
+                )
+            }
+        } catch {
+            return []
+        }
     }
 
     private func searchBooksOpenLibrary(query: String) async throws -> [BookSearchResult] {

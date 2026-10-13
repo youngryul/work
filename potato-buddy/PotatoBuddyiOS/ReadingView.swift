@@ -64,7 +64,7 @@ struct ReadingView: View {
             .refreshable { await reloadAll() }
             .sheet(isPresented: $showSearch) {
                 BookSearchSheet { result in
-                    Task { await registerBook(result) }
+                    try await registerBook(result)
                 }
             }
             // 새 기록 작성 시트
@@ -452,26 +452,23 @@ struct ReadingView: View {
         }
     }
 
-    private func registerBook(_ result: BookSearchResult) async {
-        do {
-            let book = try await SupabaseService.shared.createBook(
-                title: result.title,
-                author: result.author,
-                publisher: result.publisher,
-                isbn: result.isbn,
-                thumbnailUrl: result.thumbnailUrl,
-                description: result.description,
-                pageCount: result.pageCount,
-                publishedDate: result.publishedDate,
-                apiSource: result.apiSource,
-                apiId: result.apiId
-            )
-            showSearch = false
-            await reloadAll()
-            await selectBook(book)
-        } catch {
-            if !error.isCancellation { errorMessage = error.localizedDescription }
-        }
+    /// 등록 실패 시 에러를 던져 검색 시트에서 알림을 띄움 (루트 알럿은 시트에 가려 보이지 않음)
+    private func registerBook(_ result: BookSearchResult) async throws {
+        let book = try await SupabaseService.shared.createBook(
+            title: result.title,
+            author: result.author,
+            publisher: result.publisher,
+            isbn: result.isbn,
+            thumbnailUrl: result.thumbnailUrl,
+            description: result.description,
+            pageCount: result.pageCount,
+            publishedDate: result.publishedDate,
+            apiSource: result.apiSource,
+            apiId: result.apiId
+        )
+        showSearch = false
+        await reloadAll()
+        await selectBook(book)
     }
 
     private func saveRecord(bookId: String, date: String, pages: Int?, notes: String?, editingId: String?) async {
@@ -568,12 +565,18 @@ struct ReadingView: View {
 // MARK: - 책 검색 시트
 
 private struct BookSearchSheet: View {
-    let onSelect: (BookSearchResult) -> Void
+    /// 등록 처리 — 성공 시 부모가 시트를 닫고, 실패 시 에러를 던짐
+    let onSelect: (BookSearchResult) async throws -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
     @State private var results: [BookSearchResult] = []
     @State private var isSearching = false
+    @State private var hasSearched = false
+    @State private var searchedQuery = ""
     @State private var errorMessage = ""
+    /// 등록 요청 중 중복 탭 방지
+    @State private var isRegistering = false
+    @State private var registerErrorMessage = ""
 
     var body: some View {
         NavigationStack {
@@ -593,13 +596,16 @@ private struct BookSearchSheet: View {
                     ProgressView("검색 중...")
                 } else if !errorMessage.isEmpty {
                     Text(errorMessage).foregroundStyle(.red)
-                } else if results.isEmpty && !query.isEmpty {
-                    Text("검색 결과가 없습니다.")
+                } else if results.isEmpty && hasSearched {
+                    // 알라딘 결과가 없으면 Open Library 로 대체되는데, Open Library 는 3글자 이상만 검색 가능 (웹과 동일 안내)
+                    Text(searchedQuery.count < 3
+                         ? "검색 결과가 없습니다. 검색어는 3글자 이상 입력해 주세요."
+                         : "검색 결과가 없습니다.")
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(results) { item in
                         Button {
-                            onSelect(item)
+                            Task { await register(item) }
                         } label: {
                             HStack(spacing: 12) {
                                 if let url = URL(string: item.thumbnailUrl.hasPrefix("http://")
@@ -618,9 +624,23 @@ private struct BookSearchSheet: View {
                                     Text(item.author.isEmpty ? "저자 미상" : item.author)
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
+                                    if !item.publisher.isEmpty {
+                                        Text(item.publisher)
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    if item.pageCount > 0 {
+                                        Text("\(item.pageCount)쪽")
+                                            .font(.caption2)
+                                            .foregroundStyle(.tertiary)
+                                    }
                                 }
+                                Spacer(minLength: 0)
+                                Image(systemName: "plus.circle.fill")
+                                    .foregroundStyle(.green)
                             }
                         }
+                        .disabled(isRegistering)
                     }
                 }
             }
@@ -631,6 +651,32 @@ private struct BookSearchSheet: View {
                     Button("닫기") { dismiss() }
                 }
             }
+            .overlay {
+                if isRegistering {
+                    ProgressView("등록 중...")
+                        .padding()
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            .alert("책 등록 실패", isPresented: Binding(
+                get: { !registerErrorMessage.isEmpty },
+                set: { if !$0 { registerErrorMessage = "" } }
+            )) {
+                Button("확인", role: .cancel) {}
+            } message: {
+                Text(registerErrorMessage)
+            }
+        }
+    }
+
+    private func register(_ item: BookSearchResult) async {
+        guard !isRegistering else { return }
+        isRegistering = true
+        defer { isRegistering = false }
+        do {
+            try await onSelect(item)
+        } catch {
+            if !error.isCancellation { registerErrorMessage = error.localizedDescription }
         }
     }
 
@@ -639,7 +685,11 @@ private struct BookSearchSheet: View {
         guard !q.isEmpty else { return }
         isSearching = true
         errorMessage = ""
-        defer { isSearching = false }
+        defer {
+            isSearching = false
+            hasSearched = true
+            searchedQuery = q
+        }
         do {
             results = try await SupabaseService.shared.searchBooks(query: q)
         } catch {
