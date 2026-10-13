@@ -119,6 +119,22 @@ final class SupabaseService {
         return 0
     }
 
+    // MARK: - 회원 탈퇴
+
+    /// 내 데이터와 계정 삭제 (supabase-delete-account.sql의 delete_my_account)
+    func deleteMyAccount() async throws {
+        let (_, token) = await authInfo()
+
+        let url = URL(string: "\(Config.supabaseURL)/rest/v1/rpc/delete_my_account")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+        request.httpBody = try JSONSerialization.data(withJSONObject: [:])
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+    }
+
     // MARK: - 오늘 할일 조회
 
     func fetchTodayTasks() async throws -> [TaskItem] {

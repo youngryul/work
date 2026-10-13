@@ -8,6 +8,9 @@ struct SettingsView: View {
     @AppStorage(StepCounterConstants.dailyGoalUserDefaultsKey) private var dailyStepGoal: Int = StepCounterConstants.defaultDailyGoal
     @AppStorage(NotificationService.enabledKey) private var notificationsEnabled: Bool = false
     @State private var showNotificationDeniedAlert = false
+    @State private var showDeleteAccountConfirm = false
+    @State private var isDeletingAccount = false
+    @State private var deleteAccountError = ""
 
     private var effectiveDailyGoal: Int {
         dailyStepGoal > 0 ? dailyStepGoal : StepCounterConstants.defaultDailyGoal
@@ -108,6 +111,24 @@ struct SettingsView: View {
                         }
                     }
                 }
+
+                Section {
+                    Button(role: .destructive) {
+                        showDeleteAccountConfirm = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "person.crop.circle.badge.xmark")
+                            Text(isDeletingAccount ? "탈퇴 처리 중…" : "회원 탈퇴")
+                            if isDeletingAccount {
+                                Spacer()
+                                ProgressView()
+                            }
+                        }
+                    }
+                    .disabled(isDeletingAccount)
+                } footer: {
+                    Text("탈퇴하면 할일, 일기, 기록 등 모든 데이터와 계정이 삭제되며 되돌릴 수 없습니다.")
+                }
             }
             .navigationTitle("설정")
             .navigationBarTitleDisplayMode(.large)
@@ -124,6 +145,36 @@ struct SettingsView: View {
             Button("취소", role: .cancel) {}
         } message: {
             Text("알림을 받으려면 설정 > 포실이에서 알림을 허용해주세요.")
+        }
+        .alert("회원 탈퇴", isPresented: $showDeleteAccountConfirm) {
+            Button("탈퇴", role: .destructive) {
+                Task { await deleteAccount() }
+            }
+            Button("취소", role: .cancel) {}
+        } message: {
+            Text("모든 데이터와 계정이 영구적으로 삭제됩니다. 정말 탈퇴할까요?")
+        }
+        .alert("탈퇴 실패", isPresented: Binding(
+            get: { !deleteAccountError.isEmpty },
+            set: { if !$0 { deleteAccountError = "" } }
+        )) {
+            Button("확인", role: .cancel) {}
+        } message: {
+            Text(deleteAccountError)
+        }
+    }
+
+    @MainActor
+    private func deleteAccount() async {
+        isDeletingAccount = true
+        defer { isDeletingAccount = false }
+        do {
+            try await SupabaseService.shared.deleteMyAccount()
+            auth.signOut()
+        } catch {
+            if !error.isCancellation {
+                deleteAccountError = error.localizedDescription
+            }
         }
     }
 }

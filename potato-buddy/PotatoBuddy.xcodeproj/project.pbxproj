@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E5B1C2D3F4A5061728394E11 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E5B1C2D3F4A5061728394E01 /* PrivacyInfo.xcprivacy */; };
+		E5B1C2D3F4A5061728394E12 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E5B1C2D3F4A5061728394E02 /* PrivacyInfo.xcprivacy */; };
+		E5B1C2D3F4A5061728394E13 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E5B1C2D3F4A5061728394E03 /* PrivacyInfo.xcprivacy */; };
+		E5B1C2D3F4A5061728394E14 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E5B1C2D3F4A5061728394E04 /* PrivacyInfo.xcprivacy */; };
 		01882407C87EE8CD8545AD3A /* HabitTrackerCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AA6CB30D85668CDA815DE41 /* HabitTrackerCardView.swift */; };
 		020662E1DCFAE785B5DE0500 /* Error+Cancellation.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD50AFBF484A85D9DBDA915C /* Error+Cancellation.swift */; };
 		02602D5243B4A5E3095C4BD5 /* JellyRewardConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29331826BBBDC0B4BAFFEB9D /* JellyRewardConstants.swift */; };
@@ -268,6 +272,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		E5B1C2D3F4A5061728394E01 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		E5B1C2D3F4A5061728394E02 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		E5B1C2D3F4A5061728394E03 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		E5B1C2D3F4A5061728394E04 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		0560E090212CE20E96E17F0F /* timer-exercise.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "timer-exercise.jpg"; sourceTree = "<group>"; };
 		05A6AF978C0A2F99C543A02A /* DiaryCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryCalendarView.swift; sourceTree = "<group>"; };
 		0987064D68A1DF4DD6756AF6 /* CategoryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryItem.swift; sourceTree = "<group>"; };
@@ -496,6 +504,7 @@
 		6D7BAE9E61880F3F0A71DE4A /* PotatoBuddyWatchWidget */ = {
 			isa = PBXGroup;
 			children = (
+				E5B1C2D3F4A5061728394E04 /* PrivacyInfo.xcprivacy */,
 				3D1BAE6C17B325B51641EC36 /* Info.plist */,
 				D5CD363BDDFE0F34BE302284 /* PotatoBuddyWatchWidget.entitlements */,
 				8F9D0E8560A7E5AC45249F93 /* PotatoBuddyWatchWidgetBundle.swift */,
@@ -539,6 +548,7 @@
 		A0404CF5825ADE4B7DE25604 /* PotatoBuddyiOS */ = {
 			isa = PBXGroup;
 			children = (
+				E5B1C2D3F4A5061728394E01 /* PrivacyInfo.xcprivacy */,
 				12DF9FBB4D85C2F270AAC672 /* 모바일배경.png */,
 				9A049AA85E6EC1B1FD764A2E /* 앱이미지.png */,
 				8B40DEFAD718CADC17E20AEA /* 타이머.png */,
@@ -634,6 +644,7 @@
 		A42283C8F283CC18A98377BD /* ScheduleWidget */ = {
 			isa = PBXGroup;
 			children = (
+				E5B1C2D3F4A5061728394E02 /* PrivacyInfo.xcprivacy */,
 				E15764114ADA5B9E60AFC5BC /* Assets.xcassets */,
 				52B5802B90B5E7C54304B55C /* DDayWidget.swift */,
 				B1C2D3E4F5A60718293A4B6D /* QuickAddBacklogControl.swift */,
@@ -650,6 +661,7 @@
 		A6CC0CB5A702CBC2118CF2C9 /* PotatoBuddyWatch */ = {
 			isa = PBXGroup;
 			children = (
+				E5B1C2D3F4A5061728394E03 /* PrivacyInfo.xcprivacy */,
 				AE7513E3FD57D8E1244BB566 /* Assets.xcassets */,
 				B8FCB9219BEBB4CC214B0075 /* Info.plist */,
 				BD90A4FEC87EAA38107EEA6B /* PotatoBuddyWatch.entitlements */,
@@ -741,6 +753,7 @@
 			buildConfigurationList = B0E8FCF87CD6EEBA1C342EE3 /* Build configuration list for PBXNativeTarget "PotatoBuddyWatchWidgetExtension" */;
 			buildPhases = (
 				F250C3BDE84137F7BB6DECF8 /* Sources */,
+				E5B1C2D3F4A5061728394E20 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -886,6 +899,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E5B1C2D3F4A5061728394E11 /* PrivacyInfo.xcprivacy in Resources */,
 				2E495F3BAC7718EAB6E0FB4C /* Assets.xcassets in Resources */,
 				A0C597CAD60E7CDF14F2AB08 /* Hakgyoansim_BoardmarkerR.ttf in Resources */,
 				B3820B867F396BC6BBEB425C /* Secrets.xcconfig.example in Resources */,
@@ -920,6 +934,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E5B1C2D3F4A5061728394E13 /* PrivacyInfo.xcprivacy in Resources */,
 				3F0DD50F26CD83E796E2C65B /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -928,9 +943,18 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E5B1C2D3F4A5061728394E12 /* PrivacyInfo.xcprivacy in Resources */,
 				5E20DDE97560E2B3AA0C2297 /* Assets.xcassets in Resources */,
 				1EC1538578F8D7E1B30BEAD4 /* Hakgyoansim_BoardmarkerR.ttf in Resources */,
 				DC7F1F04C985E175714DB0D6 /* WEATHER_IMAGES_README.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E5B1C2D3F4A5061728394E20 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E5B1C2D3F4A5061728394E14 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
