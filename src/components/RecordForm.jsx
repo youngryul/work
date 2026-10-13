@@ -1,14 +1,18 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { format } from 'date-fns'
 import { createRecord, updateRecord } from '../services/recordService.js'
 import { getAllProjectNames } from '../services/recordService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
+/** 입력이 멈춘 뒤 자동 저장까지 대기 시간 (대학원 기록과 동일) */
+const AUTO_SAVE_DELAY_MS = 2000
+
 /**
- * 기록 작성/수정 폼 컴포넌트
+ * 기록 작성/수정 폼 컴포넌트 (입력 후 자동 저장)
+ * - 새 기록은 프로젝트명과 제목이 채워지면 처음 저장 시 생성하고, 이후에는 수정으로 저장한다.
  * @param {Object|null} initialRecord - 초기 기록 데이터 (수정 모드)
- * @param {Function} onSave - 저장 완료 핸들러
- * @param {Function} onCancel - 취소 핸들러
+ * @param {Function} onSave - 닫기 핸들러 (대기 중인 변경을 저장한 뒤 호출)
+ * @param {Function} onCancel - 사용하지 않음 (호환용)
  */
 export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
   const isEditMode = !!initialRecord
@@ -29,6 +33,14 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
   const projectInputRef = useRef(null)
   const projectDropdownRef = useRef(null)
 
+  // 자동 저장 상태
+  const [saving, setSaving] = useState(false)
+  const [savedAt, setSavedAt] = useState(null)
+  const recordIdRef = useRef(initialRecord?.id ?? null)
+  const latestFormRef = useRef(formData)
+  const lastSavedRef = useRef(null) // 마지막으로 저장한 폼 스냅샷(JSON)
+  const savingPromiseRef = useRef(null)
+
   // 프로젝트명 목록 로드
   useEffect(() => {
     const loadProjectNames = async () => {
@@ -48,12 +60,16 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
       // 기존 데이터에서 content 생성 (background를 우선 사용, 없으면 content 사용)
       const existingContent = initialRecord.content || initialRecord.background || ''
 
-      setFormData({
+      const loaded = {
         projectName: initialRecord.projectName || initialRecord.projectname || '',
         date: initialRecord.date || format(new Date(), 'yyyy-MM-dd'),
         title: initialRecord.title || '',
         content: existingContent,
-      })
+      }
+      // 불러온 내용 그대로는 다시 저장하지 않는다
+      lastSavedRef.current = JSON.stringify(loaded)
+      recordIdRef.current = initialRecord.id
+      setFormData(loaded)
     }
   }, [initialRecord])
 
@@ -124,48 +140,87 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
     }
   }, [])
 
-  // 저장
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  /**
+   * 현재 입력을 저장
+   * @returns {Promise<boolean|null>} 저장 성공 true, 실패 false, 저장할 변경 없음 null
+   */
+  const saveNow = useCallback(async () => {
+    // 앞선 저장이 끝난 뒤 진행해 새 기록이 중복 생성되지 않게 한다
+    if (savingPromiseRef.current) await savingPromiseRef.current
 
-    // 유효성 검사
-    if (!formData.projectName.trim()) {
-      showToast('프로젝트명을 입력해주세요.', TOAST_TYPES.ERROR)
-      return
-    }
-    if (!formData.title.trim()) {
-      showToast('제목을 입력해주세요.', TOAST_TYPES.ERROR)
-      return
-    }
+    const data = latestFormRef.current
+    if (!data.projectName.trim() || !data.title.trim()) return null
+    const snapshot = JSON.stringify(data)
+    if (snapshot === lastSavedRef.current) return null
 
+    const run = (async () => {
+      setSaving(true)
+      try {
+        const dataToSave = {
+          projectName: data.projectName,
+          date: data.date,
+          title: data.title,
+          content: data.content,
+          background: null,
+          discussion: null,
+          problem: null,
+          decision: null,
+          actionItems: [],
+        }
+        if (recordIdRef.current) {
+          await updateRecord(recordIdRef.current, dataToSave)
+        } else {
+          const created = await createRecord(dataToSave)
+          recordIdRef.current = created.id
+        }
+        lastSavedRef.current = snapshot
+        setSavedAt(new Date())
+        return true
+      } catch (error) {
+        console.error('자동 저장 실패:', error)
+        showToast('기록 저장에 실패했습니다.', TOAST_TYPES.ERROR)
+        return false
+      } finally {
+        setSaving(false)
+      }
+    })()
+
+    savingPromiseRef.current = run
     try {
-      const dataToSave = {
-        projectName: formData.projectName,
-        date: formData.date,
-        title: formData.title,
-        content: formData.content,
-        background: null,
-        discussion: null,
-        problem: null,
-        decision: null,
-        actionItems: [],
-      }
-
-      if (isEditMode) {
-        await updateRecord(initialRecord.id, dataToSave)
-      } else {
-        await createRecord(dataToSave)
-      }
-
-      // 저장 완료 이벤트 발생
-      window.dispatchEvent(new CustomEvent('recordSaved'))
-
-      onSave?.()
-    } catch (error) {
-      console.error('기록 저장 실패:', error)
-      showToast('기록 저장에 실패했습니다.', TOAST_TYPES.ERROR)
+      return await run
+    } finally {
+      if (savingPromiseRef.current === run) savingPromiseRef.current = null
     }
+  }, [])
+
+  // 입력이 멈추면 자동 저장
+  useEffect(() => {
+    latestFormRef.current = formData
+    const timer = setTimeout(() => {
+      saveNow()
+    }, AUTO_SAVE_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [formData, saveNow])
+
+  // 화면을 벗어날 때 대기 중인 변경 저장
+  useEffect(() => () => { saveNow() }, [saveNow])
+
+  // 닫기: 대기 중인 변경을 바로 저장한 뒤 목록으로
+  const handleClose = async () => {
+    const result = await saveNow()
+    if (result === false) return // 저장 실패 시 작성 내용을 잃지 않도록 머문다
+    window.dispatchEvent(new CustomEvent('recordSaved'))
+    onSave?.()
   }
+
+  const canSave = formData.projectName.trim() !== '' && formData.title.trim() !== ''
+  const saveStatus = saving
+    ? '저장 중...'
+    : savedAt
+      ? `저장됨 ${savedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`
+      : canSave
+        ? '입력하면 자동으로 저장돼요'
+        : '프로젝트명과 제목을 입력하면 자동으로 저장돼요'
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -175,11 +230,11 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
             {isEditMode ? '기록 수정' : '새 기록 작성'}
           </h1>
           <p className="text-base text-gray-600 font-sans">
-            {isEditMode ? '기록을 수정해주세요' : '새로운 기록을 작성해주세요'}
+            {isEditMode ? '수정한 내용은 자동으로 저장돼요' : '작성한 내용은 자동으로 저장돼요'}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
           {/* 기본 정보 */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-800 border-b-2 border-green-200 pb-2 font-sans">
@@ -275,19 +330,14 @@ export default function RecordForm({ initialRecord = null, onSave, onCancel }) {
           </div>
 
           {/* 버튼 */}
-          <div className="flex gap-4 justify-end pt-4 border-t-2 border-green-200">
+          <div className="flex gap-4 items-center justify-end pt-4 border-t-2 border-green-200">
+            <span className="text-sm text-gray-500 font-sans mr-auto">{saveStatus}</span>
             <button
               type="button"
-              onClick={onCancel}
-              className="px-6 py-2 border-2 border-green-200 rounded-lg text-gray-700 hover:bg-green-50 transition-colors text-base font-medium shadow-md font-sans"
-            >
-              취소
-            </button>
-            <button
-              type="submit"
+              onClick={handleClose}
               className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans"
             >
-              {isEditMode ? '수정' : '저장'}
+              닫기
             </button>
           </div>
         </form>

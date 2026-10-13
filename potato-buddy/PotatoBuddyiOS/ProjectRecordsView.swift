@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// 웹 프로젝트 기록(RecordMainView) — 프로젝트 목록 → 상세(메인+기록)
 struct ProjectRecordsView: View {
@@ -158,6 +159,13 @@ struct ProjectRecordsDetailView: View {
                                     recordRow(record)
                                 }
                                 .buttonStyle(.plain)
+                                .contextMenu {
+                                    Button {
+                                        UIPasteboard.general.string = record.copyText
+                                    } label: {
+                                        Label("기록 복사", systemImage: "doc.on.doc")
+                                    }
+                                }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
                                         recordToDelete = record
@@ -397,6 +405,8 @@ private struct ProjectRecordDetailSheet: View {
     var onToggleMain: () -> Void
     var onDismiss: () -> Void
 
+    @State private var copiedMessage = ""
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -412,6 +422,7 @@ private struct ProjectRecordDetailSheet: View {
                     }
                     Text(record.title)
                         .font(.title2.weight(.bold))
+                        .textSelection(.enabled)
                     if record.isMain {
                         Text("메인 기록")
                             .font(.caption.weight(.bold))
@@ -422,6 +433,7 @@ private struct ProjectRecordDetailSheet: View {
                         .font(.body)
                         .foregroundStyle(record.content.isEmpty ? .secondary : .primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
                 }
                 .padding()
             }
@@ -433,6 +445,18 @@ private struct ProjectRecordDetailSheet: View {
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
+                        Button {
+                            copy(record.content, message: "내용을 복사했어요")
+                        } label: {
+                            Label("내용 복사", systemImage: "doc.on.doc")
+                        }
+                        .disabled(record.content.isEmpty)
+                        Button {
+                            copy(record.copyText, message: "제목과 내용을 복사했어요")
+                        } label: {
+                            Label("제목+내용 복사", systemImage: "doc.on.clipboard")
+                        }
+                        Divider()
                         Button(record.isMain ? "메인 해제" : "메인 기록으로 설정", action: onToggleMain)
                         Button("수정", action: onEdit)
                         Button("삭제", role: .destructive, action: onDelete)
@@ -442,6 +466,35 @@ private struct ProjectRecordDetailSheet: View {
                 }
             }
         }
+        .overlay(alignment: .bottom) {
+            if !copiedMessage.isEmpty {
+                Text(copiedMessage)
+                    .font(.subheadline.weight(.medium))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Capsule().fill(.regularMaterial))
+                    .padding(.bottom, 24)
+                    .transition(.opacity)
+            }
+        }
         .presentationDetents([.medium, .large])
+    }
+
+    private func copy(_ text: String, message: String) {
+        UIPasteboard.general.string = text
+        withAnimation { copiedMessage = message }
+        Task {
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            await MainActor.run {
+                withAnimation { copiedMessage = "" }
+            }
+        }
+    }
+}
+
+private extension ProjectRecordItem {
+    /// 복사용 텍스트: 제목 + 빈 줄 + 내용
+    var copyText: String {
+        content.isEmpty ? title : "\(title)\n\n\(content)"
     }
 }
