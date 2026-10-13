@@ -36,6 +36,19 @@ struct ReadingView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                // 더보기 상단 커스텀 바(safeAreaInset)와 내비게이션 바 툴바가 겹쳐 + 버튼이 가려지므로
+                // 툴바 대신 화면 상단에 책 추가 버튼을 둔다.
+                HStack {
+                    Spacer()
+                    Button {
+                        showSearch = true
+                    } label: {
+                        Label("책 추가", systemImage: "plus.circle.fill")
+                            .font(.headline)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
                 monthStatsBar
                 Divider()
                 if isLoading && books.isEmpty {
@@ -49,15 +62,6 @@ struct ReadingView: View {
             .navigationBarTitleDisplayMode(.large)
             // 탭 '더보기' 시스템 뒤로가기와 상세 뒤로가기 중복 방지
             .navigationBarBackButtonHidden(true)
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showSearch = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
             .navigationDestination(item: $selectedBookId) { bookId in
                 if let book = books.first(where: { $0.id == bookId }) {
                     bookDetail(book)
@@ -173,7 +177,7 @@ struct ReadingView: View {
                 ContentUnavailableView(
                     "등록된 책이 없습니다",
                     systemImage: "books.vertical",
-                    description: Text("오른쪽 위 + 버튼으로 책을 검색해 추가하세요.")
+                    description: Text("책 추가 버튼으로 책을 검색해 추가하세요.")
                 )
             } else {
                 VStack(spacing: 0) {
@@ -333,75 +337,59 @@ struct ReadingView: View {
             }
 
             Section {
-                if records.isEmpty {
-                    Button {
-                        showCreateRecordForm = true
-                    } label: {
-                        Label("기록 추가", systemImage: "plus.circle")
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.vertical, 4)
-                    }
-                } else {
-                    ForEach(records) { record in
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text(record.readingDate)
-                                    .font(.subheadline.weight(.semibold))
-                                Spacer()
-                                Text(record.pagesLabel)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            if let notes = record.notes, !notes.isEmpty {
-                                Text(notes)
-                                    .font(.body)
-                                    .foregroundStyle(.primary)
-                            }
+                ForEach(records) { record in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(record.readingDate)
+                                .font(.subheadline.weight(.semibold))
+                            Spacer()
+                            Text(record.pagesLabel)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            editingRecord = record
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                Task { await deleteRecord(record.id) }
-                            } label: {
-                                Label("삭제", systemImage: "trash")
-                            }
+                        if let notes = record.notes, !notes.isEmpty {
+                            Text(notes)
+                                .font(.body)
+                                .foregroundStyle(.primary)
                         }
                     }
-                    // 기록이 있어도 하단에 추가 버튼 노출
-                    Button {
-                        showCreateRecordForm = true
-                    } label: {
-                        Label("기록 추가", systemImage: "plus.circle")
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.vertical, 4)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        editingRecord = record
                     }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            Task { await deleteRecord(record.id) }
+                        } label: {
+                            Label("삭제", systemImage: "trash")
+                        }
+                    }
+                }
+                // 추가 버튼은 기록 목록 하단 하나만 둔다
+                Button {
+                    showCreateRecordForm = true
+                } label: {
+                    Label("기록 추가", systemImage: "plus.circle")
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 4)
                 }
             } header: {
                 Text("독서 기록")
+            }
+
+            // 더보기 상단 커스텀 바와 겹쳐 툴바가 가려지므로 삭제도 본문에 둔다
+            Section {
+                Button(role: .destructive) {
+                    bookToDelete = book
+                } label: {
+                    Label("책 삭제", systemImage: "trash")
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
             }
         }
         .listStyle(.insetGrouped)
         .navigationTitle(book.title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showCreateRecordForm = true
-                } label: {
-                    Image(systemName: "plus.circle")
-                }
-            }
-            ToolbarItem(placement: .secondaryAction) {
-                Button(role: .destructive) {
-                    bookToDelete = book
-                } label: {
-                    Label("책 삭제", systemImage: "trash")
-                }
-            }
-        }
         .task {
             await loadRecords(for: book.id)
         }
