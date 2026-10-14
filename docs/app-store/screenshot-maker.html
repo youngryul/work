@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>스크린샷 메이커</title>
+  <style>
+    :root { --bg: #f6f3ec; --panel: #ffffff; --fg: #2d2a26; --muted: #7a746a; --line: #e4ddcf; --accent: #4f9a5b; }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1b1a18; --panel: #262522; --fg: #ece8df; --muted: #a39d92; --line: #3a3732; --accent: #7cc489; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
+    header { padding: 24px 16px 8px; max-width: 1200px; margin: 0 auto; }
+    h1 { margin: 0 0 4px; font-size: 1.4rem; }
+    .hint { color: var(--muted); font-size: 0.9rem; margin: 0; line-height: 1.6; }
+    .toolbar { max-width: 1200px; margin: 12px auto; padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+    .toolbar label { font-size: 0.9rem; display: flex; gap: 6px; align-items: center; }
+    select, input[type="text"], button { font: inherit; }
+    select, input[type="text"] { padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); }
+    button { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+    button.ghost { background: transparent; color: var(--accent); }
+    .swatches { display: flex; gap: 6px; }
+    .swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
+    .swatch[aria-pressed="true"] { border-color: var(--fg); }
+    .grid { max-width: 1200px; margin: 0 auto; padding: 0 16px 48px; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .card canvas { width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); }
+    .card input[type="text"] { width: 100%; }
+    .card .row { display: flex; gap: 6px; justify-content: space-between; align-items: center; }
+    .num { font-weight: 700; color: var(--muted); font-size: 0.85rem; }
+    .empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 48px 16px; border: 2px dashed var(--line); border-radius: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>포실이 App Store 스크린샷 메이커</h1>
+    <p class="hint">시뮬레이터에서 찍은 스크린샷을 순서대로 불러오면 문구를 얹어 App Store 규격 PNG로 내보냅니다. 문구는 listing.md의 구성표가 미리 채워져 있으며 자유롭게 고칠 수 있어요. 모든 처리는 이 브라우저 안에서만 이뤄집니다.</p>
+  </header>
+
+  <div class="toolbar">
+    <label>스크린샷 <input id="files" type="file" accept="image/*" multiple /></label>
+    <label>크기
+      <select id="size">
+        <option value="1320x2868">iPhone 6.9인치 (1320 × 2868)</option>
+        <option value="1290x2796">iPhone 6.7인치 (1290 × 2796)</option>
+        <option value="2064x2752">iPad 13인치 (2064 × 2752)</option>
+      </select>
+    </label>
+    <span class="swatches" id="swatches" aria-label="배경색"></span>
+    <label>손글씨 폰트 <input id="font" type="file" accept=".ttf,.otf" title="potato-buddy/PotatoBuddyiOS/Fonts/Hakgyoansim_BoardmarkerR.ttf" /></label>
+    <button id="downloadAll">모두 PNG로 저장</button>
+  </div>
+
+  <div class="grid" id="grid">
+    <div class="empty">위의 "스크린샷"에서 이미지를 여러 장 선택하세요. 선택한 순서(파일 이름 순)대로 1번부터 배치됩니다.</div>
+  </div>
+
+  <script>
+    // listing.md 스크린샷 구성표와 동일한 기본 문구
+    const DEFAULT_COPY = [
+      ['오늘 할 일만 쏙', '백로그에서 골라 오늘에 집중해요'],
+      ['손글씨로 슥슥', '쓰면 글자로 바로 인식돼요'],
+      ['잠금화면에서 바로 추가', '떠오른 할일, 앱 찾지 말고 한 번에'],
+      ['사진으로 채우는 일기 달력', '하루 한 장, 나만의 기록'],
+      ['위젯으로 한눈에', '오늘 일정과 디데이를 홈 화면에'],
+      ['매일 쌓이는 습관', '체크할수록 늘어나는 기록'],
+      ['집중한 시간까지 기록', '잠금화면에서도 타이머 확인'],
+      ['입력하면 바로 저장', '프로젝트별 기록을 깔끔하게'],
+      ['기록할수록 자라는 포실이', '젤리를 모아 포실이를 키워요'],
+      ['', ''],
+    ]
+
+    // 배경 테마: [위쪽 색, 아래쪽 색, 글자색]
+    const THEMES = [
+      ['#fbf3dc', '#efdcae', '#3b2f1e'],
+      ['#e6f4e3', '#bfe0b8', '#1f3b22'],
+      ['#fde6e1', '#f6c2b6', '#4a2620'],
+      ['#e5eefc', '#bcd0f3', '#1d2c4a'],
+      ['#2b2622', '#141210', '#fbf3dc'],
+    ]
+
+    const state = { slides: [], theme: 0, fontFamily: null }
+    const grid = document.getElementById('grid')
+    const sizeSelect = document.getElementById('size')
+
+    function currentSize() {
+      const [w, h] = sizeSelect.value.split('x').map(Number)
+      return { w, h }
+    }
+
+    // 배경색 선택 버튼
+    const swatches = document.getElementById('swatches')
+    THEMES.forEach((t, i) => {
+      const b = document.createElement('button')
+      b.className = 'swatch'
+      b.style.background = `linear-gradient(${t[0]}, ${t[1]})`
+      b.setAttribute('aria-label', `배경 ${i + 1}`)
+      b.setAttribute('aria-pressed', i === 0)
+      b.onclick = () => {
+        state.theme = i
+        swatches.querySelectorAll('.swatch').forEach((s, j) => s.setAttribute('aria-pressed', j === i))
+        renderAll()
+      }
+      swatches.appendChild(b)
+    })
+
+    function loadImage(file) {
+      return new Promise((resolve, reject) => {
+        const img = new Image()
+        img.onload = () => resolve(img)
+        img.onerror = reject
+        img.src = URL.createObjectURL(file)
+      })
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath()
+      ctx.moveTo(x + r, y)
+      ctx.arcTo(x + w, y, x + w, y + h, r)
+      ctx.arcTo(x + w, y + h, x, y + h, r)
+      ctx.arcTo(x, y + h, x, y, r)
+      ctx.arcTo(x, y, x + w, y, r)
+      ctx.closePath()
+    }
+
+    // 한 줄에 안 들어가면 단어 단위로 줄바꿈
+    function wrapLines(ctx, text, maxWidth) {
+      const words = text.split(' ')
+      const lines = []
+      let line = ''
+      for (const word of words) {
+        const test = line ? `${line} ${word}` : word
+        if (ctx.measureText(test).width > maxWidth && line) {
+          lines.push(line)
+          line = word
+        } else {
+          line = test
+        }
+      }
+      if (line) lines.push(line)
+      return lines
+    }
+
+    function drawSlide(canvas, slide) {
+      const { w, h } = currentSize()
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      const [top, bottom, ink] = THEMES[state.theme]
+
+      const bg = ctx.createLinearGradient(0, 0, 0, h)
+      bg.addColorStop(0, top)
+      bg.addColorStop(1, bottom)
+      ctx.fillStyle = bg
+      ctx.fillRect(0, 0, w, h)
+
+      const unit = w / 1320
+      const family = state.fontFamily
+        ? `"${state.fontFamily}", "Apple SD Gothic Neo", sans-serif`
+        : '"Apple SD Gothic Neo", "Noto Sans KR", sans-serif'
+
+      // 큰 문구
+      ctx.fillStyle = ink
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      let y = h * 0.055
+      ctx.font = `800 ${Math.round(112 * unit)}px ${family}`
+      for (const line of wrapLines(ctx, slide.title, w * 0.86)) {
+        ctx.fillText(line, w / 2, y)
+        y += 132 * unit
+      }
+
+      // 작은 문구
+      ctx.globalAlpha = 0.75
+      ctx.font = `500 ${Math.round(56 * unit)}px ${family}`
+      y += 12 * unit
+      for (const line of wrapLines(ctx, slide.subtitle, w * 0.86)) {
+        ctx.fillText(line, w / 2, y)
+        y += 72 * unit
+      }
+      ctx.globalAlpha = 1
+
+      // 스크린샷: 남은 공간에 맞춰 축소, 둥근 모서리 + 테두리 + 그림자
+      const img = slide.image
+      const areaTop = Math.max(y + 56 * unit, h * 0.22)
+      const maxW = w * 0.82
+      const maxH = h - areaTop - h * 0.035
+      const scale = Math.min(maxW / img.width, maxH / img.height)
+      const iw = img.width * scale
+      const ih = img.height * scale
+      const ix = (w - iw) / 2
+      const iy = areaTop
+      const bezel = 18 * unit
+      const radius = (img.width > img.height ? 40 : 96) * unit
+
+      ctx.save()
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.28)'
+      ctx.shadowBlur = 60 * unit
+      ctx.shadowOffsetY = 24 * unit
+      ctx.fillStyle = '#111'
+      roundRect(ctx, ix - bezel, iy - bezel, iw + bezel * 2, ih + bezel * 2, radius + bezel)
+      ctx.fill()
+      ctx.restore()
+
+      ctx.save()
+      roundRect(ctx, ix, iy, iw, ih, radius)
+      ctx.clip()
+      ctx.drawImage(img, ix, iy, iw, ih)
+      ctx.restore()
+    }
+
+    function renderAll() {
+      state.slides.forEach((s) => drawSlide(s.canvas, s))
+    }
+
+    function download(slide, index) {
+      const a = document.createElement('a')
+      const { w, h } = currentSize()
+      a.download = `posili-${String(index + 1).padStart(2, '0')}-${w}x${h}.png`
+      a.href = slide.canvas.toDataURL('image/png')
+      a.click()
+    }
+
+    function buildCards() {
+      grid.innerHTML = ''
+      state.slides.forEach((slide, i) => {
+        const card = document.createElement('div')
+        card.className = 'card'
+
+        const head = document.createElement('div')
+        head.className = 'row'
+        head.innerHTML = `<span class="num">${i + 1}번</span>`
+        const save = document.createElement('button')
+        save.className = 'ghost'
+        save.textContent = 'PNG 저장'
+        save.onclick = () => download(slide, i)
+        head.appendChild(save)
+
+        const title = document.createElement('input')
+        title.type = 'text'
+        title.value = slide.title
+        title.placeholder = '큰 문구'
+        title.oninput = () => { slide.title = title.value; drawSlide(slide.canvas, slide) }
+
+        const subtitle = document.createElement('input')
+        subtitle.type = 'text'
+        subtitle.value = slide.subtitle
+        subtitle.placeholder = '작은 문구'
+        subtitle.oninput = () => { slide.subtitle = subtitle.value; drawSlide(slide.canvas, slide) }
+
+        card.append(head, slide.canvas, title, subtitle)
+        grid.appendChild(card)
+      })
+    }
+
+    document.getElementById('files').addEventListener('change', async (e) => {
+      const files = [...e.target.files].sort((a, b) => a.name.localeCompare(b.name, 'ko', { numeric: true }))
+      if (files.length === 0) return
+      const images = await Promise.all(files.map(loadImage))
+      state.slides = images.slice(0, 10).map((image, i) => ({
+        image,
+        title: DEFAULT_COPY[i][0],
+        subtitle: DEFAULT_COPY[i][1],
+        canvas: document.createElement('canvas'),
+      }))
+      buildCards()
+      renderAll()
+    })
+
+    document.getElementById('font').addEventListener('change', async (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+      const face = new FontFace('PosiliHand', await file.arrayBuffer())
+      await face.load()
+      document.fonts.add(face)
+      state.fontFamily = 'PosiliHand'
+      renderAll()
+    })
+
+    sizeSelect.addEventListener('change', renderAll)
+
+    document.getElementById('downloadAll').addEventListener('click', async () => {
+      for (let i = 0; i < state.slides.length; i++) {
+        download(state.slides[i], i)
+        // 브라우저가 연속 다운로드를 막지 않도록 약간씩 띄운다
+        await new Promise((r) => setTimeout(r, 400))
+      }
+    })
+  </script>
+</body>
+</html>
