@@ -1,13 +1,11 @@
-import OpenAI from 'openai'
+import { getOpenAIClient } from './openaiProxy.js'
 import {
   DIARY_IMAGE_GPT_NO_TEXT_RULES,
   finalizeDiaryImagePrompt,
 } from '../constants/diaryImagePrompt.js'
 
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true,
-})
+// 이미지 생성 모델: GPT Image 2.5 Flare (빠른 일상 생성용). 편집 정밀도가 더 필요하면 'gpt-image-2.5-sunburst'
+const IMAGE_MODEL = 'gpt-image-2.5-flare'
 
 /**
  * GPT-4o로 일기 내용을 DALL-E 프롬프트로 변환
@@ -27,7 +25,7 @@ Rules:
 ${DIARY_IMAGE_GPT_NO_TEXT_RULES}
 - Output only the prompt, nothing else.`
 
-  const response = await openai.chat.completions.create({
+  const response = await (await getOpenAIClient()).chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
       { role: 'system', content: systemPrompt },
@@ -46,24 +44,20 @@ ${DIARY_IMAGE_GPT_NO_TEXT_RULES}
  * @returns {Promise<{imageUrl: string, prompt: string}>}
  */
 export async function generateDiaryImage(diaryContent) {
-  if (!import.meta.env.VITE_OPENAI_API_KEY) {
-    throw new Error('OpenAI API 키가 설정되지 않았습니다.')
-  }
-
   try {
     // 1단계: 일기 내용 → 이미지 프롬프트 변환
     const prompt = finalizeDiaryImagePrompt(await buildPromptFromDiary(diaryContent))
 
-    // 2단계: gpt-image-1으로 이미지 생성
-    const response = await openai.images.generate({
-      model: 'gpt-image-1',
+    // 2단계: GPT Image 모델로 이미지 생성
+    const response = await (await getOpenAIClient()).images.generate({
+      model: IMAGE_MODEL,
       prompt,
       n: 1,
       size: '1024x1024',
       quality: 'low',
     })
 
-    // gpt-image-1은 base64 반환, 기존 모델은 url 반환
+    // GPT Image 모델은 base64 반환, 기존 모델은 url 반환
     const imageData = response.data[0]
     const imageUrl = imageData.url
       ?? (imageData.b64_json ? `data:image/png;base64,${imageData.b64_json}` : null)
@@ -105,7 +99,7 @@ Rules:
 ${DIARY_IMAGE_GPT_NO_TEXT_RULES}
 - Output only the prompt, nothing else.`
 
-  const response = await openai.chat.completions.create({
+  const response = await (await getOpenAIClient()).chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
       { role: 'system', content: systemPrompt },
@@ -124,9 +118,6 @@ ${DIARY_IMAGE_GPT_NO_TEXT_RULES}
  * @returns {Promise<{imageUrl: string, prompt: string}>}
  */
 export async function generateRecipeImage(title) {
-  if (!import.meta.env.VITE_OPENAI_API_KEY) {
-    throw new Error('OpenAI API 키가 설정되지 않았습니다.')
-  }
   if (!title?.trim()) {
     throw new Error('요리 제목을 입력해주세요.')
   }
@@ -134,8 +125,8 @@ export async function generateRecipeImage(title) {
   try {
     const prompt = finalizeDiaryImagePrompt(await buildPromptFromRecipeTitle(title.trim()))
 
-    const response = await openai.images.generate({
-      model: 'gpt-image-1',
+    const response = await (await getOpenAIClient()).images.generate({
+      model: IMAGE_MODEL,
       prompt,
       n: 1,
       size: '1024x1024',

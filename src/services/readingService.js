@@ -1,3 +1,4 @@
+import { getOpenAIProxyToken, OPENAI_CHAT_COMPLETIONS_URL } from './openaiProxy.js'
 /**
  * 독서 기록 서비스
  * 독서 활동 기록 및 통계 관리
@@ -226,10 +227,7 @@ export async function getMonthlyReadingStats(year, month) {
  * @returns {Promise<string>} AI 분석 결과
  */
 export async function generateMonthlyReadingAnalysis(year, month) {
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY
-  if (!apiKey) {
-    throw new Error('OpenAI API 키가 설정되지 않았습니다.')
-  }
+  const apiKey = await getOpenAIProxyToken()
 
   try {
     const records = await getReadingRecordsByMonth(year, month)
@@ -266,7 +264,7 @@ export async function generateMonthlyReadingAnalysis(year, month) {
       return `${index + 1}. ${book.title || '알 수 없음'} - ${record.readingDate}: ${record.readingMinutes || 0}분`
     }).join('\n')
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -6,7 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const DIARY_IMAGE_MODEL = 'gpt-image-1'
+// GPT Image 2.5 Flare (빠른 일상 생성용). 편집 정밀도가 더 필요하면 'gpt-image-2.5-sunburst'
+const DIARY_IMAGE_MODEL = 'gpt-image-2.5-flare'
 const DIARY_IMAGE_SIZE = '1024x1024'
 const DIARY_IMAGE_QUALITY = 'low'
 

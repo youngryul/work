@@ -1,3 +1,4 @@
+import { getOpenAIProxyToken, OPENAI_CHAT_COMPLETIONS_URL } from './openaiProxy.js'
 /**
  * 업무일지 AI 요약 서비스
  * 완료한 할일들을 업무일지 형태로 요약 및 정리
@@ -12,10 +13,7 @@ import { getCurrentUserId } from '../utils/authHelper.js'
  * @returns {Promise<string>} AI가 생성한 업무일지 요약
  */
 export async function generateDailyWorkReport(tasks, dateString) {
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY
-  if (!apiKey) {
-    throw new Error('OpenAI API 키가 설정되지 않았습니다.')
-  }
+  const apiKey = await getOpenAIProxyToken()
 
   if (!tasks || tasks.length === 0) {
     return `${dateString}에는 완료한 할일이 없습니다.`
@@ -35,7 +33,7 @@ export async function generateDailyWorkReport(tasks, dateString) {
   }).join('\n')
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -447,10 +445,7 @@ export async function generateWeeklyWorkReport(weekStart, weekEnd, reportDates) 
     throw new Error('로그인이 필요합니다.')
   }
 
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY
-  if (!apiKey) {
-    throw new Error('OpenAI API 키가 설정되지 않았습니다.')
-  }
+  const apiKey = await getOpenAIProxyToken()
 
   // 해당 주의 모든 업무일지 조회 (현재 사용자만)
   const reports = []
@@ -532,7 +527,7 @@ ${tasksSummary}
   }).join('\n\n---\n\n')
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -637,10 +632,7 @@ export async function generateMonthlyWorkReport(year, month) {
     throw new Error('로그인이 필요합니다.')
   }
 
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY
-  if (!apiKey) {
-    throw new Error('OpenAI API 키가 설정되지 않았습니다.')
-  }
+  const apiKey = await getOpenAIProxyToken()
 
   const reportDates = await getWorkReportDatesByMonth(year, month)
   const dailyReports = []
@@ -677,7 +669,7 @@ export async function generateMonthlyWorkReport(year, month) {
   }
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -748,10 +740,7 @@ export async function generateWeeklyDiarySummary(weekStart, weekEnd, diaries) {
     throw new Error('로그인이 필요합니다.')
   }
 
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY
-  if (!apiKey) {
-    throw new Error('OpenAI API 키가 설정되지 않았습니다.')
-  }
+  const apiKey = await getOpenAIProxyToken()
 
   if (!diaries || diaries.length === 0) {
     throw new Error('일기가 없습니다.')
@@ -769,7 +758,7 @@ export async function generateWeeklyDiarySummary(weekStart, weekEnd, diaries) {
   }).join('\n\n---\n\n')
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -839,10 +828,7 @@ export async function generateMonthlyDiarySummary(year, month, diaries) {
     throw new Error('로그인이 필요합니다.')
   }
 
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY
-  if (!apiKey) {
-    throw new Error('OpenAI API 키가 설정되지 않았습니다.')
-  }
+  const apiKey = await getOpenAIProxyToken()
 
   if (!diaries || diaries.length === 0) {
     throw new Error(`${year}년 ${month}월에는 일기가 없습니다.`)
@@ -855,7 +841,7 @@ export async function generateMonthlyDiarySummary(year, month, diaries) {
   }).join('\n\n---\n\n')
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -921,10 +907,7 @@ ${diariesSummary}
  * @returns {Promise<string>} AI가 생성한 통합 회고록
  */
 export async function generateIntegratedReview(year, month = null) {
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY
-  if (!apiKey) {
-    throw new Error('OpenAI API 키가 설정되지 않았습니다.')
-  }
+  const apiKey = await getOpenAIProxyToken()
 
   // 업무일지와 일기 데이터 가져오기
   const { getDiariesByMonth } = await import('./diaryService.js')
@@ -981,7 +964,7 @@ export async function generateIntegratedReview(year, month = null) {
     : `${year}년`
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

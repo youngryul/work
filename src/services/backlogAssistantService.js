@@ -1,3 +1,4 @@
+import { getOpenAIProxyToken, OPENAI_CHAT_COMPLETIONS_URL } from './openaiProxy.js'
 import {
   BACKLOG_ASSISTANT_DECOMPOSE_MAX_STEPS,
   BACKLOG_ASSISTANT_MAX_SCHEDULED_OCCURRENCES,
@@ -740,16 +741,13 @@ function parseAssistantJson(content) {
  * @returns {Promise<{ reply: string, suggestions: BacklogAssistantSuggestion[], remainingBalance: number }>}
  */
 export async function sendBacklogAssistantMessage(messages, context) {
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY
-  if (!apiKey) {
-    throw new Error('OpenAI API 키가 설정되지 않았습니다. (VITE_OPENAI_API_KEY)')
-  }
+  const apiKey = await getOpenAIProxyToken()
 
   await assertSufficientTokensForBacklogAssistant()
 
   const contextPrompt = buildContextPrompt(context)
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

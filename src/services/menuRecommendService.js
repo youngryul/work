@@ -1,3 +1,4 @@
+import { getOpenAIProxyToken, OPENAI_CHAT_COMPLETIONS_URL } from './openaiProxy.js'
 import {
   MENU_RECOMMEND_MAX_TOKENS,
   MENU_RECOMMEND_MENU_COUNT_MAX,
@@ -105,10 +106,7 @@ function normalizeMenus(menus) {
  * @returns {Promise<{ menus: RecommendedMenu[], remainingBalance: number }>}
  */
 export async function recommendMenusFromFridge(items) {
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY
-  if (!apiKey) {
-    throw new Error('OpenAI API 키가 설정되지 않았습니다. (VITE_OPENAI_API_KEY)')
-  }
+  const apiKey = await getOpenAIProxyToken()
 
   const ingredients = items ?? (await getActiveFridgeIngredients())
   if (!ingredients.length) {
@@ -119,7 +117,7 @@ export async function recommendMenusFromFridge(items) {
 
   const contextPrompt = buildMenuRecommendContext(ingredients)
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

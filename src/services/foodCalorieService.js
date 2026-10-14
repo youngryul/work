@@ -1,4 +1,4 @@
-import OpenAI from 'openai'
+import { getOpenAIClient } from './openaiProxy.js'
 import { supabase } from '../config/supabase.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
 
@@ -7,22 +7,12 @@ import { getCurrentUserId } from '../utils/authHelper.js'
  * 음식 사진 인식 및 칼로리 정보 제공
  */
 
-// OpenAI 클라이언트 초기화
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true,
-})
-
 /**
  * 음식 사진에서 음식명 추정
  * @param {File|string} imageFile - 업로드된 이미지 파일 또는 이미지 URL
  * @returns {Promise<string>} 추정된 음식명
  */
 export async function recognizeFoodFromImage(imageFile) {
-  if (!import.meta.env.VITE_OPENAI_API_KEY) {
-    throw new Error('OpenAI API 키가 설정되지 않았습니다. .env 파일에 VITE_OPENAI_API_KEY를 추가해주세요.')
-  }
-
   try {
     let imageUrl
     
@@ -36,7 +26,7 @@ export async function recognizeFoodFromImage(imageFile) {
     }
 
     // OpenAI Vision API로 음식 인식
-    const response = await openai.chat.completions.create({
+    const response = await (await getOpenAIClient()).chat.completions.create({
       model: 'gpt-4o-mini', // 비용 효율적인 모델 사용
       messages: [
         {
@@ -94,13 +84,9 @@ function fileToBase64(file) {
  * @returns {Promise<{calories: number, carbs: number, protein: number, fat: number, servingSize: string}>} 영양 정보
  */
 export async function estimateCalories(foodName) {
-  if (!import.meta.env.VITE_OPENAI_API_KEY) {
-    throw new Error('OpenAI API 키가 설정되지 않았습니다.')
-  }
-
   try {
     // OpenAI를 사용하여 음식의 칼로리 및 영양 정보 추정
-    const response = await openai.chat.completions.create({
+    const response = await (await getOpenAIClient()).chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
