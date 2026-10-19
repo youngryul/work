@@ -7,17 +7,6 @@ export const DIARY_MODE = {
   PHOTO: 'photo',
 }
 
-export const DIARY_MODE_LABELS = {
-  [DIARY_MODE.AI_FOUR_CUT]: 'AI 4컷',
-  [DIARY_MODE.PHOTO]: '사진 첨부',
-}
-
-/** 폼 모드 탭에 표시할 모드 */
-export const DIARY_FORM_MODES = [
-  DIARY_MODE.AI_FOUR_CUT,
-  DIARY_MODE.PHOTO,
-]
-
 /** 첨부 사진 최대 장수 */
 export const PHOTO_ATTACH_MAX = 10
 

@@ -19,9 +19,7 @@ import { DIARY_EMOTION_LABELS, getDiaryEmotionLabel } from '../constants/diaryEm
 import { AI_FOUR_CUT_TOKEN_COST } from '../constants/aiTokenSettings.js'
 import {
   AI_FOUR_CUT_SCENE_COUNT,
-  DIARY_FORM_MODES,
   DIARY_MODE,
-  DIARY_MODE_LABELS,
   PHOTO_ATTACH_MAX,
 } from '../constants/diaryModes.js'
 
@@ -62,14 +60,11 @@ export default function DiaryForm({
   const fileInputRef = useRef(null)
   const [showDepositModal, setShowDepositModal] = useState(false)
   const [isSavingWithoutImage, setIsSavingWithoutImage] = useState(false)
-  const [diaryMode, setDiaryMode] = useState(DIARY_MODE.AI_FOUR_CUT)
   const [fourCutProgress, setFourCutProgress] = useState(null)
   const [showFourCutModal, setShowFourCutModal] = useState(false)
   const [liveSceneUrls, setLiveSceneUrls] = useState([])
   const [liveFourCutUrl, setLiveFourCutUrl] = useState(null)
   const [isCreatingAiFourCut, setIsCreatingAiFourCut] = useState(false)
-  /** write: 글 작성 / media: 글·사진 출력 및 생성·첨부 */
-  const [formStep, setFormStep] = useState('write')
   const [isUpdatingCover, setIsUpdatingCover] = useState(false)
 
   const { balance: tokenBalance, generationCost } = useAiTokenInfo(
@@ -77,8 +72,6 @@ export default function DiaryForm({
   )
 
   const aiFourCutCost = AI_FOUR_CUT_TOKEN_COST
-  const isPhotoMode = diaryMode === DIARY_MODE.PHOTO
-  const isAiFourCut = diaryMode === DIARY_MODE.AI_FOUR_CUT
 
   // 기존 일기 로드
   useEffect(() => {
@@ -100,21 +93,12 @@ export default function DiaryForm({
         setAttachedImages(diary.attachedImages || [])
         attachedImagesRef.current = diary.attachedImages || []
         setDiaryEmotion(getDiaryEmotionLabel(diary.emotion) ?? null)
-        const hasAiFourCut = Boolean(diary.fourCutUrl) || (diary.fourCutSceneUrls || []).length > 0
-        setDiaryMode(
-          !hasAiFourCut && (diary.attachedImages || []).length > 0
-            ? DIARY_MODE.PHOTO
-            : DIARY_MODE.AI_FOUR_CUT,
-        )
-        setFormStep('write')
       } else {
         setContent('')
         setExistingDiary(null)
         setAttachedImages([])
         attachedImagesRef.current = []
         setDiaryEmotion(null)
-        setDiaryMode(DIARY_MODE.AI_FOUR_CUT)
-        setFormStep('write')
       }
     } catch (error) {
       console.error('일기 로드 실패:', error)
@@ -230,7 +214,6 @@ export default function DiaryForm({
       return
     }
 
-    setDiaryMode(DIARY_MODE.AI_FOUR_CUT)
     setIsLoading(true)
     setError(null)
     setIsCreatingAiFourCut(true)
@@ -278,11 +261,6 @@ export default function DiaryForm({
       setIsCreatingAiFourCut(false)
       setFourCutProgress(null)
     }
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (isAiFourCut) await saveAiFourCut()
   }
 
   const handleSaveAiFourCut = () => saveAiFourCut()
@@ -387,11 +365,9 @@ export default function DiaryForm({
   }
 
   /**
-   * 클립보드에서 이미지 붙여넣기 (사진 첨부 모드만)
+   * 일기 칸에 이미지를 붙여넣으면 사진으로 첨부 (텍스트 붙여넣기는 그대로)
    */
   const handlePaste = async (e) => {
-    if (!isPhotoMode) return
-
     const files = Array.from(e.clipboardData?.items || [])
       .filter((item) => item.type.startsWith('image/'))
       .map((item) => item.getAsFile())
@@ -513,64 +489,162 @@ export default function DiaryForm({
     : null
 
   const aiFourCutCoverPicker = renderCoverPicker(
-    'AI 4컷 대문 선택',
+    'AI 4컷 장면',
     fourCutScenes,
     [aiFourCutBoothAction].filter(Boolean),
   )
-  // 글 쓰기 단계: AI 4컷 장면 + 첨부 사진 전체에서 대표 사진 선택
-  const allCoverPicker = renderCoverPicker(
-    '대표 사진 선택',
-    [...fourCutScenes, ...savedPhotos],
-    [aiFourCutBoothAction].filter(Boolean),
+
+  const isBusy = isLoading || isSavingWithoutImage || isCreatingAiFourCut
+  const isUploadingPhotos = Object.keys(uploadingImages).length > 0
+
+  /** 사진 첨부 영역: 첨부하면 자동 저장, 클릭해서 대표 사진 선택 */
+  const photoSection = (
+    <section className="rounded-xl border-2 border-green-100 bg-white/70 p-4 space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-base font-semibold text-gray-700 font-sans">
+          📷 사진 <span className="text-xs font-normal text-gray-500">{attachedImages.length}/{PHOTO_ATTACH_MAX}장</span>
+        </h3>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleFileUpload}
+          className="hidden"
+          id="diary-image-upload"
+        />
+        <label
+          htmlFor="diary-image-upload"
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium font-sans transition-colors ${
+            content.trim()
+              ? 'bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer'
+              : 'bg-gray-100 text-gray-400 cursor-not-allowed pointer-events-none'
+          }`}
+        >
+          사진 추가
+        </label>
+      </div>
+      <p className="text-xs text-gray-500 font-sans">
+        {content.trim()
+          ? '첨부하면 바로 저장됩니다. 일기 칸에 Ctrl+V로 붙여넣어도 돼요. 사진을 누르면 대표 사진으로 지정됩니다.'
+          : '일기 글을 먼저 쓰면 사진을 첨부할 수 있어요.'}
+      </p>
+      {(isUploadingPhotos || isSavingPhotos) && (
+        <div className="flex items-center gap-2 text-sm text-gray-600 font-sans">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-400"></div>
+          <span>{isUploadingPhotos ? '사진 업로드 중...' : '저장 중...'}</span>
+        </div>
+      )}
+      {attachedImages.length > 0 && (
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {attachedImages.map((imageUrl, index) => {
+            const isCover = currentCoverUrl === imageUrl
+            return (
+              <div key={`${imageUrl}-${index}`} className="relative group">
+                <button
+                  type="button"
+                  disabled={isUpdatingCover || isSavingPhotos}
+                  onClick={() => handleSelectCover(imageUrl)}
+                  className={`block w-full overflow-hidden rounded-lg border-2 transition-all ${
+                    isCover
+                      ? 'border-green-500 ring-2 ring-green-300'
+                      : 'border-gray-200 hover:border-green-300'
+                  } disabled:opacity-60`}
+                  title="대표 사진으로 지정"
+                >
+                  <img
+                    src={imageUrl}
+                    alt={`첨부 사진 ${index + 1}`}
+                    className="w-full h-24 object-cover"
+                  />
+                </button>
+                {isCover && (
+                  <span className="absolute bottom-1 left-1 rounded bg-green-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                    대표
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(index)}
+                  disabled={isSavingPhotos}
+                  className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors text-xs font-bold opacity-100 sm:opacity-0 sm:group-hover:opacity-100 disabled:opacity-50"
+                  title="삭제"
+                >
+                  ×
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </section>
   )
 
-  const stepTabs = (
-    <div className="mt-4 flex gap-2">
-      <button
-        type="button"
-        onClick={() => setFormStep('write')}
-        className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors font-sans ${
-          formStep === 'write'
-            ? 'bg-green-500 text-white'
-            : 'bg-green-50 text-green-800 hover:bg-green-100'
-        }`}
-      >
-        1. 글 쓰기
-      </button>
-      <button
-        type="button"
-        onClick={() => {
-          if (!content.trim()) {
-            showToast('먼저 일기 글을 작성해 주세요.', TOAST_TYPES.ERROR)
-            return
-          }
-          setFormStep('media')
-        }}
-        className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors font-sans ${
-          formStep === 'media'
-            ? 'bg-green-500 text-white'
-            : 'bg-green-50 text-green-800 hover:bg-green-100'
-        }`}
-      >
-        2. 사진·이미지
-      </button>
-    </div>
+  /** AI 4컷 영역: 생성 버튼·진행 상태·장면(대표 선택) */
+  const aiFourCutSection = (
+    <section className="rounded-xl border-2 border-amber-100 bg-white/70 p-4 space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-base font-semibold text-gray-700 font-sans">🎨 AI 4컷</h3>
+        <button
+          type="button"
+          onClick={handleSaveAiFourCut}
+          disabled={isBusy || !content.trim() || hasInsufficientTokensForAiFourCut}
+          className="px-3 py-1.5 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-sm font-medium font-sans disabled:opacity-50"
+        >
+          {isCreatingAiFourCut
+            ? '생성 중...'
+            : hasAiFourCut
+              ? `다시 만들기 (${aiFourCutCost}토큰)`
+              : `만들기 (${aiFourCutCost}토큰)`}
+        </button>
+      </div>
+      <p className="text-xs text-amber-800 font-sans">
+        일기를 4장면으로 요약해 그림으로 만들고 일기와 함께 저장합니다.
+      </p>
+
+      {isCreatingAiFourCut && !showFourCutModal && (
+        <div className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-900 font-sans">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500" />
+          <span>
+            AI 4컷 생성 중
+            {fourCutProgress ? ` (${fourCutProgress.done}/${fourCutProgress.total})` : '...'}
+          </span>
+        </div>
+      )}
+
+      {hasInsufficientTokensForAiFourCut && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 font-sans">
+          <p className="font-semibold">토큰이 부족합니다. (필요 {aiFourCutCost}개)</p>
+          <button
+            type="button"
+            onClick={openDepositModal}
+            className="mt-1 text-sm font-semibold text-amber-700 underline hover:text-amber-900"
+          >
+            토큰 충전 신청하기 →
+          </button>
+        </div>
+      )}
+
+      {aiFourCutCoverPicker}
+
+      {diaryEmotion && (
+        <p className="text-sm text-gray-500 font-sans">
+          오늘의 감정: <span className="font-semibold text-green-600">{diaryEmotion}</span>
+        </p>
+      )}
+    </section>
   )
 
-  const writeStepContent = (
+  const formContent = (
     <>
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-800 mb-2 font-sans">
           {existingDiary ? '일기 수정' : '일기 작성'}
         </h1>
         {datePicker}
-        {stepTabs}
-        <p className="mt-3 text-sm text-gray-500 font-sans">
-          글을 쓴 뒤 글만 저장하거나 AI 4컷을 만들 수 있습니다. 사진은 2단계에서 첨부하면 바로 저장됩니다.
-        </p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-5">
         <div>
           <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
             오늘의 일기
@@ -578,35 +652,22 @@ export default function DiaryForm({
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            onPaste={handlePaste}
             placeholder="오늘 하루를 기록해보세요..."
             className="w-full h-72 p-4 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans resize-none"
           />
         </div>
 
-        {allCoverPicker}
+        <div className="grid gap-4 md:grid-cols-2">
+          {photoSection}
+          {aiFourCutSection}
+        </div>
 
-        {error && formStep === 'write' && (
+        {error && (
           <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
             <p className="text-sm text-red-700 font-sans">{error}</p>
           </div>
         )}
-
-        {hasInsufficientTokensForAiFourCut && (
-          <div className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 font-sans">
-            <p className="font-semibold">AI 4컷에 토큰이 부족합니다. (필요 {aiFourCutCost}개)</p>
-            <button
-              type="button"
-              onClick={openDepositModal}
-              className="mt-2 text-sm font-semibold text-amber-700 underline hover:text-amber-900"
-            >
-              토큰 충전 신청하기 →
-            </button>
-          </div>
-        )}
-
-        <p className="text-sm text-amber-800 font-sans">
-          AI 4컷은 일기를 4장면으로 만들어 저장합니다. 1회 {aiFourCutCost}토큰이 소모됩니다.
-        </p>
 
         <div className="flex flex-wrap gap-3 justify-end pt-4 border-t-2 border-green-200">
           <button
@@ -619,263 +680,15 @@ export default function DiaryForm({
           <button
             type="button"
             onClick={handleSaveWithoutImage}
-            disabled={isSavingWithoutImage || isCreatingAiFourCut || isLoading || !content.trim()}
-            className="px-6 py-2 border-2 border-green-400 bg-green-50 text-green-800 rounded-lg hover:bg-green-100 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
-          >
-            {isSavingWithoutImage ? '저장 중...' : '글만 저장'}
-          </button>
-          <button
-            type="button"
-            onClick={handleSaveAiFourCut}
-            disabled={
-              isSavingWithoutImage
-              || isCreatingAiFourCut
-              || isLoading
-              || !content.trim()
-              || hasInsufficientTokensForAiFourCut
-            }
+            disabled={isBusy || isSavingPhotos || isUploadingPhotos || !content.trim()}
             className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
           >
-            {isCreatingAiFourCut
-              ? 'AI 4컷 생성 중...'
-              : hasAiFourCut
-                ? `AI 4컷 다시 만들기 (${aiFourCutCost}토큰)`
-                : `AI 4컷 저장 (${aiFourCutCost}토큰)`}
+            {isSavingWithoutImage ? '저장 중...' : '저장'}
           </button>
         </div>
       </div>
     </>
   )
-
-  const mediaStepContent = (
-    <>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2 font-sans">
-          사진 · 이미지
-        </h1>
-        {datePicker}
-        {stepTabs}
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          {DIARY_FORM_MODES.map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => setDiaryMode(mode)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors font-sans ${
-                diaryMode === mode
-                  ? 'bg-stone-800 text-white'
-                  : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
-              }`}
-            >
-              {DIARY_MODE_LABELS[mode]}
-            </button>
-          ))}
-        </div>
-
-        {isAiFourCut && (
-          <p className="mt-2 text-sm text-amber-800 font-sans">
-            생성 전 일기를 4줄로 요약한 뒤 시간 흐름이 보이게 만듭니다. 1회 {aiFourCutCost}토큰이 소모됩니다.
-          </p>
-        )}
-        {isPhotoMode && (
-          <p className="mt-2 text-sm text-green-800 font-sans">
-            사진을 첨부하면 바로 저장됩니다. 사진을 눌러 달력 대표 사진으로 고를 수 있어요. (최대 {PHOTO_ATTACH_MAX}장)
-          </p>
-        )}
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6" onPaste={handlePaste}>
-        {/* AI 4컷: 4컷만 */}
-        {isAiFourCut && (
-          <div className="space-y-4">
-            {isCreatingAiFourCut && !showFourCutModal && (
-              <div className="rounded-lg border-2 border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900 font-sans">
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500" />
-                  <span>
-                    AI 4컷 생성 중
-                    {fourCutProgress
-                      ? ` (${fourCutProgress.done}/${fourCutProgress.total})`
-                      : '...'}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {hasAiFourCut ? (
-              <div className="space-y-4">
-                {aiFourCutCoverPicker}
-                {existingDiary?.fourCutUrl && (
-                  <div>
-                    <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
-                      AI 4컷
-                    </label>
-                    <img
-                      src={existingDiary.fourCutUrl}
-                      alt="4컷 일기"
-                      className="w-40 rounded-lg border-2 border-green-200 bg-white object-contain shadow"
-                    />
-                  </div>
-                )}
-                {diaryEmotion && (
-                  <p className="text-sm text-gray-500 font-sans">
-                    오늘의 감정: <span className="font-semibold text-green-600">{diaryEmotion}</span>
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 font-sans">
-                아직 생성된 AI 4컷이 없습니다. 아래 버튼으로 만들어 보세요.
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* 사진 첨부: 첨부하면 자동 저장, 클릭해서 대표 사진 선택 */}
-        {isPhotoMode && (
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleFileUpload}
-                className="hidden"
-                id="diary-image-upload"
-              />
-              <label
-                htmlFor="diary-image-upload"
-                className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium cursor-pointer font-sans"
-              >
-                📷 사진 선택
-              </label>
-              <p className="text-xs text-gray-500 font-sans">
-                {attachedImages.length}/{PHOTO_ATTACH_MAX}장 · Ctrl+V로 붙여넣기
-              </p>
-              {(Object.keys(uploadingImages).length > 0 || isSavingPhotos) && (
-                <div className="flex items-center gap-2 text-sm text-gray-600 font-sans">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-400"></div>
-                  <span>{Object.keys(uploadingImages).length > 0 ? '사진 업로드 중...' : '저장 중...'}</span>
-                </div>
-              )}
-            </div>
-
-            {attachedImages.length > 0 ? (
-              <div>
-                <p className="mb-2 text-xs text-gray-500 font-sans">
-                  사진을 누르면 달력 대표 사진으로 지정됩니다.
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {attachedImages.map((imageUrl, index) => {
-                    const isCover = currentCoverUrl === imageUrl
-                    return (
-                      <div key={`${imageUrl}-${index}`} className="relative group">
-                        <button
-                          type="button"
-                          disabled={isUpdatingCover || isSavingPhotos}
-                          onClick={() => handleSelectCover(imageUrl)}
-                          className={`block w-full overflow-hidden rounded-lg border-2 transition-all ${
-                            isCover
-                              ? 'border-green-500 ring-2 ring-green-300'
-                              : 'border-gray-200 hover:border-green-300'
-                          } disabled:opacity-60`}
-                          title="대표 사진으로 지정"
-                        >
-                          <img
-                            src={imageUrl}
-                            alt={`첨부 사진 ${index + 1}`}
-                            className="w-full h-32 object-cover"
-                          />
-                        </button>
-                        {isCover && (
-                          <span className="absolute bottom-1 left-1 rounded bg-green-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                            대표
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(index)}
-                          disabled={isSavingPhotos}
-                          className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors text-xs font-bold opacity-0 group-hover:opacity-100 disabled:opacity-50"
-                          title="삭제"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 font-sans">
-                아직 첨부한 사진이 없습니다.
-              </p>
-            )}
-          </div>
-        )}
-
-        {error && (
-          <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
-            <p className="text-sm text-red-700 font-sans">{error}</p>
-          </div>
-        )}
-
-        {isAiFourCut && hasInsufficientTokensForAiFourCut && (
-          <div className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 font-sans">
-            <p className="font-semibold">AI 4컷에 토큰이 부족합니다. (필요 {aiFourCutCost}개)</p>
-            <button
-              type="button"
-              onClick={openDepositModal}
-              className="mt-2 text-sm font-semibold text-amber-700 underline hover:text-amber-900"
-            >
-              토큰 충전 신청하기 →
-            </button>
-          </div>
-        )}
-
-        <div className="flex flex-wrap gap-3 justify-end pt-4 border-t-2 border-green-200">
-          <button
-            type="button"
-            onClick={() => setFormStep('write')}
-            className="px-6 py-2 border-2 border-green-200 rounded-lg text-gray-700 hover:bg-green-50 transition-colors text-base font-medium shadow-md font-sans"
-          >
-            ← 글 수정
-          </button>
-          <button
-            type="button"
-            onClick={() => onSave?.()}
-            className="px-6 py-2 border-2 border-green-200 rounded-lg text-gray-700 hover:bg-green-50 transition-colors text-base font-medium shadow-md font-sans"
-          >
-            완료
-          </button>
-          {isAiFourCut && (
-            <button
-              type="submit"
-              disabled={
-                isLoading
-                || isSavingWithoutImage
-                || isCreatingAiFourCut
-                || hasInsufficientTokensForAiFourCut
-              }
-              className="px-6 py-2 bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors text-base font-medium shadow-md font-sans disabled:opacity-50"
-            >
-              {isCreatingAiFourCut
-                ? 'AI 4컷 생성 중...'
-                : isLoading
-                  ? '저장 중...'
-                  : hasAiFourCut
-                    ? `AI 4컷 다시 만들기 (${aiFourCutCost}토큰)`
-                    : `AI 4컷 만들기 (${aiFourCutCost}토큰)`}
-            </button>
-          )}
-        </div>
-      </form>
-    </>
-  )
-
-  const formContent = formStep === 'write' ? writeStepContent : mediaStepContent
 
 
   const depositModal = !onOpenDepositModal && (
