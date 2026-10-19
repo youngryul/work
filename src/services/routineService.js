@@ -3,6 +3,57 @@ import { getCurrentUserId } from '../utils/authHelper.js'
 import { getDefaultCategory } from './categoryService.js'
 import { createTask } from './taskService.js'
 
+/** 요일 라벨 (0=일..6=토) */
+export const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
+
+/**
+ * DB CSV → 정렬된 요일 배열 (빈 배열 = 매일)
+ * @param {string | null | undefined} csv
+ * @returns {number[]}
+ */
+function parseWeekdays(csv) {
+  if (!csv) return []
+  const days = String(csv)
+    .split(',')
+    .map((v) => Number(v.trim()))
+    .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
+  return [...new Set(days)].sort((a, b) => a - b)
+}
+
+/**
+ * 요일 배열 → DB CSV (빈 배열·7일 전체는 NULL = 매일)
+ * @param {number[] | null | undefined} days
+ * @returns {string | null}
+ */
+function serializeWeekdays(days) {
+  const normalized = parseWeekdays((days || []).join(','))
+  if (normalized.length === 0 || normalized.length === 7) return null
+  return normalized.join(',')
+}
+
+/**
+ * 해당 날짜에 루틴이 반복되는지 여부
+ * @param {{ repeatWeekdays?: number[] }} routine
+ * @param {string} [ymd] YYYY-MM-DD
+ * @returns {boolean}
+ */
+export function isRoutineScheduledOn(routine, ymd = getTodayDateString()) {
+  const days = routine?.repeatWeekdays || []
+  if (days.length === 0) return true
+  const weekday = new Date(`${ymd}T00:00:00`).getDay()
+  return days.includes(weekday)
+}
+
+/**
+ * 반복 요일 표시 문자열
+ * @param {number[]} days
+ * @returns {string}
+ */
+export function formatRoutineWeekdays(days) {
+  if (!days || days.length === 0) return '매일'
+  return days.map((d) => WEEKDAY_LABELS[d]).join('·')
+}
+
 /**
  * @param {object} row
  */
@@ -16,6 +67,7 @@ function normalizeRoutine(row) {
     lastAppliedDate: row.last_applied_date ?? row.lastAppliedDate ?? null,
     createdAt: row.created_at ?? row.createdAt,
     sortOrder: row.sort_order ?? row.sortOrder ?? 0,
+    repeatWeekdays: parseWeekdays(row.repeat_weekdays),
   }
 }
 
@@ -74,7 +126,7 @@ export async function getDailyRoutines() {
 
 /**
  * 루틴 추가
- * @param {{ title: string, category?: string, isEnabled?: boolean }} payload
+ * @param {{ title: string, category?: string, isEnabled?: boolean, repeatWeekdays?: number[] }} payload
  */
 export async function createDailyRoutine(payload) {
   const userId = await getCurrentUserId()
@@ -84,6 +136,7 @@ export async function createDailyRoutine(payload) {
   if (!title) throw new Error('루틴 제목을 입력해주세요.')
 
   const category = payload.category || (await getDefaultCategory())
+  const repeatWeekdays = serializeWeekdays(payload.repeatWeekdays)
 
   const { data: existing } = await supabase
     .from('daily_routines')
@@ -105,6 +158,8 @@ export async function createDailyRoutine(payload) {
         is_enabled: payload.isEnabled !== false,
         created_at: Date.now(),
         sort_order: nextSort,
+        // 매일(NULL)이면 컬럼을 보내지 않아 마이그레이션 전 DB에서도 동작
+        ...(repeatWeekdays ? { repeat_weekdays: repeatWeekdays } : {}),
       },
     ])
     .select()
@@ -117,8 +172,8 @@ export async function createDailyRoutine(payload) {
 
   const routine = normalizeRoutine(data)
 
-  if (routine.isEnabled) {
-    const today = getTodayDateString()
+  const today = getTodayDateString()
+  if (routine.isEnabled && isRoutineScheduledOn(routine, today)) {
     try {
       const created = await ensureRoutineTaskForToday(userId, routine, today)
       if (created) {
@@ -136,7 +191,7 @@ export async function createDailyRoutine(payload) {
 /**
  * 루틴 수정
  * @param {string} id
- * @param {{ title?: string, category?: string, isEnabled?: boolean }} updates
+ * @param {{ title?: string, category?: string, isEnabled?: boolean, repeatWeekdays?: number[] }} updates
  */
 export async function updateDailyRoutine(id, updates) {
   const userId = await getCurrentUserId()
@@ -146,6 +201,9 @@ export async function updateDailyRoutine(id, updates) {
   if ('title' in updates) dbUpdates.title = (updates.title || '').trim()
   if ('category' in updates) dbUpdates.category = updates.category
   if ('isEnabled' in updates) dbUpdates.is_enabled = updates.isEnabled
+  if ('repeatWeekdays' in updates) {
+    dbUpdates.repeat_weekdays = serializeWeekdays(updates.repeatWeekdays)
+  }
 
   const { data, error } = await supabase
     .from('daily_routines')
@@ -271,7 +329,10 @@ export async function applyDailyRoutinesToToday() {
       return 0
     }
 
-    const enabled = routines.filter((routine) => routine.isEnabled)
+    // 활성 + 오늘 요일에 해당하는 루틴만 반영
+    const enabled = routines.filter(
+      (routine) => routine.isEnabled && isRoutineScheduledOn(routine, today),
+    )
     if (enabled.length === 0) return 0
 
     let createdCount = 0

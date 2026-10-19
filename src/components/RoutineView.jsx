@@ -2,13 +2,65 @@ import { useState, useEffect } from 'react'
 import {
   createDailyRoutine,
   deleteDailyRoutine,
+  formatRoutineWeekdays,
   getDailyRoutines,
+  isRoutineScheduledOn,
   updateDailyRoutine,
+  WEEKDAY_LABELS,
 } from '../services/routineService.js'
 import { getDefaultCategory, getCategoryEmoji } from '../services/categoryService.js'
 import CategorySelector from './CategorySelector.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 import ViewPageTitle from './ViewPageTitle.jsx'
+
+/** 월요일부터 표시 (0=일..6=토) */
+const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
+
+/**
+ * 반복 요일 선택 (아무것도 고르지 않으면 매일)
+ * @param {{ value: number[], onChange: (days: number[]) => void, disabled?: boolean }} props
+ */
+function WeekdayPicker({ value, onChange, disabled = false }) {
+  const toggle = (day) => {
+    const next = value.includes(day) ? value.filter((d) => d !== day) : [...value, day]
+    onChange(next.sort((a, b) => a - b))
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="text-sm text-gray-500 mr-1">반복 요일</span>
+      {WEEKDAY_ORDER.map((day) => {
+        const active = value.includes(day)
+        return (
+          <button
+            key={day}
+            type="button"
+            onClick={() => toggle(day)}
+            disabled={disabled}
+            aria-pressed={active}
+            className={`w-9 h-9 rounded-full text-sm font-semibold border transition-colors disabled:opacity-50 ${
+              active
+                ? 'bg-green-500 text-white border-green-500'
+                : `bg-white border-gray-200 hover:border-green-300 ${
+                    day === 0 ? 'text-red-400' : day === 6 ? 'text-blue-400' : 'text-gray-600'
+                  }`
+            }`}
+          >
+            {WEEKDAY_LABELS[day]}
+          </button>
+        )
+      })}
+      <span className="text-xs text-gray-400 ml-1">
+        {value.length === 0 || value.length === 7 ? '매일' : formatRoutineWeekdays(value)}
+      </span>
+    </div>
+  )
+}
+
+/** 요일 배열 비교 */
+function sameWeekdays(a, b) {
+  return a.length === b.length && a.every((d, i) => d === b[i])
+}
 
 /**
  * 매일 오늘 할일로 자동 추가되는 루틴 관리 화면
@@ -18,6 +70,7 @@ export default function RoutineView() {
   const [isLoading, setIsLoading] = useState(true)
   const [newTitle, setNewTitle] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('회사')
+  const [newWeekdays, setNewWeekdays] = useState([])
   const [isSaving, setIsSaving] = useState(false)
   const [deletingId, setDeletingId] = useState('')
   const [togglingId, setTogglingId] = useState('')
@@ -26,6 +79,7 @@ export default function RoutineView() {
   const [editingId, setEditingId] = useState('')
   const [editTitle, setEditTitle] = useState('')
   const [editCategory, setEditCategory] = useState('')
+  const [editWeekdays, setEditWeekdays] = useState([])
   const [isUpdating, setIsUpdating] = useState(false)
 
   const loadRoutines = async () => {
@@ -72,12 +126,19 @@ export default function RoutineView() {
         title,
         category: selectedCategory,
         isEnabled: true,
+        repeatWeekdays: newWeekdays,
       })
       const emoji = await getCategoryEmoji(created.category)
       setCategoryEmojis((prev) => ({ ...prev, [created.id]: emoji }))
       setRoutines((prev) => [...prev, created])
       setNewTitle('')
-      showToast('루틴이 등록되었습니다. 오늘 할일에도 추가되었습니다.', TOAST_TYPES.SUCCESS)
+      setNewWeekdays([])
+      showToast(
+        isRoutineScheduledOn(created)
+          ? '루틴이 등록되었습니다. 오늘 할일에도 추가되었습니다.'
+          : `루틴이 등록되었습니다. ${formatRoutineWeekdays(created.repeatWeekdays)}요일에 오늘 할일로 추가됩니다.`,
+        TOAST_TYPES.SUCCESS,
+      )
       window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
     } catch (error) {
       showToast(error.message || '루틴 등록에 실패했습니다.', TOAST_TYPES.ERROR)
@@ -104,12 +165,14 @@ export default function RoutineView() {
     setEditingId(routine.id)
     setEditTitle(routine.title)
     setEditCategory(routine.category)
+    setEditWeekdays(routine.repeatWeekdays || [])
   }
 
   const cancelEdit = () => {
     setEditingId('')
     setEditTitle('')
     setEditCategory('')
+    setEditWeekdays([])
   }
 
   const handleSaveEdit = async (routine) => {
@@ -119,7 +182,10 @@ export default function RoutineView() {
       return
     }
     // 변경 사항이 없으면 그냥 닫기
-    if (title === routine.title && editCategory === routine.category) {
+    // 7일 전체 선택은 매일과 같음
+    const nextWeekdays = editWeekdays.length === 7 ? [] : editWeekdays
+    const weekdaysChanged = !sameWeekdays(nextWeekdays, routine.repeatWeekdays || [])
+    if (title === routine.title && editCategory === routine.category && !weekdaysChanged) {
       cancelEdit()
       return
     }
@@ -129,6 +195,8 @@ export default function RoutineView() {
       const updated = await updateDailyRoutine(routine.id, {
         title,
         category: editCategory,
+        // 요일이 바뀐 경우에만 보냄
+        ...(weekdaysChanged ? { repeatWeekdays: nextWeekdays } : {}),
       })
       if (updated.category !== routine.category) {
         const emoji = await getCategoryEmoji(updated.category)
@@ -164,7 +232,7 @@ export default function RoutineView() {
     <div className="max-w-3xl mx-auto p-6">
       <ViewPageTitle icon="🔁" title="루틴">
         <p className="text-xl text-gray-600">
-          등록한 루틴은 매일 오늘 할일 목록에 자동으로 추가됩니다.
+          등록한 루틴은 매일(또는 지정한 요일에) 오늘 할일 목록에 자동으로 추가됩니다.
           {enabledCount > 0 && ` (활성 ${enabledCount}개)`}
         </p>
       </ViewPageTitle>
@@ -191,8 +259,12 @@ export default function RoutineView() {
             {isSaving ? '추가 중...' : '루틴 추가'}
           </button>
         </div>
+        <div className="mt-3">
+          <WeekdayPicker value={newWeekdays} onChange={setNewWeekdays} disabled={isSaving} />
+        </div>
         <p className="text-sm text-gray-500 mt-2">
-          등록 즉시 오늘 할일에 추가되며, 이후에는 매일 자동으로 추가됩니다.
+          요일을 고르지 않으면 매일, 고르면 해당 요일에만 오늘 할일에 자동으로 추가됩니다.
+          오늘이 해당 요일이면 등록 즉시 추가됩니다.
         </p>
       </form>
 
@@ -250,6 +322,13 @@ export default function RoutineView() {
                     </button>
                   </div>
                 </div>
+                <div className="mt-3">
+                  <WeekdayPicker
+                    value={editWeekdays}
+                    onChange={setEditWeekdays}
+                    disabled={isUpdating}
+                  />
+                </div>
                 <p className="text-xs text-gray-500 mt-2">
                   이미 오늘 할일에 추가된 항목은 바뀌지 않고, 다음 반영부터 수정 내용이 적용됩니다.
                 </p>
@@ -270,6 +349,7 @@ export default function RoutineView() {
                 <p className="text-base text-gray-800 font-sans truncate">{routine.title}</p>
                 <p className="text-xs text-gray-500 mt-0.5">
                   {routine.category}
+                  {` · ${formatRoutineWeekdays(routine.repeatWeekdays)}`}
                   {routine.lastAppliedDate
                     ? ` · 마지막 반영: ${routine.lastAppliedDate}`
                     : ' · 아직 반영 전'}

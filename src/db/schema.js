@@ -379,6 +379,7 @@ export const dailyRoutines = pgTable('daily_routines', {
   lastAppliedDate: text('last_applied_date'),
   createdAt: bigint('created_at', { mode: 'number' }).notNull(),
   sortOrder: integer('sort_order').default(0).notNull(),
+  repeatWeekdays: text('repeat_weekdays'), // 반복 요일 CSV (0=일..6=토), 비어 있으면 매일
 })
 
 export const diaries = pgTable('diaries', {
