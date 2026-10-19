@@ -298,3 +298,33 @@ body[data-theme='excel'] {
 .farm-baby-bounce {
   animation: farm-baby-bounce 2s ease-in-out infinite;
 }
+
+/* 일기 달력: 감정 색이 날짜 테두리에서 빛처럼 번지는 효과 (--emotion-color) */
+.diary-emotion-glow {
+  box-shadow:
+    0 0 0 2px var(--emotion-color),
+    0 0 12px 2px var(--emotion-color),
+    inset 0 0 12px -2px var(--emotion-color);
+  animation: diary-emotion-breathe 3.2s ease-in-out infinite;
+}
+
+@keyframes diary-emotion-breathe {
+  0%, 100% {
+    box-shadow:
+      0 0 0 2px var(--emotion-color),
+      0 0 8px 1px var(--emotion-color),
+      inset 0 0 10px -3px var(--emotion-color);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px var(--emotion-color),
+      0 0 18px 4px var(--emotion-color),
+      inset 0 0 16px 0 var(--emotion-color);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diary-emotion-glow {
+    animation: none;
+  }
+}

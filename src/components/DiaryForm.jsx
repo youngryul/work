@@ -15,15 +15,13 @@ import AiTokenBalanceBadge from './AiTokenBalanceBadge.jsx'
 import TokenDepositRequestModal from './TokenDepositRequestModal.jsx'
 import FourCutDispenserModal from './FourCutDispenserModal.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
-import { DIARY_EMOTION_LABELS, getDiaryEmotionLabel } from '../constants/diaryEmotions.js'
+import { getDiaryEmotionLabel } from '../constants/diaryEmotions.js'
 import { AI_FOUR_CUT_TOKEN_COST } from '../constants/aiTokenSettings.js'
 import {
   AI_FOUR_CUT_SCENE_COUNT,
   DIARY_MODE,
   PHOTO_ATTACH_MAX,
 } from '../constants/diaryModes.js'
-
-const EMOTION_LABELS = DIARY_EMOTION_LABELS
 
 /**
  * 일기 작성/수정 폼 컴포넌트
@@ -130,7 +128,7 @@ export default function DiaryForm({
     saved,
     { withImage = true, booth = null, closeAfter = true } = {},
   ) => {
-    if (saved?.emotion) setDiaryEmotion(EMOTION_LABELS[saved.emotion] ?? saved.emotion)
+    if (saved?.emotion) setDiaryEmotion(getDiaryEmotionLabel(saved.emotion) ?? null)
 
     const consumed = saved?.tokensConsumedCount || (saved?.tokensConsumed ? 1 : 0)
     const tokensUsed = saved?.tokensUsed > 0

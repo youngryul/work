@@ -8,7 +8,12 @@ import {
 } from '../services/diaryService.js'
 import DiaryShareButton from './DiaryShareButton.jsx'
 import FourCutDispenserModal from './FourCutDispenserModal.jsx'
-import { getDiaryEmotionLabel } from '../constants/diaryEmotions.js'
+import {
+  DIARY_EMOTIONS,
+  getDiaryEmotionColor,
+  getDiaryEmotionLabel,
+  normalizeDiaryEmotion,
+} from '../constants/diaryEmotions.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
@@ -188,12 +193,15 @@ export default function DiaryCalendar({ onDateClick, initialDate = null }) {
         && today.getMonth() === month
         && today.getDate() === day
       const isFocused = focusedDate === dateString
+      const emotionColor = getDiaryEmotionColor(diary?.emotion)
 
-      days.push(
+      const cell = (
         <div
-          key={day}
           onClick={() => handleDateClick(dateString)}
-          className={`aspect-square flex flex-col items-start justify-start p-1 rounded-lg transition-all duration-200 relative overflow-hidden cursor-pointer hover:shadow-md ${
+          style={emotionColor ? { '--emotion-color': emotionColor } : undefined}
+          className={`aspect-square flex flex-col items-start justify-start p-1 rounded-lg transition-all duration-200 relative overflow-hidden cursor-pointer ${
+            emotionColor ? 'diary-emotion-glow z-[1]' : 'hover:shadow-md'
+          } ${
             isFocused
               ? 'bg-green-200 border-2 border-green-400'
               : isToday
@@ -228,7 +236,31 @@ export default function DiaryCalendar({ onDateClick, initialDate = null }) {
               </div>
             </div>
           )}
-        </div>,
+        </div>
+      )
+
+      // 감정이 있는 날은 호버 시 감정 툴팁 표시 (칸은 overflow-hidden이라 바깥 래퍼에 둠)
+      days.push(
+        emotionColor ? (
+          <div key={day} className="group relative hover:z-20">
+            {cell}
+            <div
+              role="tooltip"
+              className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-full bg-gray-900/90 px-2.5 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100 font-sans"
+            >
+              <span className="flex items-center gap-1.5">
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: emotionColor, boxShadow: `0 0 6px 1px ${emotionColor}` }}
+                />
+                {getDiaryEmotionLabel(diary.emotion)}
+              </span>
+              <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900/90" />
+            </div>
+          </div>
+        ) : (
+          <div key={day}>{cell}</div>
+        ),
       )
     }
 
@@ -240,10 +272,35 @@ export default function DiaryCalendar({ onDateClick, initialDate = null }) {
     }
 
     calendar.push(
-      <div key="days" className="grid grid-cols-7 gap-1">
+      <div key="days" className="grid grid-cols-7 gap-1.5">
         {days}
       </div>,
     )
+
+    // 이번 달에 나온 감정만 색상 범례로 표시
+    const monthEmotionKeys = [...new Set(
+      Object.values(diaries)
+        .map((diary) => normalizeDiaryEmotion(diary.emotion))
+        .filter(Boolean),
+    )]
+    if (monthEmotionKeys.length > 0) {
+      calendar.push(
+        <div key="emotion-legend" className="mt-4 flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-gray-600 font-sans">
+          {monthEmotionKeys.map((key) => (
+            <span key={key} className="flex items-center gap-1.5">
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{
+                  backgroundColor: DIARY_EMOTIONS[key].color,
+                  boxShadow: `0 0 6px 1px ${DIARY_EMOTIONS[key].color}`,
+                }}
+              />
+              {DIARY_EMOTIONS[key].label}
+            </span>
+          ))}
+        </div>,
+      )
+    }
 
     return calendar
   }
@@ -311,6 +368,18 @@ export default function DiaryCalendar({ onDateClick, initialDate = null }) {
                 <h3 className="text-3xl font-handwriting text-gray-800">
                   {formatDateForPopup(selectedDate)}
                 </h3>
+                {getDiaryEmotionColor(selectedDiary.emotion) && (
+                  <p className="mt-1 flex items-center gap-1.5 text-sm text-gray-600 font-sans">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full"
+                      style={{
+                        backgroundColor: getDiaryEmotionColor(selectedDiary.emotion),
+                        boxShadow: `0 0 6px 1px ${getDiaryEmotionColor(selectedDiary.emotion)}`,
+                      }}
+                    />
+                    오늘의 감정 · {getDiaryEmotionLabel(selectedDiary.emotion)}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {(currentCover || selectedDiary.imageUrl) && (

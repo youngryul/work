@@ -39,7 +39,7 @@ ${DIARY_IMAGE_GPT_NO_TEXT_RULES}
 const FOUR_CUT_PLAN_SYSTEM = `You plan a 4-panel photo-booth comic from a Korean diary.
 Return JSON only:
 {
-  "emotion": "one English emotion word",
+  "emotion": "exactly one of: happiness, excitement, love, gratitude, pride, satisfaction, hope, calm, peace, comfort, relief, determination, nostalgia, embarrassment, envy, confusion, anxiety, tiredness, loneliness, sadness, disappointment, frustration, anger",
   "styleLock": "one English paragraph locking identical Posili design + crayon style + shared color palette for ALL panels",
   "panels": [
     { "beat": 1, "timeLabel": "morning|afternoon|evening|night", "summary": "one short English visual sentence", "setting": "place", "action": "what Posili is doing" },
