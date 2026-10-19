@@ -62,3 +62,24 @@ struct ProjectCountItem: Identifiable, Hashable {
     let projectName: String
     let count: Int
 }
+
+/// 기록 본문 속 사이트 주소 찾기
+enum ProjectRecordLinks {
+    private static let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+
+    /// 본문 속 http(s) 주소에 링크를 건 텍스트 (SwiftUI Text에서 누르면 바로 열림, "www.~"도 인식)
+    static func attributed(_ text: String) -> AttributedString {
+        var result = AttributedString(text)
+        guard let detector, !text.isEmpty else { return result }
+        let range = NSRange(text.startIndex..., in: text)
+        for match in detector.matches(in: text, options: [], range: range) {
+            guard let url = match.url,
+                  let scheme = url.scheme?.lowercased(),
+                  scheme == "http" || scheme == "https",
+                  let linkRange = Range(match.range, in: result) else { continue }
+            result[linkRange].link = url
+            result[linkRange].underlineStyle = .single
+        }
+        return result
+    }
+}

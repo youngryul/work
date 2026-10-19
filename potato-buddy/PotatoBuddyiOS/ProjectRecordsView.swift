@@ -429,7 +429,8 @@ private struct ProjectRecordDetailSheet: View {
                             .foregroundColor(.green)
                     }
                     Divider()
-                    Text(record.content.isEmpty ? "(내용 없음)" : record.content)
+                    // 본문 속 사이트 주소는 그 자리에서 바로 열 수 있게 링크로 표시
+                    Text(record.content.isEmpty ? AttributedString("(내용 없음)") : ProjectRecordLinks.attributed(record.content))
                         .font(.body)
                         .foregroundStyle(record.content.isEmpty ? .secondary : .primary)
                         .frame(maxWidth: .infinity, alignment: .leading)

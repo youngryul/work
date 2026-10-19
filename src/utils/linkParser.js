@@ -89,3 +89,35 @@ export function parseTextWithLinks(text) {
   return result
 }
 
+/** 주소 추출용 패턴: URL에 쓰는 ASCII 문자까지만 (예: 'https://a.com에서' → 'https://a.com') */
+const LINK_EXTRACT_PATTERN = /(?:https?:\/\/|www\.)[A-Za-z0-9\-._~:/?#[\]@!$&'()*+,;=%]+/gi
+
+/** URL 끝에 붙어 있으면 주소가 아닌 것으로 보는 문장 부호 */
+const TRAILING_PUNCTUATION = /[.,;:!?)\]}>'"’”」』。、]+$/
+
+/**
+ * 텍스트를 일반 글자와 사이트 주소 구간으로 나눈다 (원문 글자는 그대로 보존)
+ * 에디터 위에 링크를 겹쳐 그릴 때 글자 위치가 어긋나지 않도록 모든 문자를 빠짐없이 돌려준다.
+ * @param {string} text
+ * @returns {Array<{ type: 'text' | 'link', content: string, url?: string }>}
+ */
+export function splitTextLinks(text) {
+  if (!text || typeof text !== 'string') return []
+
+  const segments = []
+  let lastIndex = 0
+  for (const match of text.matchAll(LINK_EXTRACT_PATTERN)) {
+    const label = match[0].replace(TRAILING_PUNCTUATION, '')
+    if (!label || label.toLowerCase() === 'www.') continue
+    if (match.index > lastIndex) {
+      segments.push({ type: 'text', content: text.slice(lastIndex, match.index) })
+    }
+    const url = label.toLowerCase().startsWith('www.') ? `https://${label}` : label
+    segments.push({ type: 'link', content: label, url })
+    lastIndex = match.index + label.length
+  }
+  if (lastIndex < text.length) {
+    segments.push({ type: 'text', content: text.slice(lastIndex) })
+  }
+  return segments
+}

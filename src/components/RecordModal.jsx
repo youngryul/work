@@ -1,6 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { format } from 'date-fns'
 import { updateRecord } from '../services/recordService.js'
+import { splitTextLinks } from '../utils/linkParser.js'
+
+/** 본문 textarea와 링크 레이어가 같은 글자 배치를 갖도록 공유하는 스타일 */
+const CONTENT_TEXT_CLASS =
+  'w-full text-base leading-relaxed font-sans whitespace-pre-wrap break-words'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /** 입력이 멈춘 뒤 자동 저장까지 대기 시간 (대학원 기록과 동일) */
@@ -109,6 +114,10 @@ export default function RecordModal({ record, isOpen, onClose, onSaved, onDelete
     const timer = setTimeout(() => { saveNow() }, AUTO_SAVE_DELAY_MS)
     return () => clearTimeout(timer)
   }, [title, date, content, record, saveNow])
+
+  // 본문을 글자·사이트 주소 구간으로 나눔 (textarea 위에 겹친 레이어에서 주소만 클릭 가능하게 그림)
+  const contentSegments = useMemo(() => splitTextLinks(content), [content])
+  const hasLinks = contentSegments.some((segment) => segment.type === 'link')
 
   // 본문 높이 맞추기
   useEffect(() => {
@@ -242,18 +251,47 @@ export default function RecordModal({ record, isOpen, onClose, onSaved, onDelete
             className="w-full text-2xl sm:text-3xl font-sans font-bold text-gray-900 placeholder-gray-300 resize-none border-none outline-none bg-transparent mb-4 leading-tight"
           />
 
-          {/* 본문 입력 */}
-          <textarea
-            ref={contentRef}
-            placeholder="내용을 입력하세요..."
-            value={content}
-            onChange={(e) => {
-              autoResize(e.target)
-              setContent(e.target.value)
-            }}
-            rows={8}
-            className="w-full min-h-[12rem] text-base text-gray-700 placeholder-gray-300 resize-none border-none outline-none bg-transparent leading-relaxed font-sans"
-          />
+          {/* 본문 입력: 주소가 있으면 textarea 글자는 투명하게 두고, 같은 배치의 레이어가 글자와 링크를 그린다 */}
+          <div className="relative">
+            <textarea
+              ref={contentRef}
+              placeholder="내용을 입력하세요..."
+              value={content}
+              onChange={(e) => {
+                autoResize(e.target)
+                setContent(e.target.value)
+              }}
+              rows={8}
+              className={`${CONTENT_TEXT_CLASS} block min-h-[12rem] placeholder-gray-300 resize-none border-none outline-none bg-transparent p-0 ${
+                hasLinks ? 'text-transparent caret-gray-700' : 'text-gray-700'
+              }`}
+            />
+            {hasLinks && (
+              <div
+                aria-hidden
+                className={`${CONTENT_TEXT_CLASS} absolute inset-0 text-gray-700 pointer-events-none`}
+              >
+                {contentSegments.map((segment, index) =>
+                  segment.type === 'link' ? (
+                    <a
+                      key={index}
+                      href={segment.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`${segment.url} 열기`}
+                      className="pointer-events-auto text-blue-600 underline decoration-blue-300 underline-offset-2 hover:text-blue-700 hover:decoration-blue-500 cursor-pointer"
+                    >
+                      {segment.content}
+                    </a>
+                  ) : (
+                    <span key={index}>{segment.content}</span>
+                  ),
+                )}
+                {/* 마지막 줄바꿈도 textarea와 같은 높이로 보이게 */}
+                {'​'}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
