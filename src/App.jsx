@@ -258,12 +258,6 @@ function AppContent() {
     setRecordView('form')
   }
 
-  // 기록 수정
-  const handleEditRecord = (record) => {
-    setEditingRecord(record)
-    setRecordView('form')
-  }
-
   // 저장 완료
   const handleSaveComplete = () => {
     setRecordView('main')
@@ -530,7 +524,6 @@ function AppContent() {
             {recordView === 'main' && (
               <RecordMainView
                 onNewRecord={handleNewRecord}
-                onEditRecord={handleEditRecord}
               />
             )}
             {recordView === 'form' && (

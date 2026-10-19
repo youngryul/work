@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { format } from 'date-fns'
 import RecordFilters from './RecordFilters.jsx'
 import RecordList from './RecordList.jsx'
 import RecordDetail from './RecordDetail.jsx'
 import RecordModal from './RecordModal.jsx'
 import ProjectList from './ProjectList.jsx'
 import { 
-  getAllRecords, 
-  deleteRecord, 
+  getAllRecords,
+  createRecord,
+  deleteRecord,
   getProjectCountsByArchiveState,
   archiveProject,
   unarchiveProject,
@@ -20,10 +22,9 @@ import { showToast, TOAST_TYPES } from './Toast.jsx'
 
 /**
  * 기록 메인 화면 컴포넌트
- * @param {Function} onNewRecord - 새 기록 작성 핸들러
- * @param {Function} onEditRecord - 기록 수정 핸들러
+ * @param {Function} onNewRecord - 새 프로젝트 기록 작성 핸들러 (프로젝트명부터 입력하는 폼)
  */
-export default function RecordMainView({ onNewRecord, onEditRecord }) {
+export default function RecordMainView({ onNewRecord }) {
   const [activeProjects, setActiveProjects] = useState([]) // [{ projectName, count }]
   const [archivedProjects, setArchivedProjects] = useState([]) // 보관한 프로젝트
   const [isArchiveView, setIsArchiveView] = useState(false)
@@ -40,6 +41,7 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
     endDate: null,
   })
   const [loading, setLoading] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
 
   /**
    * 프로젝트 목록(일반·보관) 및 개수 로드
@@ -123,10 +125,48 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
     }
   }
 
-  // 기록 수정
+  // 기록 바로 편집 (팝업 에디터 열기)
   const handleEdit = (record) => {
-    onEditRecord?.(record)
+    setSelectedRecord(record)
+    setIsModalOpen(true)
   }
+
+  // 선택한 프로젝트에 새 기록을 만들고 바로 편집 (대학원 기록과 동일)
+  const handleCreateInProject = async () => {
+    if (!selectedProject || isCreating) return
+    setIsCreating(true)
+    try {
+      const created = await createRecord({
+        projectName: selectedProject,
+        date: format(new Date(), 'yyyy-MM-dd'),
+        title: '',
+        content: '',
+      })
+      setRecords((prev) => [created, ...prev])
+      setSelectedRecord(created)
+      setIsModalOpen(true)
+      loadProjects() // 프로젝트 개수 업데이트
+    } catch (error) {
+      console.error('기록 생성 실패:', error)
+      showToast('기록 생성에 실패했습니다.', TOAST_TYPES.ERROR)
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  // 자동 저장된 기록을 목록·메인 기록에 반영
+  const handleRecordAutoSaved = useCallback((saved) => {
+    setRecords((prev) => prev.map((r) => (r.id === saved.id ? { ...r, ...saved } : r)))
+    setMainRecordState((prev) => (prev && prev.id === saved.id ? { ...prev, ...saved } : prev))
+  }, [])
+
+  // 팝업 에디터 닫기 (날짜 변경 시 정렬이 바뀔 수 있어 목록을 다시 불러온다)
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false)
+    setSelectedRecord(null)
+    if (selectedProject) loadProjectData(selectedProject)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProject])
 
   // 기록 삭제
   const handleDelete = async (id) => {
@@ -346,6 +386,13 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
               <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-green-200 p-4 h-[calc(100vh-500px)] overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold text-gray-700 font-sans">기록 목록</h2>
+                  <button
+                    onClick={handleCreateInProject}
+                    disabled={isCreating}
+                    className="px-3 py-1 text-sm bg-green-400 text-white rounded-lg hover:bg-green-500 transition-colors font-sans disabled:opacity-60"
+                  >
+                    {isCreating ? '만드는 중...' : '+ 새 기록'}
+                  </button>
                 </div>
                 {loading ? (
                   <div className="text-center py-8 text-gray-500 text-base font-sans">로딩 중...</div>
@@ -367,18 +414,12 @@ export default function RecordMainView({ onNewRecord, onEditRecord }) {
         </div>
       </div>
 
-      {/* 기록 상세 모달 */}
+      {/* 기록 팝업 에디터 */}
       <RecordModal
         record={selectedRecord}
         isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false)
-          setSelectedRecord(null)
-        }}
-        onEdit={(record) => {
-          setIsModalOpen(false)
-          handleEdit(record)
-        }}
+        onClose={handleCloseModal}
+        onSaved={handleRecordAutoSaved}
         onDelete={handleDelete}
         onSetMain={(id) => {
           handleSetMainRecord(id)

@@ -45,7 +45,7 @@ export default function RecordList({ records = [], selectedId, onSelect }) {
           {/* 제목 */}
           <div className="flex items-center gap-2">
             <h3 className="text-base font-semibold text-gray-900 line-clamp-2 font-sans flex-1">
-              {record.title}
+              {record.title || '제목 없음'}
             </h3>
             {record.isMain && (
               <span className="text-xs px-2 py-1 bg-green-200 text-green-800 rounded-full font-medium font-sans">
