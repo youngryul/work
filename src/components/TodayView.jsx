@@ -339,10 +339,10 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
 
       <div className={`max-w-2xl mx-auto p-6 ${appTheme === APP_THEMES.EXCEL ? 'today-view--excel' : ''}`}>
         <ViewPageTitle iconSrc={MENU_ICON_PATHS.today} title="오늘 할 일">
-          <p className="text-lg text-gray-500 mb-2">
+          <p className="text-lg text-white mb-2">
             {getCurrentDateString()}
           </p>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-white">
             {totalTodayCount > 0
               ? `${completedCount}개 완료 / ${totalTodayCount}개`
               : '오늘은 무엇을 할까요?'}
