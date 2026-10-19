@@ -1607,6 +1607,46 @@ final class SupabaseService {
         try checkResponse(data, response)
     }
 
+    // MARK: - 여행 앨범 (보기 전용)
+
+    /// 여행 앨범 목록 (최근 생성 순)
+    func fetchTravelAlbums() async throws -> [TravelAlbum] {
+        let (userId, token) = await authInfo()
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/travel_albums")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "select", value: "id,title,country_code,trip_id,start_date,end_date"),
+            URLQueryItem(name: "order", value: "created_at.desc"),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        return try JSONDecoder().decode([TravelAlbum].self, from: data)
+    }
+
+    /// 사용자의 여행 앨범 사진 전체 (정렬 순)
+    func fetchTravelAlbumPhotos() async throws -> [TravelAlbumPhoto] {
+        let (userId, token) = await authInfo()
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/travel_abroad_album_photos")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "select", value: "id,album_id,trip_id,image_url,caption,sort_order"),
+            URLQueryItem(name: "order", value: "sort_order.asc,created_at.asc"),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        return try JSONDecoder().decode([TravelAlbumPhoto].self, from: data)
+    }
+
     func fetchAbroadItineraryItems(tripId: String, itemDate: String?) async throws -> [AbroadItineraryItem] {
         let (userId, token) = await authInfo()
 

@@ -98,6 +98,10 @@
 		C1D2E3F4A5B60718293A4C02 /* DDayStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B60718293A4C01 /* DDayStore.swift */; };
 		C1D2E3F4A5B60718293A4C03 /* DDayStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B60718293A4C01 /* DDayStore.swift */; };
 		C1D2E3F4A5B60718293A4C05 /* DDayManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B60718293A4C04 /* DDayManagerView.swift */; };
+		7A1B2C3D4E5F60718293A511 /* TravelAlbumView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1B2C3D4E5F60718293A510 /* TravelAlbumView.swift */; };
+		7A1B2C3D4E5F60718293A513 /* TravelAlbumShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1B2C3D4E5F60718293A512 /* TravelAlbumShareView.swift */; };
+		7A1B2C3D4E5F60718293A515 /* TravelAlbumImageComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1B2C3D4E5F60718293A514 /* TravelAlbumImageComposer.swift */; };
+		7A1B2C3D4E5F60718293A517 /* TravelAlbumMedia.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1B2C3D4E5F60718293A516 /* TravelAlbumMedia.swift */; };
 		67EC21AB52504545A10B4E25 /* FridgeItemIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5028470205B5D6852C07FE0 /* FridgeItemIcons.swift */; };
 		680B1FB46FFFBEB496161FC8 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CB4229136599A8BA65F44C /* MainTabView.swift */; };
 		6852538528FE21F5E7A86BC3 /* FridgeItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758A8A2B777A70B6D61AC077 /* FridgeItem.swift */; };
@@ -422,6 +426,10 @@
 		D4A1B2C3E5F60718293A4D01 /* QuickAddBacklogIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAddBacklogIntent.swift; sourceTree = "<group>"; };
 		C1D2E3F4A5B60718293A4C01 /* DDayStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DDayStore.swift; sourceTree = "<group>"; };
 		C1D2E3F4A5B60718293A4C04 /* DDayManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DDayManagerView.swift; sourceTree = "<group>"; };
+		7A1B2C3D4E5F60718293A510 /* TravelAlbumView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelAlbumView.swift; sourceTree = "<group>"; };
+		7A1B2C3D4E5F60718293A512 /* TravelAlbumShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelAlbumShareView.swift; sourceTree = "<group>"; };
+		7A1B2C3D4E5F60718293A514 /* TravelAlbumImageComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelAlbumImageComposer.swift; sourceTree = "<group>"; };
+		7A1B2C3D4E5F60718293A516 /* TravelAlbumMedia.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelAlbumMedia.swift; sourceTree = "<group>"; };
 		DC39AB8BC8BEB8056A67FDB4 /* PotatoBuddyiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PotatoBuddyiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC6E6DDE62FCA0C4C9A856FF /* PotatoBuddyWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotatoBuddyWatchApp.swift; sourceTree = "<group>"; };
 		DDDA9374BFB496DC310B133F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -562,6 +570,10 @@
 				1D826A844BE6F7D286ED09B9 /* BacklogView.swift */,
 				A1B2C3D4E5F60718293A4B5D /* HandwritingPad.swift */,
 				C1D2E3F4A5B60718293A4C04 /* DDayManagerView.swift */,
+				7A1B2C3D4E5F60718293A510 /* TravelAlbumView.swift */,
+				7A1B2C3D4E5F60718293A512 /* TravelAlbumShareView.swift */,
+				7A1B2C3D4E5F60718293A514 /* TravelAlbumImageComposer.swift */,
+				7A1B2C3D4E5F60718293A516 /* TravelAlbumMedia.swift */,
 				70E0F19BC75F1A6C397BBE1C /* ContentView.swift */,
 				7464AC9BA45E00EF6E7C1FD8 /* CorkBoardBackground.swift */,
 				649A812AC54ACA91CE4BF2D1 /* CorkBoardTheme.swift */,
@@ -1061,6 +1073,10 @@
 				3EC67E34991A9E1E85726F5E /* BacklogView.swift in Sources */,
 				A1B2C3D4E5F60718293A4B5C /* HandwritingPad.swift in Sources */,
 				C1D2E3F4A5B60718293A4C05 /* DDayManagerView.swift in Sources */,
+				7A1B2C3D4E5F60718293A511 /* TravelAlbumView.swift in Sources */,
+				7A1B2C3D4E5F60718293A513 /* TravelAlbumShareView.swift in Sources */,
+				7A1B2C3D4E5F60718293A515 /* TravelAlbumImageComposer.swift in Sources */,
+				7A1B2C3D4E5F60718293A517 /* TravelAlbumMedia.swift in Sources */,
 				49C4D7D0195075F8BFC6E2D5 /* BookItem.swift in Sources */,
 				45F8E451826FCC1F2C488AE8 /* CategoryItem.swift in Sources */,
 				1B20A10E1FD42DE2DAD38071 /* Config.swift in Sources */,

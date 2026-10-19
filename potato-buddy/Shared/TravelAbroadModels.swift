@@ -258,3 +258,65 @@ enum TravelItineraryTime {
         return out.string(from: date)
     }
 }
+
+/// 여행 폴라로이드 앨범 (travel_albums)
+struct TravelAlbum: Codable, Identifiable, Hashable {
+    let id: String
+    let title: String
+    let countryCode: String?
+    let tripId: String?
+    var startDate: String?
+    var endDate: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title
+        case countryCode = "country_code"
+        case tripId = "trip_id"
+        case startDate = "start_date"
+        case endDate = "end_date"
+    }
+
+    /// 국가 이름 (국가가 없으면 nil)
+    var countryName: String? {
+        guard let code = countryCode, !code.isEmpty else { return nil }
+        return TravelAbroadCountry.name(for: code)
+    }
+
+    /// "2026.10.01 – 2026.10.05" 형식 기간 (웹 formatTravelPeriod와 동일)
+    var periodLabel: String {
+        func format(_ value: String?) -> String {
+            guard let value, !value.isEmpty else { return "" }
+            let key = String(value.prefix(10))
+            let parts = key.split(separator: "-")
+            guard parts.count == 3 else { return key }
+            return parts.joined(separator: ".")
+        }
+        let start = format(startDate)
+        let end = format(endDate)
+        if !start.isEmpty && !end.isEmpty { return "\(start) – \(end)" }
+        return start.isEmpty ? end : start
+    }
+}
+
+/// 여행 앨범 사진 (travel_abroad_album_photos)
+struct TravelAlbumPhoto: Codable, Identifiable, Hashable {
+    let id: String
+    let albumId: String?
+    let tripId: String?
+    let imageUrl: String
+    let caption: String?
+    let sortOrder: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case id, caption
+        case albumId = "album_id"
+        case tripId = "trip_id"
+        case imageUrl = "image_url"
+        case sortOrder = "sort_order"
+    }
+
+    /// 앞뒤 공백을 제거한 캡션
+    var trimmedCaption: String {
+        caption?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+}

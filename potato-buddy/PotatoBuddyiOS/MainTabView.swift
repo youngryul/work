@@ -9,6 +9,7 @@ struct MainTabView: View {
     static let farmTabTag = 16
     static let graduateNotesTabTag = 17
     static let ddayTabTag = 18
+    static let travelAlbumTabTag = 19
 
     /// 예전 토익 탭 tag. 커스텀 더보기에도 넣지 않는다.
     private static let removedToeicTabTag = 7
@@ -105,6 +106,8 @@ struct MainTabView: View {
             moreDestination(StepCounterView())
         case 6:
             moreDestination(TravelItineraryView())
+        case Self.travelAlbumTabTag:
+            moreDestination(TravelAlbumView())
         case 8:
             moreDestination(FridgeInventoryView())
         case Self.farmTabTag:
@@ -155,6 +158,7 @@ private struct MoreMenuView: View {
         (13, "프로젝트", "folder.fill"),
         (11, "걸음", "figure.walk"),
         (6, "여행", "airplane"),
+        (MainTabView.travelAlbumTabTag, "여행 앨범", "photo.on.rectangle.angled"),
         (8, "냉장고", "refrigerator.fill"),
         (15, "시간표", "graduationcap.fill"),
         (MainTabView.graduateNotesTabTag, "대학원 기록", "note.text"),
