@@ -172,6 +172,18 @@ function AppContent() {
     }
   }, [currentView])
 
+  // 다른 화면(1년 전 오늘 카드 등)에서 특정 날짜 일기 열기
+  useEffect(() => {
+    const handleOpenDiaryDate = (event) => {
+      const date = event.detail?.date
+      if (!date) return
+      setCurrentView('diary-calendar')
+      setDiaryOpenDate(date)
+    }
+    window.addEventListener('openDiaryDate', handleOpenDiaryDate)
+    return () => window.removeEventListener('openDiaryDate', handleOpenDiaryDate)
+  }, [])
+
   // 공유 링크 (?view=diary-calendar&date=YYYY-MM-DD) 처리
   useEffect(() => {
     if (!user) return

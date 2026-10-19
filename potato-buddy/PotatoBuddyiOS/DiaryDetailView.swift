@@ -7,6 +7,9 @@ struct DiaryDetailView: View {
     var onPrevDay: () -> Void
     var onNextDay: () -> Void
     var onCoverUpdated: (DiaryItem) -> Void
+    /// 랜덤으로 연 일기면 '다른 날 보기' 버튼을 보여준다
+    var onRandomNext: (() -> Void)? = nil
+    var isPickingRandom: Bool = false
 
     @State private var showFourCutViewer = false
     @State private var showShareCard = false
@@ -49,6 +52,32 @@ struct DiaryDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                if let onRandomNext {
+                    HStack(spacing: 8) {
+                        Text("🎲 지난 일기를 꺼내 왔어요")
+                            .font(.system(size: 13))
+                            .foregroundStyle(SketchbookStyle.ink)
+                        Spacer()
+                        Button {
+                            onRandomNext()
+                        } label: {
+                            Text(isPickingRandom ? "고르는 중..." : "다른 날 보기")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 12).padding(.vertical, 5)
+                                .background(SketchbookStyle.green)
+                                .overlay(RoundedRectangle(cornerRadius: 5).stroke(SketchbookStyle.ink, lineWidth: 2))
+                                .clipShape(RoundedRectangle(cornerRadius: 5))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isPickingRandom)
+                    }
+                    .padding(10)
+                    .background(Color(red: 1.0, green: 0.97, blue: 0.86))
+                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(SketchbookStyle.ink.opacity(0.35), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
+                    .padding(.bottom, 12)
+                }
+
                 HStack {
                     Button("‹ 달력") { onBack() }
                         .foregroundStyle(SketchbookStyle.ink)

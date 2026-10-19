@@ -44,6 +44,9 @@ struct TodayView: View {
                                     subtitle: "\(dateSubtitle) · \(tasks.count)개"
                                 )
 
+                                // 1년 전 오늘 일기 (있을 때만)
+                                DiaryMemoryCardView()
+
                                 if tasks.isEmpty {
                                     CorkBoardEmptyState(
                                         message: "오늘 할일이 없어요!",

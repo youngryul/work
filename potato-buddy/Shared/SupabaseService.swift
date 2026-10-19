@@ -444,6 +444,27 @@ final class SupabaseService {
         return items.first
     }
 
+    /// 기준 날짜 이전에 쓴 일기 날짜 목록 (랜덤 일기용, 최신순)
+    func fetchPastDiaryDates(before date: String) async throws -> [String] {
+        let (userId, token) = await authInfo()
+
+        var components = URLComponents(string: "\(Config.supabaseURL)/rest/v1/diaries")!
+        components.queryItems = [
+            URLQueryItem(name: "user_id", value: "eq.\(userId)"),
+            URLQueryItem(name: "date", value: "lt.\(date)"),
+            URLQueryItem(name: "select", value: "date"),
+            URLQueryItem(name: "order", value: "date.desc"),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        headers(token: token).forEach { request.addValue($1, forHTTPHeaderField: $0) }
+
+        let (data, response) = try await fetch(request)
+        try checkResponse(data, response)
+        struct DateRow: Decodable { let date: String }
+        return try JSONDecoder().decode([DateRow].self, from: data).map(\.date)
+    }
+
     /// diaries 테이블에 대한 upsert 공통 실행부. 전달된 필드만 갱신되고(PostgREST 병합 upsert),
     /// 나머지 컬럼은 기존 값이 보존된다.
     private func upsertDiary(_ fields: [String: Any]) async throws -> DiaryItem {

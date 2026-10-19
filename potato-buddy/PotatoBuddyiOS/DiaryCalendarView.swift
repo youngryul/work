@@ -32,6 +32,10 @@ struct DiaryCalendarView: View {
     @State private var diariesByDate: [String: DiaryItem] = [:]
     @State private var isLoading = false
     @State private var errorMessage = ""
+    /// 랜덤으로 연 일기 날짜 (상세 화면에 '다른 날 보기' 표시)
+    @State private var randomDate: String?
+    @State private var isPickingRandom = false
+    @ObservedObject private var openRequest = DiaryOpenRequest.shared
 
     private let calendar = Calendar(identifier: .gregorian)
 
@@ -73,11 +77,13 @@ struct DiaryCalendarView: View {
                             if let diary = diariesByDate[date] {
                                 DiaryDetailView(
                                     diary: diary,
-                                    onBack: { screen = .calendar },
+                                    onBack: { randomDate = nil; screen = .calendar },
                                     onEdit: { screen = .write(date: date, existing: diary) },
                                     onPrevDay: { moveDay(from: date, by: -1) },
                                     onNextDay: { moveDay(from: date, by: 1) },
-                                    onCoverUpdated: { updated in diariesByDate[updated.date] = updated }
+                                    onCoverUpdated: { updated in diariesByDate[updated.date] = updated },
+                                    onRandomNext: randomDate == date ? { Task { await openRandomDiary() } } : nil,
+                                    isPickingRandom: isPickingRandom
                                 )
                             }
                         }
@@ -93,7 +99,13 @@ struct DiaryCalendarView: View {
                 }
             }
         }
-        .task { await loadDiaries() }
+        .task {
+            await loadDiaries()
+            await consumeOpenRequest()
+        }
+        .onChange(of: openRequest.pendingDate) { _, _ in
+            Task { await consumeOpenRequest() }
+        }
         .alert("오류", isPresented: Binding(get: { !errorMessage.isEmpty }, set: { _ in errorMessage = "" })) {
             Button("확인") { errorMessage = "" }
         } message: {
@@ -155,6 +167,23 @@ struct DiaryCalendarView: View {
             Spacer(minLength: 8)
 
             VStack(spacing: 14) {
+                Button {
+                    Task { await openRandomDiary() }
+                } label: {
+                    HStack(spacing: 8) {
+                        Text("🎲").font(.system(size: 17))
+                        Text(isPickingRandom ? "지난 일기 고르는 중..." : "그날의 일기 꺼내 보기").font(.sketchbook(18))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .foregroundStyle(SketchbookStyle.ink)
+                    .background(SketchbookStyle.paper)
+                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(SketchbookStyle.ink, lineWidth: 2))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+                .buttonStyle(.plain)
+                .disabled(isPickingRandom)
+
                 HStack(spacing: 14) {
                     Text("AI 4컷 · \(countByKind(.aiFourCut))")
                     Text("사진 · \(countByKind(.photos))")
@@ -328,7 +357,55 @@ struct DiaryCalendarView: View {
     }
 
     private func openWrite(date: String, existing: DiaryItem?) {
+        randomDate = nil
         screen = .write(date: date, existing: existing)
+    }
+
+    /// 과거 일기 하나를 랜덤으로 열기
+    private func openRandomDiary() async {
+        guard !isPickingRandom else { return }
+        isPickingRandom = true
+        defer { isPickingRandom = false }
+        do {
+            let dates = try await SupabaseService.shared.fetchPastDiaryDates(before: todayDateString)
+            guard let picked = DiaryMemory.pickRandomDate(from: dates, current: randomDate) else {
+                errorMessage = "아직 지난 일기가 없어요. 오늘 일기부터 그려 볼까요?"
+                return
+            }
+            if await showDiary(date: picked) {
+                randomDate = picked
+            }
+        } catch {
+            if !error.isCancellation { errorMessage = error.localizedDescription }
+        }
+    }
+
+    /// 다른 탭(1년 전 오늘 카드)에서 요청한 날짜 일기 열기
+    private func consumeOpenRequest() async {
+        guard let date = openRequest.pendingDate else { return }
+        openRequest.pendingDate = nil
+        randomDate = nil
+        _ = await showDiary(date: date)
+    }
+
+    /// 해당 날짜가 속한 달로 이동한 뒤 일기 상세를 연다
+    private func showDiary(date: String) async -> Bool {
+        guard let target = Self.isoDateFormatter.date(from: date) else { return false }
+        let sameMonth = calendar.isDate(target, equalTo: monthAnchor, toGranularity: .month)
+        if !sameMonth || diariesByDate[date] == nil {
+            monthAnchor = target
+            await loadDiaries()
+        }
+        if diariesByDate[date] == nil,
+           let diary = try? await SupabaseService.shared.fetchDiary(date: date) {
+            diariesByDate[date] = diary
+        }
+        guard diariesByDate[date] != nil else {
+            errorMessage = "일기를 불러오지 못했어요."
+            return false
+        }
+        screen = .detail(date: date)
+        return true
     }
 
     private func moveDay(from dateString: String, by delta: Int) {
@@ -337,6 +414,7 @@ struct DiaryCalendarView: View {
         else { return }
         let newDateString = Self.isoDateFormatter.string(from: newDate)
         if let diary = diariesByDate[newDateString] {
+            randomDate = nil
             screen = .detail(date: diary.date)
         } else {
             openWrite(date: newDateString, existing: nil)

@@ -377,6 +377,30 @@ export async function getDiariesByMonth(year, month) {
   }
 }
 
+/**
+ * 오늘 이전에 쓴 일기 날짜 목록 (랜덤 일기용)
+ * @param {string} today YYYY-MM-DD
+ * @returns {Promise<string[]>}
+ */
+export async function getPastDiaryDates(today) {
+  const userId = await getCurrentUserId()
+  if (!userId) return []
+
+  const { data, error } = await supabase
+    .from('diaries')
+    .select('date')
+    .eq('user_id', userId)
+    .lt('date', today)
+    .order('date', { ascending: false })
+
+  if (error) {
+    console.error('과거 일기 날짜 조회 오류:', error)
+    throw error
+  }
+
+  return (data || []).map((row) => row.date)
+}
+
 export async function deleteDiary(date) {
   const userId = await getCurrentUserId()
   if (!userId) {

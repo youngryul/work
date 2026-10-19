@@ -21,6 +21,8 @@ struct MainTabView: View {
     @State private var showLogoutConfirm = false
     /// 탭 이동 시 초기화되지 않도록 MainTabView에서 소유
     @StateObject private var timerViewModel = StudyTimerViewModel()
+    /// '1년 전 오늘' 카드 등에서 일기를 열어 달라는 요청
+    @ObservedObject private var diaryOpenRequest = DiaryOpenRequest.shared
 
     /// 하단 탭은 5개만 두어 iOS 시스템 More가 생기지 않게 한다.
     private var tabBarSelection: Binding<Int> {
@@ -80,6 +82,10 @@ struct MainTabView: View {
             if selectedTab == Self.removedToeicTabTag {
                 selectedTab = Self.moreTabTag
             }
+        }
+        .onChange(of: diaryOpenRequest.pendingDate) { _, newValue in
+            // 일기 탭으로 이동 (실제 열기는 DiaryCalendarView가 처리)
+            if newValue != nil { selectedTab = 2 }
         }
         .confirmationDialog("로그아웃", isPresented: $showLogoutConfirm) {
             Button("로그아웃", role: .destructive) {

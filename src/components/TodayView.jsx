@@ -9,6 +9,7 @@ import { MENU_ICON_PATHS } from '../constants/navigationMenu.js'
 import { APP_THEMES, shouldShowTodayExcelGrid } from '../constants/appThemes.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 import ViewPageTitle from './ViewPageTitle.jsx'
+import DiaryMemoryCard from './DiaryMemoryCard.jsx'
 
 /**
  * 오늘 날짜를 YYYY-MM-DD 형식으로 반환
@@ -348,6 +349,9 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
               : '오늘은 무엇을 할까요?'}
           </p>
         </ViewPageTitle>
+
+        {/* 1년 전 오늘 일기 (있을 때만) */}
+        <DiaryMemoryCard />
 
         {/* 할 일 목록 */}
         {isLoading ? (
