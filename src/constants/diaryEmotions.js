@@ -5,6 +5,7 @@
 export const DIARY_EMOTIONS = {
   happiness: { label: '행복', color: '#FACC15' }, // 햇살 같은 노랑
   excitement: { label: '설렘', color: '#FB7185' }, // 두근거리는 코랄 핑크
+  surprise: { label: '놀람', color: '#E879F9' }, // 번쩍이는 자홍빛
   love: { label: '사랑', color: '#EC4899' }, // 장밋빛 분홍
   gratitude: { label: '감사', color: '#F59E0B' }, // 따뜻한 호박빛 금색
   pride: { label: '뿌듯함', color: '#FB923C' }, // 노을 같은 주황
@@ -39,6 +40,9 @@ const EMOTION_SYNONYMS = {
   cheerful: 'happiness', delight: 'happiness', delighted: 'happiness', fun: 'happiness',
   excited: 'excitement', thrill: 'excitement', thrilled: 'excitement',
   anticipation: 'excitement', flutter: 'excitement', playful: 'excitement',
+  curious: 'excitement', curiosity: 'excitement',
+  surprised: 'surprise', amazed: 'surprise', amazement: 'surprise', astonished: 'surprise',
+  shock: 'surprise', shocked: 'surprise', wonder: 'surprise', awe: 'surprise',
   loved: 'love', affection: 'love', romantic: 'love', romance: 'love',
   grateful: 'gratitude', thankful: 'gratitude', thankfulness: 'gratitude', appreciation: 'gratitude',
   proud: 'pride', accomplishment: 'pride', achievement: 'pride', accomplished: 'pride',
@@ -51,18 +55,21 @@ const EMOTION_SYNONYMS = {
   relieved: 'relief',
   determined: 'determination', motivated: 'determination', motivation: 'determination', resolve: 'determination',
   nostalgic: 'nostalgia', longing: 'nostalgia', missing: 'nostalgia', yearning: 'nostalgia',
+  bittersweet: 'nostalgia', pensive: 'nostalgia', reflective: 'nostalgia', thoughtful: 'nostalgia',
   embarrassed: 'embarrassment', shy: 'embarrassment', shame: 'embarrassment', awkward: 'embarrassment',
   envious: 'envy', jealous: 'envy', jealousy: 'envy',
   confused: 'confusion', bewildered: 'confusion',
   anxious: 'anxiety', worry: 'anxiety', worried: 'anxiety', nervous: 'anxiety',
   stress: 'anxiety', stressed: 'anxiety', fear: 'anxiety', afraid: 'anxiety',
+  scared: 'anxiety', overwhelmed: 'anxiety', nervousness: 'anxiety',
   tired: 'tiredness', exhausted: 'tiredness', exhaustion: 'tiredness', fatigue: 'tiredness',
   sleepy: 'tiredness', bored: 'tiredness', boredom: 'tiredness',
-  lonely: 'loneliness',
+  lonely: 'loneliness', empty: 'loneliness', emptiness: 'loneliness',
   sad: 'sadness', sorrow: 'sadness', grief: 'sadness', melancholy: 'sadness', gloomy: 'sadness',
-  disappointed: 'disappointment', regret: 'disappointment',
+  hurt: 'sadness', depressed: 'sadness',
+  disappointed: 'disappointment', regret: 'disappointment', guilt: 'disappointment', guilty: 'disappointment',
   frustrated: 'frustration', annoyed: 'frustration', annoyance: 'frustration',
-  irritated: 'frustration', irritation: 'frustration',
+  irritated: 'frustration', irritation: 'frustration', upset: 'frustration',
   angry: 'anger', rage: 'anger', mad: 'anger', furious: 'anger',
 }
 
