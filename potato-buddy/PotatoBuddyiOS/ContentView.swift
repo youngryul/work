@@ -47,6 +47,7 @@ struct ContentView: View {
                 await ScheduleWidgetService.refreshTodayWidget()
                 await WeatherWidgetService.shared.refreshWeatherWidget()
                 await jellyStore.refresh()
+                await NotificationService.shared.refreshIfEnabled()
             }
         }
     }

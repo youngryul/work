@@ -294,6 +294,8 @@ struct BacklogView: View {
         do {
             try await SupabaseService.shared.moveToToday(id: task.id)
             tasks.removeAll { $0.id == task.id }
+            // 오늘 할 일이 늘었으니 알림 개수를 다시 맞춘다
+            Task { await NotificationService.shared.refreshIfEnabled() }
         } catch {
             if !error.isCancellation { errorMessage = error.localizedDescription }
         }

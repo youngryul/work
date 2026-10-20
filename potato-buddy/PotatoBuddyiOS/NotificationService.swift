@@ -33,9 +33,14 @@ final class NotificationService {
         await center.notificationSettings().authorizationStatus
     }
 
-    // MARK: - 앱 활성화 시 새로고침
+    /// 새로고침이 겹칠 때 가장 마지막 요청만 예약에 반영하기 위한 번호
+    private var refreshGeneration = 0
+
+    // MARK: - 새로고침 (앱 활성화, 할 일·일기 변경 시)
 
     func refreshIfEnabled() async {
+        refreshGeneration += 1
+        let generation = refreshGeneration
         guard UserDefaults.standard.bool(forKey: Self.enabledKey) else { return }
         let status = await authorizationStatus()
         guard status == .authorized || status == .provisional else { return }
@@ -55,6 +60,9 @@ final class NotificationService {
             hasTodayDiary = (try? await SupabaseService.shared.fetchDiary(date: formatDateKey(Date()))) != nil
         }
 
+        // 조회하는 동안 더 새로운 새로고침이나 전체 끄기가 있었으면 이 결과는 버린다
+        guard generation == refreshGeneration else { return }
+
         center.removeAllPendingNotificationRequests()
         if walkOn { scheduleWalkJelly() }
         if todoOn { scheduleTodoNotifications(todoCount: todoCount) }
@@ -64,6 +72,7 @@ final class NotificationService {
     // MARK: - 취소
 
     func cancelAll() {
+        refreshGeneration += 1
         center.removeAllPendingNotificationRequests()
     }
 
@@ -149,14 +158,17 @@ final class NotificationService {
 
     /// 오늘 할일 알림 내용 (동적)
     private func makeTodayContent(count: Int?) -> UNMutableNotificationContent {
+        // 조회 실패 시 개수를 모르므로 정적 내용으로 보낸다
+        guard let count = count else { return makeGenericContent() }
         let c = UNMutableNotificationContent()
         c.sound = .default
-        if let count = count, count > 0 {
+        if count > 0 {
             c.title = "📋 할 일 \(count)개 남음"
             c.body = "오늘 완료해야 할 할 일이 \(count)개 남아있어요!"
         } else {
-            c.title = "📝 오늘 할 일 등록"
-            c.body = "오늘 할 일을 아직 등록하지 않으셨어요! 지금 추가해보세요."
+            // 0개는 모두 완료한 경우와 아직 등록하지 않은 경우가 함께 들어온다
+            c.title = "📝 남은 할 일 없음"
+            c.body = "오늘 할 일을 다 끝냈다면 잘했어요! 아직 없다면 지금 추가해보세요."
         }
         return c
     }

@@ -218,6 +218,8 @@ struct TodayView: View {
             let awarded = try await SupabaseService.shared.completeTask(id: task.id)
             pendingCompleteIds.remove(task.id)
             tasks.removeAll { $0.id == task.id }
+            // 알림에 들어가는 남은 할 일 개수를 다시 맞춘다
+            Task { await NotificationService.shared.refreshIfEnabled() }
             if awarded > 0 {
                 jellyEarnedMessage = "젤리 +\(awarded)을 획득했어요."
                 await jellyStore.refresh()
@@ -273,6 +275,7 @@ struct TodayView: View {
             newTaskTitle = ""
             newTaskDrawing = PKDrawing()
             await loadTasks()
+            Task { await NotificationService.shared.refreshIfEnabled() }
         } catch {
             if !error.isCancellation { errorMessage = error.localizedDescription }
         }
