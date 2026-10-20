@@ -4,6 +4,8 @@ import Foundation
 /// 앱 로컬 알림 관리
 /// - 걷기 젤리: 매일 오후 8시 (반복)
 /// - 오늘 할일: 매일 오후 12시·7시 (당일 동적 내용, 이후 7일 정적 내용)
+/// - 일기: 매일 오후 10시 (오늘 일기를 이미 썼으면 오늘 알림은 건너뜀, 7일치)
+/// 전체 알림(enabledKey)이 켜져 있을 때 항목별 설정을 따로 적용한다
 @MainActor
 final class NotificationService {
     static let shared = NotificationService()
@@ -11,6 +13,15 @@ final class NotificationService {
 
     private let center = UNUserNotificationCenter.current()
     static let enabledKey = "potato-notifications-enabled"
+    // 항목별 알림 설정 (기본값: 켜짐)
+    static let walkEnabledKey = "potato-notifications-walk-enabled"
+    static let todoEnabledKey = "potato-notifications-todo-enabled"
+    static let diaryEnabledKey = "potato-notifications-diary-enabled"
+
+    /// 저장된 값이 없으면 켜짐으로 본다
+    static func isEnabled(_ key: String) -> Bool {
+        UserDefaults.standard.object(forKey: key) as? Bool ?? true
+    }
 
     // MARK: - 권한
 
@@ -29,23 +40,28 @@ final class NotificationService {
         let status = await authorizationStatus()
         guard status == .authorized || status == .provisional else { return }
 
-        let todoCount: Int?
-        do {
-            let tasks = try await SupabaseService.shared.fetchTodayTasks()
-            todoCount = tasks.count
-        } catch {
-            todoCount = nil
+        let walkOn = Self.isEnabled(Self.walkEnabledKey)
+        let todoOn = Self.isEnabled(Self.todoEnabledKey)
+        let diaryOn = Self.isEnabled(Self.diaryEnabledKey)
+
+        var todoCount: Int?
+        if todoOn {
+            todoCount = try? await SupabaseService.shared.fetchTodayTasks().count
         }
-        scheduleAll(todoCount: todoCount)
-    }
 
-    // MARK: - 전체 스케줄 / 취소
+        // 조회에 실패하면 안 쓴 것으로 보고 오늘 알림도 예약한다
+        var hasTodayDiary = false
+        if diaryOn {
+            hasTodayDiary = (try? await SupabaseService.shared.fetchDiary(date: formatDateKey(Date()))) != nil
+        }
 
-    func scheduleAll(todoCount: Int?) {
         center.removeAllPendingNotificationRequests()
-        scheduleWalkJelly()
-        scheduleTodoNotifications(todoCount: todoCount)
+        if walkOn { scheduleWalkJelly() }
+        if todoOn { scheduleTodoNotifications(todoCount: todoCount) }
+        if diaryOn { scheduleDiaryNotifications(skipToday: hasTodayDiary) }
     }
+
+    // MARK: - 취소
 
     func cancelAll() {
         center.removeAllPendingNotificationRequests()
@@ -101,6 +117,33 @@ final class NotificationService {
                     trigger: trigger
                 ))
             }
+        }
+    }
+
+    // MARK: - 일기 (22:00, 7일치)
+
+    private func scheduleDiaryNotifications(skipToday: Bool) {
+        let now = Date()
+        let calendar = Calendar.current
+
+        for daysAhead in 0..<7 {
+            if daysAhead == 0 && skipToday { continue }
+            guard let baseDate = calendar.date(byAdding: .day, value: daysAhead, to: now) else { continue }
+            var dc = calendar.dateComponents([.year, .month, .day], from: baseDate)
+            dc.hour = 22
+            dc.minute = 0
+            guard let fireDate = calendar.date(from: dc), fireDate > now else { continue }
+
+            let content = UNMutableNotificationContent()
+            content.title = "📔 오늘 일기 쓰기"
+            content.body = "오늘 하루는 어땠나요? 잠들기 전에 일기를 남겨보세요!"
+            content.sound = .default
+            let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: false)
+            center.add(UNNotificationRequest(
+                identifier: "potato-diary-\(formatDateKey(baseDate))",
+                content: content,
+                trigger: trigger
+            ))
         }
     }
 

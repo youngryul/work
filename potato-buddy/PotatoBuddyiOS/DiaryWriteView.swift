@@ -374,6 +374,8 @@ struct DiaryWriteView: View {
         do {
             let result = try await SupabaseService.shared.saveDiaryTextOnly(date: date, content: content)
             onSaved(result.item)
+            // 오늘 일기를 썼으면 오늘 밤 일기 알림을 빼도록 다시 예약
+            Task { await NotificationService.shared.refreshIfEnabled() }
         } catch {
             if !error.isCancellation { errorMessage = error.localizedDescription }
         }
@@ -403,6 +405,7 @@ struct DiaryWriteView: View {
                     }
                 )
                 onSaved(result.item)
+                Task { await NotificationService.shared.refreshIfEnabled() }
             case .photos:
                 break
             }

@@ -7,6 +7,9 @@ struct SettingsView: View {
     @Binding var showLogoutConfirm: Bool
     @AppStorage(StepCounterConstants.dailyGoalUserDefaultsKey) private var dailyStepGoal: Int = StepCounterConstants.defaultDailyGoal
     @AppStorage(NotificationService.enabledKey) private var notificationsEnabled: Bool = false
+    @AppStorage(NotificationService.walkEnabledKey) private var walkNotificationEnabled: Bool = true
+    @AppStorage(NotificationService.todoEnabledKey) private var todoNotificationEnabled: Bool = true
+    @AppStorage(NotificationService.diaryEnabledKey) private var diaryNotificationEnabled: Bool = true
     @State private var showNotificationDeniedAlert = false
     @State private var showDeleteAccountConfirm = false
     @State private var isDeletingAccount = false
@@ -90,12 +93,18 @@ struct SettingsView: View {
                     }
 
                     if notificationsEnabled {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("• 걷기 젤리 알림: 매일 오후 8시")
-                            Text("• 오늘 할 일 알림: 매일 오후 12시·7시")
-                        }
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        notificationTypeToggle(
+                            "걷기 젤리", detail: "매일 오후 8시",
+                            systemImage: "figure.walk", isOn: $walkNotificationEnabled
+                        )
+                        notificationTypeToggle(
+                            "오늘 할 일", detail: "매일 오후 12시·7시",
+                            systemImage: "checklist", isOn: $todoNotificationEnabled
+                        )
+                        notificationTypeToggle(
+                            "일기", detail: "매일 오후 10시 · 오늘 일기를 썼으면 건너뜀",
+                            systemImage: "book.closed.fill", isOn: $diaryNotificationEnabled
+                        )
                     }
                 } header: {
                     Text("알림")
@@ -161,6 +170,23 @@ struct SettingsView: View {
             Button("확인", role: .cancel) {}
         } message: {
             Text(deleteAccountError)
+        }
+    }
+
+    /// 항목별 알림 토글: 바꾸면 예약된 알림을 다시 잡는다
+    private func notificationTypeToggle(
+        _ title: String, detail: String, systemImage: String, isOn: Binding<Bool>
+    ) -> some View {
+        Toggle(isOn: isOn) {
+            VStack(alignment: .leading, spacing: 2) {
+                Label(title, systemImage: systemImage)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .onChange(of: isOn.wrappedValue) { _, _ in
+            Task { await NotificationService.shared.refreshIfEnabled() }
         }
     }
 
