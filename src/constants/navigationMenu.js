@@ -166,4 +166,11 @@ export const EXTERNAL_LINKS = [
     href: 'https://codingmate.vercel.app/',
     target: '_blank',
   },
+  {
+    id: 'airplane-cheep',
+    label: '항공료 확인',
+    icon: '✈️',
+    href: 'https://airplane-cheep.vercel.app/',
+    target: '_blank',
+  },
 ]
