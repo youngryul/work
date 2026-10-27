@@ -45,6 +45,7 @@ const DAILY_MENU_ITEMS = [
 /** 기록·라이프 */
 const LIFE_MENU_ITEMS = [
   { id: 'records', label: '프로젝트 기록', icon: '📁' },
+  { id: 'notebooks', label: '필기 노트', icon: '✍️' },
   { id: 'goals', label: '2026 목표', icon: '🎯' },
   { id: 'habit-tracker', label: '습관 트래커', icon: '📌' },
   { id: 'bucketlist', label: '버킷리스트', icon: '🪣' },

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, bigint, timestamp, numeric, primaryKey, integer, jsonb, date } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, boolean, bigint, timestamp, numeric, primaryKey, integer, jsonb, date, doublePrecision } from 'drizzle-orm/pg-core'
 
 /**
  * categories 테이블 스키마 정의
@@ -660,6 +660,38 @@ export const feedbacks = pgTable('feedbacks', {
   content: text('content').notNull(),
   status: text('status').default('pending').notNull(), // pending | reviewing | done | rejected
   adminReply: text('admin_reply'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * notebooks — 필기 노트 (iOS PencilKit 필기, 웹은 보기 전용)
+ */
+export const notebooks = pgTable('notebooks', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  title: text('title').notNull().default(''),
+  coverColor: text('cover_color').notNull().default('green'),
+  paperType: text('paper_type').notNull().default('lined'), // blank | lined | grid | dot
+  pdfPath: text('pdf_path'), // PDF로 만든 노트의 원본 경로 (notebooks 버킷)
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * notebook_pages — 필기 노트 페이지
+ */
+export const notebookPages = pgTable('notebook_pages', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  notebookId: uuid('notebook_id').notNull(),
+  userId: uuid('user_id').notNull(),
+  pageOrder: doublePrecision('page_order').notNull().default(0),
+  paperType: text('paper_type').notNull().default('lined'), // blank | lined | grid | dot | pdf
+  pdfPageIndex: integer('pdf_page_index'),
+  drawingPath: text('drawing_path'), // PKDrawing 데이터 경로
+  previewPath: text('preview_path'), // 미리보기 JPEG 경로
+  images: jsonb('images').notNull().default([]), // [{ id, path, x, y, width, height }]
+  recognizedText: text('recognized_text').notNull().default(''),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })

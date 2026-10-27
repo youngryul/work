@@ -10,6 +10,7 @@ import TodoCalendarView from './components/TodoCalendarView.jsx'
 import ScheduleCalendarView from './components/ScheduleCalendarView.jsx'
 import GraduateTimetableView from './components/GraduateTimetableView.jsx'
 import GraduateNotesView from './components/Graduate/GraduateNotesView.jsx'
+import NotebookView from './components/notebook/NotebookView.jsx'
 import CalendarView from './components/CalendarView.jsx'
 import AnnualReviewView from './components/AnnualReviewView.jsx'
 import Review2026View from './components/Review2026View.jsx'
@@ -510,6 +511,7 @@ function AppContent() {
         {currentView === 'schedule-calendar' && <ScheduleCalendarView />}
         {currentView === 'graduate-timetable' && <GraduateTimetableView />}
         {currentView === 'graduate-notes' && <GraduateNotesView />}
+        {currentView === 'notebooks' && <NotebookView />}
         {currentView === 'diary-calendar' && (
           <CalendarView
             calendarKey={diaryCalendarKey}

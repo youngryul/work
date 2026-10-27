@@ -121,6 +121,7 @@ export const ROLE_MENU_CONFIG_GROUPS = [
     title: '기록',
     menuIds: [
       'records',
+      'notebooks',
       'goals',
       'habit-tracker',
       'bucketlist',

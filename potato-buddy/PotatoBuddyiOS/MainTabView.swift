@@ -10,6 +10,7 @@ struct MainTabView: View {
     static let graduateNotesTabTag = 17
     static let ddayTabTag = 18
     static let travelAlbumTabTag = 19
+    static let notebooksTabTag = 20
 
     /// 예전 토익 탭 tag. 커스텀 더보기에도 넣지 않는다.
     private static let removedToeicTabTag = 7
@@ -124,6 +125,8 @@ struct MainTabView: View {
             moreDestination(GraduateNotesView())
         case Self.ddayTabTag:
             moreDestination(DDayManagerView())
+        case Self.notebooksTabTag:
+            moreDestination(NotebookListView())
         case 10:
             moreDestination(SettingsView(showLogoutConfirm: $showLogoutConfirm))
         default:
@@ -168,6 +171,7 @@ private struct MoreMenuView: View {
         (8, "냉장고", "refrigerator.fill"),
         (15, "시간표", "graduationcap.fill"),
         (MainTabView.graduateNotesTabTag, "대학원 기록", "note.text"),
+        (MainTabView.notebooksTabTag, "필기 노트", "pencil.and.scribble"),
         (MainTabView.ddayTabTag, "디데이", "calendar.badge.clock"),
         (9, "시계", "clock.fill"),
         (10, "설정", "gearshape.fill"),
