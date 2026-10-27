@@ -148,7 +148,7 @@ export default function BacklogView() {
     <div className="max-w-6xl mx-auto p-6">
       <BacklogAssistantChat onTasksCreated={loadTasks} />
       <ViewPageTitle iconSrc={MENU_ICON_PATHS.backlog} title="백로그">
-        <p className="text-xl text-gray-600">
+        <p className="text-xl text-white">
           {visibleTasks.length > 0
             ? `총 ${visibleTasks.length}개의 할 일`
             : '백로그가 비어있어요'}
