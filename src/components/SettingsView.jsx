@@ -3,6 +3,7 @@ import { getNotificationSettings, saveNotificationSettings } from '../services/n
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { APP_THEMES } from '../constants/appThemes.js'
+import ClaudeConnectionSettings from './ClaudeConnectionSettings.jsx'
 
 /**
  * 설정 화면 컴포넌트
@@ -80,7 +81,7 @@ export default function SettingsView({ currentTheme = 'posily', onThemeChange })
         <p className="text-xl text-gray-600">앱 설정을 관리하세요</p>
       </div>
 
-      <div className="mb-6 flex gap-3">
+      <div className="mb-6 flex flex-wrap gap-3">
         {canUseNotifications && (
           <button
             type="button"
@@ -97,7 +98,16 @@ export default function SettingsView({ currentTheme = 'posily', onThemeChange })
         >
           🎨 테마 설정
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('claude')}
+          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${activeTab === 'claude' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+        >
+          🤖 Claude 연결
+        </button>
       </div>
+
+      {activeTab === 'claude' && <ClaudeConnectionSettings />}
 
       {canUseNotifications && activeTab === 'notification' && (
         <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">

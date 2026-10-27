@@ -1,16 +1,27 @@
 // Supabase Edge Function: 포실이 백로그 MCP 서버
-// Claude(claude.ai 커스텀 커넥터)에서 대화 내용을 백로그 할 일로 바로 등록하기 위한 MCP 서버
+// Claude(claude.ai 커스텀 커넥터, Claude Code)에서 대화 내용을 백로그 할 일로 바로 등록하기 위한 MCP 서버
 // - 프로토콜: MCP Streamable HTTP (상태 없는 JSON-RPC 응답)
-// - 인증: URL 쿼리 ?key=<MCP_ACCESS_KEY> (claude.ai 커스텀 커넥터는 임의 헤더를 넣을 수 없어 URL 키 방식 사용)
-// - 필요한 시크릿: MCP_ACCESS_KEY, MCP_USER_ID (할 일을 넣을 내 계정 user_id)
-//   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY 는 Edge Function 에 기본 제공됨
+// - 인증: 사용자별 연결 키 psl_... (설계: BACKLOG_MCP_KEYS_DESIGN.md)
+//   · Authorization: Bearer psl_... 헤더 (Claude Code 권장, URL에 키가 남지 않음)
+//   · URL 쿼리 ?key=psl_... (claude.ai 커스텀 커넥터는 임의 헤더를 넣을 수 없어 URL 키 방식 사용)
+//   · 전환 기간: 기존 시크릿 MCP_ACCESS_KEY 와 같으면 MCP_USER_ID 계정으로 동작 (두 시크릿을 지우면 꺼짐)
+// - SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY 는 Edge Function 에 기본 제공됨
 // - 배포: supabase functions deploy backlog-mcp --no-verify-jwt
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
 
 const SUPPORTED_PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05']
-const SERVER_INFO = { name: 'posili-backlog', version: '1.1.0' }
+const SERVER_INFO = { name: 'posili-backlog', version: '1.2.0' }
 const MAX_ITEMS_PER_CALL = 30
 const SYSTEM_CATEGORY_DAILY = '일상'
+
+/** 연결 키 접두사 */
+const KEY_PREFIX = 'psl_'
+/** 키 하나당 도구 호출 분당 한도 */
+const TOOL_CALLS_PER_MINUTE = 30
+/** 키 하나당 할 일 추가 하루 한도 (한국 시간 기준) */
+const TASKS_PER_DAY = 300
+/** last_used_at 갱신 간격 (매 요청마다 쓰지 않도록) */
+const LAST_USED_UPDATE_INTERVAL_MS = 5 * 60 * 1000
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,8 +33,12 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
 )
-const USER_ID = Deno.env.get('MCP_USER_ID') ?? ''
-const ACCESS_KEY = Deno.env.get('MCP_ACCESS_KEY') ?? ''
+// 전환 기간용 기존 단일 키 (A안 11에서 시크릿 삭제)
+const LEGACY_USER_ID = Deno.env.get('MCP_USER_ID') ?? ''
+const LEGACY_ACCESS_KEY = Deno.env.get('MCP_ACCESS_KEY') ?? ''
+
+/** 요청한 사용자 정보. connectionId 가 없으면 기존 단일 키 (한도 미적용) */
+type Caller = { userId: string; connectionId: string | null }
 
 /** Claude 에 노출할 도구 목록 */
 const TOOLS = [
@@ -97,12 +112,89 @@ const TOOLS = [
   },
 ]
 
+// ===== 인증 =====
+
+async function sha256Hex(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+/** Authorization: Bearer 헤더 → 없으면 ?key= 쿼리 */
+function readKey(req: Request): string {
+  const auth = req.headers.get('authorization') ?? ''
+  const bearer = auth.match(/^Bearer\s+(.+)$/i)?.[1]?.trim()
+  if (bearer?.startsWith(KEY_PREFIX)) return bearer
+  return new URL(req.url).searchParams.get('key')?.trim() ?? ''
+}
+
+/** 키로 사용자 찾기. 없거나 폐기된 키면 null */
+async function resolveCaller(key: string): Promise<Caller | null> {
+  if (!key) return null
+
+  if (key.startsWith(KEY_PREFIX)) {
+    const { data, error } = await supabase
+      .from('mcp_connections')
+      .select('id, user_id, last_used_at')
+      .eq('key_hash', await sha256Hex(key))
+      .is('revoked_at', null)
+      .maybeSingle()
+    if (error) throw new Error(`연결 키 확인 실패: ${error.message}`)
+    if (!data) return null
+
+    const lastUsed = data.last_used_at ? new Date(data.last_used_at).getTime() : 0
+    if (Date.now() - lastUsed > LAST_USED_UPDATE_INTERVAL_MS) {
+      // 마지막 사용 시각은 응답을 기다리지 않고 갱신
+      supabase
+        .from('mcp_connections')
+        .update({ last_used_at: new Date().toISOString() })
+        .eq('id', data.id)
+        .then(({ error: updateError }) => {
+          if (updateError) console.error('last_used_at 갱신 실패:', updateError.message)
+        })
+    }
+    return { userId: data.user_id, connectionId: data.id }
+  }
+
+  if (LEGACY_ACCESS_KEY && LEGACY_USER_ID && key === LEGACY_ACCESS_KEY) {
+    return { userId: LEGACY_USER_ID, connectionId: null }
+  }
+  return null
+}
+
+// ===== 사용 한도 =====
+
+/** 한도 안이면 amount 만큼 쓰고 true. 기존 단일 키는 한도 없음 */
+async function consume(caller: Caller, bucket: string, amount: number, limit: number): Promise<boolean> {
+  if (!caller.connectionId) return true
+  const { data, error } = await supabase.rpc('mcp_consume', {
+    p_connection_id: caller.connectionId,
+    p_bucket: bucket,
+    p_amount: amount,
+    p_limit: limit,
+  })
+  if (error) throw new Error(`사용 한도 확인 실패: ${error.message}`)
+  return data === true
+}
+
+function minuteBucket(): string {
+  return `m:${new Date().toISOString().slice(0, 16)}`
+}
+
+/** 한국 시간 기준 날짜 YYYY-MM-DD */
+function todayKst(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date())
+}
+
+// ===== 도구 =====
+
 /** 사용자 카테고리 이름 목록 (시스템 카테고리 '일상' 포함) */
-async function getCategoryNames(): Promise<string[]> {
+async function getCategoryNames(userId: string): Promise<string[]> {
   const { data, error } = await supabase
     .from('categories')
     .select('name')
-    .eq('user_id', USER_ID)
+    .eq('user_id', userId)
     .order('name', { ascending: true })
   if (error) throw new Error(`카테고리 조회 실패: ${error.message}`)
   const names = (data ?? []).map((c: { name: string }) => c.name)
@@ -111,11 +203,11 @@ async function getCategoryNames(): Promise<string[]> {
 }
 
 /** 기본 카테고리: user_preferences.default_category → 첫 카테고리 → '작업' */
-async function getDefaultCategory(names: string[]): Promise<string> {
+async function getDefaultCategory(userId: string, names: string[]): Promise<string> {
   const { data } = await supabase
     .from('user_preferences')
     .select('default_category')
-    .eq('user_id', USER_ID)
+    .eq('user_id', userId)
     .maybeSingle()
   const preferred = data?.default_category
   if (preferred && names.includes(preferred)) return preferred
@@ -124,13 +216,13 @@ async function getDefaultCategory(names: string[]): Promise<string> {
 
 type TaskInput = { title?: string; category?: string; memo?: string; scheduled_date?: string }
 
-async function addBacklogTasks(args: { tasks?: TaskInput[] }) {
+async function addBacklogTasks(caller: Caller, args: { tasks?: TaskInput[] }) {
   const tasks = Array.isArray(args?.tasks) ? args.tasks : []
   if (tasks.length === 0) throw new Error('tasks 가 비어 있습니다.')
   if (tasks.length > MAX_ITEMS_PER_CALL) throw new Error(`한 번에 최대 ${MAX_ITEMS_PER_CALL}개까지 추가할 수 있습니다.`)
 
-  const names = await getCategoryNames()
-  const defaultCategory = await getDefaultCategory(names)
+  const names = await getCategoryNames(caller.userId)
+  const defaultCategory = await getDefaultCategory(caller.userId, names)
   const now = Date.now()
 
   const rows = tasks.map((t, i) => {
@@ -143,7 +235,7 @@ async function addBacklogTasks(args: { tasks?: TaskInput[] }) {
       category: t.category && names.includes(t.category) ? t.category : defaultCategory,
       // 같은 밀리초에 여러 개가 들어가도 입력 순서가 유지되도록 1ms 씩 증가
       createdat: now + i,
-      user_id: USER_ID,
+      user_id: caller.userId,
       priority: 0,
     }
     if (t.memo?.trim()) row.memo = t.memo.trim()
@@ -156,6 +248,11 @@ async function addBacklogTasks(args: { tasks?: TaskInput[] }) {
     return row
   })
 
+  // 입력 검증이 끝난 뒤에 하루 한도를 쓴다 (잘못된 요청이 한도를 깎지 않도록)
+  if (!(await consume(caller, `d:${todayKst()}:tasks`, rows.length, TASKS_PER_DAY))) {
+    throw new Error(`할 일은 하루 ${TASKS_PER_DAY}개까지 추가할 수 있습니다. 내일 다시 시도해 주세요.`)
+  }
+
   const { data, error } = await supabase.from('tasks').insert(rows).select('id, title, category, scheduled_date')
   if (error) throw new Error(`할 일 추가 실패: ${error.message}`)
 
@@ -166,12 +263,12 @@ async function addBacklogTasks(args: { tasks?: TaskInput[] }) {
   return `백로그에 ${lines.length}개를 추가했습니다.\n${lines.join('\n')}`
 }
 
-async function listBacklog(args: { limit?: number }) {
+async function listBacklog(caller: Caller, args: { limit?: number }) {
   const limit = Math.min(Math.max(Number(args?.limit) || 50, 1), 200)
   const { data, error } = await supabase
     .from('tasks')
     .select('id, title, category, memo, scheduled_date, createdat')
-    .eq('user_id', USER_ID)
+    .eq('user_id', caller.userId)
     .eq('completed', false)
     .eq('istoday', false)
     .order('createdat', { ascending: false })
@@ -186,11 +283,11 @@ async function listBacklog(args: { limit?: number }) {
     .join('\n')
 }
 
-async function listTodayTasks() {
+async function listTodayTasks(caller: Caller) {
   const { data, error } = await supabase
     .from('tasks')
     .select('id, title, category, completed, memo')
-    .eq('user_id', USER_ID)
+    .eq('user_id', caller.userId)
     .eq('istoday', true)
     .order('priority', { ascending: true })
     .order('createdat', { ascending: true })
@@ -204,7 +301,7 @@ async function listTodayTasks() {
     .join('\n')
 }
 
-async function updateTaskMemo(args: { task_id?: string; memo?: string; mode?: string }) {
+async function updateTaskMemo(caller: Caller, args: { task_id?: string; memo?: string; mode?: string }) {
   const taskId = (args?.task_id ?? '').trim()
   const memo = (args?.memo ?? '').trim()
   if (!taskId) throw new Error('task_id 가 필요합니다.')
@@ -215,30 +312,34 @@ async function updateTaskMemo(args: { task_id?: string; memo?: string; mode?: st
   const { data: task, error: findError } = await supabase
     .from('tasks')
     .select('id, title, memo')
-    .eq('user_id', USER_ID)
+    .eq('user_id', caller.userId)
     .eq('id', taskId)
     .maybeSingle()
   if (findError) throw new Error(`할 일 조회 실패: ${findError.message}`)
   if (!task) throw new Error('해당 id 의 할 일을 찾을 수 없습니다.')
 
   const nextMemo = args?.mode === 'replace' || !task.memo ? memo : `${task.memo}\n\n${memo}`
-  const { error } = await supabase.from('tasks').update({ memo: nextMemo }).eq('user_id', USER_ID).eq('id', taskId)
+  const { error } = await supabase.from('tasks').update({ memo: nextMemo }).eq('user_id', caller.userId).eq('id', taskId)
   if (error) throw new Error(`메모 수정 실패: ${error.message}`)
   return `'${task.title}' 메모를 ${args?.mode === 'replace' ? '교체' : '추가'}했습니다. (현재 ${nextMemo.length}자)`
 }
 
-async function callTool(name: string, args: Record<string, unknown>): Promise<string> {
+async function callTool(caller: Caller, name: string, args: Record<string, unknown>): Promise<string> {
+  if (!(await consume(caller, minuteBucket(), 1, TOOL_CALLS_PER_MINUTE))) {
+    throw new Error(`요청이 너무 많습니다. 도구는 1분에 ${TOOL_CALLS_PER_MINUTE}번까지 쓸 수 있으니 잠시 후 다시 시도해 주세요.`)
+  }
+
   switch (name) {
     case 'add_backlog_tasks':
-      return await addBacklogTasks(args as { tasks?: TaskInput[] })
+      return await addBacklogTasks(caller, args as { tasks?: TaskInput[] })
     case 'list_backlog':
-      return await listBacklog(args as { limit?: number })
+      return await listBacklog(caller, args as { limit?: number })
     case 'list_today_tasks':
-      return await listTodayTasks()
+      return await listTodayTasks(caller)
     case 'update_task_memo':
-      return await updateTaskMemo(args as { task_id?: string; memo?: string; mode?: string })
+      return await updateTaskMemo(caller, args as { task_id?: string; memo?: string; mode?: string })
     case 'list_categories':
-      return (await getCategoryNames()).join(', ')
+      return (await getCategoryNames(caller.userId)).join(', ')
     default:
       throw new Error(`알 수 없는 도구: ${name}`)
   }
@@ -247,7 +348,7 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<st
 type JsonRpcRequest = { jsonrpc: '2.0'; id?: string | number | null; method: string; params?: Record<string, unknown> }
 
 /** JSON-RPC 메시지 하나 처리. 알림(notification)이면 null 반환 */
-async function handleMessage(msg: JsonRpcRequest): Promise<Record<string, unknown> | null> {
+async function handleMessage(caller: Caller, msg: JsonRpcRequest): Promise<Record<string, unknown> | null> {
   const isNotification = msg.id === undefined || msg.id === null
   const ok = (result: unknown) => ({ jsonrpc: '2.0', id: msg.id, result })
   const fail = (code: number, message: string) => ({ jsonrpc: '2.0', id: msg.id ?? null, error: { code, message } })
@@ -276,7 +377,7 @@ async function handleMessage(msg: JsonRpcRequest): Promise<Record<string, unknow
       const name = String(msg.params?.name ?? '')
       const args = (msg.params?.arguments ?? {}) as Record<string, unknown>
       try {
-        const text = await callTool(name, args)
+        const text = await callTool(caller, name, args)
         return ok({ content: [{ type: 'text', text }] })
       } catch (e) {
         // 도구 실행 오류는 isError 로 돌려줘서 Claude 가 원인을 보고 다시 시도할 수 있게 함
@@ -298,11 +399,15 @@ function json(body: unknown, status = 200) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
-  // 접근 키 확인
-  const key = new URL(req.url).searchParams.get('key')
-  if (!ACCESS_KEY || !USER_ID) return json({ error: '서버 설정(MCP_ACCESS_KEY, MCP_USER_ID)이 필요합니다.' }, 500)
+  // 연결 키 확인
+  let caller: Caller | null
+  try {
+    caller = await resolveCaller(readKey(req))
+  } catch (e) {
+    return json({ error: (e as Error).message }, 500)
+  }
   // 401 을 돌려주면 Claude 가 OAuth 로그인 절차를 시작하므로, 키 불일치는 403 으로 응답
-  if (key !== ACCESS_KEY) return json({ error: 'forbidden: key 가 올바르지 않습니다.' }, 403)
+  if (!caller) return json({ error: 'forbidden: 연결 키가 올바르지 않거나 폐기되었습니다.' }, 403)
 
   // 상태 없는 서버이므로 SSE 스트림(GET)은 제공하지 않음
   if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405, headers: corsHeaders })
@@ -314,11 +419,12 @@ Deno.serve(async (req) => {
     return json({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } }, 400)
   }
 
+  const currentCaller = caller
   if (Array.isArray(body)) {
-    const results = (await Promise.all(body.map(handleMessage))).filter((r) => r !== null)
+    const results = (await Promise.all(body.map((msg) => handleMessage(currentCaller, msg)))).filter((r) => r !== null)
     return results.length ? json(results) : new Response(null, { status: 202, headers: corsHeaders })
   }
 
-  const result = await handleMessage(body)
+  const result = await handleMessage(currentCaller, body)
   return result ? json(result) : new Response(null, { status: 202, headers: corsHeaders })
 })

@@ -695,3 +695,34 @@ export const notebookPages = pgTable('notebook_pages', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
+
+/**
+ * mcp_connections — 포실이 MCP 사용자별 연결 키 (원문 대신 SHA-256 해시 저장)
+ * 발급·폐기는 DB 함수 issue_mcp_key / revoke_mcp_key 로만 한다 (supabase-mcp-connections.sql)
+ */
+export const mcpConnections = pgTable('mcp_connections', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  label: text('label').notNull().default(''),
+  keyHash: text('key_hash').notNull().unique(),
+  keyPrefix: text('key_prefix').notNull(), // 표시용 앞부분 (예: psl_1a2b3c4d)
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }), // null 이면 사용 중
+})
+
+/**
+ * mcp_rate_counters — MCP 연결 키별 사용 한도 카운터 (서버 전용)
+ */
+export const mcpRateCounters = pgTable(
+  'mcp_rate_counters',
+  {
+    connectionId: uuid('connection_id').notNull(),
+    bucket: text('bucket').notNull(), // 'm:YYYY-MM-DDTHH:MM' (분) / 'd:YYYY-MM-DD:tasks' (일)
+    count: integer('count').notNull().default(0),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.connectionId, table.bucket] }),
+  }),
+)
