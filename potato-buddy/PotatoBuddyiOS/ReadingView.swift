@@ -762,7 +762,7 @@ private struct BookSearchSheet: View {
                 } else if !errorMessage.isEmpty {
                     Text(errorMessage).foregroundStyle(.red)
                 } else if results.isEmpty && hasSearched {
-                    // 알라딘 결과가 없으면 Open Library 로 대체되는데, Open Library 는 3글자 이상만 검색 가능 (웹과 동일 안내)
+                    // 교보문고 결과가 없으면 Open Library 로 대체되는데, Open Library 는 3글자 이상만 검색 가능 (웹과 동일 안내)
                     Text(searchedQuery.count < 3
                          ? "검색 결과가 없습니다. 검색어는 3글자 이상 입력해 주세요."
                          : "검색 결과가 없습니다.")

@@ -1,8 +1,8 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { EXCHANGE_RATE_ITEMS } from './src/constants/exchangeRates.js'
 import { normalizeNaverExchangeResponse } from './src/utils/exchangeRate.js'
-import { searchAladinBooks } from './src/utils/aladinBook.js'
+import { searchKyoboBooks } from './src/utils/kyoboBook.js'
 
 const NAVER_EXCHANGE_API = 'https://api.stock.naver.com/marketindex/exchange'
 
@@ -127,8 +127,6 @@ function bookSearchDevPlugin() {
   return {
     name: 'book-search-dev',
     configureServer(server) {
-      const env = loadEnv(server.config.mode, process.cwd(), '')
-
       server.middlewares.use('/api/book-search', async (req, res) => {
         res.setHeader('Content-Type', 'application/json; charset=utf-8')
         res.setHeader('Cache-Control', 'no-store')
@@ -146,15 +144,8 @@ function bookSearchDevPlugin() {
           return
         }
 
-        const ttbKey = env.ALADIN_TTB_KEY
-        if (!ttbKey) {
-          res.statusCode = 500
-          res.end(JSON.stringify({ error: 'ALADIN_TTB_KEY가 설정되지 않았습니다.' }))
-          return
-        }
-
         try {
-          const books = await searchAladinBooks(q, ttbKey)
+          const books = await searchKyoboBooks(q)
           res.end(JSON.stringify({ books }))
         } catch (error) {
           console.error('book-search dev error:', error)

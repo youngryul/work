@@ -1,6 +1,6 @@
 /**
  * 책 검색 및 관리 서비스
- * 알라딘 Open API(서버 프록시 /api/book-search)를 활용한 책 검색 및 등록
+ * 교보문고 검색(서버 프록시 /api/book-search)을 활용한 책 검색 및 등록
  */
 import { supabase } from '../config/supabase.js'
 import { getCurrentUserId } from '../utils/authHelper.js'
@@ -32,27 +32,27 @@ function mapOpenLibraryDoc(doc) {
 }
 
 /**
- * 알라딘 책 검색 (서버 프록시 /api/book-search 경유, CORS 미지원으로 직접 호출 불가)
+ * 교보문고 책 검색 (서버 프록시 /api/book-search 경유, CORS 미지원으로 직접 호출 불가)
  * @param {string} q - trim된 검색어
  * @returns {Promise<Array>}
  */
-async function searchBooksAladin(q) {
+async function searchBooksKyobo(q) {
   try {
     const response = await fetch(`/api/book-search?q=${encodeURIComponent(q)}`)
     const data = await response.json().catch(() => ({}))
     if (!response.ok) {
-      console.warn('[책 검색] 알라딘:', data.error || response.status)
+      console.warn('[책 검색] 교보문고:', data.error || response.status)
       return []
     }
     return data.books || []
   } catch (e) {
-    console.warn('[책 검색] 알라딘 요청 실패:', e)
+    console.warn('[책 검색] 교보문고 요청 실패:', e)
     return []
   }
 }
 
 /**
- * Open Library 검색 (API 키 불필요, 알라딘 실패 시 대체)
+ * Open Library 검색 (API 키 불필요, 교보문고 실패 시 대체)
  * 검색어는 최소 3자여야 합니다.
  * @param {string} q - trim된 검색어
  * @returns {Promise<Array>}
@@ -84,7 +84,7 @@ async function searchBooksOpenLibrary(q) {
 }
 
 /**
- * 책 검색 (알라딘 우선, 실패·결과 없음 시 Open Library)
+ * 책 검색 (교보문고 우선, 실패·결과 없음 시 Open Library)
  * @param {string} query - 검색어 (책 제목)
  * @returns {Promise<Array>} 검색된 책 목록
  */
@@ -94,9 +94,9 @@ export async function searchBooks(query) {
     return []
   }
 
-  const fromAladin = await searchBooksAladin(q)
-  if (fromAladin.length > 0) {
-    return fromAladin
+  const fromKyobo = await searchBooksKyobo(q)
+  if (fromKyobo.length > 0) {
+    return fromKyobo
   }
 
   const fromOl = await searchBooksOpenLibrary(q)

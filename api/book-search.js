@@ -1,4 +1,4 @@
-import { searchAladinBooks } from '../src/utils/aladinBook.js'
+import { searchKyoboBooks } from '../src/utils/kyoboBook.js'
 
 /**
  * @param {import('http').ServerResponse} res
@@ -13,7 +13,7 @@ function sendJson(res, status, body) {
 }
 
 /**
- * Vercel Serverless — 책 검색 (알라딘 Open API)
+ * Vercel Serverless — 책 검색 (교보문고 공개 검색 페이지)
  */
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -34,14 +34,8 @@ export default async function handler(req, res) {
     return
   }
 
-  const ttbKey = process.env.ALADIN_TTB_KEY
-  if (!ttbKey) {
-    sendJson(res, 500, { error: 'ALADIN_TTB_KEY가 설정되지 않았습니다.' })
-    return
-  }
-
   try {
-    const books = await searchAladinBooks(q, ttbKey)
+    const books = await searchKyoboBooks(q)
     sendJson(res, 200, { books })
   } catch (error) {
     console.error('book-search error:', error)

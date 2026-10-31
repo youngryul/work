@@ -3141,18 +3141,18 @@ final class SupabaseService {
         return MonthlyReadingStats(totalBooks: books, totalSessions: rows.count, totalMinutes: minutes)
     }
 
-    /// 알라딘(웹 서버 프록시) → 결과 없음·실패 시 Open Library (웹 bookService.searchBooks 와 동일)
+    /// 교보문고(웹 서버 프록시) → 결과 없음·실패 시 Open Library (웹 bookService.searchBooks 와 동일)
     func searchBooks(query: String) async throws -> [BookSearchResult] {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { return [] }
 
-        let aladin = await searchBooksAladin(query: q)
-        if !aladin.isEmpty { return aladin }
+        let kyobo = await searchBooksKyobo(query: q)
+        if !kyobo.isEmpty { return kyobo }
         return try await searchBooksOpenLibrary(query: q)
     }
 
-    /// 알라딘 API는 TTB 키가 서버에만 있고 CORS 미지원이므로 웹의 /api/book-search 프록시를 경유
-    private func searchBooksAladin(query: String) async -> [BookSearchResult] {
+    /// 교보문고 검색 페이지 파싱은 서버에서 처리하므로 웹의 /api/book-search 프록시를 경유
+    private func searchBooksKyobo(query: String) async -> [BookSearchResult] {
         guard var components = URLComponents(
             url: Config.websiteURL.appendingPathComponent("api/book-search"),
             resolvingAgainstBaseURL: false
@@ -3163,8 +3163,8 @@ final class SupabaseService {
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-        struct AladinResponse: Decodable { let books: [AladinBook]? }
-        struct AladinBook: Decodable {
+        struct KyoboResponse: Decodable { let books: [KyoboBook]? }
+        struct KyoboBook: Decodable {
             let apiId: String?
             let title: String?
             let author: String?
@@ -3182,7 +3182,7 @@ final class SupabaseService {
             guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
                 return []
             }
-            let decoded = try JSONDecoder().decode(AladinResponse.self, from: data)
+            let decoded = try JSONDecoder().decode(KyoboResponse.self, from: data)
             return (decoded.books ?? []).compactMap { book in
                 let title = book.title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
                 guard !title.isEmpty else { return nil }
@@ -3197,7 +3197,7 @@ final class SupabaseService {
                     description: book.description ?? "",
                     pageCount: book.pageCount ?? 0,
                     publishedDate: book.publishedDate ?? "",
-                    apiSource: book.apiSource ?? "aladin"
+                    apiSource: book.apiSource ?? "kyobo"
                 )
             }
         } catch {
