@@ -13,6 +13,7 @@ struct NotebookEditorView: View {
     @State private var showPageGrid = false
     @State private var showSettings = false
     @State private var showDeletePageConfirm = false
+    @State private var showDeleteNotebookConfirm = false
     @State private var photoToDelete: NotebookPageImage?
     @State private var shareItems: [Any]?
     @State private var isExporting = false
@@ -36,6 +37,7 @@ struct NotebookEditorView: View {
                         photos: model.photos,
                         photoImages: model.photoImages,
                         isPhotoEditing: isPhotoEditing,
+                        isToolPickerHidden: showDeletePageConfirm || showDeleteNotebookConfirm || photoToDelete != nil,
                         onDrawingChanged: { model.drawingChanged($0) },
                         onPhotosChanged: { model.photosChanged($0) },
                         onDeletePhoto: { photoToDelete = $0 }
@@ -95,6 +97,14 @@ struct NotebookEditorView: View {
                 Task { await model.deleteCurrentPage() }
             }
             Button("취소", role: .cancel) {}
+        }
+        .confirmationDialog("노트를 지울까요?", isPresented: $showDeleteNotebookConfirm, titleVisibility: .visible) {
+            Button("노트 삭제", role: .destructive) {
+                Task { await deleteNotebook() }
+            }
+            Button("취소", role: .cancel) {}
+        } message: {
+            Text("모든 페이지와 필기가 함께 지워져요.")
         }
         .confirmationDialog(
             "사진을 지울까요?",
@@ -171,22 +181,15 @@ struct NotebookEditorView: View {
 
     @ViewBuilder
     private var saveStateIcon: some View {
-        switch model.saveState {
-        case .saved:
-            Image(systemName: "checkmark.icloud")
-                .foregroundStyle(.secondary)
-                .accessibilityLabel("저장됨")
-        case .pending, .saving:
-            Image(systemName: "arrow.triangle.2.circlepath.icloud")
-                .foregroundStyle(.secondary)
-                .accessibilityLabel("저장 중")
-        case .failed(let message):
+        // 저장 실패만 알린다
+        if case .failed(let message) = model.saveState {
             Button {
                 model.errorMessage = "저장하지 못했어요. 기기에는 남아 있고 다음에 다시 올려요.\n\(message)"
             } label: {
-                Image(systemName: "exclamationmark.icloud")
+                Image(systemName: "exclamationmark.triangle")
                     .foregroundStyle(.orange)
             }
+            .accessibilityLabel("저장 실패")
         }
     }
 
@@ -258,6 +261,12 @@ struct NotebookEditorView: View {
                 Label("이 페이지 삭제", systemImage: "trash")
             }
             .disabled(model.pages.count <= 1)
+
+            Button(role: .destructive) {
+                showDeleteNotebookConfirm = true
+            } label: {
+                Label("이 노트 삭제", systemImage: "trash.fill")
+            }
         } label: {
             Image(systemName: "ellipsis.circle")
         }
@@ -268,6 +277,13 @@ struct NotebookEditorView: View {
         await model.flushAndWait()
         isClosing = false
         dismiss()
+    }
+
+    private func deleteNotebook() async {
+        isClosing = true
+        let deleted = await model.deleteNotebook()
+        isClosing = false
+        if deleted { dismiss() }
     }
 
     private func exportPDF() async {

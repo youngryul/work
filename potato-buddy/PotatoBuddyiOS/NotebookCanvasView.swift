@@ -14,6 +14,8 @@ struct NotebookCanvasView: UIViewRepresentable {
     let photos: [NotebookPageImage]
     let photoImages: [String: UIImage]
     let isPhotoEditing: Bool
+    /// 확인 팝업을 가리지 않도록 펜 도구 막대를 잠시 숨긴다
+    let isToolPickerHidden: Bool
     var onDrawingChanged: (PKDrawing) -> Void
     var onPhotosChanged: ([NotebookPageImage]) -> Void
     var onDeletePhoto: (NotebookPageImage) -> Void
@@ -45,6 +47,7 @@ struct NotebookCanvasView: UIViewRepresentable {
         container.configure(pageSize: pageSize, background: background, resetZoom: pageChanged)
         container.photoLayer.update(photos: photos, images: photoImages, isEditing: isPhotoEditing)
         container.setPhotoEditing(isPhotoEditing)
+        container.setToolPickerHidden(isToolPickerHidden)
     }
 
     static func dismantleUIView(_ container: NotebookCanvasContainer, coordinator: Coordinator) {
@@ -102,6 +105,7 @@ final class NotebookCanvasContainer: UIView {
     private var pageSize = NotebookPageLayout.defaultSize
     private var lastFitWidth: CGFloat = 0
     private var isPhotoEditing = false
+    private var isToolPickerHidden = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -142,6 +146,14 @@ final class NotebookCanvasContainer: UIView {
     func hideToolPicker() {
         toolPicker.setVisible(false, forFirstResponder: canvas)
         canvas.resignFirstResponder()
+    }
+
+    func setToolPickerHidden(_ hidden: Bool) {
+        guard hidden != isToolPickerHidden else { return }
+        isToolPickerHidden = hidden
+        toolPicker.setVisible(!hidden, forFirstResponder: canvas)
+        // 팝업이 닫히면 필기를 바로 이어갈 수 있게 캔버스로 돌아온다
+        if !hidden { canvas.becomeFirstResponder() }
     }
 
     override func layoutSubviews() {

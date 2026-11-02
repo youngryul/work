@@ -42,7 +42,11 @@ struct NotebookListView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        // 더보기 상단 커스텀 바(safeAreaInset)와 내비게이션 바가 겹쳐 + 버튼이 가려지므로
+        // NavigationStack/툴바/searchable 대신 상단 헤더에 제목·추가 버튼·검색창을 둔다.
+        VStack(spacing: 0) {
+            header
+
             ScrollView {
                 if trimmedQuery.isEmpty {
                     notebookGrid(notebooks)
@@ -70,28 +74,7 @@ struct NotebookListView: View {
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
                 }
             }
-            .navigationTitle("필기 노트")
-            .searchable(text: $searchText, prompt: "노트 제목·손글씨 검색")
             .refreshable { await load() }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button {
-                            showCreate = true
-                        } label: {
-                            Label("새 노트", systemImage: "square.and.pencil")
-                        }
-                        Button {
-                            showPdfImporter = true
-                        } label: {
-                            Label("PDF 가져오기", systemImage: "doc.badge.arrow.up")
-                        }
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                    .disabled(isImporting)
-                }
-            }
         }
         .task { await load() }
         .task(id: trimmedQuery) { await search(trimmedQuery) }
@@ -142,6 +125,54 @@ struct NotebookListView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+    }
+
+    private var header: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Text("필기 노트")
+                    .font(.title2.bold())
+                Spacer()
+                Menu {
+                    Button {
+                        showCreate = true
+                    } label: {
+                        Label("새 노트", systemImage: "square.and.pencil")
+                    }
+                    Button {
+                        showPdfImporter = true
+                    } label: {
+                        Label("PDF 가져오기", systemImage: "doc.badge.arrow.up")
+                    }
+                } label: {
+                    Label("추가", systemImage: "plus.circle.fill")
+                        .font(.headline)
+                }
+                .disabled(isImporting)
+            }
+
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField("노트 제목·손글씨 검색", text: $searchText)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 10)
     }
 
     private func notebookGrid(_ items: [Notebook]) -> some View {

@@ -267,6 +267,20 @@ final class NotebookEditorModel: ObservableObject {
         }
     }
 
+    /// 노트 전체를 지운다. 성공하면 true
+    func deleteNotebook() async -> Bool {
+        // 진행 중인 저장이 끝난 뒤 지워야 파일이 다시 생기지 않는다
+        await flushAndWait()
+        do {
+            try await SupabaseService.shared.deleteNotebook(notebook)
+            pages.forEach { NotebookFileCache.removePage(pageId: $0.id) }
+            return true
+        } catch {
+            errorMessage = "노트를 지우지 못했어요: \(error.localizedDescription)"
+            return false
+        }
+    }
+
     func updateNotebook(title: String, cover: NotebookCoverColor, paper: NotebookPaperType) async {
         do {
             notebook = try await SupabaseService.shared.updateNotebook(
