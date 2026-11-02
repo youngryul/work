@@ -1,3 +1,5 @@
+import { POSILY_BACKGROUND_IMAGE } from '../constants/appThemes.js'
+
 /**
  * 포실이 대문 페이지
  * 비로그인 초기 화면 - 로그인 버튼을 누르면 로그인 폼으로 이동
@@ -9,7 +11,7 @@ export default function LandingPage({ onLogin }) {
       {/* 배경 이미지 (TodayView 와 동일) */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/images/todo.png')" }}
+        style={{ backgroundImage: `url('${POSILY_BACKGROUND_IMAGE}')` }}
       />
 
       {/* 어두운 오버레이 - 텍스트 가독성 확보 */}

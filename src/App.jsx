@@ -70,7 +70,7 @@ import {
   fetchMonthlyStatsSummary,
 } from './services/monthlyStatsPopupService.js'
 import { applyDailyRoutinesToToday } from './services/routineService.js'
-import { getThemeWrapperClass, APP_THEMES } from './constants/appThemes.js'
+import { getThemeWrapperClass, APP_THEMES, POSILY_BACKGROUND_IMAGE } from './constants/appThemes.js'
 import { useAiTokenInfo } from './hooks/useAiTokenInfo.js'
 import { RECIPE_IMAGE_GENERATION_TOKEN_COST } from './constants/aiTokenSettings.js'
 import { JELLY_UPDATED_EVENT } from './utils/jellyEvents.js'
@@ -217,7 +217,7 @@ function AppContent() {
   // 배경 이미지: posily 테마이면 모든 화면에 적용
   useEffect(() => {
     const showBg = appTheme === APP_THEMES.POSILY
-    document.body.style.backgroundImage = showBg ? 'url(/images/todo.png)' : ''
+    document.body.style.backgroundImage = showBg ? `url(${POSILY_BACKGROUND_IMAGE})` : ''
     document.body.style.backgroundSize = showBg ? 'cover' : ''
     document.body.style.backgroundPosition = showBg ? 'center' : ''
     document.body.style.backgroundAttachment = showBg ? 'fixed' : ''

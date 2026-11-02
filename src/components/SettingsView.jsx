@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { getNotificationSettings, saveNotificationSettings } from '../services/notificationSettingsService.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
-import { APP_THEMES } from '../constants/appThemes.js'
+import { APP_THEMES, POSILY_BACKGROUND_IMAGE } from '../constants/appThemes.js'
 import ClaudeConnectionSettings from './ClaudeConnectionSettings.jsx'
 
 /**
@@ -198,7 +198,7 @@ export default function SettingsView({ currentTheme = 'posily', onThemeChange })
               </div>
               <div
                 className="h-20 rounded-lg border border-pink-200 bg-cover bg-center"
-                style={{ backgroundImage: 'url(/images/todo.png)' }}
+                style={{ backgroundImage: `url(${POSILY_BACKGROUND_IMAGE})` }}
               />
               <p className="text-sm text-gray-600 mt-3">기존처럼 배경 이미지를 사용하는 감성 테마</p>
             </button>
