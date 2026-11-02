@@ -1,3 +1,6 @@
+/** 포실이 테마 배경 이미지 (시즌에 맞춰 이 값만 바꾼다) */
+export const POSILY_BACKGROUND_IMAGE = '/images/christmas.webp'
+
 /** 앱 테마 id */
 export const APP_THEMES = {
   POSILY: 'posily',
