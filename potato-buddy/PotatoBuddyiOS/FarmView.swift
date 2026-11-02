@@ -18,6 +18,9 @@ final class FarmViewModel: ObservableObject {
     @Published var toastMessage = ""
     @Published var errorMessage = ""
     @Published var levelUp: LevelUp?
+    @Published private(set) var trip: FarmTripState?
+    @Published private(set) var isTripSubmitting = false
+    @Published var postcards: [FarmTripStop] = []
 
     private let jellyStore = JellyBalanceStore.shared
 
@@ -92,6 +95,61 @@ final class FarmViewModel: ObservableObject {
             // 설정 조회 실패는 기본값으로 대체 가능하므로 화면을 막지 않는다.
             settings = (try? await settingsTask) ?? settings
             await jellyTask
+            if isMaxStage { await loadTrip() }
+        } catch {
+            if error.isCancellation { return }
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    // MARK: 여행
+
+    var activeTripCourse: FarmTripCourse? {
+        guard let active = trip?.activeTrip else { return nil }
+        return trip?.courses.first { $0.courseKey == active.courseKey }
+    }
+
+    private func loadTrip() async {
+        // 여행 조회 실패가 성장 화면을 막지 않도록 한다.
+        guard let state = try? await SupabaseService.shared.getMyFarmTrip() else { return }
+        trip = state
+        if !state.unseenPostcards.isEmpty { postcards = state.unseenPostcards }
+    }
+
+    func startTrip(_ course: FarmTripCourse) async {
+        guard let trip, !isTripSubmitting else { return }
+        guard jellyStore.balance >= trip.startJellyCost else {
+            errorMessage = "도시락에는 젤리 \(trip.startJellyCost)개가 필요해요."
+            return
+        }
+        await performTripAction {
+            try await SupabaseService.shared.startFarmTrip(courseKey: course.courseKey)
+            self.toastMessage = "포실이가 \(course.title)로 출발했어요! 🎒"
+        }
+    }
+
+    func claimTripReward() async {
+        guard !isTripSubmitting else { return }
+        await performTripAction {
+            let reward = try await SupabaseService.shared.claimFarmTripReward()
+            self.toastMessage = reward.firstClear
+                ? "\(reward.courseTitle) 첫 완주! 배지와 씨앗 \(reward.seedGranted)개를 받았어요 🏅"
+                : "\(reward.courseTitle) 여행을 마쳤어요. 다음 코스를 골라 보세요!"
+        }
+    }
+
+    func markPostcardsSeen() {
+        postcards = []
+        Task { try? await SupabaseService.shared.markFarmPostcardsSeen() }
+    }
+
+    private func performTripAction(_ action: () async throws -> Void) async {
+        isTripSubmitting = true
+        defer { isTripSubmitting = false }
+
+        do {
+            try await action()
+            await load(showSpinner: false)
         } catch {
             if error.isCancellation { return }
             errorMessage = error.localizedDescription
@@ -149,6 +207,213 @@ final class FarmViewModel: ObservableObject {
     }
 }
 
+// MARK: - 여행 화면
+
+/// 엽서 이미지가 없으면 경유지 이모지로 표시한다.
+private struct FarmPostcardArt: View {
+    let stop: FarmTripStop
+
+    var body: some View {
+        if let string = stop.imageUrl, string.hasPrefix("http"), let url = URL(string: string) {
+            AsyncImage(url: url) { image in
+                image.resizable().scaledToFill()
+            } placeholder: {
+                emojiArt
+            }
+        } else {
+            emojiArt
+        }
+    }
+
+    private var emojiArt: some View {
+        ZStack {
+            LinearGradient(colors: [Color.blue.opacity(0.15), Color.orange.opacity(0.15)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+            Text(stop.emoji).font(.largeTitle)
+        }
+    }
+}
+
+/// 10단계 이후 여행 카드
+private struct FarmTripCard: View {
+    @ObservedObject var viewModel: FarmViewModel
+    let trip: FarmTripState
+    @State private var pendingCourse: FarmTripCourse?
+    @State private var showAlbum = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("🎒 포실이 여행").font(.headline)
+                Spacer()
+                Button(showAlbum ? "여행 보기" : "엽서 도감") { showAlbum.toggle() }
+                    .font(.subheadline.weight(.semibold))
+            }
+
+            if showAlbum {
+                album
+            } else if let active = trip.activeTrip, let course = viewModel.activeTripCourse {
+                activeTrip(active, course: course)
+            } else {
+                coursePicker
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(RoundedRectangle(cornerRadius: 16).fill(Color(.secondarySystemGroupedBackground)))
+        .confirmationDialog(
+            "\(pendingCourse?.title ?? "")로 떠날까요?",
+            isPresented: Binding(
+                get: { pendingCourse != nil },
+                set: { if !$0 { pendingCourse = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("젤리 \(trip.startJellyCost)개로 출발") {
+                if let course = pendingCourse {
+                    Task { await viewModel.startTrip(course) }
+                }
+            }
+            Button("취소", role: .cancel) {}
+        }
+    }
+
+    private func activeTrip(_ active: FarmActiveTrip, course: FarmTripCourse) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("\(course.emoji) \(course.title)").font(.subheadline.weight(.semibold))
+
+            ProgressView(value: min(1, Double(active.distanceKm) / Double(max(course.totalKm, 1))))
+
+            HStack {
+                if active.isArrived {
+                    Text("도착했어요!")
+                } else if let next = course.stops.first(where: { $0.kmAt > active.distanceKm }) {
+                    Text("다음 경유지: \(next.name) (\(next.kmAt)km)")
+                }
+                Spacer()
+                Text("\(active.distanceKm) / \(course.totalKm)km").fontWeight(.bold)
+            }
+            .font(.caption)
+            .foregroundColor(.secondary)
+
+            if active.isArrived {
+                Button {
+                    Task { await viewModel.claimTripReward() }
+                } label: {
+                    Text("완주 보상 받기").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(viewModel.isTripSubmitting)
+            } else {
+                Text("오늘 \(active.todayKm) / \(trip.dailyKmCap)km 이동했어요 · \(course.bonusLabel)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+
+    private var coursePicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("기록으로 받은 젤리 1개가 1km가 돼요. 하루 최대 \(trip.dailyKmCap)km까지 이동해요.")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+
+            ForEach(trip.courses) { course in
+                Button {
+                    pendingCourse = course
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(course.emoji) \(course.title) · \(course.totalKm)km\(course.clearCount > 0 ? " 🏅" : "")")
+                            .font(.subheadline.weight(.bold))
+                        Text(course.description)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("\(course.bonusLabel) · 도시락 젤리 \(trip.startJellyCost)개")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .background(RoundedRectangle(cornerRadius: 12).stroke(Color.blue.opacity(0.2), lineWidth: 2))
+                }
+                .buttonStyle(.plain)
+                .disabled(viewModel.isTripSubmitting)
+            }
+        }
+    }
+
+    private var album: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(trip.courses) { course in
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("\(course.emoji) \(course.title)\(course.clearCount > 0 ? " · 🏅 완주 \(course.clearCount)회" : "")")
+                        .font(.subheadline.weight(.bold))
+                    HStack(spacing: 8) {
+                        ForEach(course.stops) { stop in
+                            VStack(spacing: 4) {
+                                if stop.collected {
+                                    FarmPostcardArt(stop: stop)
+                                        .frame(height: 70)
+                                        .frame(maxWidth: .infinity)
+                                        .clipped()
+                                } else {
+                                    Text("?")
+                                        .frame(maxWidth: .infinity, minHeight: 70)
+                                        .background(Color(.systemGray5))
+                                }
+                                Text(stop.collected ? stop.name : "\(stop.kmAt)km")
+                                    .font(.caption2)
+                                    .lineLimit(1)
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// 새로 받은 엽서 시트
+private struct FarmPostcardSheet: View {
+    let postcards: [FarmTripStop]
+    let onClose: () -> Void
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Text("엽서가 도착했어요! 💌").font(.title3.bold())
+
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(postcards) { stop in
+                        VStack(spacing: 6) {
+                            FarmPostcardArt(stop: stop)
+                                .frame(height: 140)
+                                .frame(maxWidth: .infinity)
+                                .clipped()
+                            Text(stop.name).font(.subheadline.weight(.bold))
+                            Text(stop.message)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding([.horizontal, .bottom], 10)
+                        }
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.blue.opacity(0.2)))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                }
+            }
+
+            Button {
+                onClose()
+            } label: {
+                Text("확인").frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding()
+    }
+}
+
 // MARK: - 화면
 
 /// 포실이 성장 — 젤리로 먹이를 주며 10단계까지 키운다.
@@ -187,7 +452,7 @@ struct FarmView: View {
             } message: {
                 Text(viewModel.errorMessage)
             }
-            .alert("먹이 주기", isPresented: Binding(
+            .alert("포실이", isPresented: Binding(
                 get: { !viewModel.toastMessage.isEmpty },
                 set: { _ in viewModel.toastMessage = "" }
             )) {
@@ -216,6 +481,15 @@ struct FarmView: View {
                 )
                 .presentationDetents([.medium])
             }
+            .sheet(isPresented: Binding(
+                get: { !viewModel.postcards.isEmpty },
+                set: { if !$0 { viewModel.markPostcardsSeen() } }
+            )) {
+                FarmPostcardSheet(postcards: viewModel.postcards) {
+                    viewModel.markPostcardsSeen()
+                }
+                .presentationDetents([.medium, .large])
+            }
         }
         .navigationViewStyle(.stack)
         .task { await viewModel.load() }
@@ -232,6 +506,9 @@ struct FarmView: View {
                 characterCard
                 if viewModel.canFeed, let event = viewModel.milkEvent {
                     feedCard(event: event)
+                }
+                if viewModel.isMaxStage, let trip = viewModel.trip {
+                    FarmTripCard(viewModel: viewModel, trip: trip)
                 }
                 jellyGuideCard
             }

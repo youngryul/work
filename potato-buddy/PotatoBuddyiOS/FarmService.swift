@@ -115,6 +115,34 @@ extension SupabaseService {
         return total
     }
 
+    // MARK: - 여행
+
+    /// 여행 상태. RPC가 아직 DB에 없으면 nil을 돌려 여행 영역만 숨긴다.
+    func getMyFarmTrip() async throws -> FarmTripState? {
+        do {
+            let data = try await callFarmRpc("get_my_farm_trip", body: [:])
+            return try JSONDecoder().decode(FarmTripState.self, from: data)
+        } catch let error as NSError where Self.isMissingFarmRpc(error) {
+            return nil
+        }
+    }
+
+    /// 도시락 젤리를 내고 여행 출발
+    func startFarmTrip(courseKey: String) async throws {
+        _ = try await callFarmRpc("start_farm_trip", body: ["p_course_key": courseKey])
+    }
+
+    /// 완주 보상 받기
+    func claimFarmTripReward() async throws -> FarmTripReward {
+        let data = try await callFarmRpc("claim_farm_trip_reward", body: [:])
+        return try JSONDecoder().decode(FarmTripReward.self, from: data)
+    }
+
+    /// 새 엽서를 확인 처리
+    func markFarmPostcardsSeen() async throws {
+        _ = try await callFarmRpc("mark_farm_postcards_seen", body: [:])
+    }
+
     // MARK: - 내부
 
     private func callFarmRpc(_ name: String, body: [String: Any]) async throws -> Data {

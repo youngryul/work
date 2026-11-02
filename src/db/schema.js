@@ -726,3 +726,67 @@ export const mcpRateCounters = pgTable(
     pk: primaryKey({ columns: [table.connectionId, table.bucket] }),
   }),
 )
+
+/**
+ * farm_trip_courses — 포실이 여행 코스
+ */
+export const farmTripCourses = pgTable('farm_trip_courses', {
+  courseKey: text('course_key').primaryKey(),
+  title: text('title').notNull(),
+  emoji: text('emoji').notNull(),
+  description: text('description').notNull(),
+  bonusLabel: text('bonus_label').notNull(),
+  bonusReasons: text('bonus_reasons').array().notNull().default([]),
+  totalKm: integer('total_km').notNull(),
+  rewardSeedCount: integer('reward_seed_count').notNull().default(0),
+  badgeImageUrl: text('badge_image_url'),
+  isActive: boolean('is_active').notNull().default(true),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+/**
+ * farm_trip_stops — 여행 코스 경유지 (도착 시 엽서 지급)
+ */
+export const farmTripStops = pgTable('farm_trip_stops', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  courseKey: text('course_key').notNull(),
+  seq: integer('seq').notNull(),
+  name: text('name').notNull(),
+  emoji: text('emoji').notNull(),
+  kmAt: integer('km_at').notNull(),
+  message: text('message').notNull(),
+  imageUrl: text('image_url'),
+})
+
+/**
+ * user_farm_trips — 사용자별 여행 진행
+ */
+export const userFarmTrips = pgTable('user_farm_trips', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  courseKey: text('course_key').notNull(),
+  status: text('status').notNull().default('traveling'),
+  distanceKm: integer('distance_km').notNull().default(0),
+  distanceToday: integer('distance_today').notNull().default(0),
+  distanceDay: date('distance_day'),
+  startedAt: timestamp('started_at').defaultNow().notNull(),
+  arrivedAt: timestamp('arrived_at'),
+  claimedAt: timestamp('claimed_at'),
+})
+
+/**
+ * user_farm_postcards — 사용자가 받은 여행 엽서
+ */
+export const userFarmPostcards = pgTable(
+  'user_farm_postcards',
+  {
+    userId: uuid('user_id').notNull(),
+    stopId: uuid('stop_id').notNull(),
+    acquiredAt: timestamp('acquired_at').defaultNow().notNull(),
+    seenAt: timestamp('seen_at'),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.stopId] }),
+  }),
+)

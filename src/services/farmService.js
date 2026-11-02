@@ -576,3 +576,68 @@ export async function getFarmRanking(limit = 50) {
   }))
 }
 
+
+/**
+ * 포실이 여행 상태 조회. RPC가 아직 없으면 null을 돌려 여행 영역만 숨긴다.
+ * @returns {Promise<{
+ *   startJellyCost: number,
+ *   dailyKmCap: number,
+ *   activeTrip: { id: string, courseKey: string, status: string, distanceKm: number, todayKm: number } | null,
+ *   courses: Array<Object>,
+ *   unseenPostcards: Array<Object>,
+ * } | null>}
+ */
+export async function getMyFarmTrip() {
+  const userId = await getCurrentUserId()
+  if (!userId) return null
+
+  const { data, error } = await supabase.rpc('get_my_farm_trip')
+  if (error) {
+    console.error('get_my_farm_trip 오류:', error)
+    return null
+  }
+  return {
+    startJellyCost: data?.startJellyCost ?? 20,
+    dailyKmCap: data?.dailyKmCap ?? 40,
+    activeTrip: data?.activeTrip ?? null,
+    courses: data?.courses ?? [],
+    unseenPostcards: data?.unseenPostcards ?? [],
+  }
+}
+
+/**
+ * 도시락 젤리를 내고 여행 출발
+ * @param {string} courseKey
+ */
+export async function startFarmTrip(courseKey) {
+  const { data, error } = await supabase.rpc('start_farm_trip', {
+    p_course_key: courseKey,
+  })
+  if (error) {
+    console.error('start_farm_trip 오류:', error)
+    throw new Error(error.message || '여행을 시작하지 못했어요.')
+  }
+  notifyJellyUpdated({ balance: data?.jellyBalance ?? null, awarded: -(data?.jellySpent ?? 0) })
+  return data
+}
+
+/**
+ * 완주 보상 받기
+ * @returns {Promise<{ courseTitle: string, firstClear: boolean, seedGranted: number }>}
+ */
+export async function claimFarmTripReward() {
+  const { data, error } = await supabase.rpc('claim_farm_trip_reward')
+  if (error) {
+    console.error('claim_farm_trip_reward 오류:', error)
+    throw new Error(error.message || '보상을 받지 못했어요.')
+  }
+  return data
+}
+
+/**
+ * 새 엽서를 확인 처리
+ */
+export async function markFarmPostcardsSeen() {
+  const { error } = await supabase.rpc('mark_farm_postcards_seen')
+  if (error) console.error('mark_farm_postcards_seen 오류:', error)
+}

@@ -171,3 +171,59 @@ struct FarmFeedResponse: Decodable {
         seedGranted = int("seedGranted", "seed_granted") ?? 0
     }
 }
+
+// MARK: - 포실이 여행
+
+/// 여행 경유지 · 엽서
+struct FarmTripStop: Decodable, Equatable, Identifiable {
+    let id: String
+    let seq: Int
+    let name: String
+    let emoji: String
+    let kmAt: Int
+    let message: String
+    let imageUrl: String?
+    let collected: Bool
+}
+
+/// 여행 코스
+struct FarmTripCourse: Decodable, Equatable, Identifiable {
+    let courseKey: String
+    let title: String
+    let emoji: String
+    let description: String
+    let bonusLabel: String
+    let totalKm: Int
+    let rewardSeedCount: Int
+    let clearCount: Int
+    let stops: [FarmTripStop]
+
+    var id: String { courseKey }
+}
+
+/// 진행 중인 여행
+struct FarmActiveTrip: Decodable, Equatable {
+    let id: String
+    let courseKey: String
+    let status: String
+    let distanceKm: Int
+    let todayKm: Int
+
+    var isArrived: Bool { status == "arrived" }
+}
+
+/// `get_my_farm_trip` 결과
+struct FarmTripState: Decodable, Equatable {
+    let startJellyCost: Int
+    let dailyKmCap: Int
+    let activeTrip: FarmActiveTrip?
+    let courses: [FarmTripCourse]
+    let unseenPostcards: [FarmTripStop]
+}
+
+/// `claim_farm_trip_reward` 결과
+struct FarmTripReward: Decodable, Equatable {
+    let courseTitle: String
+    let firstClear: Bool
+    let seedGranted: Int
+}

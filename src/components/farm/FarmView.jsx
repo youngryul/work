@@ -38,6 +38,7 @@ import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 import ViewPageTitle from '../ViewPageTitle.jsx'
 import FarmRankingView from './FarmRankingView.jsx'
+import FarmTripPanel from './FarmTripPanel.jsx'
 
 export default function FarmView() {
 
@@ -504,6 +505,10 @@ export default function FarmView() {
         </section>
 
       )}
+
+      {/* 10단계 이후 여행 */}
+
+      {isMaxStage && <FarmTripPanel jellyBalance={jellyBalance} />}
 
       {/* 젤리 획득 방법 */}
 
