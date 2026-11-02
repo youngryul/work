@@ -173,4 +173,11 @@ export const EXTERNAL_LINKS = [
     href: 'https://airplane-cheep.vercel.app/',
     target: '_blank',
   },
+  {
+    id: 'agora',
+    label: '아고라',
+    icon: '🏛️',
+    href: 'https://agora-nu-azure.vercel.app/',
+    target: '_blank',
+  },
 ]
