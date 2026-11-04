@@ -11,7 +11,7 @@ export default function ViewPageTitle({ iconSrc, icon, title, children }) {
     typeof iconSrc === 'string' && iconSrc.includes('/') ? iconSrc : null
 
   return (
-    <div className="mb-8">
+    <div className="mb-8 page-title-box">
       <div className="flex items-center gap-3 mb-2">
         {imageSrc ? (
           <MenuIcon iconSrc={imageSrc} label={title} size="lg" />
