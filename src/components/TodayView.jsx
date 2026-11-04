@@ -1,5 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
-import { getTodayTasks, resetTodayTasks, moveToBacklog, updateTaskPriorities, moveScheduledTasksToToday } from '../services/taskService.js'
+import {
+  getTodayTasks,
+  resetTodayTasks,
+  moveToBacklog,
+  updateTaskPriorities,
+  moveScheduledTasksToToday,
+  moveTasksToTimeSlot,
+  moveTasksToBacklog,
+} from '../services/taskService.js'
 import { applyDailyRoutinesToToday } from '../services/routineService.js'
 import TaskItem from './TaskItem.jsx'
 import { getWeekStart, getWeekEnd } from '../services/workReportService.js'
@@ -10,6 +18,45 @@ import { APP_THEMES, shouldShowTodayExcelGrid } from '../constants/appThemes.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 import ViewPageTitle from './ViewPageTitle.jsx'
 import DiaryMemoryCard from './DiaryMemoryCard.jsx'
+import TimeSlotSection from './today/TimeSlotSection.jsx'
+import TimeSlotCleanupBanner from './today/TimeSlotCleanupBanner.jsx'
+import {
+  TIME_SLOTS,
+  UNASSIGNED_SLOT,
+  UNASSIGNED_SLOT_KEY,
+  TIME_SLOT_VIEW_STORAGE_KEY,
+  TIME_SLOT_FOCUS_STORAGE_KEY,
+  TIME_SLOT_CLEANUP_DISMISS_STORAGE_KEY,
+  isValidTimeSlot,
+  getTimeSlotInfo,
+  getTimeSlotForDate,
+  getPastTimeSlots,
+} from '../constants/timeSlots.js'
+import { openPomodoroForTask } from '../constants/pomodoro.js'
+
+/** 섹션 표시 순서: 오전 → 오후 → 퇴근 후 → 언제든 */
+const SECTION_ORDER = [...TIME_SLOTS.map((slot) => slot.key), UNASSIGNED_SLOT_KEY]
+
+/**
+ * localStorage boolean 읽기 (실패 시 기본값)
+ * @param {string} key
+ * @param {boolean} fallback
+ */
+const readStoredFlag = (key, fallback = false) => {
+  try {
+    const value = localStorage.getItem(key)
+    return value === null ? fallback : value === 'true'
+  } catch {
+    return fallback
+  }
+}
+
+/**
+ * 할 일 → 섹션 키 (시간대가 없으면 '언제든')
+ * @param {Object} task
+ * @returns {string}
+ */
+const getSectionKey = (task) => (isValidTimeSlot(task.timeSlot) ? task.timeSlot : UNASSIGNED_SLOT_KEY)
 
 /**
  * 오늘 날짜를 YYYY-MM-DD 형식으로 반환
@@ -48,6 +95,23 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
   const [draggedTaskId, setDraggedTaskId] = useState(null)
   const [dragOverIndex, setDragOverIndex] = useState(null)
   const dragStartIndexRef = useRef(null)
+  /** 시간대별 보기 · 집중 모드 (사용자 설정으로 유지) */
+  const [isSlotView, setIsSlotView] = useState(() => readStoredFlag(TIME_SLOT_VIEW_STORAGE_KEY))
+  const [isFocusMode, setIsFocusMode] = useState(() => readStoredFlag(TIME_SLOT_FOCUS_STORAGE_KEY))
+  /** 현재 시각 (1분마다 갱신해 시간대 전환 반영) */
+  const [now, setNow] = useState(() => Date.now())
+  /** 사용자가 직접 펼치거나 접은 섹션 { [sectionKey]: boolean(접힘) } */
+  const [collapsedOverrides, setCollapsedOverrides] = useState({})
+  /** 시간대 섹션 드래그 오버 위치 'slotKey:index' */
+  const [slotDragOverKey, setSlotDragOverKey] = useState(null)
+  const [cleanupDismissedKey, setCleanupDismissedKey] = useState(() => {
+    try {
+      return localStorage.getItem(TIME_SLOT_CLEANUP_DISMISS_STORAGE_KEY) || ''
+    } catch {
+      return ''
+    }
+  })
+  const [isCleaningUp, setIsCleaningUp] = useState(false)
 
   /**
    * 날짜 변경 감지 및 리셋 처리
@@ -318,6 +382,222 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
     dragStartIndexRef.current = null
   }
 
+  // ───────────── 시간대별 보기 ─────────────
+
+  // 1분마다 현재 시각 갱신 (오전 → 오후 전환 등 반영)
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60 * 1000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  /**
+   * 시간대별 보기 / 집중 모드 토글 (localStorage에 저장)
+   */
+  const toggleStoredFlag = (key, setter) => {
+    setter((prev) => {
+      const next = !prev
+      try {
+        localStorage.setItem(key, String(next))
+      } catch {
+        // 저장 실패해도 화면 상태는 유지
+      }
+      return next
+    })
+  }
+
+  const currentSlotKey = getTimeSlotForDate(now)
+  const pastSlotKeys = getPastTimeSlots(currentSlotKey)
+  const todayDateString = getTodayDateString()
+
+  /** 섹션별 미완료 할 일 (핵심 할 일을 섹션 맨 위로) */
+  const tasksBySection = Object.fromEntries(SECTION_ORDER.map((key) => [key, []]))
+  incompleteTasks.forEach((task) => {
+    tasksBySection[getSectionKey(task)].push(task)
+  })
+  SECTION_ORDER.forEach((key) => {
+    // Array.prototype.sort는 안정 정렬이라 같은 그룹 안에서는 priority 순서가 유지됨
+    tasksBySection[key].sort((a, b) => Number(!!b.isKey) - Number(!!a.isKey))
+  })
+
+  /** 섹션별 완료 개수 (애니메이션 중인 항목은 미완료 쪽에서 이미 셈) */
+  const completedCountBySection = Object.fromEntries(SECTION_ORDER.map((key) => [key, 0]))
+  tasks.forEach((task) => {
+    if (task.completed && !completingTaskIds.has(task.id)) {
+      completedCountBySection[getSectionKey(task)] += 1
+    }
+  })
+
+  /** 집중 모드면 지금 시간대 + 언제든만 표시 */
+  const visibleSectionKeys = isFocusMode
+    ? SECTION_ORDER.filter((key) => key === currentSlotKey || key === UNASSIGNED_SLOT_KEY)
+    : SECTION_ORDER
+
+  /** 지난 시간대는 기본 접힘, 사용자가 바꾼 상태가 있으면 그걸 따름 */
+  const isSectionCollapsed = (key) =>
+    key in collapsedOverrides ? collapsedOverrides[key] : pastSlotKeys.includes(key)
+
+  const toggleSectionCollapse = (key) => {
+    setCollapsedOverrides((prev) => ({ ...prev, [key]: !isSectionCollapsed(key) }))
+  }
+
+  /** 지난 시간대에 남은 할 일 (정리 배너용) */
+  const leftoverTasks = pastSlotKeys.flatMap((key) =>
+    tasksBySection[key].filter((task) => !completingTaskIds.has(task.id)),
+  )
+  const leftoverSlotLabels = pastSlotKeys
+    .filter((key) => tasksBySection[key].length > 0)
+    .map((key) => getTimeSlotInfo(key).label)
+  // 같은 날 같은 시간대에서 한 번 닫으면 다시 띄우지 않음
+  const cleanupKey = `${todayDateString}|${currentSlotKey}`
+  const showCleanupBanner =
+    isSlotView && leftoverTasks.length > 0 && cleanupDismissedKey !== cleanupKey
+
+  const dismissCleanupBanner = () => {
+    setCleanupDismissedKey(cleanupKey)
+    try {
+      localStorage.setItem(TIME_SLOT_CLEANUP_DISMISS_STORAGE_KEY, cleanupKey)
+    } catch {
+      // 무시
+    }
+  }
+
+  /**
+   * 지난 시간대 할 일을 지금 시간대로 미루기
+   */
+  const handleMoveLeftoversToCurrent = async () => {
+    const ids = leftoverTasks.map((task) => task.id)
+    setIsCleaningUp(true)
+    try {
+      await moveTasksToTimeSlot(ids, currentSlotKey)
+      setTasks((prev) =>
+        prev.map((task) => (ids.includes(task.id) ? { ...task, timeSlot: currentSlotKey } : task)),
+      )
+      showToast(`${ids.length}개를 ${getTimeSlotInfo(currentSlotKey).label}로 미뤘어요.`, TOAST_TYPES.SUCCESS)
+    } catch (error) {
+      showToast(error.message || '시간대 변경에 실패했습니다.', TOAST_TYPES.ERROR)
+    } finally {
+      setIsCleaningUp(false)
+    }
+  }
+
+  /**
+   * 지난 시간대 할 일을 백로그로 보내기
+   */
+  const handleMoveLeftoversToBacklog = async () => {
+    const ids = leftoverTasks.map((task) => task.id)
+    setIsCleaningUp(true)
+    try {
+      await moveTasksToBacklog(ids)
+      setTasks((prev) => prev.filter((task) => !ids.includes(task.id)))
+      showToast(`${ids.length}개를 백로그로 보냈어요.`, TOAST_TYPES.SUCCESS)
+    } catch (error) {
+      showToast(error.message || '백로그 이동에 실패했습니다.', TOAST_TYPES.ERROR)
+    } finally {
+      setIsCleaningUp(false)
+    }
+  }
+
+  /**
+   * 시간대 섹션 드래그 오버 (index === 섹션 길이면 섹션 맨 끝)
+   */
+  const handleSlotDragOver = (e, sectionKey, index) => {
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = 'move'
+    setSlotDragOverKey(`${sectionKey}:${index}`)
+  }
+
+  /**
+   * 시간대 섹션 드롭: 섹션 안 순서 변경 또는 다른 시간대로 이동
+   */
+  const handleSlotDrop = async (e, targetSectionKey, dropIndex) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setSlotDragOverKey(null)
+
+    const draggedId = draggedTaskId
+    setDraggedTaskId(null)
+    dragStartIndexRef.current = null
+    if (!draggedId) return
+
+    const sections = Object.fromEntries(
+      SECTION_ORDER.map((key) => [key, [...tasksBySection[key]]]),
+    )
+    const sourceSectionKey = SECTION_ORDER.find((key) =>
+      sections[key].some((task) => task.id === draggedId),
+    )
+    if (!sourceSectionKey) return
+
+    const sourceIndex = sections[sourceSectionKey].findIndex((task) => task.id === draggedId)
+    if (sourceSectionKey === targetSectionKey && sourceIndex === dropIndex) return
+
+    const [draggedTask] = sections[sourceSectionKey].splice(sourceIndex, 1)
+    const targetList = sections[targetSectionKey]
+    targetList.splice(Math.min(dropIndex, targetList.length), 0, draggedTask)
+
+    const nextTimeSlot = targetSectionKey === UNASSIGNED_SLOT_KEY ? null : targetSectionKey
+    const isSlotChanged = sourceSectionKey !== targetSectionKey
+
+    // 섹션 순서대로 이어 붙여 priority를 0부터 다시 매김
+    const ordered = SECTION_ORDER.flatMap((key) => sections[key])
+    const priorityUpdates = ordered.map((task, index) => ({
+      id: task.id,
+      priority: index,
+      ...(isSlotChanged && task.id === draggedId ? { timeSlot: nextTimeSlot } : {}),
+    }))
+
+    const updatedById = new Map(
+      priorityUpdates.map((update) => [
+        update.id,
+        'timeSlot' in update ? { priority: update.priority, timeSlot: update.timeSlot } : { priority: update.priority },
+      ]),
+    )
+    setTasks((prev) =>
+      prev.map((task) => (updatedById.has(task.id) ? { ...task, ...updatedById.get(task.id) } : task)),
+    )
+
+    try {
+      await updateTaskPriorities(priorityUpdates)
+    } catch (error) {
+      console.error('시간대 이동 오류:', error)
+      loadTasks()
+    }
+  }
+
+  /**
+   * 할 일 하나 렌더 (시간대 섹션용)
+   */
+  const renderSlotTask = (sectionKey) => (task, index) => (
+    <div
+      key={task.id}
+      draggable
+      onDragStart={(e) => handleDragStart(e, task.id, index)}
+      onDragOver={(e) => handleSlotDragOver(e, sectionKey, index)}
+      onDrop={(e) => handleSlotDrop(e, sectionKey, index)}
+      onDragEnd={() => {
+        handleDragEnd()
+        setSlotDragOverKey(null)
+      }}
+      className={`transition-all duration-200 ${
+        draggedTaskId === task.id
+          ? 'opacity-50'
+          : slotDragOverKey === `${sectionKey}:${index}`
+          ? 'transform translate-y-1'
+          : ''
+      }`}
+    >
+      <TaskItem
+        task={task}
+        onUpdate={handleTaskUpdate}
+        onCompleteAnimationStart={handleCompleteAnimationStart}
+        onDelete={handleTaskDelete}
+        onMoveToBacklog={() => handleMoveToBacklog(task.id)}
+        onStartPomodoro={() => openPomodoroForTask(task)}
+        showQuickTimeSlot={sectionKey === UNASSIGNED_SLOT_KEY}
+      />
+    </div>
+  )
+
   /**
    * 현재 날짜 포맷팅
    */
@@ -353,9 +633,82 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
         {/* 1년 전 오늘 일기 (있을 때만) */}
         <DiaryMemoryCard />
 
+        {/* 보기 옵션: 시간대별 보기 · 집중 모드 */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => toggleStoredFlag(TIME_SLOT_VIEW_STORAGE_KEY, setIsSlotView)}
+            aria-pressed={isSlotView}
+            className={`px-3 py-1.5 rounded-full text-sm font-semibold shadow-sm transition-colors ${
+              isSlotView ? 'bg-green-500 text-white' : 'bg-white/80 text-gray-700 hover:bg-white'
+            }`}
+          >
+            🕒 시간대별 보기
+          </button>
+          {isSlotView && (
+            <button
+              type="button"
+              onClick={() => toggleStoredFlag(TIME_SLOT_FOCUS_STORAGE_KEY, setIsFocusMode)}
+              aria-pressed={isFocusMode}
+              className={`px-3 py-1.5 rounded-full text-sm font-semibold shadow-sm transition-colors ${
+                isFocusMode ? 'bg-green-500 text-white' : 'bg-white/80 text-gray-700 hover:bg-white'
+              }`}
+            >
+              🎯 지금 시간대만 ({getTimeSlotInfo(currentSlotKey).emoji} {getTimeSlotInfo(currentSlotKey).label})
+            </button>
+          )}
+        </div>
+
+        {/* 지난 시간대 정리 배너 */}
+        {!isLoading && showCleanupBanner && (
+          <TimeSlotCleanupBanner
+            pastLabels={leftoverSlotLabels}
+            count={leftoverTasks.length}
+            currentSlot={getTimeSlotInfo(currentSlotKey)}
+            isWorking={isCleaningUp}
+            onMoveToCurrent={handleMoveLeftoversToCurrent}
+            onMoveToBacklog={handleMoveLeftoversToBacklog}
+            onDismiss={dismissCleanupBanner}
+          />
+        )}
+
         {/* 할 일 목록 */}
         {isLoading ? (
           <div className="text-center py-8 text-gray-500 text-xl">로딩 중...</div>
+        ) : isSlotView && totalTodayCount > 0 ? (
+          <div className="space-y-4">
+            {visibleSectionKeys.map((key) => {
+              const sectionTasks = tasksBySection[key]
+              // 집중 모드에서 '언제든' 섹션이 비어 있으면 숨김
+              if (isFocusMode && key === UNASSIGNED_SLOT_KEY && sectionTasks.length === 0) {
+                return null
+              }
+              // 시간대 미지정 섹션은 할 일이 없으면 숨김
+              if (
+                key === UNASSIGNED_SLOT_KEY &&
+                sectionTasks.length === 0 &&
+                completedCountBySection[key] === 0
+              ) {
+                return null
+              }
+              return (
+                <TimeSlotSection
+                  key={key}
+                  slot={key === UNASSIGNED_SLOT_KEY ? UNASSIGNED_SLOT : getTimeSlotInfo(key)}
+                  tasks={sectionTasks}
+                  completedCount={completedCountBySection[key]}
+                  isCurrent={key === currentSlotKey}
+                  isPast={pastSlotKeys.includes(key)}
+                  isCollapsed={isSectionCollapsed(key)}
+                  onToggleCollapse={() => toggleSectionCollapse(key)}
+                  isDropTarget={!!draggedTaskId && slotDragOverKey === `${key}:${sectionTasks.length}`}
+                  onDragOverEnd={(e) => handleSlotDragOver(e, key, sectionTasks.length)}
+                  onDropEnd={(e) => handleSlotDrop(e, key, sectionTasks.length)}
+                  renderTask={renderSlotTask(key)}
+                />
+              )
+            })}
+          </div>
         ) : incompleteTasks.length === 0 ? (
           <div className="text-center py-12 text-gray-400 text-xl">
             {totalTodayCount === 0
@@ -387,6 +740,7 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
                   onCompleteAnimationStart={handleCompleteAnimationStart}
                   onDelete={handleTaskDelete}
                   onMoveToBacklog={() => handleMoveToBacklog(task.id)}
+                  onStartPomodoro={() => openPomodoroForTask(task)}
                 />
               </div>
             ))}

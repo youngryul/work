@@ -5,6 +5,7 @@ import {
   formatStudyDurationShort,
   getStudySecondsByDate,
   getStudyBreakdownForDate,
+  POMODORO_SOURCE,
 } from '../services/studyTimeService.js'
 import {
   STUDY_TIMER_CATEGORIES,
@@ -12,8 +13,12 @@ import {
   getStudyCategoryLabel,
 } from '../constants/studyTimerCategories.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
+import TimeSlotStatsCard from './today/TimeSlotStatsCard.jsx'
 // 주간 업무일지만 사용하므로 일일 업무일지 생성 기능 제거
 // import { generateDailyWorkReport, saveWorkReport, getWorkReport, getWorkReportDatesByMonth } from '../services/workReportService.js'
+
+/** 할 일 달력에서는 뽀모도로 기록을 제외 (뽀모도로 화면에서 따로 합계 표시) */
+const CALENDAR_STUDY_OPTIONS = { excludeSources: [POMODORO_SOURCE] }
 
 /**
  * 할 일 달력 컴포넌트
@@ -44,7 +49,7 @@ export default function TodoCalendar() {
       const month = currentDate.getMonth() + 1
       const [counts, studySeconds] = await Promise.all([
         getCompletedCountsByDate(year, month),
-        getStudySecondsByDate(year, month).catch(() => ({})),
+        getStudySecondsByDate(year, month, CALENDAR_STUDY_OPTIONS).catch(() => ({})),
       ])
       setCompletedCounts(counts)
       setStudySecondsByDate(studySeconds)
@@ -101,7 +106,7 @@ export default function TodoCalendar() {
     try {
       const [tasks, studyBreakdown] = await Promise.all([
         count > 0 ? getCompletedTasksByDate(dateString) : Promise.resolve([]),
-        getStudyBreakdownForDate(dateString).catch(() => ({
+        getStudyBreakdownForDate(dateString, CALENDAR_STUDY_OPTIONS).catch(() => ({
           totalSeconds: studySec,
           byCategory: {},
         })),
@@ -345,6 +350,9 @@ export default function TodoCalendar() {
       ) : (
         generateCalendar()
       )}
+
+      {/* 시간대별 계획 vs 실제 완료 통계 */}
+      <TimeSlotStatsCard year={currentDate.getFullYear()} month={currentDate.getMonth() + 1} />
 
       {/* 완료된 할 일 팝업 */}
       {selectedDate && (

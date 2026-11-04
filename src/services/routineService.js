@@ -68,6 +68,7 @@ function normalizeRoutine(row) {
     createdAt: row.created_at ?? row.createdAt,
     sortOrder: row.sort_order ?? row.sortOrder ?? 0,
     repeatWeekdays: parseWeekdays(row.repeat_weekdays),
+    timeSlot: row.time_slot ?? row.timeSlot ?? null,
   }
 }
 
@@ -126,7 +127,7 @@ export async function getDailyRoutines() {
 
 /**
  * 루틴 추가
- * @param {{ title: string, category?: string, isEnabled?: boolean, repeatWeekdays?: number[] }} payload
+ * @param {{ title: string, category?: string, isEnabled?: boolean, repeatWeekdays?: number[], timeSlot?: string | null }} payload
  */
 export async function createDailyRoutine(payload) {
   const userId = await getCurrentUserId()
@@ -160,6 +161,8 @@ export async function createDailyRoutine(payload) {
         sort_order: nextSort,
         // 매일(NULL)이면 컬럼을 보내지 않아 마이그레이션 전 DB에서도 동작
         ...(repeatWeekdays ? { repeat_weekdays: repeatWeekdays } : {}),
+        // 시간대도 지정했을 때만 보냄
+        ...(payload.timeSlot ? { time_slot: payload.timeSlot } : {}),
       },
     ])
     .select()
@@ -191,7 +194,7 @@ export async function createDailyRoutine(payload) {
 /**
  * 루틴 수정
  * @param {string} id
- * @param {{ title?: string, category?: string, isEnabled?: boolean, repeatWeekdays?: number[] }} updates
+ * @param {{ title?: string, category?: string, isEnabled?: boolean, repeatWeekdays?: number[], timeSlot?: string | null }} updates
  */
 export async function updateDailyRoutine(id, updates) {
   const userId = await getCurrentUserId()
@@ -204,6 +207,7 @@ export async function updateDailyRoutine(id, updates) {
   if ('repeatWeekdays' in updates) {
     dbUpdates.repeat_weekdays = serializeWeekdays(updates.repeatWeekdays)
   }
+  if ('timeSlot' in updates) dbUpdates.time_slot = updates.timeSlot || null
 
   const { data, error } = await supabase
     .from('daily_routines')
@@ -293,7 +297,7 @@ async function ensureRoutineTaskForToday(userId, routine, today) {
     return false
   }
 
-  await createTask(title, routine.category, true)
+  await createTask(title, routine.category, true, { timeSlot: routine.timeSlot })
 
   const { error } = await supabase
     .from('daily_routines')

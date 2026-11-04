@@ -21,6 +21,8 @@ function normalizeTask(task) {
     priority: task.priority ?? 0,
     scheduledDate: task.scheduled_date ?? task.scheduledDate ?? null,
     handwritingImageUrl: task.handwriting_image_url ?? task.handwritingImageUrl ?? null,
+    timeSlot: task.time_slot ?? task.timeSlot ?? null,
+    isKey: task.is_key ?? task.isKey ?? false,
   }
 }
 
@@ -109,7 +111,7 @@ export async function getBacklogTasks() {
  * @param {string} title - 할 일 제목
  * @param {string} category - 카테고리
  * @param {boolean} isToday - 오늘 할 일 여부
- * @param {{ scheduledDate?: string | null, memo?: string | null }} [options]
+ * @param {{ scheduledDate?: string | null, memo?: string | null, timeSlot?: string | null }} [options]
  * @returns {Promise<Object|null>} 생성된 할 일
  */
 export async function createTask(title, category, isToday = false, options = {}) {
@@ -161,6 +163,10 @@ export async function createTask(title, category, isToday = false, options = {})
   if (options.memo) {
     newTask.memo = options.memo
   }
+  // 시간대가 있을 때만 보내 마이그레이션 전 DB에서도 동작
+  if (options.timeSlot) {
+    newTask.time_slot = options.timeSlot
+  }
 
   const { data, error } = await supabase
     .from('tasks')
@@ -208,7 +214,13 @@ export async function updateTask(id, updates) {
   if ('scheduledDate' in updates) {
     dbUpdates.scheduled_date = updates.scheduledDate || null
   }
-  
+  if ('timeSlot' in updates) {
+    dbUpdates.time_slot = updates.timeSlot || null
+  }
+  if ('isKey' in updates) {
+    dbUpdates.is_key = !!updates.isKey
+  }
+
   // completed가 true로 변경될 때 completedAt 설정
   if ('completed' in updates && updates.completed === true) {
     dbUpdates.completedat = Date.now()
@@ -252,7 +264,7 @@ export async function updateTask(id, updates) {
   
   // 나머지 필드들 병합 (camelCase 필드는 제외)
   Object.keys(updates).forEach(key => {
-    if (!['isToday', 'createdAt', 'completedAt', 'movedToTodayAt', 'priority', 'scheduledDate'].includes(key)) {
+    if (!['isToday', 'createdAt', 'completedAt', 'movedToTodayAt', 'priority', 'scheduledDate', 'timeSlot', 'isKey'].includes(key)) {
       dbUpdates[key] = updates[key]
     }
   })
@@ -360,9 +372,10 @@ export async function restoreCompletedTaskToToday(id) {
 /**
  * 오늘 할 일로 이동
  * @param {string} id - 할 일 ID
+ * @param {{ timeSlot?: string | null }} [options] - 함께 지정할 시간대
  * @returns {Promise<Object|null>} 수정된 할 일
  */
-export async function moveToToday(id) {
+export async function moveToToday(id, options = {}) {
   const userId = await getCurrentUserId()
   if (!userId) {
     throw new Error('로그인이 필요합니다.')
@@ -395,7 +408,12 @@ export async function moveToToday(id) {
   }
 
   // 업데이트 실행
-  const result = await updateTask(id, { isToday: true, movedToTodayAt: Date.now(), priority })
+  // timeSlot을 넘긴 경우에만 변경 (null이면 '언제든'으로 비움, 안 넘기면 기존 시간대 유지)
+  const updates = { isToday: true, movedToTodayAt: Date.now(), priority }
+  if ('timeSlot' in options) {
+    updates.timeSlot = options.timeSlot || null
+  }
+  const result = await updateTask(id, updates)
   
   // 업데이트 후 오늘 할일 목록 새로고침 이벤트 발생
   window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
@@ -701,7 +719,8 @@ export async function moveScheduledTasksToToday() {
 
 /**
  * 여러 할 일의 우선순위를 일괄 업데이트
- * @param {Array<{id: string, priority: number}>} updates - 업데이트할 할 일 목록
+ * timeSlot이 들어 있으면 시간대도 함께 변경 (시간대 섹션 간 드래그)
+ * @param {Array<{id: string, priority: number, timeSlot?: string | null}>} updates - 업데이트할 할 일 목록
  * @returns {Promise<void>}
  */
 export async function updateTaskPriorities(updates) {
@@ -712,13 +731,17 @@ export async function updateTaskPriorities(updates) {
 
   try {
     // 각 할 일의 priority를 개별적으로 업데이트
-    const updatePromises = updates.map(({ id, priority }) =>
-      supabase
+    const updatePromises = updates.map((item) => {
+      const dbUpdates = { priority: item.priority }
+      if ('timeSlot' in item) {
+        dbUpdates.time_slot = item.timeSlot || null
+      }
+      return supabase
         .from('tasks')
-        .update({ priority })
-        .eq('id', id)
+        .update(dbUpdates)
+        .eq('id', item.id)
         .eq('user_id', userId)
-    )
+    })
 
     const results = await Promise.all(updatePromises)
     
@@ -734,3 +757,52 @@ export async function updateTaskPriorities(updates) {
   }
 }
 
+
+/**
+ * 여러 할 일의 시간대를 한 번에 변경 (지난 시간대 정리용)
+ * @param {string[]} ids - 할 일 ID 목록
+ * @param {string | null} timeSlot - 옮길 시간대 (null이면 미지정)
+ * @returns {Promise<void>}
+ */
+export async function moveTasksToTimeSlot(ids, timeSlot) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+  if (!ids || ids.length === 0) return
+
+  const { error } = await supabase
+    .from('tasks')
+    .update({ time_slot: timeSlot || null })
+    .in('id', ids)
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error('시간대 일괄 변경 오류:', error)
+    throw error
+  }
+}
+
+/**
+ * 여러 할 일을 한 번에 백로그로 이동 (지난 시간대 정리용)
+ * @param {string[]} ids - 할 일 ID 목록
+ * @returns {Promise<void>}
+ */
+export async function moveTasksToBacklog(ids) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+  if (!ids || ids.length === 0) return
+
+  const { error } = await supabase
+    .from('tasks')
+    .update({ istoday: false })
+    .in('id', ids)
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error('백로그 일괄 이동 오류:', error)
+    throw error
+  }
+}

@@ -27,6 +27,8 @@ export const tasks = pgTable('tasks', {
   memo: text('memo'),
   scheduledDate: text('scheduled_date'), // YYYY-MM-DD 형식, 해당 날짜에 오늘 할일로 자동 이동
   handwritingImageUrl: text('handwriting_image_url'), // iOS 앱에서 손글씨로 작성한 경우 손글씨 이미지 URL
+  timeSlot: text('time_slot'), // 'morning' | 'afternoon' | 'evening' | NULL(미지정)
+  isKey: boolean('is_key').default(false).notNull(), // 오늘의 핵심 할 일
 })
 
 /**
@@ -339,6 +341,8 @@ export const studySessions = pgTable('study_sessions', {
   source: text('source').notNull().default('summer-clock'),
   category: text('category').notNull().default('study'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  taskId: uuid('task_id'), // 뽀모도로로 집중한 할 일
+  taskTitle: text('task_title'), // 기록 당시 할 일 제목
 })
 
 /**
@@ -380,6 +384,7 @@ export const dailyRoutines = pgTable('daily_routines', {
   createdAt: bigint('created_at', { mode: 'number' }).notNull(),
   sortOrder: integer('sort_order').default(0).notNull(),
   repeatWeekdays: text('repeat_weekdays'), // 반복 요일 CSV (0=일..6=토), 비어 있으면 매일
+  timeSlot: text('time_slot'), // 오늘 할일로 추가될 때의 기본 시간대
 })
 
 export const diaries = pgTable('diaries', {

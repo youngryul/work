@@ -12,6 +12,7 @@ import { getDefaultCategory, getCategoryEmoji } from '../services/categoryServic
 import CategorySelector from './CategorySelector.jsx'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 import ViewPageTitle from './ViewPageTitle.jsx'
+import { TIME_SLOTS, UNASSIGNED_SLOT, isValidTimeSlot, getTimeSlotInfo } from '../constants/timeSlots.js'
 
 /** 월요일부터 표시 (0=일..6=토) */
 const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
@@ -57,6 +58,37 @@ function WeekdayPicker({ value, onChange, disabled = false }) {
   )
 }
 
+/**
+ * 루틴 기본 시간대 선택 (미지정 가능)
+ * @param {{ value: string | null, onChange: (slot: string | null) => void, disabled?: boolean }} props
+ */
+function RoutineTimeSlotPicker({ value, onChange, disabled = false }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="text-sm text-gray-500 mr-1">시간대</span>
+      {[...TIME_SLOTS, { ...UNASSIGNED_SLOT, key: null }].map((slot) => {
+        const active = (value || null) === slot.key
+        return (
+          <button
+            key={slot.key ?? 'none'}
+            type="button"
+            onClick={() => onChange(slot.key)}
+            disabled={disabled}
+            aria-pressed={active}
+            className={`px-3 h-9 rounded-full text-sm font-semibold border transition-colors disabled:opacity-50 ${
+              active
+                ? 'bg-green-500 text-white border-green-500'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-green-300'
+            }`}
+          >
+            {slot.emoji} {slot.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 /** 요일 배열 비교 */
 function sameWeekdays(a, b) {
   return a.length === b.length && a.every((d, i) => d === b[i])
@@ -71,6 +103,7 @@ export default function RoutineView() {
   const [newTitle, setNewTitle] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('회사')
   const [newWeekdays, setNewWeekdays] = useState([])
+  const [newTimeSlot, setNewTimeSlot] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
   const [deletingId, setDeletingId] = useState('')
   const [togglingId, setTogglingId] = useState('')
@@ -80,6 +113,7 @@ export default function RoutineView() {
   const [editTitle, setEditTitle] = useState('')
   const [editCategory, setEditCategory] = useState('')
   const [editWeekdays, setEditWeekdays] = useState([])
+  const [editTimeSlot, setEditTimeSlot] = useState(null)
   const [isUpdating, setIsUpdating] = useState(false)
 
   const loadRoutines = async () => {
@@ -127,12 +161,14 @@ export default function RoutineView() {
         category: selectedCategory,
         isEnabled: true,
         repeatWeekdays: newWeekdays,
+        timeSlot: newTimeSlot,
       })
       const emoji = await getCategoryEmoji(created.category)
       setCategoryEmojis((prev) => ({ ...prev, [created.id]: emoji }))
       setRoutines((prev) => [...prev, created])
       setNewTitle('')
       setNewWeekdays([])
+      setNewTimeSlot(null)
       showToast(
         isRoutineScheduledOn(created)
           ? '루틴이 등록되었습니다. 오늘 할일에도 추가되었습니다.'
@@ -166,6 +202,7 @@ export default function RoutineView() {
     setEditTitle(routine.title)
     setEditCategory(routine.category)
     setEditWeekdays(routine.repeatWeekdays || [])
+    setEditTimeSlot(routine.timeSlot || null)
   }
 
   const cancelEdit = () => {
@@ -173,6 +210,7 @@ export default function RoutineView() {
     setEditTitle('')
     setEditCategory('')
     setEditWeekdays([])
+    setEditTimeSlot(null)
   }
 
   const handleSaveEdit = async (routine) => {
@@ -185,7 +223,13 @@ export default function RoutineView() {
     // 7일 전체 선택은 매일과 같음
     const nextWeekdays = editWeekdays.length === 7 ? [] : editWeekdays
     const weekdaysChanged = !sameWeekdays(nextWeekdays, routine.repeatWeekdays || [])
-    if (title === routine.title && editCategory === routine.category && !weekdaysChanged) {
+    const timeSlotChanged = (editTimeSlot || null) !== (routine.timeSlot || null)
+    if (
+      title === routine.title &&
+      editCategory === routine.category &&
+      !weekdaysChanged &&
+      !timeSlotChanged
+    ) {
       cancelEdit()
       return
     }
@@ -197,6 +241,8 @@ export default function RoutineView() {
         category: editCategory,
         // 요일이 바뀐 경우에만 보냄
         ...(weekdaysChanged ? { repeatWeekdays: nextWeekdays } : {}),
+        // 시간대도 바뀐 경우에만 보냄 (마이그레이션 전 DB 호환)
+        ...(timeSlotChanged ? { timeSlot: editTimeSlot } : {}),
       })
       if (updated.category !== routine.category) {
         const emoji = await getCategoryEmoji(updated.category)
@@ -261,6 +307,9 @@ export default function RoutineView() {
         </div>
         <div className="mt-3">
           <WeekdayPicker value={newWeekdays} onChange={setNewWeekdays} disabled={isSaving} />
+        </div>
+        <div className="mt-2">
+          <RoutineTimeSlotPicker value={newTimeSlot} onChange={setNewTimeSlot} disabled={isSaving} />
         </div>
         <p className="text-sm text-gray-500 mt-2">
           요일을 고르지 않으면 매일, 고르면 해당 요일에만 오늘 할일에 자동으로 추가됩니다.
@@ -329,6 +378,13 @@ export default function RoutineView() {
                     disabled={isUpdating}
                   />
                 </div>
+                <div className="mt-2">
+                  <RoutineTimeSlotPicker
+                    value={editTimeSlot}
+                    onChange={setEditTimeSlot}
+                    disabled={isUpdating}
+                  />
+                </div>
                 <p className="text-xs text-gray-500 mt-2">
                   이미 오늘 할일에 추가된 항목은 바뀌지 않고, 다음 반영부터 수정 내용이 적용됩니다.
                 </p>
@@ -350,6 +406,8 @@ export default function RoutineView() {
                 <p className="text-xs text-gray-500 mt-0.5">
                   {routine.category}
                   {` · ${formatRoutineWeekdays(routine.repeatWeekdays)}`}
+                  {isValidTimeSlot(routine.timeSlot) &&
+                    ` · ${getTimeSlotInfo(routine.timeSlot).emoji} ${getTimeSlotInfo(routine.timeSlot).label}`}
                   {routine.lastAppliedDate
                     ? ` · 마지막 반영: ${routine.lastAppliedDate}`
                     : ' · 아직 반영 전'}

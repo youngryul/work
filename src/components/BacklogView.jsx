@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getBacklogTasks, createTask, moveToToday } from '../services/taskService.js'
+import { getTimeSlotInfo } from '../constants/timeSlots.js'
 import { getDefaultCategory } from '../services/categoryService.js'
 import TaskItem from './TaskItem.jsx'
 import CategorySelector from './CategorySelector.jsx'
@@ -93,11 +94,16 @@ export default function BacklogView() {
   /**
    * 오늘 할 일로 이동
    */
-  const handleMoveToToday = async (taskId) => {
+  const handleMoveToToday = async (taskId, timeSlot) => {
     try {
-      await moveToToday(taskId)
+      await moveToToday(taskId, { timeSlot })
       setTasks(tasks.filter((t) => t.id !== taskId))
-      showToast('오늘 할 일로 이동했습니다!', TOAST_TYPES.SUCCESS)
+      showToast(
+        timeSlot
+          ? `오늘 ${getTimeSlotInfo(timeSlot).label} 할 일로 이동했습니다!`
+          : '오늘 할 일로 이동했습니다!',
+        TOAST_TYPES.SUCCESS,
+      )
     } catch (error) {
       showToast(error.message || '이동에 실패했습니다.', TOAST_TYPES.ERROR)
     }
@@ -206,7 +212,7 @@ export default function BacklogView() {
                 onUpdate={handleTaskUpdate}
                 onCompleteAnimationStart={handleCompleteAnimationStart}
                 onDelete={handleTaskDelete}
-                onMoveToToday={() => handleMoveToToday(task.id)}
+                onMoveToToday={(timeSlot) => handleMoveToToday(task.id, timeSlot)}
               />
             ))}
             {defaultCategoryTasks.length === 0 && (
@@ -228,7 +234,7 @@ export default function BacklogView() {
                 onUpdate={handleTaskUpdate}
                 onCompleteAnimationStart={handleCompleteAnimationStart}
                 onDelete={handleTaskDelete}
-                onMoveToToday={() => handleMoveToToday(task.id)}
+                onMoveToToday={(timeSlot) => handleMoveToToday(task.id, timeSlot)}
               />
             ))}
             {otherTasks.length === 0 && (

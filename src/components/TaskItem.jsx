@@ -15,6 +15,7 @@ import {
   isBacklogStaleOneWeek,
   isBacklogStaleTwoWeeks,
 } from '../utils/backlogStale.js'
+import { TIME_SLOTS, UNASSIGNED_SLOT, isValidTimeSlot, getTimeSlotInfo } from '../constants/timeSlots.js'
 
 /** 완료 시 표시하는 포실이 이미지 (오늘 할 일·백로그 공통) */
 const POSILY_COMPLETE_IMAGE_SRC = '/images/포실이.png'
@@ -33,6 +34,8 @@ const COMPLETE_LEAVE_DURATION_MS = 900
  * @param {Function} props.onDelete - 삭제 콜백
  * @param {Function} props.onMoveToToday - 오늘로 이동 콜백 (선택)
  * @param {Function} props.onMoveToBacklog - 백로그로 이동 콜백 (선택)
+ * @param {Function} [props.onStartPomodoro] - 이 할 일로 뽀모도로 시작 (오늘 할 일에서만)
+ * @param {boolean} [props.showQuickTimeSlot] - 시간대 한 번에 지정 칩 표시 (언제든 섹션)
  */
 export default function TaskItem({
   task,
@@ -41,9 +44,12 @@ export default function TaskItem({
   onDelete,
   onMoveToToday,
   onMoveToBacklog,
+  onStartPomodoro,
+  showQuickTimeSlot = false,
 }) {
   const [isEditing, setIsEditing] = useState(false)
   const [isEditingCategory, setIsEditingCategory] = useState(false)
+  const [isEditingTimeSlot, setIsEditingTimeSlot] = useState(false)
   const [isEditingMemo, setIsEditingMemo] = useState(false)
   const [isEditingSchedule, setIsEditingSchedule] = useState(false)
   const [editTitle, setEditTitle] = useState(task.title)
@@ -189,6 +195,34 @@ export default function TaskItem({
       setIsEditingCategory(false)
     } catch (error) {
       console.error('카테고리 변경 오류:', error)
+    }
+  }
+
+  /**
+   * 시간대 변경 (null이면 미지정)
+   */
+  const handleTimeSlotChange = async (newTimeSlot) => {
+    setIsEditingTimeSlot(false)
+    if ((task.timeSlot || null) === newTimeSlot) return
+    try {
+      const updated = await updateTask(task.id, { timeSlot: newTimeSlot })
+      onUpdate(updated)
+    } catch (error) {
+      console.error('시간대 변경 오류:', error)
+      showToast('시간대 변경에 실패했습니다.', TOAST_TYPES.ERROR)
+    }
+  }
+
+  /**
+   * 오늘의 핵심 할 일 표시 토글
+   */
+  const handleToggleKey = async () => {
+    try {
+      const updated = await updateTask(task.id, { isKey: !task.isKey })
+      onUpdate(updated)
+    } catch (error) {
+      console.error('핵심 할 일 변경 오류:', error)
+      showToast('핵심 할 일 표시에 실패했습니다.', TOAST_TYPES.ERROR)
     }
   }
 
@@ -439,22 +473,66 @@ export default function TaskItem({
               aria-hidden="true"
             />
           )}
+          {/* 오늘의 핵심 할 일 표시 (시간대는 오른쪽 아이콘으로 표시) */}
+          {task.isKey && !localCompleted && (
+            <span className="ml-2 text-xs font-semibold text-amber-700 bg-amber-100 rounded-full px-2 py-0.5 align-middle whitespace-nowrap">
+              ⭐ 핵심
+            </span>
+          )}
         </span>
       )}
 
       {/* 버튼 영역 (고정 너비) */}
-      <div className="flex-shrink-0 flex items-center gap-2 w-32 justify-end">
-        {/* 오늘로 버튼 (백로그에서만 표시) */}
-        {onMoveToToday && (
+      <div className="flex-shrink-0 flex items-center gap-2 min-w-32 justify-end">
+        {/* 뽀모도로 시작 (오늘 할 일에서만) */}
+        {onStartPomodoro && !localCompleted && (
           <button
-            onClick={onMoveToToday}
+            onClick={onStartPomodoro}
             onMouseDown={(e) => e.stopPropagation()}
-            className="px-3 py-1 bg-green-200 text-green-700 rounded-lg text-sm hover:bg-green-300 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm whitespace-nowrap"
+            className="text-xl text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-200"
+            aria-label="이 할 일로 뽀모도로 시작"
+            title="이 할 일로 뽀모도로 시작"
           >
-            오늘로
+            🍅
           </button>
         )}
 
+        {/* 핵심 할 일 토글 (오늘 할 일에서만) */}
+        {onMoveToBacklog && (
+          <button
+            onClick={handleToggleKey}
+            onMouseDown={(e) => e.stopPropagation()}
+            className={`text-xl transition-all duration-200 ${
+              task.isKey
+                ? 'text-amber-500'
+                : 'text-gray-300 hover:text-amber-400 opacity-0 group-hover:opacity-100'
+            }`}
+            aria-label={task.isKey ? '핵심 할 일 해제' : '핵심 할 일로 표시'}
+            aria-pressed={!!task.isKey}
+            title={task.isKey ? '핵심 할 일 해제' : '오늘의 핵심 할 일로 표시'}
+          >
+            {task.isKey ? '★' : '☆'}
+          </button>
+        )}
+
+        {/* 시간대 지정 (백로그는 하단 '오늘로' 줄에서 고름) */}
+        {!isBacklog && (
+        <button
+          onClick={() => setIsEditingTimeSlot(!isEditingTimeSlot)}
+          onMouseDown={(e) => e.stopPropagation()}
+          className={`text-xl transition-all duration-200 ${
+            isValidTimeSlot(task.timeSlot)
+              ? 'hover:scale-110'
+              : 'text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100'
+          }`}
+          aria-label="시간대 지정"
+          title="시간대 지정 (오전 / 오후 / 퇴근 후)"
+        >
+          {isValidTimeSlot(task.timeSlot) ? getTimeSlotInfo(task.timeSlot).emoji : UNASSIGNED_SLOT.emoji}
+        </button>
+        )}
+
+        {/* 오늘로 버튼 (백로그에서만 표시) */}
         {/* 백로그로 버튼 (오늘 할 일에서만 표시) */}
         {onMoveToBacklog && (
           <button
@@ -519,6 +597,60 @@ export default function TaskItem({
             selectedCategory={task.category}
             onChange={handleCategoryChange}
           />
+        </div>
+      )}
+
+      {/* 항목 하단 시간대 버튼 (모바일에서도 보이도록 항상 표시)
+          - 백로그: 고른 시간대로 바로 오늘 할 일로 이동
+          - 오늘 할 일 '언제든' 섹션: 시간대만 지정 */}
+      {(isBacklog || showQuickTimeSlot) && !localCompleted && !isEditingTimeSlot && (
+        <div
+          className="-mt-1 pl-[4.25rem] flex flex-wrap items-center gap-1.5"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {isBacklog && <span className="text-xs text-gray-400">오늘로</span>}
+          {/* 백로그는 '언제든'(시간대 없이 오늘로)까지 표시 */}
+          {(isBacklog ? [...TIME_SLOTS, { ...UNASSIGNED_SLOT, key: null }] : TIME_SLOTS).map((slot) => (
+            <button
+              key={slot.key ?? 'none'}
+              type="button"
+              onClick={() =>
+                isBacklog ? onMoveToToday(slot.key) : handleTimeSlotChange(slot.key)
+              }
+              aria-label={isBacklog ? `오늘 ${slot.label}로 이동` : `${slot.label}로 지정`}
+              className="px-2.5 py-0.5 rounded-full text-xs border border-gray-200 bg-white text-gray-600 hover:border-green-300 hover:bg-green-50"
+            >
+              {slot.emoji} {slot.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* 시간대 선택 */}
+      {isEditingTimeSlot && (
+        <div
+          className="pt-2 border-t border-green-100 flex flex-wrap items-center gap-2"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <span className="text-sm text-gray-500">시간대</span>
+          {[...TIME_SLOTS, { ...UNASSIGNED_SLOT, key: null }].map((slot) => {
+            const active = (task.timeSlot || null) === slot.key
+            return (
+              <button
+                key={slot.key ?? 'none'}
+                type="button"
+                onClick={() => handleTimeSlotChange(slot.key)}
+                aria-pressed={active}
+                className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                  active
+                    ? 'bg-green-500 text-white border-green-500'
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-green-300'
+                }`}
+              >
+                {slot.emoji} {slot.label}
+              </button>
+            )
+          })}
         </div>
       )}
 

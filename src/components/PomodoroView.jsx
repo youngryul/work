@@ -2,9 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 import TimerBgmToggle from './TimerBgmToggle.jsx'
 import { useTimerBgm } from '../hooks/useTimerBgm.js'
-import { addStudySession, formatStudyDuration } from '../services/studyTimeService.js'
+import { addStudySession, formatStudyDuration, POMODORO_SOURCE } from '../services/studyTimeService.js'
 import StudyTimerCategoryPicker from './StudyTimerCategoryPicker.jsx'
 import { DEFAULT_STUDY_TIMER_CATEGORY } from '../constants/studyTimerCategories.js'
+import { readPomodoroLinkedTask, clearPomodoroLinkedTask } from '../constants/pomodoro.js'
+import { updateTask } from '../services/taskService.js'
+import PomodoroSummaryCard from './PomodoroSummaryCard.jsx'
 
 const DURATIONS = [15, 25, 35, 50]
 const MIN_POMODORO_MINUTES = 1
@@ -77,8 +80,19 @@ export default function PomodoroView({ onClose }) {
   const intervalRef = useRef(null)
   const endTimeRef = useRef(null) // Date.now() + ms
   const { enabled: bgmEnabled, toggle: toggleBgm } = useTimerBgm()
+  // 오늘 할 일에서 🍅로 들어온 경우 연결된 할 일 (한 번만 꺼내 씀)
+  const [linkedTask, setLinkedTask] = useState(() => readPomodoroLinkedTask())
+  // 방금 기록한 연결 할 일 → "할 일도 완료" 버튼 표시용
+  const [justSavedTask, setJustSavedTask] = useState(null)
+  const [isCompletingTask, setIsCompletingTask] = useState(false)
+  const [summaryRefreshKey, setSummaryRefreshKey] = useState(0)
 
   const canChangeDuration = state === 'idle' || state === 'finished'
+
+  // 읽어 둔 연결 할 일은 저장소에서 지움 (메뉴로 다시 들어오면 연결 없이 시작)
+  useEffect(() => {
+    clearPomodoroLinkedTask()
+  }, [])
 
   // 이미지 컨테이너 크기 측정
   useEffect(() => {
@@ -195,17 +209,43 @@ export default function PomodoroView({ onClose }) {
     if (secs <= 0 || isSaving) return
     setIsSaving(true)
     try {
-      const result = await addStudySession(secs, { source: 'pomodoro', category })
+      const result = await addStudySession(secs, {
+        source: POMODORO_SOURCE,
+        category,
+        taskId: linkedTask?.id,
+        taskTitle: linkedTask?.title,
+      })
       const jellyMsg =
         result?.jellyAwarded > 0 ? ` · 젤리 +${result.jellyAwarded}` : ''
       showToast(`${formatStudyDuration(secs)} 기록 완료!${jellyMsg}`, TOAST_TYPES.SUCCESS)
       window.dispatchEvent(new CustomEvent('refreshStudyTime'))
+      setSummaryRefreshKey((k) => k + 1)
+      setJustSavedTask(linkedTask)
       setState('idle')
       setRemainingSeconds(selectedMinutes * 60)
     } catch (err) {
       showToast(err.message || '저장 실패', TOAST_TYPES.ERROR)
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  /**
+   * 방금 집중한 할 일을 완료 처리
+   */
+  const handleCompleteLinkedTask = async () => {
+    if (!justSavedTask || isCompletingTask) return
+    setIsCompletingTask(true)
+    try {
+      await updateTask(justSavedTask.id, { completed: true })
+      showToast(`'${justSavedTask.title}' 완료! 🎉`, TOAST_TYPES.SUCCESS)
+      window.dispatchEvent(new CustomEvent('refreshTodayTasks'))
+      setJustSavedTask(null)
+      setLinkedTask(null)
+    } catch (err) {
+      showToast(err.message || '할 일 완료 처리에 실패했습니다.', TOAST_TYPES.ERROR)
+    } finally {
+      setIsCompletingTask(false)
     }
   }
 
@@ -261,6 +301,21 @@ export default function PomodoroView({ onClose }) {
           {formatCountdown(remainingSeconds)}
         </p>
         <p className="mt-1 text-sm text-gray-500">{statusText}</p>
+        {linkedTask && (
+          <div className="mt-3 mx-6 inline-flex max-w-xs items-center gap-2 rounded-full bg-white/80 px-3 py-1.5 shadow-sm">
+            <span className="text-sm text-gray-700 truncate">🎯 {linkedTask.title}</span>
+            {(state === 'idle' || state === 'finished') && (
+              <button
+                type="button"
+                onClick={() => setLinkedTask(null)}
+                className="shrink-0 text-gray-400 hover:text-gray-600"
+                aria-label="할 일 연결 해제"
+              >
+                ×
+              </button>
+            )}
+          </div>
+        )}
         <StudyTimerCategoryPicker
           value={category}
           onChange={setCategory}
@@ -360,9 +415,27 @@ export default function PomodoroView({ onClose }) {
         )}
       </div>
 
+      {justSavedTask && (
+        <div className="mt-3 px-6 w-full max-w-sm">
+          <button
+            type="button"
+            onClick={handleCompleteLinkedTask}
+            disabled={isCompletingTask}
+            className="w-full rounded-xl bg-white py-2.5 text-sm font-semibold text-green-700 shadow-sm hover:bg-green-50 transition disabled:opacity-60"
+          >
+            {isCompletingTask ? '처리 중...' : `✅ '${justSavedTask.title}' 할 일도 완료하기`}
+          </button>
+        </div>
+      )}
+
       <p className="mt-3 text-xs text-gray-400 text-center px-6">
         중간에 멈춰도 「완료」로 통계에 합산할 수 있어요
       </p>
+
+      {/* 뽀모도로 합계 (할 일 달력에는 기록되지 않음) */}
+      <div className="mt-5 mb-8 px-6 w-full max-w-sm">
+        <PomodoroSummaryCard refreshKey={summaryRefreshKey} />
+      </div>
     </div>
   )
 }
