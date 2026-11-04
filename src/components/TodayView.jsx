@@ -24,32 +24,24 @@ import {
   TIME_SLOTS,
   UNASSIGNED_SLOT,
   UNASSIGNED_SLOT_KEY,
-  TIME_SLOT_VIEW_STORAGE_KEY,
-  TIME_SLOT_FOCUS_STORAGE_KEY,
   TIME_SLOT_CLEANUP_DISMISS_STORAGE_KEY,
   isValidTimeSlot,
   getTimeSlotInfo,
   getTimeSlotForDate,
   getPastTimeSlots,
+  TIME_SLOT_TIMES_CHANGED_EVENT,
 } from '../constants/timeSlots.js'
+import TodaySettingsModal from './today/TodaySettingsModal.jsx'
+import {
+  getCachedTodayViewSettings,
+  loadTodayViewSettings,
+  saveTodayViewSettings,
+} from '../services/todayViewSettingsService.js'
 import { openPomodoroForTask } from '../constants/pomodoro.js'
 
 /** 섹션 표시 순서: 오전 → 오후 → 퇴근 후 → 언제든 */
 const SECTION_ORDER = [...TIME_SLOTS.map((slot) => slot.key), UNASSIGNED_SLOT_KEY]
 
-/**
- * localStorage boolean 읽기 (실패 시 기본값)
- * @param {string} key
- * @param {boolean} fallback
- */
-const readStoredFlag = (key, fallback = false) => {
-  try {
-    const value = localStorage.getItem(key)
-    return value === null ? fallback : value === 'true'
-  } catch {
-    return fallback
-  }
-}
 
 /**
  * 할 일 → 섹션 키 (시간대가 없으면 '언제든')
@@ -95,9 +87,12 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
   const [draggedTaskId, setDraggedTaskId] = useState(null)
   const [dragOverIndex, setDragOverIndex] = useState(null)
   const dragStartIndexRef = useRef(null)
-  /** 시간대별 보기 · 집중 모드 (사용자 설정으로 유지) */
-  const [isSlotView, setIsSlotView] = useState(() => readStoredFlag(TIME_SLOT_VIEW_STORAGE_KEY))
-  const [isFocusMode, setIsFocusMode] = useState(() => readStoredFlag(TIME_SLOT_FOCUS_STORAGE_KEY))
+  /** 시간대별 보기 · 집중 모드 (캐시로 먼저 그리고, Supabase 값으로 갱신) */
+  const [isSlotView, setIsSlotView] = useState(() => getCachedTodayViewSettings().isSlotView)
+  const [isFocusMode, setIsFocusMode] = useState(() => getCachedTodayViewSettings().isFocusMode)
+  /** 지난 시간대에 못 끝낸 할 일을 지금 시간대로 자동 이월 */
+  const [isAutoCarry, setIsAutoCarry] = useState(() => getCachedTodayViewSettings().isAutoCarry)
+  const autoCarryInFlightRef = useRef(false)
   /** 현재 시각 (1분마다 갱신해 시간대 전환 반영) */
   const [now, setNow] = useState(() => Date.now())
   /** 사용자가 직접 펼치거나 접은 섹션 { [sectionKey]: boolean(접힘) } */
@@ -112,6 +107,7 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
     }
   })
   const [isCleaningUp, setIsCleaningUp] = useState(false)
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
 
   /**
    * 날짜 변경 감지 및 리셋 처리
@@ -385,28 +381,44 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
   // ───────────── 시간대별 보기 ─────────────
 
   // 1분마다 현재 시각 갱신 (오전 → 오후 전환 등 반영)
+  // 시간대 시작 시각을 바꾸면 즉시 다시 계산
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 60 * 1000)
-    return () => window.clearInterval(timer)
+    const refreshNow = () => setNow(Date.now())
+    const timer = window.setInterval(refreshNow, 60 * 1000)
+    window.addEventListener(TIME_SLOT_TIMES_CHANGED_EVENT, refreshNow)
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener(TIME_SLOT_TIMES_CHANGED_EVENT, refreshNow)
+    }
+  }, [])
+
+  // Supabase에 저장된 보기 설정 불러오기 (다른 기기에서 바꾼 값 반영)
+  useEffect(() => {
+    let cancelled = false
+    loadTodayViewSettings().then((settings) => {
+      if (cancelled) return
+      setIsSlotView(settings.isSlotView)
+      setIsFocusMode(settings.isFocusMode)
+      setIsAutoCarry(settings.isAutoCarry)
+    })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   /**
-   * 시간대별 보기 / 집중 모드 토글 (localStorage에 저장)
+   * 보기 설정 팝업 저장: Supabase에 저장한 뒤 화면에 반영
+   * 시간대 시작 시각은 서비스가 캐시를 갱신하며 변경 이벤트로 반영됨
    */
-  const toggleStoredFlag = (key, setter) => {
-    setter((prev) => {
-      const next = !prev
-      try {
-        localStorage.setItem(key, String(next))
-      } catch {
-        // 저장 실패해도 화면 상태는 유지
-      }
-      return next
-    })
+  const handleSaveViewSettings = async (settings) => {
+    await saveTodayViewSettings(settings)
+    setIsSlotView(settings.isSlotView)
+    setIsFocusMode(settings.isFocusMode)
+    setIsAutoCarry(settings.isAutoCarry)
   }
 
   const currentSlotKey = getTimeSlotForDate(now)
-  const pastSlotKeys = getPastTimeSlots(currentSlotKey)
+  const pastSlotKeys = getPastTimeSlots(currentSlotKey, now)
   const todayDateString = getTodayDateString()
 
   /** 섹션별 미완료 할 일 (핵심 할 일을 섹션 맨 위로) */
@@ -449,8 +461,38 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
     .map((key) => getTimeSlotInfo(key).label)
   // 같은 날 같은 시간대에서 한 번 닫으면 다시 띄우지 않음
   const cleanupKey = `${todayDateString}|${currentSlotKey}`
+  // 자동 이월이 켜져 있으면 배너 대신 바로 옮김
   const showCleanupBanner =
-    isSlotView && leftoverTasks.length > 0 && cleanupDismissedKey !== cleanupKey
+    isSlotView && !isAutoCarry && leftoverTasks.length > 0 && cleanupDismissedKey !== cleanupKey
+
+  /**
+   * 자동 이월: 지난 시간대에 남은 할 일을 지금 시간대로 옮김
+   * 시간대가 바뀌거나(1분마다 확인) 지난 시간대에 할 일이 생기면 실행
+   * 오전 시작 전 새벽에는 지난 시간대가 없어 실행되지 않음
+   */
+  const leftoverIdsKey = leftoverTasks.map((task) => task.id).join(',')
+  useEffect(() => {
+    if (!isSlotView || !isAutoCarry || isLoading || !leftoverIdsKey) return
+    if (autoCarryInFlightRef.current) return
+
+    const ids = leftoverIdsKey.split(',')
+    const targetSlotKey = currentSlotKey
+    autoCarryInFlightRef.current = true
+    moveTasksToTimeSlot(ids, targetSlotKey)
+      .then(() => {
+        setTasks((prev) =>
+          prev.map((task) => (ids.includes(task.id) ? { ...task, timeSlot: targetSlotKey } : task)),
+        )
+        const slot = getTimeSlotInfo(targetSlotKey)
+        showToast(`⏭️ 못 끝낸 할 일 ${ids.length}개를 ${slot.emoji} ${slot.label}로 옮겼어요.`, TOAST_TYPES.INFO)
+      })
+      .catch((error) => {
+        console.error('자동 이월 오류:', error)
+      })
+      .finally(() => {
+        autoCarryInFlightRef.current = false
+      })
+  }, [isSlotView, isAutoCarry, isLoading, leftoverIdsKey, currentSlotKey])
 
   const dismissCleanupBanner = () => {
     setCleanupDismissedKey(cleanupKey)
@@ -633,31 +675,34 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
         {/* 1년 전 오늘 일기 (있을 때만) */}
         <DiaryMemoryCard />
 
-        {/* 보기 옵션: 시간대별 보기 · 집중 모드 */}
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+        {/* 보기 설정 팝업 열기 + 현재 보기 상태 */}
+        <div className="mb-4 flex items-center justify-end gap-2">
+          {isSlotView && (
+            <span className="text-sm text-gray-700 bg-white/70 rounded-full px-3 py-1 shadow-sm">
+              {isFocusMode ? '🎯 지금만' : '🕒 시간대별'} · 지금{' '}
+              {getTimeSlotInfo(currentSlotKey).emoji} {getTimeSlotInfo(currentSlotKey).label}
+              {isAutoCarry && ' · ⏭️ 자동 이월'}
+            </span>
+          )}
           <button
             type="button"
-            onClick={() => toggleStoredFlag(TIME_SLOT_VIEW_STORAGE_KEY, setIsSlotView)}
-            aria-pressed={isSlotView}
-            className={`px-3 py-1.5 rounded-full text-sm font-semibold shadow-sm transition-colors ${
-              isSlotView ? 'bg-green-500 text-white' : 'bg-white/80 text-gray-700 hover:bg-white'
-            }`}
+            onClick={() => setIsSettingsModalOpen(true)}
+            className="px-3 py-1.5 rounded-full text-sm font-semibold shadow-sm bg-white/80 text-gray-700 hover:bg-white"
+            aria-haspopup="dialog"
           >
-            🕒 시간대별 보기
+            ⚙️ 보기 설정
           </button>
-          {isSlotView && (
-            <button
-              type="button"
-              onClick={() => toggleStoredFlag(TIME_SLOT_FOCUS_STORAGE_KEY, setIsFocusMode)}
-              aria-pressed={isFocusMode}
-              className={`px-3 py-1.5 rounded-full text-sm font-semibold shadow-sm transition-colors ${
-                isFocusMode ? 'bg-green-500 text-white' : 'bg-white/80 text-gray-700 hover:bg-white'
-              }`}
-            >
-              🎯 지금 시간대만 ({getTimeSlotInfo(currentSlotKey).emoji} {getTimeSlotInfo(currentSlotKey).label})
-            </button>
-          )}
         </div>
+
+        {isSettingsModalOpen && (
+          <TodaySettingsModal
+            isSlotView={isSlotView}
+            isFocusMode={isFocusMode}
+            isAutoCarry={isAutoCarry}
+            onSave={handleSaveViewSettings}
+            onClose={() => setIsSettingsModalOpen(false)}
+          />
+        )}
 
         {/* 지난 시간대 정리 배너 */}
         {!isLoading && showCleanupBanner && (
