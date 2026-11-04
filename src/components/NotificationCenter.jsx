@@ -14,6 +14,7 @@ export const NOTIFICATION_TYPES = {
   MONTHLY_SUMMARY: 'monthly_summary',
   PURCHASE_REQUEST: 'purchase_request',
   BACKLOG_STALE: 'backlog_stale',
+  MONTHLY_GOAL: 'monthly_goal',
 }
 
 /**
@@ -25,6 +26,7 @@ export default function NotificationCenter({
   monthlySummaryReminder,
   purchaseRequestReminder,
   backlogStaleReminder,
+  monthlyGoalReminder,
   onWeeklySummaryGenerate,
   onMonthlySummaryGenerate,
   onWeeklySummaryClose,
@@ -33,6 +35,8 @@ export default function NotificationCenter({
   onPurchaseRequestClose,
   onBacklogStaleOpen,
   onBacklogStaleClose,
+  onMonthlyGoalOpen,
+  onMonthlyGoalClose,
 }) {
   const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
@@ -45,12 +49,14 @@ export default function NotificationCenter({
     if (monthlySummaryReminder?.isOpen) count++
     if (purchaseRequestReminder?.isOpen) count++
     if (backlogStaleReminder?.isOpen) count++
+    if (monthlyGoalReminder?.isOpen) count++
     setUnreadCount(count)
   }, [
     weeklySummaryReminder?.isOpen,
     monthlySummaryReminder?.isOpen,
     purchaseRequestReminder?.isOpen,
     backlogStaleReminder?.isOpen,
+    monthlyGoalReminder?.isOpen,
   ])
 
   // 알림 목록 토글
@@ -264,6 +270,46 @@ export default function NotificationCenter({
                               className="px-3 py-1.5 border border-gray-300 text-gray-700 text-xs rounded-lg hover:bg-gray-50 transition-colors font-sans"
                             >
                               나중에
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 월별 목표 10일 점검 알림 */}
+                  {monthlyGoalReminder?.isOpen && monthlyGoalReminder.payload && (
+                    <div className="p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 font-sans mb-1">
+                            {monthlyGoalReminder.payload.isMonthEnd
+                              ? `${monthlyGoalReminder.payload.month}월 목표 마무리 점검`
+                              : `${monthlyGoalReminder.payload.month}월 목표 ${monthlyGoalReminder.payload.checkpoint}일 점검`}
+                          </p>
+                          <p className="text-xs text-gray-600 font-sans mb-3">
+                            평균 달성률 {monthlyGoalReminder.payload.summary.overallRate}% ·{' '}
+                            {monthlyGoalReminder.payload.message}
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                onMonthlyGoalOpen?.()
+                                handleClose()
+                              }}
+                              className="px-3 py-1.5 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600 transition-colors font-sans"
+                            >
+                              진행 상황 보기
+                            </button>
+                            <button
+                              onClick={() => {
+                                onMonthlyGoalClose?.()
+                                handleClose()
+                              }}
+                              className="px-3 py-1.5 border border-gray-300 text-gray-700 text-xs rounded-lg hover:bg-gray-50 transition-colors font-sans"
+                            >
+                              확인
                             </button>
                           </div>
                         </div>

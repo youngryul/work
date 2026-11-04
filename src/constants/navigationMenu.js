@@ -7,7 +7,6 @@
  * 사이드바에 표시하지 않는 최상위 메뉴 id (뷰 전환·localStorage 등은 그대로 동작)
  */
 export const SIDEBAR_HIDDEN_MENU_ITEM_IDS = new Set([
-  'goals',
   'travel-menu',
   'food-calorie',
 ])
@@ -46,8 +45,7 @@ const DAILY_MENU_ITEMS = [
 const LIFE_MENU_ITEMS = [
   { id: 'records', label: '프로젝트 기록', icon: '📁' },
   { id: 'notebooks', label: '필기 노트', icon: '✍️' },
-  { id: 'goals', label: '2026 목표', icon: '🎯' },
-  { id: 'habit-tracker', label: '습관 트래커', icon: '📌' },
+  { id: 'habit-tracker', label: '월별 목표·습관', icon: '📌' },
   { id: 'bucketlist', label: '버킷리스트', icon: '🪣' },
   { id: 'reading', label: '독서', icon: '📚' },
   { id: 'five-year-questions', label: '5년 질문', icon: '📖' },

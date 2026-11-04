@@ -13,6 +13,13 @@ import {
   fetchBacklogStaleReminderPayload,
   hasBacklogStaleReminderToday,
 } from '../services/backlogStaleReminderService.js'
+import {
+  fetchMonthlyGoalReminderPayload,
+  hasMonthlyGoalReminderShown,
+} from '../services/monthlyGoalReminderService.js'
+
+/** 월별 목표 점검 알림 닫힌 상태 */
+const CLOSED_MONTHLY_GOAL_REMINDER = { isOpen: false, payload: null }
 
 /**
  * 알림 상태를 관리하는 커스텀 훅
@@ -41,6 +48,8 @@ export function useNotifications() {
     tasks: [],
     message: '',
   })
+  // 월별 목표 10일 점검 (10일 · 20일 · 말일)
+  const [monthlyGoalReminder, setMonthlyGoalReminder] = useState(CLOSED_MONTHLY_GOAL_REMINDER)
   const [isLoading, setIsLoading] = useState(true)
 
   const checkNotifications = useCallback(async () => {
@@ -49,6 +58,7 @@ export function useNotifications() {
       setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
       setPurchaseRequestReminder({ isOpen: false, count: 0 })
       setBacklogStaleReminder({ isOpen: false, tasks: [], message: '' })
+      setMonthlyGoalReminder(CLOSED_MONTHLY_GOAL_REMINDER)
       setIsLoading(false)
       return
     }
@@ -104,6 +114,19 @@ export function useNotifications() {
         setBacklogStaleReminder({ isOpen: false, tasks: [], message: '' })
       }
 
+      // 월별 목표 점검: 점검일이고, 아직 확인 안 했고, 이번 달 목표가 있을 때만
+      const alreadyShownMonthlyGoal = await hasMonthlyGoalReminderShown(user.id)
+      if (notificationSettings.monthlyGoalEnabled && !alreadyShownMonthlyGoal) {
+        const payload = await fetchMonthlyGoalReminderPayload()
+        setMonthlyGoalReminder(
+          payload && payload.summary.totalCount > 0
+            ? { isOpen: true, payload }
+            : CLOSED_MONTHLY_GOAL_REMINDER,
+        )
+      } else {
+        setMonthlyGoalReminder(CLOSED_MONTHLY_GOAL_REMINDER)
+      }
+
       if (userRole === 'admin') {
         const pendingPurchaseCount = await getPendingTokenPurchaseRequestCount()
         setPurchaseRequestReminder({
@@ -126,6 +149,7 @@ export function useNotifications() {
       setMonthlySummaryReminder({ isOpen: false, period: '', year: null, month: null })
       setPurchaseRequestReminder({ isOpen: false, count: 0 })
       setBacklogStaleReminder({ isOpen: false, tasks: [], message: '' })
+      setMonthlyGoalReminder(CLOSED_MONTHLY_GOAL_REMINDER)
       setIsLoading(false)
       return
     }
@@ -140,11 +164,13 @@ export function useNotifications() {
     monthlySummaryReminder,
     purchaseRequestReminder,
     backlogStaleReminder,
+    monthlyGoalReminder,
     isLoading,
     setWeeklySummaryReminder,
     setMonthlySummaryReminder,
     setPurchaseRequestReminder,
     setBacklogStaleReminder,
+    setMonthlyGoalReminder,
     refreshNotifications: checkNotifications,
   }
 }

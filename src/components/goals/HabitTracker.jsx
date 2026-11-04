@@ -18,6 +18,14 @@ import {
   isSundayColumn,
   isSaturdayColumn,
 } from '../../constants/habitTracker.js'
+import { getHabitProgress, getHabitStreak, getPaceStatus } from '../../utils/monthlyGoalProgress.js'
+
+/** 페이스 상태별 색상 */
+const PACE_TONE_CLASS = {
+  good: 'text-green-700',
+  ok: 'text-amber-700',
+  low: 'text-red-600',
+}
 
 /**
  * @param {Object} tracker - Habit Tracker 데이터
@@ -110,6 +118,14 @@ export default function HabitTracker({ tracker, year, month, onUpdate }) {
 
   const completedCount = days.filter((d) => d.isCompleted).length
   const completionRate = totalDays > 0 ? Math.round((completedCount / totalDays) * 100) : 0
+
+  // 페이스(오늘까지 기대 vs 실제)와 연속 달성 스트릭
+  const progress = getHabitProgress({ days }, year, month)
+  const streak = getHabitStreak(days, year, month)
+  const pace = getPaceStatus(progress.paceRate)
+  const expectedRate = progress.totalDays > 0
+    ? Math.round((progress.elapsedDays / progress.totalDays) * 100)
+    : 0
 
   const beginEditTitle = () => {
     setTitleDraft(tracker?.title || '')
@@ -320,12 +336,33 @@ export default function HabitTracker({ tracker, year, month, onUpdate }) {
             {completedCount}/{totalDays} ({completionRate}%)
           </span>
         </div>
-        <div className="h-1.5 w-full rounded-full bg-amber-100">
+        <div className="relative h-1.5 w-full rounded-full bg-amber-100">
           <div
             className="h-full rounded-full bg-gradient-to-r from-amber-400 to-green-400 transition-all duration-300"
             style={{ width: `${completionRate}%` }}
           />
+          {/* 오늘까지 매일 했을 때의 기대 위치 */}
+          {progress.elapsedDays > 0 && progress.elapsedDays < progress.totalDays && (
+            <div
+              className="absolute -top-0.5 h-2.5 w-0.5 rounded bg-amber-900/60"
+              style={{ left: `${expectedRate}%` }}
+              title={`오늘까지 기대 진도 ${progress.elapsedDays}일`}
+              aria-hidden="true"
+            />
+          )}
         </div>
+
+        {/* 페이스 · 스트릭 */}
+        {progress.elapsedDays > 0 && (
+          <div className="mt-1 flex items-center justify-between text-[10px] font-sans">
+            <span className={`font-semibold ${PACE_TONE_CLASS[pace.tone]}`}>
+              페이스 {progress.checkedDays}/{progress.elapsedDays}일 ({progress.paceRate}%) · {pace.label}
+            </span>
+            <span className="font-semibold text-amber-950" title={`이번 달 최장 ${streak.best}일 연속`}>
+              🔥 {streak.current}일 연속{streak.best > streak.current ? ` · 최장 ${streak.best}` : ''}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )

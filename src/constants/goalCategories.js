@@ -83,5 +83,5 @@ export const MONTHLY_GOAL_STATUS_LABEL = {
  * 최대 목표 개수 제한
  */
 export const MAX_YEARLY_GOALS = 5 // 연간 목표 최대 5개
-export const MAX_MONTHLY_GOALS = 3 // 월별 목표 최대 3개
+export const MAX_MONTHLY_GOALS = 5 // 월별 목표 최대 5개
 

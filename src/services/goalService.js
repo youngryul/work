@@ -247,7 +247,8 @@ export async function createMonthlyGoal(goalData) {
     const { data, error } = await supabase
       .from('monthly_goals')
       .insert([{
-        yearly_goal_id: goalData.yearlyGoalId,
+        // 연간 목표 연결은 선택 사항 (없으면 null)
+        yearly_goal_id: goalData.yearlyGoalId || null,
         year: goalData.year,
         month: goalData.month,
         title: goalData.title,
@@ -282,6 +283,7 @@ export async function updateMonthlyGoal(id, goalData) {
     if (goalData.title !== undefined) updateData.title = goalData.title
     if (goalData.description !== undefined) updateData.description = goalData.description
     if (goalData.status !== undefined) updateData.status = goalData.status
+    if (goalData.yearlyGoalId !== undefined) updateData.yearly_goal_id = goalData.yearlyGoalId || null
     // progress_percentage는 더 이상 사용하지 않음 (기존 데이터 호환성을 위해 유지)
     // if (goalData.progressPercentage !== undefined) updateData.progress_percentage = goalData.progressPercentage
 
@@ -321,6 +323,9 @@ export async function deleteMonthlyGoal(id) {
   }
 
   try {
+    // 연결된 습관 트래커를 먼저 정리 (FK가 CASCADE가 아니어도 고아 트래커가 남지 않도록)
+    await deleteHabitTrackersByMonthlyGoal(id)
+
     const { error } = await supabase
       .from('monthly_goals')
       .delete()
@@ -789,17 +794,125 @@ export async function getHabitTrackers(year, month) {
     }
 
     const trackers = (data || []).map(parseHabitTracker)
-
-    // 각 tracker의 일별 체크 데이터 로드
-    for (const tracker of trackers) {
-      tracker.days = await getHabitTrackerDays(tracker.id)
-    }
-
+    await attachHabitTrackerDays(trackers, userId)
     return trackers
   } catch (error) {
     console.error('Habit Tracker 조회 오류:', error)
     throw error
   }
+}
+
+/**
+ * 여러 트래커의 일별 체크를 한 번의 쿼리로 불러와 tracker.days에 채운다.
+ * (트래커마다 쿼리 2번씩 하던 N+1 조회를 대체)
+ * @param {Array} trackers - parseHabitTracker 결과 목록 (직접 수정됨)
+ * @param {string} userId
+ */
+async function attachHabitTrackerDays(trackers, userId) {
+  if (trackers.length === 0) return
+
+  const { data, error } = await supabase
+    .from('habit_tracker_days')
+    .select('*')
+    .eq('user_id', userId)
+    .in('habit_tracker_id', trackers.map((t) => t.id))
+    .order('day', { ascending: true })
+
+  if (error) {
+    throw error
+  }
+
+  const daysByTracker = {}
+  for (const row of data || []) {
+    if (!daysByTracker[row.habit_tracker_id]) daysByTracker[row.habit_tracker_id] = []
+    daysByTracker[row.habit_tracker_id].push(parseHabitTrackerDay(row))
+  }
+  for (const tracker of trackers) {
+    tracker.days = daysByTracker[tracker.id] || []
+  }
+}
+
+/**
+ * 특정 월별 목표에 연결된 Habit Tracker를 모두 삭제
+ * ("습관 트래커 필요" 해제 · 목표 삭제 시 사용)
+ * @param {string} monthlyGoalId - 월별 목표 ID
+ * @returns {Promise<void>}
+ */
+export async function deleteHabitTrackersByMonthlyGoal(monthlyGoalId) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    throw new Error('로그인이 필요합니다.')
+  }
+
+  const { error } = await supabase
+    .from('habit_trackers')
+    .delete()
+    .eq('user_id', userId)
+    .eq('monthly_goal_id', monthlyGoalId)
+
+  if (error) {
+    console.error('목표 연결 Habit Tracker 삭제 오류:', error)
+    throw error
+  }
+}
+
+/**
+ * 월별 목표 + 습관 트래커 통합 조회
+ * - goals: 각 목표에 연결된 트래커를 habitTrackers로 붙인 목록
+ * - independentTrackers: 목표에 연결되지 않은(또는 다른 달 목표에 연결된) 독립 습관
+ * @param {number} year
+ * @param {number} month
+ * @returns {Promise<{ goals: Array, independentTrackers: Array }>}
+ */
+export async function getMonthlyGoalHabitBoard(year, month) {
+  const [goals, trackers] = await Promise.all([
+    getMonthlyGoals(year, month),
+    getHabitTrackers(year, month),
+  ])
+
+  const goalIds = new Set(goals.map((goal) => goal.id))
+  const trackersByGoal = {}
+  const independentTrackers = []
+  for (const tracker of trackers) {
+    if (tracker.monthlyGoalId && goalIds.has(tracker.monthlyGoalId)) {
+      if (!trackersByGoal[tracker.monthlyGoalId]) trackersByGoal[tracker.monthlyGoalId] = []
+      trackersByGoal[tracker.monthlyGoalId].push(tracker)
+    } else {
+      independentTrackers.push(tracker)
+    }
+  }
+
+  return {
+    goals: goals.map((goal) => ({ ...goal, habitTrackers: trackersByGoal[goal.id] || [] })),
+    independentTrackers,
+  }
+}
+
+/**
+ * 지난달 목표를 이번 달로 이월
+ * - 제목만 복사하고 상태는 '진행 중'으로 시작
+ * - 원래 목표에 습관 트래커가 있었다면 같은 제목·색상의 빈 트래커를 새로 만든다
+ * @param {Array} sourceGoals - 이월할 지난달 목표 목록 (habitTrackers 포함 가능)
+ * @param {number} year - 이월 대상 연도
+ * @param {number} month - 이월 대상 월
+ * @returns {Promise<number>} 이월된 목표 수
+ */
+export async function carryOverMonthlyGoals(sourceGoals, year, month) {
+  let carried = 0
+  for (const source of sourceGoals) {
+    const created = await createMonthlyGoal({ year, month, title: source.title })
+    for (const tracker of source.habitTrackers || []) {
+      await createHabitTracker({
+        monthlyGoalId: created.id,
+        year,
+        month,
+        title: tracker.title,
+        color: tracker.color,
+      })
+    }
+    carried += 1
+  }
+  return carried
 }
 
 /**

@@ -1,8 +1,9 @@
 /**
  * 월별 목표 입력/수정 폼 컴포넌트
+ * 목표 제목만 입력 (연간 목표 연결 · 목표 설명은 사용하지 않음)
  */
 import { useState, useEffect } from 'react'
-import { getYearlyGoals, createMonthlyGoal, updateMonthlyGoal, getMonthlyGoals } from '../../services/goalService.js'
+import { createMonthlyGoal, updateMonthlyGoal, getMonthlyGoals, createHabitTracker } from '../../services/goalService.js'
 import { MONTHLY_GOAL_STATUS, MAX_MONTHLY_GOALS } from '../../constants/goalCategories.js'
 import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
@@ -12,72 +13,34 @@ import { showToast, TOAST_TYPES } from '../Toast.jsx'
  * @param {number} month - 월
  * @param {Function} onSave - 저장 완료 핸들러
  * @param {Function} onCancel - 취소 핸들러
- * @param {string|null} defaultYearlyGoalId - 기본 연간 목표 ID (연간 목표 클릭 시)
  */
-export default function MonthlyGoalForm({ initialGoal = null, year, month, onSave, onCancel, defaultYearlyGoalId = null }) {
+export default function MonthlyGoalForm({ initialGoal = null, year, month, onSave, onCancel }) {
   const isEditMode = !!initialGoal
-  const [yearlyGoals, setYearlyGoals] = useState([])
   const [existingGoals, setExistingGoals] = useState([])
-
-  const [formData, setFormData] = useState({
-    yearlyGoalId: '',
-    title: '',
-    description: '',
-    status: MONTHLY_GOAL_STATUS.IN_PROGRESS,
-  })
-
+  const [title, setTitle] = useState('')
+  const [status, setStatus] = useState(MONTHLY_GOAL_STATUS.IN_PROGRESS)
+  // 등록 시 이 목표 아래에 습관 트래커를 함께 만들지 여부
+  const [needsHabitTracker, setNeedsHabitTracker] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  // 연간 목표 및 기존 월별 목표 로드
+  // 기존 월별 목표 로드 (최대 개수 확인용)
   useEffect(() => {
-    loadData()
+    getMonthlyGoals(year, month)
+      .then(setExistingGoals)
+      .catch((error) => console.error('데이터 로드 실패:', error))
   }, [year, month])
 
-  // 초기 데이터 로드
+  // 수정 모드 초기값
   useEffect(() => {
-    if (initialGoal) {
-      setFormData({
-        yearlyGoalId: initialGoal.yearlyGoalId,
-        title: initialGoal.title,
-        description: initialGoal.description || '',
-        status: initialGoal.status || MONTHLY_GOAL_STATUS.IN_PROGRESS,
-      })
-    } else {
-      setFormData({
-        yearlyGoalId: defaultYearlyGoalId || '',
-        title: '',
-        description: '',
-        status: MONTHLY_GOAL_STATUS.IN_PROGRESS,
-      })
-    }
+    setTitle(initialGoal?.title || '')
+    setStatus(initialGoal?.status || MONTHLY_GOAL_STATUS.IN_PROGRESS)
   }, [initialGoal])
-
-  const loadData = async () => {
-    try {
-      const [yearly, monthly] = await Promise.all([
-        getYearlyGoals(year),
-        getMonthlyGoals(year, month),
-      ])
-      setYearlyGoals(yearly)
-      setExistingGoals(monthly)
-    } catch (error) {
-      console.error('데이터 로드 실패:', error)
-    }
-  }
-
-  const updateField = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    // 유효성 검사
-    if (!formData.yearlyGoalId) {
-      showToast('연간 목표를 선택해주세요.', TOAST_TYPES.ERROR)
-      return
-    }
-    if (!formData.title.trim()) {
+    const trimmed = title.trim()
+    if (!trimmed) {
       showToast('목표 제목을 입력해주세요.', TOAST_TYPES.ERROR)
       return
     }
@@ -91,17 +54,18 @@ export default function MonthlyGoalForm({ initialGoal = null, year, month, onSav
     try {
       setLoading(true)
       if (isEditMode) {
-        await updateMonthlyGoal(initialGoal.id, {
-          ...formData,
-          year,
-          month,
-        })
+        // 제목·상태만 수정 (기존에 저장된 연간 목표 연결·설명은 건드리지 않음)
+        await updateMonthlyGoal(initialGoal.id, { title: trimmed, status })
       } else {
-        await createMonthlyGoal({
-          ...formData,
-          year,
-          month,
-        })
+        const created = await createMonthlyGoal({ title: trimmed, year, month })
+        if (needsHabitTracker) {
+          await createHabitTracker({
+            monthlyGoalId: created.id,
+            year,
+            month,
+            title: trimmed,
+          })
+        }
       }
       onSave?.()
     } catch (error) {
@@ -120,65 +84,44 @@ export default function MonthlyGoalForm({ initialGoal = null, year, month, onSav
             {isEditMode ? '월별 목표 수정' : '월별 목표 등록'}
           </h1>
           <p className="text-base text-gray-600 font-sans">
-            {year}년 {month}월 목표를 등록하세요. 연간 목표와 연결하여 구체적인 행동 계획을 세워보세요.
+            {year}년 {month}월 목표를 등록하세요. 매일 할 일이 있는 목표라면 습관 트래커를 함께 만들어보세요.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* 연간 목표 선택 */}
-          <div>
-            <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
-              연간 목표 선택 *
-            </label>
-            <select
-              value={formData.yearlyGoalId}
-              onChange={(e) => updateField('yearlyGoalId', e.target.value)}
-              required
-              disabled={isEditMode}
-              className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans disabled:bg-gray-100"
-            >
-              <option value="">연간 목표를 선택하세요</option>
-              {yearlyGoals.map((goal) => (
-                <option key={goal.id} value={goal.id}>
-                  {goal.title}
-                </option>
-              ))}
-            </select>
-            {yearlyGoals.length === 0 && (
-              <p className="text-sm text-gray-500 mt-2 font-sans">
-                먼저 연간 목표를 등록해주세요.
-              </p>
-            )}
-          </div>
-
           {/* 목표 제목 */}
           <div>
             <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
-              목표 제목 *
+              목표 *
             </label>
             <input
               type="text"
-              value={formData.title}
-              onChange={(e) => updateField('title', e.target.value)}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="예: 주 3회 운동하기"
               required
+              autoFocus
               className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
             />
           </div>
 
-          {/* 목표 설명 */}
-          <div>
-            <label className="block text-base font-medium text-gray-700 mb-2 font-sans">
-              목표 설명
+          {/* 습관 트래커 함께 만들기 (등록 모드에서만) */}
+          {!isEditMode && (
+            <label className="flex items-start gap-3 p-4 rounded-lg border-2 border-amber-200 bg-amber-50/60 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={needsHabitTracker}
+                onChange={(e) => setNeedsHabitTracker(e.target.checked)}
+                className="mt-1 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500"
+              />
+              <span className="font-sans">
+                <span className="block text-base font-medium text-gray-800">습관 트래커가 필요해요</span>
+                <span className="block text-sm text-gray-600">
+                  목표 바로 아래에 1일~말일 체크 트래커가 생겨요. 습관 이름은 트래커 제목을 눌러 바꿀 수 있어요.
+                </span>
+              </span>
             </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => updateField('description', e.target.value)}
-              placeholder="이번 달 목표에 대한 구체적인 설명을 작성해주세요..."
-              rows={4}
-              className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans resize-none"
-            />
-          </div>
+          )}
 
           {/* 완료 여부 (수정 모드에서만) */}
           {isEditMode && (
@@ -187,8 +130,8 @@ export default function MonthlyGoalForm({ initialGoal = null, year, month, onSav
                 완료 여부
               </label>
               <select
-                value={formData.status}
-                onChange={(e) => updateField('status', e.target.value)}
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
                 className="w-full px-4 py-2 border-2 border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-base bg-white font-sans"
               >
                 <option value={MONTHLY_GOAL_STATUS.IN_PROGRESS}>진행 중</option>
@@ -220,4 +163,3 @@ export default function MonthlyGoalForm({ initialGoal = null, year, month, onSav
     </div>
   )
 }
-

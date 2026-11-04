@@ -15,6 +15,7 @@ export default function SettingsView({ currentTheme = 'posily', onThemeChange })
     weeklySummaryEnabled: true,
     monthlySummaryEnabled: true,
     backlogStaleEnabled: true,
+    monthlyGoalEnabled: true,
   })
   const [activeTab, setActiveTab] = useState(canUseNotifications ? 'notification' : 'theme')
   const [isLoading, setIsLoading] = useState(true)
@@ -161,6 +162,24 @@ export default function SettingsView({ currentTheme = 'posily', onThemeChange })
                 type="checkbox"
                 checked={settings.backlogStaleEnabled}
                 onChange={() => handleToggle('backlogStaleEnabled')}
+                disabled={isSaving}
+                className="sr-only peer"
+              />
+              <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+
+          {/* 월별 목표 점검 알림 */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-800 mb-1">월별 목표 점검 알림</h3>
+              <p className="text-sm text-gray-600">매달 10일·20일·말일에 목표 달성률과 습관 체크율을 알려줍니다</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.monthlyGoalEnabled}
+                onChange={() => handleToggle('monthlyGoalEnabled')}
                 disabled={isSaving}
                 className="sr-only peer"
               />

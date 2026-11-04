@@ -11,6 +11,7 @@ const DEFAULT_NOTIFICATION_SETTINGS = {
   monthlySummaryEnabled: true,
   fiveYearQuestionEnabled: true,
   backlogStaleEnabled: true,
+  monthlyGoalEnabled: true,
 }
 
 const NOTIFICATION_COLUMNS = [
@@ -19,6 +20,7 @@ const NOTIFICATION_COLUMNS = [
   'notification_monthly_summary_enabled',
   'notification_five_year_question_enabled',
   'notification_backlog_stale_enabled',
+  'notification_monthly_goal_enabled',
 ].join(', ')
 
 /**
@@ -32,6 +34,7 @@ function toNotificationSettings(data) {
     monthlySummaryEnabled: data?.notification_monthly_summary_enabled ?? true,
     fiveYearQuestionEnabled: data?.notification_five_year_question_enabled ?? true,
     backlogStaleEnabled: data?.notification_backlog_stale_enabled ?? true,
+    monthlyGoalEnabled: data?.notification_monthly_goal_enabled ?? true,
   }
 }
 
@@ -95,6 +98,7 @@ export async function saveNotificationSettings(settings) {
       notification_monthly_summary_enabled: settings.monthlySummaryEnabled ?? true,
       notification_five_year_question_enabled: settings.fiveYearQuestionEnabled ?? true,
       notification_backlog_stale_enabled: settings.backlogStaleEnabled ?? true,
+      notification_monthly_goal_enabled: settings.monthlyGoalEnabled ?? true,
     }
 
     const query = existing

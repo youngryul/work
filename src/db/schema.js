@@ -795,3 +795,14 @@ export const userFarmPostcards = pgTable(
     pk: primaryKey({ columns: [table.userId, table.stopId] }),
   }),
 )
+
+/**
+ * 월별 목표 · 습관 트래커 (Drizzle 미관리, SQL 파일로 관리)
+ * - monthly_goals, habit_trackers, habit_tracker_days, user_preferences 는
+ *   Supabase에서 직접 만든 테이블이라 이 파일에 정의하지 않는다.
+ *   (여기 정의하면 db:push가 기존 테이블을 다시 맞추려 할 수 있음)
+ * - 변경 내역: supabase-monthly-goal-habit.sql
+ *   · monthly_goals.yearly_goal_id → NULL 허용 (연간 목표 연결 선택 사항)
+ *   · user_preferences.notification_monthly_goal_enabled boolean DEFAULT true
+ * - "습관 트래커 필요" 여부는 habit_trackers.monthly_goal_id 연결 여부로 판단한다.
+ */

@@ -16,8 +16,12 @@ import AnnualReviewView from './components/AnnualReviewView.jsx'
 import Review2026View from './components/Review2026View.jsx'
 import RecordMainView from './components/RecordMainView.jsx'
 import RecordForm from './components/RecordForm.jsx'
-import GoalsDashboard from './components/goals/GoalsDashboard.jsx'
-import HabitTrackerView from './components/goals/HabitTrackerView.jsx'
+import MonthlyGoalHabitView, {
+  OPEN_MONTHLY_REFLECTION_KEY,
+  OPEN_MONTHLY_REFLECTION_EVENT,
+} from './components/goals/MonthlyGoalHabitView.jsx'
+import MonthlyGoalReminderModal from './components/goals/MonthlyGoalReminderModal.jsx'
+import { markMonthlyGoalReminderShown } from './services/monthlyGoalReminderService.js'
 import BucketlistView from './components/bucketlist/BucketlistView.jsx'
 import ReadingView from './components/reading/ReadingView.jsx'
 import TravelView from './components/travel/TravelView.jsx'
@@ -75,6 +79,20 @@ import { useAiTokenInfo } from './hooks/useAiTokenInfo.js'
 import { RECIPE_IMAGE_GENERATION_TOKEN_COST } from './constants/aiTokenSettings.js'
 import { JELLY_UPDATED_EVENT } from './utils/jellyEvents.js'
 import { showToast, TOAST_TYPES } from './components/Toast.jsx'
+
+/** 없어진 화면 id → 대신 열 화면 (localStorage에 예전 화면이 저장돼 있을 때) */
+const REMOVED_VIEW_REDIRECTS = {
+  goals: 'habit-tracker', // 2026 목표 → 월별 목표·습관
+}
+
+/**
+ * 저장된 마지막 화면 id를 현재 존재하는 화면 id로 바꾼다.
+ * @param {string|null} savedView
+ * @returns {string|null}
+ */
+function resolveSavedView(savedView) {
+  return REMOVED_VIEW_REDIRECTS[savedView] || savedView
+}
 
 /**
  * 메인 앱 컨텐츠 컴포넌트 (인증 필요)
@@ -142,8 +160,7 @@ function AppContent() {
 
   // localStorage에서 마지막으로 본 화면 불러오기
   const [currentView, setCurrentView] = useState(() => {
-    const savedView = localStorage.getItem('lastView')
-    return savedView || 'today'
+    return resolveSavedView(localStorage.getItem('lastView')) || 'today'
   })
   const [diaryCalendarKey, setDiaryCalendarKey] = useState(0)
   const [diaryOpenDate, setDiaryOpenDate] = useState(null)
@@ -258,12 +275,26 @@ function AppContent() {
     monthlySummaryReminder,
     purchaseRequestReminder,
     backlogStaleReminder,
+    monthlyGoalReminder,
     setWeeklySummaryReminder,
     setMonthlySummaryReminder,
     setPurchaseRequestReminder,
     setBacklogStaleReminder,
+    setMonthlyGoalReminder,
     refreshNotifications,
   } = useNotifications()
+  // 월별 목표 점검 모달 (알림 센터에서 "진행 상황 보기"로 열림)
+  const [monthlyGoalReminderModal, setMonthlyGoalReminderModal] = useState({ isOpen: false, payload: null })
+
+  /** 월별 목표 점검 알림 확인 처리 후 알림 목록에서 내림 */
+  const dismissMonthlyGoalReminder = async () => {
+    try {
+      await markMonthlyGoalReminderShown(user?.id)
+    } catch (error) {
+      console.error('리마인더 기록 실패:', error)
+    }
+    setMonthlyGoalReminder({ isOpen: false, payload: null })
+  }
 
   // 새 기록 작성
   const handleNewRecord = () => {
@@ -294,7 +325,7 @@ function AppContent() {
   // 로그인 시 localStorage에 저장된 마지막 화면 복원 (없으면 'today')
   useEffect(() => {
     if (user && !loading) {
-      const savedView = localStorage.getItem('lastView')
+      const savedView = resolveSavedView(localStorage.getItem('lastView'))
       if (savedView) {
         setCurrentView(savedView)
       }
@@ -549,8 +580,7 @@ function AppContent() {
             )}
           </>
         )}
-        {currentView === 'goals' && <GoalsDashboard />}
-        {currentView === 'habit-tracker' && <HabitTrackerView />}
+        {currentView === 'habit-tracker' && <MonthlyGoalHabitView />}
         {currentView === 'bucketlist' && <BucketlistView />}
         {currentView === 'reading' && <ReadingView />}
         {currentView === 'travel' && <TravelView />}
@@ -615,6 +645,12 @@ function AppContent() {
         monthlySummaryReminder={monthlySummaryReminder}
         purchaseRequestReminder={purchaseRequestReminder}
         backlogStaleReminder={backlogStaleReminder}
+        monthlyGoalReminder={monthlyGoalReminder}
+        onMonthlyGoalOpen={async () => {
+          setMonthlyGoalReminderModal({ isOpen: true, payload: monthlyGoalReminder.payload })
+          await dismissMonthlyGoalReminder()
+        }}
+        onMonthlyGoalClose={dismissMonthlyGoalReminder}
         onWeeklySummaryGenerate={async () => {
           // 2026 회고록 페이지로 이동하고 주간 탭 열기
           window.dispatchEvent(new CustomEvent('navigateToReview2026', { 
@@ -718,6 +754,29 @@ function AppContent() {
         }}
       />
       )}
+
+      {/* 월별 목표 10일 점검 모달 */}
+      <MonthlyGoalReminderModal
+        isOpen={monthlyGoalReminderModal.isOpen}
+        reminder={monthlyGoalReminderModal.payload}
+        onClose={() => setMonthlyGoalReminderModal({ isOpen: false, payload: null })}
+        onGoToGoals={() => {
+          setMonthlyGoalReminderModal({ isOpen: false, payload: null })
+          setCurrentView('habit-tracker')
+        }}
+        onWriteReflection={() => {
+          const { year, month } = monthlyGoalReminderModal.payload
+          // 화면이 새로 열리면 sessionStorage로, 이미 열려 있으면 이벤트로 회고를 펼친다
+          try {
+            sessionStorage.setItem(OPEN_MONTHLY_REFLECTION_KEY, JSON.stringify({ year, month }))
+          } catch {
+            // ignore
+          }
+          window.dispatchEvent(new CustomEvent(OPEN_MONTHLY_REFLECTION_EVENT, { detail: { year, month } }))
+          setMonthlyGoalReminderModal({ isOpen: false, payload: null })
+          setCurrentView('habit-tracker')
+        }}
+      />
 
       {/* 카테고리 설정 모달 */}
       <CategorySettingsModal

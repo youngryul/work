@@ -10,8 +10,9 @@ import { showToast, TOAST_TYPES } from '../Toast.jsx'
  * @param {number} year - 연도
  * @param {number} month - 월
  * @param {Function} onSave - 저장 완료 핸들러
+ * @param {number|null} suggestedAchievementRate - 기존 회고가 없을 때 미리 채울 달성률 (목표·습관 기록으로 계산)
  */
-export default function MonthlyReflectionForm({ year, month, onSave }) {
+export default function MonthlyReflectionForm({ year, month, onSave, suggestedAchievementRate = null }) {
   const [formData, setFormData] = useState({
     achievementRate: 0,
     bestChoice: '',
@@ -41,6 +42,9 @@ export default function MonthlyReflectionForm({ year, month, onSave }) {
           dropNextMonth: reflection.dropNextMonth || '',
           reflectionText: reflection.reflectionText || '',
         })
+      } else if (suggestedAchievementRate != null) {
+        // 아직 회고가 없으면 이번 달 목표·습관 기록으로 계산한 달성률을 미리 채움
+        setFormData((prev) => ({ ...prev, achievementRate: suggestedAchievementRate }))
       }
     } catch (error) {
       console.error('회고 로드 실패:', error)
@@ -69,7 +73,7 @@ export default function MonthlyReflectionForm({ year, month, onSave }) {
         month,
         ...formData,
       })
-      showToast('회고가 저장되었습니다. 이제 다음 달 목표를 등록할 수 있습니다.', TOAST_TYPES.SUCCESS)
+      showToast('회고가 저장되었습니다.', TOAST_TYPES.SUCCESS)
       onSave?.()
     } catch (error) {
       console.error('회고 저장 실패:', error)
@@ -95,7 +99,8 @@ export default function MonthlyReflectionForm({ year, month, onSave }) {
           {year}년 {month}월 회고
         </h2>
         <p className="text-sm text-gray-600 font-sans">
-          회고를 작성해야 다음 달 목표를 등록할 수 있습니다.
+          잘된 점과 아쉬운 점을 남겨두면 다음 달 목표를 더 현실적으로 세울 수 있어요.
+          {suggestedAchievementRate != null && ' (달성률은 목표·습관 기록으로 미리 채워뒀어요)'}
         </p>
       </div>
 
