@@ -25,6 +25,7 @@ import {
   UNASSIGNED_SLOT,
   UNASSIGNED_SLOT_KEY,
   TIME_SLOT_CLEANUP_DISMISS_STORAGE_KEY,
+  TIME_SLOT_CARRIED_STORAGE_KEY,
   isValidTimeSlot,
   getTimeSlotInfo,
   getTimeSlotForDate,
@@ -104,6 +105,15 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
       return localStorage.getItem(TIME_SLOT_CLEANUP_DISMISS_STORAGE_KEY) || ''
     } catch {
       return ''
+    }
+  })
+  /** 오늘 다음 시간대로 넘긴 할 일 { [원래 시간대]: id[] } (날짜가 바뀌면 비움) */
+  const [carriedBySlot, setCarriedBySlot] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(TIME_SLOT_CARRIED_STORAGE_KEY) || 'null')
+      return saved && saved.date === getTodayDateString() ? saved.carried || {} : {}
+    } catch {
+      return {}
     }
   })
   const [isCleaningUp, setIsCleaningUp] = useState(false)
@@ -439,6 +449,44 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
     }
   })
 
+  /**
+   * 섹션별 다음 시간대로 넘긴 개수
+   * 오늘 할 일에 아직 있고, 지금은 다른 섹션에 있는 것만 셈 (다시 끌어다 놓은 경우 중복 방지)
+   */
+  const carriedCountBySection = Object.fromEntries(
+    SECTION_ORDER.map((key) => [
+      key,
+      (carriedBySlot[key] || []).filter((id) => {
+        const task = tasks.find((t) => t.id === id)
+        return task && getSectionKey(task) !== key
+      }).length,
+    ]),
+  )
+
+  /**
+   * 넘긴 할 일을 원래 시간대별로 기록 (원래 시간대의 전체 개수 유지용)
+   * @param {Array} movedTasks - 옮긴 할 일 (옮기기 전 시간대 정보 포함)
+   */
+  const recordCarriedTasks = (movedTasks) => {
+    setCarriedBySlot((prev) => {
+      const next = { ...prev }
+      movedTasks.forEach((task) => {
+        const fromKey = getSectionKey(task)
+        const ids = next[fromKey] || []
+        if (!ids.includes(task.id)) next[fromKey] = [...ids, task.id]
+      })
+      try {
+        localStorage.setItem(
+          TIME_SLOT_CARRIED_STORAGE_KEY,
+          JSON.stringify({ date: getTodayDateString(), carried: next }),
+        )
+      } catch {
+        // 무시
+      }
+      return next
+    })
+  }
+
   /** 집중 모드면 지금 시간대 + 언제든만 표시 */
   const visibleSectionKeys = isFocusMode
     ? SECTION_ORDER.filter((key) => key === currentSlotKey || key === UNASSIGNED_SLOT_KEY)
@@ -477,9 +525,11 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
 
     const ids = leftoverIdsKey.split(',')
     const targetSlotKey = currentSlotKey
+    const movedTasks = leftoverTasks
     autoCarryInFlightRef.current = true
     moveTasksToTimeSlot(ids, targetSlotKey)
       .then(() => {
+        recordCarriedTasks(movedTasks)
         setTasks((prev) =>
           prev.map((task) => (ids.includes(task.id) ? { ...task, timeSlot: targetSlotKey } : task)),
         )
@@ -511,6 +561,7 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
     setIsCleaningUp(true)
     try {
       await moveTasksToTimeSlot(ids, currentSlotKey)
+      recordCarriedTasks(leftoverTasks)
       setTasks((prev) =>
         prev.map((task) => (ids.includes(task.id) ? { ...task, timeSlot: currentSlotKey } : task)),
       )
@@ -742,6 +793,7 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
                   slot={key === UNASSIGNED_SLOT_KEY ? UNASSIGNED_SLOT : getTimeSlotInfo(key)}
                   tasks={sectionTasks}
                   completedCount={completedCountBySection[key]}
+                  carriedCount={carriedCountBySection[key]}
                   isCurrent={key === currentSlotKey}
                   isPast={pastSlotKeys.includes(key)}
                   isCollapsed={isSectionCollapsed(key)}

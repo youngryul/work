@@ -25,6 +25,13 @@ export const TIME_SLOT_AUTO_CARRY_STORAGE_KEY = 'todayTimeSlotAutoCarry'
 /** 지난 시간대 정리 배너를 닫은 날짜·시간대 저장 키 */
 export const TIME_SLOT_CLEANUP_DISMISS_STORAGE_KEY = 'todayTimeSlotCleanupDismissed'
 
+/**
+ * 다음 시간대로 넘긴 할 일 기록 저장 키
+ * 값: { date: 'YYYY-MM-DD', carried: { [원래 시간대 키]: string[] } }
+ * 원래 시간대의 진행 표시(완료/전체)에서 전체 개수를 유지하는 데 사용
+ */
+export const TIME_SLOT_CARRIED_STORAGE_KEY = 'todayTimeSlotCarried'
+
 /** 사용자 지정 시간대 시작 시각 저장 키 (값: 하루 중 분 단위) */
 export const TIME_SLOT_TIMES_STORAGE_KEY = 'todayTimeSlotTimes'
 

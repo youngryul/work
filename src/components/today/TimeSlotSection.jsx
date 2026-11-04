@@ -4,6 +4,7 @@
  * @param {{ key: string, label: string, emoji: string }} props.slot - 시간대 정보
  * @param {Array} props.tasks - 이 섹션에 표시할 미완료 할 일
  * @param {number} props.completedCount - 이 시간대에서 완료한 할 일 개수
+ * @param {number} [props.carriedCount] - 이 시간대에서 다음 시간대로 넘긴 할 일 개수 (전체 개수에 포함)
  * @param {boolean} props.isCurrent - 지금 시간대인지
  * @param {boolean} props.isPast - 이미 지나간 시간대인지
  * @param {boolean} props.isCollapsed - 접힘 여부
@@ -17,6 +18,7 @@ export default function TimeSlotSection({
   slot,
   tasks,
   completedCount,
+  carriedCount = 0,
   isCurrent,
   isPast,
   isCollapsed,
@@ -26,7 +28,8 @@ export default function TimeSlotSection({
   onDropEnd,
   renderTask,
 }) {
-  const totalCount = tasks.length + completedCount
+  // 다음 시간대로 넘긴 할 일도 원래 계획했던 양이므로 전체에 포함 (예: 10개 중 7개 완료 → 7/10)
+  const totalCount = tasks.length + completedCount + carriedCount
 
   return (
     <section
@@ -75,7 +78,11 @@ export default function TimeSlotSection({
                 isDropTarget ? 'border-green-400 text-green-600' : 'border-gray-200 text-gray-400'
               }`}
             >
-              {completedCount > 0 ? '이 시간대 할 일을 모두 끝냈어요! 🎉' : '할 일을 여기로 끌어다 놓으세요'}
+              {carriedCount > 0
+                ? `남은 ${carriedCount}개는 다음 시간대로 넘겼어요`
+                : completedCount > 0
+                ? '이 시간대 할 일을 모두 끝냈어요! 🎉'
+                : '할 일을 여기로 끌어다 놓으세요'}
             </div>
           ) : (
             tasks.map((task, index) => renderTask(task, index))
