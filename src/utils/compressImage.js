@@ -37,6 +37,9 @@ export async function compressImageFile(file, options = {}) {
       bitmap.close?.()
       return file
     }
+    // 투명 PNG가 검은 배경으로 변하지 않도록 흰색으로 먼저 채운다
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, width, height)
     ctx.drawImage(bitmap, 0, 0, width, height)
     bitmap.close?.()
 

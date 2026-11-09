@@ -1,4 +1,8 @@
 import { supabase } from '../config/supabase.js'
+import { compressImageFile } from '../utils/compressImage.js'
+
+// 압축(JPEG 변환)하지 않고 원본 그대로 올릴 이미지 형식
+const SKIP_COMPRESS_TYPES = ['image/gif', 'image/svg+xml']
 
 /**
  * 이미지 업로드 서비스
@@ -11,11 +15,17 @@ import { supabase } from '../config/supabase.js'
  * @param {string} folder - 저장할 폴더명 (기본값: 'project-records')
  * @returns {Promise<string>} 업로드된 이미지의 공개 URL
  */
-export async function uploadImage(file, folder = 'project-records') {
+export async function uploadImage(originalFile, folder = 'project-records') {
   // 파일 유효성 검사
-  if (!file.type.startsWith('image/')) {
+  if (!originalFile.type.startsWith('image/')) {
     throw new Error('이미지 파일만 업로드 가능합니다.')
   }
+
+  // 저장 용량 절약을 위해 업로드 전에 압축한다 (긴 변 1600px, JPEG)
+  // GIF(움짤)·SVG는 변환하면 애니메이션/벡터가 깨지므로 원본 유지
+  const file = SKIP_COMPRESS_TYPES.includes(originalFile.type)
+    ? originalFile
+    : await compressImageFile(originalFile)
 
   // 파일 크기 제한 (10MB)
   const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
