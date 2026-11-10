@@ -351,7 +351,27 @@ export default function TodoCalendar() {
         generateCalendar()
       )}
 
-      {/* 시간대별 계획 vs 실제 완료 통계 */}
+      {/* 월별 합계: 완료 할 일 총개수 · 총 타이머 시간 (뽀모도로 제외) */}
+      {!isLoading && (
+        <div className="mt-6 grid grid-cols-2 gap-2">
+          <div className="rounded-lg bg-green-50 p-4 text-center">
+            <div className="text-sm text-gray-600">이번 달 완료한 할 일</div>
+            <div className="mt-1 text-2xl font-bold text-green-600 tabular-nums">
+              {Object.values(completedCounts).reduce((sum, n) => sum + (n || 0), 0)}개
+            </div>
+          </div>
+          <div className="rounded-lg bg-emerald-50 p-4 text-center">
+            <div className="text-sm text-gray-600">이번 달 총 소요 시간</div>
+            <div className="mt-1 text-2xl font-bold text-emerald-700 tabular-nums">
+              {formatStudyDuration(
+                Object.values(studySecondsByDate).reduce((sum, s) => sum + (s || 0), 0),
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 시간대별 완료 개수 (완료 시각 기준) */}
       <TimeSlotStatsCard year={currentDate.getFullYear()} month={currentDate.getMonth() + 1} />
 
       {/* 완료된 할 일 팝업 */}

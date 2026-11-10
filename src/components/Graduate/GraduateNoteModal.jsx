@@ -42,6 +42,66 @@ function autoResize(el) {
 }
 
 /**
+ * 제목·블록을 붙여넣기 좋은 텍스트로 변환 (제목은 마크다운 헤더, 이미지는 URL)
+ * @param {string} title
+ * @param {Array} blocks
+ * @returns {string}
+ */
+function buildNoteText(title, blocks) {
+  const lines = []
+  if (title.trim()) lines.push(title.trim(), '')
+  for (const block of blocks) {
+    const content = (block.content ?? '').trimEnd()
+    switch (block.type) {
+      case 'h1':
+        if (content) lines.push(`# ${content}`)
+        break
+      case 'h2':
+        if (content) lines.push(`## ${content}`)
+        break
+      case 'paragraph':
+        lines.push(content)
+        break
+      case 'image':
+        if (content) lines.push(`[이미지] ${content}`)
+        break
+      case 'divider':
+        lines.push('---')
+        break
+      default:
+        break
+    }
+  }
+  // 앞뒤 빈 줄 정리, 연속 빈 줄은 하나로
+  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+}
+
+/**
+ * 텍스트를 클립보드에 복사 (Clipboard API가 없거나 막힌 환경은 execCommand로 대체)
+ * @param {string} text
+ */
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return
+    } catch {
+      // 아래 대체 방식 사용
+    }
+  }
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.opacity = '0'
+  document.body.appendChild(textarea)
+  textarea.select()
+  const ok = document.execCommand('copy')
+  document.body.removeChild(textarea)
+  if (!ok) throw new Error('클립보드 복사를 지원하지 않는 환경입니다.')
+}
+
+/**
  * 대학원 기록 팝업 에디터 (노션 스타일 블록 에디터)
  * @param {{ note: Object, onClose: Function, onSaved: Function, onDelete: Function }} props
  */
@@ -53,8 +113,29 @@ export default function GraduateNoteModal({ note, onClose, onSaved, onDelete }) 
   const [savedAt, setSavedAt] = useState(null)
   const [uploadingBlockId, setUploadingBlockId] = useState(null)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  // 복사 결과 표시 ('copied' | 'failed' | null)
+  const [copyStatus, setCopyStatus] = useState(null)
 
   const saveTimerRef = useRef(null)
+  const copyTimerRef = useRef(null)
+
+  // 언마운트 시 복사 표시 타이머 정리
+  useEffect(() => () => clearTimeout(copyTimerRef.current), [])
+
+  // 기록 내용 클립보드 복사
+  const handleCopy = async () => {
+    const text = buildNoteText(title, blocks)
+    if (!text) return
+    try {
+      await copyTextToClipboard(text)
+      setCopyStatus('copied')
+    } catch (e) {
+      console.error('기록 복사 실패:', e)
+      setCopyStatus('failed')
+    }
+    clearTimeout(copyTimerRef.current)
+    copyTimerRef.current = setTimeout(() => setCopyStatus(null), 1500)
+  }
   const isInitRef = useRef(false)
 
   // note 변경 시 상태 초기화
@@ -221,6 +302,19 @@ export default function GraduateNoteModal({ note, onClose, onSaved, onDelete }) 
           </span>
 
           <div className="ml-auto flex items-center gap-1 shrink-0">
+            <button
+              onClick={handleCopy}
+              className={`text-xs px-2 py-1 rounded transition-colors ${
+                copyStatus === 'copied'
+                  ? 'text-sky-600 bg-sky-50'
+                  : copyStatus === 'failed'
+                    ? 'text-red-500 bg-red-50'
+                    : 'text-gray-400 hover:text-sky-600 hover:bg-sky-50'
+              }`}
+              title="기록 내용 복사"
+            >
+              {copyStatus === 'copied' ? '복사됨' : copyStatus === 'failed' ? '복사 실패' : '복사'}
+            </button>
             {confirmingDelete ? (
               <>
                 <button
