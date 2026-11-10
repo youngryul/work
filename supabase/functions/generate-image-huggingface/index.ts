@@ -18,12 +18,29 @@ const DIARY_IMAGE_GPT_NO_TEXT_RULES = `- CRITICAL: The image must contain NO tex
 - Do NOT include speech bubbles, subtitles, newspapers, readable book pages, street signs, shop signs, phone screens with text, or UI elements with characters.
 - Tell the story only through characters, objects, colors, and composition — never through written language.`
 
+// 포실이 실제 디자인(public/images/포실이.png) 기준 캐릭터 시트.
+// 이미지 모델은 "Posili"라는 이름을 모르기 때문에 외형을 구체적으로 적지 않으면 모델이 바뀔 때마다 다른 캐릭터를 그린다.
+// 클라이언트(웹/iOS)가 보낸 프롬프트와 상관없이 서버에서 항상 앞에 붙여 디자인을 고정한다.
+const POSILI_CHARACTER_SHEET =
+  'MAIN CHARACTER "Posili" (must match exactly in every image): a small cute potato blob shaped like a gumdrop or rice ball — rounded top, slightly wider soft bottom. ' +
+  'Skin is warm golden-ochre / mustard-yellow with a subtle paper grain and a few small darker brown oval speckles. ' +
+  'NO arms, NO hands, NO legs — only two tiny stubby rounded feet nubs peeking out at the very bottom. ' +
+  'Face in the upper part of the body: two small solid black dot eyes each with one tiny white highlight, round soft pink blush cheeks just below the eyes, and a tiny pursed kissy mouth drawn as a small "3"-like squiggle between the eyes. ' +
+  'No nose, no hair, no eyebrows, no teeth, no big open-mouth grin. Simple kawaii doodle drawn with a dark brown-black hand-drawn outline. ' +
+  'Posili is NOT a human, NOT an animal, NOT a realistic potato, and never has long limbs. Keep the same size, proportions, colors and face in every image; only pose, tilt and small props may change.'
+
 const STYLE_LOCK_BASE =
-  'Consistent art style across panels: colorful crayon / colored-pencil illustration, thick black outlines, soft paper texture, vibrant but cohesive palette. Main character is always the same "Posili": a cute chubby round potato with a warm smile and tiny arms/legs, identical design in every panel.'
+  'Consistent art style across panels: colorful crayon / colored-pencil illustration, thick black outlines, soft paper texture, vibrant but cohesive palette. Main character is always the same "Posili" (golden-ochre gumdrop-shaped potato blob, black dot eyes, pink blush cheeks, tiny kissy mouth, no arms or legs, two tiny feet nubs), identical design in every panel.'
+
+/** 최종 이미지 프롬프트 앞에 포실이 캐릭터 시트를 붙인다 (중복 방지) */
+function withPosiliCharacter(prompt: string): string {
+  if (prompt.includes('MAIN CHARACTER "Posili"')) return prompt
+  return `${POSILI_CHARACTER_SHEET} ${prompt}`
+}
 
 const GPT_SYSTEM_PROMPT = `You are an assistant that converts Korean diary entries into short English image generation prompts.
 Rules:
-- The main character is always "Posili", a cute chubby round potato character with a warm smile and tiny arms/legs.
+- The main character is always "Posili": a small golden-ochre gumdrop-shaped potato blob with black dot eyes, pink blush cheeks, a tiny pursed kissy mouth, NO arms or legs (only two tiny feet nubs). Do not redesign it (no arms, no toothy smile, no clothes by default).
 - Style: colorful crayon drawing, thick black outlines, vibrant rich colors, multiple bright colors throughout the scene.
 - Identify the dominant emotion in the diary and choose a matching main color (e.g. happy → bright yellow, sad → deep blue, excited → vivid orange-red, calm → sky blue, love → rose pink, etc.).
 - Use that emotion color as the main color and add 3-4 complementary vivid crayon colors for objects and background details.
@@ -51,9 +68,10 @@ Return JSON only:
 Rules:
 - Read the diary carefully and compress it into exactly 4 chronological beats that show the flow of time (start → develop → peak/emotion → end).
 - Each panel summary must be a distinct moment; do not repeat the same activity.
+- Posili has no arms or hands: express actions through pose, position, nearby props and expression (e.g. sitting beside an umbrella, peeking out of a bag) instead of holding or grabbing.
 - Do NOT default to food, cooking, restaurants, books, studying, desks, libraries, or cafes unless the diary EXPLICITLY focuses on them.
 - Prefer diverse settings and actions grounded in the diary: outdoors, transit, weather, conversation, hobbies, work, rest, nature, chores, social moments, movement, quiet reflection, etc.
-- styleLock MUST include: Posili as the same cute chubby round potato character, crayon/colored-pencil look, thick black outlines, and a fixed emotion-based color palette so all panels look consistent.
+- styleLock MUST include: Posili as the same golden-ochre gumdrop-shaped potato blob (black dot eyes, pink blush cheeks, tiny kissy mouth, NO arms or legs, two tiny feet nubs), crayon/colored-pencil look, thick black outlines, and a fixed emotion-based color palette so all panels look consistent.
 - No text/letters/numbers in any panel description.
 ${DIARY_IMAGE_GPT_NO_TEXT_RULES}`
 
@@ -187,7 +205,7 @@ async function generateImage(apiKey: string, prompt: string) {
     },
     body: JSON.stringify({
       model: DIARY_IMAGE_MODEL,
-      prompt,
+      prompt: withPosiliCharacter(prompt),
       size: DIARY_IMAGE_SIZE,
       quality: DIARY_IMAGE_QUALITY,
       n: 1,

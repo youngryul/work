@@ -15,7 +15,7 @@ const IMAGE_MODEL = 'gpt-image-2.5-flare'
 async function buildPromptFromDiary(content) {
   const systemPrompt = `You are an assistant that converts Korean diary entries into short English image generation prompts.
 Rules:
-- The main character is always "Posili", a cute chubby round potato character with a warm smile and tiny arms/legs.
+- The main character is always "Posili", a small golden-ochre gumdrop-shaped potato blob with black dot eyes, pink blush cheeks, a tiny pursed kissy mouth and no arms or legs (only two tiny feet nubs).
 - Style: colorful crayon drawing, thick black outlines, vibrant rich colors, multiple bright colors throughout the scene.
 - Identify the dominant emotion in the diary and choose a matching main color (e.g. happy → bright yellow, sad → deep blue, excited → vivid orange-red, calm → sky blue, love → rose pink, etc.).
 - Use that emotion color as the main color and add 3-4 complementary vivid crayon colors for objects and background details.
@@ -92,7 +92,7 @@ export async function generateDiaryImage(diaryContent) {
 async function buildPromptFromRecipeTitle(title) {
   const systemPrompt = `You are an assistant that converts Korean dish titles into short English image generation prompts.
 Rules:
-- The main character is always "Posili", a cute chubby round potato character with a warm smile and tiny arms/legs, cooking or presenting the dish.
+- The main character is always "Posili", a small golden-ochre gumdrop-shaped potato blob with black dot eyes, pink blush cheeks, a tiny pursed kissy mouth and no arms or legs (only two tiny feet nubs), cooking or presenting the dish.
 - Style: hand-drawn crayon / colored pencil illustration, thick black outlines, soft paper texture feel, warm cozy kitchen atmosphere.
 - Focus the scene on the named dish (plating, steam, ingredients visible) with Posili nearby.
 - Keep the prompt under 120 words.

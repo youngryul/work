@@ -5,7 +5,7 @@
 import { AI_FOUR_CUT_SCENE_COUNT } from '../constants/diaryModes.js'
 
 const POSILI_STYLE_FALLBACK =
-  'Consistent art style: colorful crayon colored-pencil illustration, thick black outlines, soft paper texture. Main character is always the same Posili — a cute chubby round potato with a warm smile and tiny arms/legs, identical in every panel.'
+  'Consistent art style: colorful crayon colored-pencil illustration, thick black outlines, soft paper texture. Main character is always the same Posili — a golden-ochre gumdrop-shaped potato blob with black dot eyes, pink blush cheeks, a tiny pursed kissy mouth, no arms or legs (only two tiny feet nubs), identical in every panel.'
 
 /**
  * Edge Function 공통 호출

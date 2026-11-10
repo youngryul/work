@@ -621,7 +621,7 @@ final class SupabaseService {
     // MARK: AI 4컷 프롬프트 (웹 freeImageService.js와 동일)
 
     private static let posiliStyleFallback =
-        "Consistent art style: colorful crayon colored-pencil illustration, thick black outlines, soft paper texture. Main character is always the same Posili — a cute chubby round potato with a warm smile and tiny arms/legs, identical in every panel."
+        "Consistent art style: colorful crayon colored-pencil illustration, thick black outlines, soft paper texture. Main character is always the same Posili — a golden-ochre gumdrop-shaped potato blob with black dot eyes, pink blush cheeks, a tiny pursed kissy mouth, no arms or legs (only two tiny feet nubs), identical in every panel."
 
     private static let fallbackSceneHints = [
         "chronological beat 1 — beginning of the day from the diary, avoid food/books unless diary says so",
