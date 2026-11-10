@@ -729,9 +729,71 @@ function parseAssistantJson(content) {
   try {
     return JSON.parse(trimmed)
   } catch {
+    // 앞뒤 설명 문장이 붙은 경우
     const match = trimmed.match(/\{[\s\S]*\}/)
-    if (!match) throw new Error('AI 응답을 해석하지 못했습니다.')
-    return JSON.parse(match[0])
+    if (match) {
+      try {
+        return JSON.parse(match[0])
+      } catch {
+        // 아래 잘린 JSON 복구로 넘어감
+      }
+    }
+    // 토큰 상한에 걸려 응답이 중간에 끊긴 경우: 마지막으로 완성된 항목까지 살린다
+    const repaired = repairTruncatedJson(trimmed)
+    if (repaired) return repaired
+    throw new Error('AI 응답이 너무 길어 해석하지 못했습니다. 요청을 조금 나눠서 다시 시도해 주세요.')
+  }
+}
+
+/**
+ * 중간에 끊긴 JSON을 "배열 안에서 마지막으로 완성된 객체"까지 자르고 괄호를 닫아 복구한다.
+ * 예) {"reply":"..","suggestions":[{..},{..},{"title":"끊 → {"reply":"..","suggestions":[{..},{..}]}
+ * @param {string} text
+ * @returns {Object|null}
+ */
+function repairTruncatedJson(text) {
+  const start = text.indexOf('{')
+  if (start < 0) return null
+
+  /** @type {string[]} 열린 괄호 스택 */
+  const stack = []
+  let inString = false
+  let escaped = false
+  let cutIndex = -1
+  /** @type {string[]} */
+  let stackAtCut = []
+
+  for (let i = start; i < text.length; i += 1) {
+    const ch = text[i]
+    if (inString) {
+      if (escaped) escaped = false
+      else if (ch === '\\') escaped = true
+      else if (ch === '"') inString = false
+      continue
+    }
+    if (ch === '"') inString = true
+    else if (ch === '{' || ch === '[') stack.push(ch)
+    else if (ch === '}' || ch === ']') {
+      stack.pop()
+      // 배열 요소인 객체가 막 닫힌 지점 = 안전하게 자를 수 있는 지점
+      if (ch === '}' && stack[stack.length - 1] === '[') {
+        cutIndex = i + 1
+        stackAtCut = [...stack]
+      }
+    }
+  }
+
+  if (cutIndex < 0) return null
+  const closers = stackAtCut
+    .slice()
+    .reverse()
+    .map((open) => (open === '[' ? ']' : '}'))
+    .join('')
+
+  try {
+    return JSON.parse(text.slice(start, cutIndex) + closers)
+  } catch {
+    return null
   }
 }
 

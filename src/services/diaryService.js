@@ -331,13 +331,14 @@ export async function getDiaryByDate(date) {
       .select('*')
       .eq('date', date)
       .eq('user_id', userId)
-      .single()
+      // 일기가 없는 날은 정상 상황이므로 maybeSingle 사용 (single은 0행이면 406 응답을 남긴다)
+      .maybeSingle()
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return null
-      }
       throw error
+    }
+    if (!data) {
+      return null
     }
 
     return normalizeDiaryRow(data)

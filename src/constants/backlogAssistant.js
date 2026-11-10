@@ -2,7 +2,8 @@
 export const BACKLOG_ASSISTANT_MODEL = 'gpt-4o-mini'
 
 /** 채팅 최대 토큰 */
-export const BACKLOG_ASSISTANT_MAX_TOKENS = 2000
+// 한국어 JSON은 토큰을 많이 써서 2000이면 제안이 많을 때 응답이 중간에 끊겼다. openai-proxy 상한(4000)에 맞춤
+export const BACKLOG_ASSISTANT_MAX_TOKENS = 4000
 
 /** 반복 할일 자동 생성 시 최대 일정 개수 */
 export const BACKLOG_ASSISTANT_MAX_SCHEDULED_OCCURRENCES = 4
@@ -87,6 +88,7 @@ export const BACKLOG_ASSISTANT_SYSTEM_PROMPT = `당신은 Posily 앱의 백로�
     - [큰 할일 후보] 목록이 있으면 우선 쪼개기를 제안합니다. 사용자가 특정 할일을 지정하면 그 할일만 쪼갭니다.
 11. reply는 사용자에게 보여줄 친근한 한국어 설명(2~5문장)입니다. 쪼갠 경우 몇 건인지 간단히 안내합니다.
 12. 정말로 새로 제안할 할일이 없을 때만 suggestions를 빈 배열로 둡니다. 생성·쪼개기 요청이면 DB에서 관련 할일을 찾아 반드시 제안을 시도합니다.
+13. 응답 길이 제한: suggestions는 최대 10개, reason은 한 문장(40자 이내), memo는 꼭 필요할 때만 짧게 씁니다.
 
 출력 JSON 스키마:
 {
