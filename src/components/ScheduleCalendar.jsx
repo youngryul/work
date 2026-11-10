@@ -17,6 +17,7 @@ import {
 import { buildDefaultRepeatFormState } from '../utils/scheduleRepeat.js'
 import ScheduleRepeatEditor from './schedule/ScheduleRepeatEditor.jsx'
 import {
+  getLatestPeriodRecordBefore,
   getMenstrualCycleSettings,
   getPeriodRecordsInRange,
   saveMenstrualFeaturePreference,
@@ -187,9 +188,19 @@ export default function ScheduleCalendar() {
       const visibleRange = getMonthDateRange(year, month, 0)
       const predictionRange = getMonthDateRange(year, month, MENSTRUAL_PREDICTION_MONTHS)
       const settings = await getMenstrualCycleSettings()
-      const records = settings.isEnabled
-        ? await getPeriodRecordsInRange(visibleRange.rangeStart, predictionRange.rangeEnd)
-        : []
+      let records = []
+      if (settings.isEnabled) {
+        // 보고 있는 달 이후 기록만 가져오면, 지난달에 시작한 기록이 빠져 예측이 아예 안 나온다.
+        // 그래서 이 달 이전의 가장 최근 기록 1건을 예측 기준점으로 함께 가져온다.
+        const [inRange, latestBefore] = await Promise.all([
+          getPeriodRecordsInRange(visibleRange.rangeStart, predictionRange.rangeEnd),
+          getLatestPeriodRecordBefore(visibleRange.rangeStart),
+        ])
+        records = inRange
+        if (latestBefore && !inRange.some((record) => record.id === latestBefore.id)) {
+          records = [...inRange, latestBefore]
+        }
+      }
       setCycleSettings(settings)
       setPeriodRecords(records)
       setShowMenstrualOnboarding(!settings.onboardingCompleted)

@@ -196,6 +196,33 @@ export async function getPeriodRecordsInRange(rangeStart, rangeEnd) {
 }
 
 /**
+ * 기준일 이전에 시작한 가장 최근 생리 기록 1건 (예측 기준점 계산용)
+ * 보고 있는 달에 기록이 없어도 이전 달 기록으로 다음 예정일을 계산하기 위해 쓴다.
+ * @param {string} beforeDate - YYYY-MM-DD (이 날짜보다 앞서 시작한 기록만)
+ * @returns {Promise<{ id: string, startDate: string, endDate: string } | null>}
+ */
+export async function getLatestPeriodRecordBefore(beforeDate) {
+  const userId = await getCurrentUserId()
+  if (!userId) return null
+
+  const { data, error } = await supabase
+    .from('menstrual_period_records')
+    .select('*')
+    .eq('user_id', userId)
+    .lt('start_date', beforeDate)
+    .order('start_date', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    console.error('최근 생리 기록 조회 실패:', error)
+    throw error
+  }
+
+  return data ? normalizePeriodRecord(data) : null
+}
+
+/**
  * @param {string} startDate - YYYY-MM-DD
  * @returns {Promise<object>}
  */
