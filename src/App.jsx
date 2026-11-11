@@ -65,6 +65,12 @@ import TokenDepositRequestModal from './components/TokenDepositRequestModal.jsx'
 import ExcelThemeHeader from './components/ExcelThemeHeader.jsx'
 import AdSenseBanner from './components/AdSenseBanner.jsx'
 import MonthlyStatsPopupModal from './components/MonthlyStatsPopupModal.jsx'
+import YearEndReviewModal from './components/YearEndReviewModal.jsx'
+import {
+  getYearEndReviewTargetYear,
+  getYearEndReviewSeenKey,
+  fetchYearEndReviewStats,
+} from './services/yearEndReviewService.js'
 import { useNotifications } from './hooks/useNotifications.js'
 import { markWeeklyReminderShown, markMonthlyReminderShown, isFirstDayOfMonth, getLastMonthInfo } from './utils/summaryReminder.js'
 import { markBacklogStaleReminderShown } from './services/backlogStaleReminderService.js'
@@ -260,6 +266,13 @@ function AppContent() {
   const [review2026Params, setReview2026Params] = useState(null) // 2026 회고록 파라미터
   const [showCategorySettingsModal, setShowCategorySettingsModal] = useState(false) // 카테고리 설정 모달 표시 여부
 
+  // 연말정산(올해 돌아보기) 팝업 상태
+  const [yearEndReview, setYearEndReview] = useState({
+    isOpen: false,
+    stats: null,
+    markSeenOnClose: false,
+  })
+
   // 매월 1일 지난 달 통계(타이머·할일) 회고 팝업 상태
   const [monthlyStatsPopup, setMonthlyStatsPopup] = useState({
     isOpen: false,
@@ -386,6 +399,42 @@ function AppContent() {
       delete window.showTestNotification
     }
   }, [setWeeklySummaryReminder, setMonthlySummaryReminder, refreshNotifications])
+
+  // 연말정산 팝업: 12/15 ~ 1/15 사이 첫 접속 때 한 번만 자동 표시
+  useEffect(() => {
+    if (!user?.id || loading) return
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const year = getYearEndReviewTargetYear()
+        if (!year) return
+
+        const alreadySeen = await hasSeenMonthlyStatsPopup(getYearEndReviewSeenKey(year), user.id)
+        if (alreadySeen || cancelled) return
+
+        const stats = await fetchYearEndReviewStats(year, user.id)
+        // 올해 기록이 하나도 없으면 띄우지 않음
+        if (cancelled || !stats || stats.activeDays === 0) return
+
+        setYearEndReview({ isOpen: true, stats, markSeenOnClose: true })
+      } catch (error) {
+        console.error('연말정산 팝업 확인 오류:', error)
+      }
+    })()
+
+    // 기간 외 미리보기용: 콘솔에서 window.showTestYearEndReview(2026) 호출 (봤음 기록은 남기지 않음)
+    window.showTestYearEndReview = async (year = new Date().getFullYear()) => {
+      const stats = await fetchYearEndReviewStats(year, user.id)
+      if (stats) setYearEndReview({ isOpen: true, stats, markSeenOnClose: false })
+      return stats
+    }
+
+    return () => {
+      cancelled = true
+      delete window.showTestYearEndReview
+    }
+  }, [user?.id, loading])
 
   // 매월 1일, 지난 달 타이머·할일 통계 회고 팝업 확인 (한 번 본 달은 다시 표시하지 않음)
   useEffect(() => {
@@ -634,6 +683,22 @@ function AppContent() {
             await markMonthlyStatsPopupSeen(monthlyStatsPopup.periodMonth)
           } catch (error) {
             console.error('월간 통계 팝업 기록 실패:', error)
+          }
+        }}
+      />
+
+      {/* 연말정산 팝업 (12/15 ~ 1/15 기간 한정) */}
+      <YearEndReviewModal
+        isOpen={yearEndReview.isOpen}
+        stats={yearEndReview.stats}
+        onClose={async () => {
+          const { stats, markSeenOnClose } = yearEndReview
+          setYearEndReview((prev) => ({ ...prev, isOpen: false }))
+          if (!markSeenOnClose || !stats) return
+          try {
+            await markMonthlyStatsPopupSeen(getYearEndReviewSeenKey(stats.year))
+          } catch (error) {
+            console.error('연말정산 팝업 기록 실패:', error)
           }
         }}
       />
