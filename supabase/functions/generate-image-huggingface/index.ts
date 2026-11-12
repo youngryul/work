@@ -53,27 +53,63 @@ ${DIARY_IMAGE_GPT_NO_TEXT_RULES}
 - Respond with valid JSON only: {"prompt":"...","emotion":"one English emotion word","scene":"brief English scene description"}
 - The prompt field must describe a purely visual scene with zero readable text.`
 
-const FOUR_CUT_PLAN_SYSTEM = `You plan a 4-panel photo-booth comic from a Korean diary.
+// 4컷 요약 계획 프롬프트
+// - 기승전결(setup → development → climax → resolution) 역할을 컷마다 명시해 흐름이 한눈에 보이게 한다.
+// - 컷마다 카메라 구도·포실이 몸짓·표정·움직임 효과를 따로 적게 해 장면을 구체적이고 역동적으로 만든다.
+// - 포실이 외형은 이미지 생성 시 POSILI_CHARACTER_SHEET가 항상 앞에 붙으므로 여기서는 재디자인 금지만 강조한다.
+const FOUR_CUT_PLAN_SYSTEM = `You are a storyboard artist planning a 4-panel photo-booth comic strip from a Korean diary.
+The reader must be able to follow the day's story just by looking at the 4 pictures in order, with no words.
+
+STEP 1 — Understand the diary (think silently, do not output):
+- List the concrete events in time order: where the writer was, what happened, who/what was involved, how the feeling changed.
+- Find the single most important moment or emotional turning point of the day.
+- Keep real details from the diary (specific places, weather, objects, people, animals, activities). Never replace them with generic ones.
+
+STEP 2 — Compress into exactly 4 beats with a clear story arc (기승전결):
+- Panel 1 "setup" (기): where/when the day starts and the situation that kicks off the story.
+- Panel 2 "development" (승): the event unfolds or a complication/new element appears. Must visibly move forward from panel 1.
+- Panel 3 "climax" (전): the peak — the most important, surprising, funny, touching or frustrating moment. Strongest emotion and most dynamic image of the strip.
+- Panel 4 "resolution" (결): the outcome and how Posili feels about the day — a satisfying ending that answers panel 1.
+- If the diary covers only one event, split that event into 4 consecutive moments (before → during → peak → after) instead of inventing unrelated scenes.
+- If the diary has more than 4 events, merge minor ones and keep the 4 that best tell the story.
+- Each panel must show a different moment; change at least two of: location, time, camera shot, Posili's pose, key props.
+- Link panels with a visual thread (a recurring object, weather, companion or color) so they read as one continuous story.
+
+STEP 3 — Make every panel specific and dynamic:
+- "summary": one vivid English sentence describing exactly what is happening in the frame, with concrete nouns (not "a fun moment" but "Posili bounces through a puddle as rain pours from dark clouds").
+- "setting": a concrete location with 2-3 specific background details from the diary + time-of-day lighting (e.g. "crowded subway car at 8am, hanging straps swaying, morning sun through windows").
+- "action": a verb-driven, in-motion action — mid-jump, sprinting, tumbling, spinning, leaning forward, squishing, stretching tall, bouncing, sliding, hiding, peeking, startled hop, collapsing flat. Avoid static "standing/sitting/looking" unless the moment truly calls for stillness (then make it expressive, e.g. "melting flat on the sofa in exhaustion").
+- "posiliPose": body language of the blob — tilt angle, squash-and-stretch, which way it faces, feet nubs off the ground or planted, etc.
+- "expression": Posili's face using ONLY its existing features (dot eyes can become sparkly, teary, wide, squeezed shut or swirly; blush can deepen; kissy mouth can wobble, pout or puff). Do not add teeth or a big open grin.
+- "camera": shot type and angle chosen for storytelling and variety — e.g. wide establishing shot, medium shot, close-up, low angle, high angle, over-the-shoulder, dutch tilt. Use at least 3 different camera choices across the 4 panels; panel 1 is usually wide, panel 3 is usually a close-up or dramatic angle.
+- "props": 1-3 key objects or companions in the scene that carry the story (from the diary).
+- "motionCues": visual energy cues drawn in crayon — speed lines, motion trails, dust puffs, sweat drops, sparkles, little hearts, impact stars, wind swirls, raindrops, floating music notes, steam puffs. Panel 3 should have the strongest cues; a calm ending may use soft cues.
+- "mood": the emotion of this panel in 1-3 English words and how the lighting/colors express it.
+
 Return JSON only:
 {
   "emotion": "exactly one of: happiness, excitement, love, gratitude, pride, satisfaction, hope, calm, peace, comfort, relief, determination, nostalgia, embarrassment, envy, confusion, anxiety, tiredness, loneliness, sadness, disappointment, frustration, anger",
+  "storyline": "one English sentence summarizing the whole 4-panel story arc",
   "styleLock": "one English paragraph locking identical Posili design + crayon style + shared color palette for ALL panels",
   "panels": [
-    { "beat": 1, "timeLabel": "morning|afternoon|evening|night", "summary": "one short English visual sentence", "setting": "place", "action": "what Posili is doing" },
-    { "beat": 2, "timeLabel": "...", "summary": "...", "setting": "...", "action": "..." },
-    { "beat": 3, "timeLabel": "...", "summary": "...", "setting": "...", "action": "..." },
-    { "beat": 4, "timeLabel": "...", "summary": "...", "setting": "...", "action": "..." }
+    { "beat": 1, "role": "setup", "timeLabel": "morning|afternoon|evening|night", "summary": "...", "setting": "...", "action": "...", "posiliPose": "...", "expression": "...", "camera": "...", "props": "...", "motionCues": "...", "mood": "..." },
+    { "beat": 2, "role": "development", "timeLabel": "...", "summary": "...", "setting": "...", "action": "...", "posiliPose": "...", "expression": "...", "camera": "...", "props": "...", "motionCues": "...", "mood": "..." },
+    { "beat": 3, "role": "climax", "timeLabel": "...", "summary": "...", "setting": "...", "action": "...", "posiliPose": "...", "expression": "...", "camera": "...", "props": "...", "motionCues": "...", "mood": "..." },
+    { "beat": 4, "role": "resolution", "timeLabel": "...", "summary": "...", "setting": "...", "action": "...", "posiliPose": "...", "expression": "...", "camera": "...", "props": "...", "motionCues": "...", "mood": "..." }
   ]
 }
+
 Rules:
-- Read the diary carefully and compress it into exactly 4 chronological beats that show the flow of time (start → develop → peak/emotion → end).
-- Each panel summary must be a distinct moment; do not repeat the same activity.
-- Posili has no arms or hands: express actions through pose, position, nearby props and expression (e.g. sitting beside an umbrella, peeking out of a bag) instead of holding or grabbing.
+- Posili has no arms or hands: express actions through whole-body movement, position, nearby props and expression (e.g. bouncing beside an umbrella, peeking out of a bag, pushing a ball with its body, riding on a skateboard) instead of holding or grabbing.
+- Never redesign Posili: no arms, no hands, no legs beyond the two tiny feet nubs, no clothes by default, no teeth or toothy grin. Small accessories (hat, scarf) only if the diary clearly suggests them.
+- Other people or animals from the diary may appear as simple crayon side characters, but Posili is always the clear focal point of every panel.
 - Do NOT default to food, cooking, restaurants, books, studying, desks, libraries, or cafes unless the diary EXPLICITLY focuses on them.
-- Prefer diverse settings and actions grounded in the diary: outdoors, transit, weather, conversation, hobbies, work, rest, nature, chores, social moments, movement, quiet reflection, etc.
 - styleLock MUST include: Posili as the same golden-ochre gumdrop-shaped potato blob (black dot eyes, pink blush cheeks, tiny kissy mouth, NO arms or legs, two tiny feet nubs), crayon/colored-pencil look, thick black outlines, and a fixed emotion-based color palette so all panels look consistent.
-- No text/letters/numbers in any panel description.
+- Write every field in English. No text/letters/numbers in any panel description.
 ${DIARY_IMAGE_GPT_NO_TEXT_RULES}`
+
+/** 4컷 패널 역할 (기승전결) */
+const FOUR_CUT_ROLES = ['setup', 'development', 'climax', 'resolution']
 
 function finalizeDiaryImagePrompt(prompt: string): string {
   const trimmed = (prompt || '').trim()
@@ -134,9 +170,10 @@ async function planFourCut(apiKey: string, diaryContent: string) {
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: FOUR_CUT_PLAN_SYSTEM },
-        { role: 'user', content: diaryContent.substring(0, 1200) },
+        { role: 'user', content: diaryContent.substring(0, 2000) },
       ],
-      max_tokens: 700,
+      // 패널 필드가 늘어나 응답이 길어지므로 토큰 여유를 늘린다
+      max_tokens: 1600,
       temperature: 0.75,
       response_format: { type: 'json_object' },
     }),
@@ -151,13 +188,21 @@ async function planFourCut(apiKey: string, diaryContent: string) {
   const raw = data.choices?.[0]?.message?.content || '{}'
   let parsed: {
     emotion?: string
+    storyline?: string
     styleLock?: string
     panels?: Array<{
       beat?: number
+      role?: string
       timeLabel?: string
       summary?: string
       setting?: string
       action?: string
+      posiliPose?: string
+      expression?: string
+      camera?: string
+      props?: string
+      motionCues?: string
+      mood?: string
     }>
   } = {}
 
@@ -185,13 +230,22 @@ async function planFourCut(apiKey: string, diaryContent: string) {
 
   return {
     emotion: parsed.emotion || null,
+    storyline: parsed.storyline || null,
     styleLock: (parsed.styleLock || STYLE_LOCK_BASE).trim(),
     panels: panels.map((panel, index) => ({
       beat: panel.beat || index + 1,
+      role: panel.role || FOUR_CUT_ROLES[index],
       timeLabel: panel.timeLabel || ['morning', 'afternoon', 'evening', 'night'][index],
       summary: panel.summary || `Beat ${index + 1} from the diary`,
       setting: panel.setting || 'everyday place',
       action: panel.action || 'Posili in a story moment',
+      // 아래 필드는 선택값 — 기존 클라이언트(iOS 등)는 무시해도 동작한다
+      posiliPose: panel.posiliPose || null,
+      expression: panel.expression || null,
+      camera: panel.camera || null,
+      props: panel.props || null,
+      motionCues: panel.motionCues || null,
+      mood: panel.mood || null,
     })),
   }
 }

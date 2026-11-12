@@ -129,6 +129,7 @@ export async function planDiaryFourCut(diaryContent) {
     }
     return {
       emotion: data.emotion || null,
+      storyline: data.storyline || null,
       styleLock: data.styleLock || POSILI_STYLE_FALLBACK,
       panels: data.panels,
     }
@@ -143,26 +144,51 @@ export async function planDiaryFourCut(diaryContent) {
  * @param {{ styleLock: string, panels: Array<object> }} plan
  * @param {number} index
  */
+/** 기승전결 역할별 연출 지시 (패널 순서 기준) */
+const FOUR_CUT_ROLE_DIRECTION = [
+  'SETUP (beginning): establish where and when the story starts; show the situation clearly so the viewer understands the start of the day.',
+  'DEVELOPMENT (rising action): the story moves forward — something new happens or a complication appears; visibly different moment from the setup.',
+  'CLIMAX (peak moment): the most dramatic, emotional or surprising moment of the day; strongest pose, boldest angle and most energetic motion of the whole strip.',
+  'RESOLUTION (ending): the outcome of the day and how Posili feels about it; a satisfying closing image that answers the setup.',
+]
+
+/** 값이 있을 때만 "라벨: 값." 문장을 만든다 */
+function optionalLine(label, value) {
+  const text = typeof value === 'string' ? value.trim() : ''
+  return text ? `${label}: ${text}.` : null
+}
+
 function buildFourCutPanelPrompt(plan, index) {
   const panel = plan.panels[index] || {}
   const styleLock = plan.styleLock || POSILI_STYLE_FALLBACK
   return [
     styleLock,
-    `Panel ${index + 1} of 4 in a chronological photo-booth story (${panel.timeLabel || 'moment'}).`,
-    `Story beat: ${panel.summary || `Diary moment ${index + 1}`}.`,
+    `Panel ${index + 1} of 4 in a chronological photo-booth comic strip (${panel.timeLabel || 'moment'}).`,
+    optionalLine('Whole story', plan.storyline),
+    `Story role: ${FOUR_CUT_ROLE_DIRECTION[index] || 'story moment'}`,
+    `This exact moment: ${panel.summary || `Diary moment ${index + 1}`}.`,
     `Setting: ${panel.setting || 'everyday place'}.`,
-    `Action: ${panel.action || 'Posili living this moment'}.`,
-    'Keep Posili design, proportions, face, and crayon style identical to other panels.',
+    `Posili is in motion: ${panel.action || 'Posili living this moment'}.`,
+    optionalLine('Posili body language', panel.posiliPose),
+    optionalLine('Posili facial expression (same face design, only the emotion changes)', panel.expression),
+    optionalLine('Camera', panel.camera),
+    optionalLine('Key props and companions', panel.props),
+    optionalLine('Crayon motion effects', panel.motionCues),
+    optionalLine('Mood and lighting', panel.mood),
+    'Dynamic cartoon composition: capture the action mid-movement with squash-and-stretch energy, a clear foreground and background, and a detailed environment that tells where Posili is.',
+    'Keep Posili design, proportions, face, and crayon style identical to other panels; only pose, tilt, expression and props change.',
     'Do not default to food, meals, books, or studying unless this beat explicitly requires it.',
-    'Show clear passage of time compared to other panels. Single clear composition, no collage.',
-  ].join(' ')
+    'Show clear passage of time compared to other panels. Single clear composition, no collage, no panel borders.',
+  ]
+    .filter(Boolean)
+    .join(' ')
 }
 
 const FALLBACK_SCENE_HINTS = [
-  'chronological beat 1 — beginning of the day from the diary, avoid food/books unless diary says so',
-  'chronological beat 2 — developing moment, different setting from beat 1',
-  'chronological beat 3 — emotional peak or key event, diverse everyday situation',
-  'chronological beat 4 — ending wrap-up of the day, consistent Posili crayon style',
+  'SETUP — beginning of the day from the diary, wide shot showing the place and situation, avoid food/books unless diary says so',
+  'DEVELOPMENT — the story moves forward, new event or complication, different setting and camera angle from frame 1',
+  'CLIMAX — emotional peak or key event, close-up or dramatic angle, Posili mid-action with crayon motion lines',
+  'RESOLUTION — ending of the day showing the outcome and feeling, consistent Posili crayon style',
 ]
 
 /**
