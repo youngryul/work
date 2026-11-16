@@ -178,4 +178,11 @@ export const EXTERNAL_LINKS = [
     href: 'https://agora-nu-azure.vercel.app/',
     target: '_blank',
   },
+  {
+    id: 'ai-office',
+    label: 'AI오피스',
+    icon: '🏢',
+    href: 'https://ai-office-beige-eta.vercel.app/',
+    target: '_blank',
+  },
 ]
