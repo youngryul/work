@@ -185,4 +185,11 @@ export const EXTERNAL_LINKS = [
     href: 'https://ai-office-beige-eta.vercel.app/',
     target: '_blank',
   },
+  {
+    id: 'tablelog',
+    label: '맛집기록',
+    icon: '🍽️',
+    href: 'https://tablelog.vercel.app/',
+    target: '_blank',
+  },
 ]
