@@ -112,11 +112,22 @@ export default function GraduateNoteModal({ note, onClose, onSaved, onDelete }) 
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState(null)
   const [uploadingBlockId, setUploadingBlockId] = useState(null)
+  // 붙여넣은 이미지의 업로드 전 미리보기 (blockId → blob URL). DB에는 저장하지 않는다.
+  const [previews, setPreviews] = useState({})
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   // 복사 결과 표시 ('copied' | 'failed' | null)
   const [copyStatus, setCopyStatus] = useState(null)
 
   const saveTimerRef = useRef(null)
+  // 마지막으로 포커스된 블록 ID (붙여넣은 이미지를 이 블록 바로 뒤에 넣는다)
+  const focusedBlockIdRef = useRef(null)
+  const previewsRef = useRef({})
+  previewsRef.current = previews
+
+  // 언마운트 시 남아 있는 미리보기 blob URL 해제
+  useEffect(() => () => {
+    Object.values(previewsRef.current).forEach((url) => URL.revokeObjectURL(url))
+  }, [])
   const copyTimerRef = useRef(null)
 
   // 언마운트 시 복사 표시 타이머 정리
@@ -183,45 +194,76 @@ export default function GraduateNoteModal({ note, onClose, onSaved, onDelete }) 
     }, 2000)
   }, [note?.id, note?.category, onSaved])
 
+  // 미리보기 제거 (blob URL 메모리 해제 포함)
+  const clearPreview = useCallback((blockId) => {
+    setPreviews((prev) => {
+      if (!prev[blockId]) return prev
+      URL.revokeObjectURL(prev[blockId])
+      const next = { ...prev }
+      delete next[blockId]
+      return next
+    })
+  }, [])
+
   // 클립보드 붙여넣기 이벤트 처리 (이미지)
+  // 붙여넣는 즉시 로컬 미리보기를 보여주고, 업로드가 끝나면 실제 URL로 교체한다.
   useEffect(() => {
     const handlePaste = async (e) => {
-      const items = e.clipboardData?.items
-      if (!items) return
-      for (const item of items) {
-        if (item.type.startsWith('image/')) {
-          e.preventDefault()
-          const file = item.getAsFile()
-          if (!file) continue
-          const newBlock = createBlock('image')
-          setUploadingBlockId(newBlock.id)
+      const data = e.clipboardData
+      if (!data) return
+      // items 우선, 없으면 files (탐색기에서 파일 복사 등)
+      let files = Array.from(data.items ?? [])
+        .filter((item) => item.kind === 'file' && item.type.startsWith('image/'))
+        .map((item) => item.getAsFile())
+        .filter(Boolean)
+      if (files.length === 0) {
+        files = Array.from(data.files ?? []).filter((f) => f.type.startsWith('image/'))
+      }
+      if (files.length === 0) return
+      e.preventDefault()
+
+      const newBlocks = files.map(() => createBlock('image'))
+      setPreviews((prev) => {
+        const next = { ...prev }
+        newBlocks.forEach((b, i) => { next[b.id] = URL.createObjectURL(files[i]) })
+        return next
+      })
+      // 포커스된 블록 바로 뒤에 삽입 (없으면 맨 끝)
+      setBlocks((prev) => {
+        const idx = prev.findIndex((b) => b.id === focusedBlockIdRef.current)
+        const updated = idx === -1
+          ? [...prev, ...newBlocks]
+          : [...prev.slice(0, idx + 1), ...newBlocks, ...prev.slice(idx + 1)]
+        scheduleSave(title, noteDate, updated)
+        return updated
+      })
+
+      await Promise.all(newBlocks.map(async (newBlock, i) => {
+        try {
+          const url = await uploadImage(files[i], 'graduate-notes')
           setBlocks((prev) => {
-            const updated = [...prev, newBlock]
+            const updated = prev.map((b) =>
+              b.id === newBlock.id ? { ...b, content: url } : b
+            )
             scheduleSave(title, noteDate, updated)
             return updated
           })
-          try {
-            const url = await uploadImage(file, 'graduate-notes')
-            setBlocks((prev) => {
-              const updated = prev.map((b) =>
-                b.id === newBlock.id ? { ...b, content: url } : b
-              )
-              scheduleSave(title, noteDate, updated)
-              return updated
-            })
-          } catch (err) {
-            console.error('클립보드 이미지 업로드 실패:', err)
-            setBlocks((prev) => prev.filter((b) => b.id !== newBlock.id))
-          } finally {
-            setUploadingBlockId(null)
-          }
-          break
+        } catch (err) {
+          console.error('클립보드 이미지 업로드 실패:', err)
+          alert(`이미지 업로드 실패: ${err.message}`)
+          setBlocks((prev) => {
+            const updated = prev.filter((b) => b.id !== newBlock.id)
+            scheduleSave(title, noteDate, updated)
+            return updated
+          })
+        } finally {
+          clearPreview(newBlock.id)
         }
-      }
+      }))
     }
     document.addEventListener('paste', handlePaste)
     return () => document.removeEventListener('paste', handlePaste)
-  }, [title, noteDate, scheduleSave])
+  }, [title, noteDate, scheduleSave, clearPreview])
 
   // 블록 내용 변경
   const handleBlockChange = (id, value) => {
@@ -370,7 +412,9 @@ export default function GraduateNoteModal({ note, onClose, onSaved, onDelete }) 
               <BlockRow
                 key={block.id}
                 block={block}
-                isUploading={uploadingBlockId === block.id}
+                isUploading={uploadingBlockId === block.id || !!previews[block.id]}
+                previewUrl={previews[block.id]}
+                onFocusBlock={(id) => { focusedBlockIdRef.current = id }}
                 onDeleteBlock={handleDeleteBlock}
                 onBlockChange={handleBlockChange}
                 onImageUpload={handleImageUpload}
@@ -405,6 +449,8 @@ export default function GraduateNoteModal({ note, onClose, onSaved, onDelete }) 
 function BlockRow({
   block,
   isUploading,
+  previewUrl,
+  onFocusBlock,
   onDeleteBlock,
   onBlockChange,
   onImageUpload,
@@ -418,6 +464,8 @@ function BlockRow({
         <BlockContent
           block={block}
           isUploading={isUploading}
+          previewUrl={previewUrl}
+          onFocusBlock={onFocusBlock}
           fileInputRef={fileInputRef}
           onBlockChange={onBlockChange}
           onImageUpload={onImageUpload}
@@ -439,7 +487,7 @@ function BlockRow({
 /**
  * 블록 타입별 콘텐츠 렌더링
  */
-function BlockContent({ block, isUploading, fileInputRef, onBlockChange, onImageUpload }) {
+function BlockContent({ block, isUploading, previewUrl, onFocusBlock, fileInputRef, onBlockChange, onImageUpload }) {
   const textareaRef = useRef(null)
 
   useEffect(() => {
@@ -457,6 +505,7 @@ function BlockContent({ block, isUploading, fileInputRef, onBlockChange, onImage
             autoResize(e.target)
             onBlockChange(block.id, e.target.value)
           }}
+          onFocus={() => onFocusBlock?.(block.id)}
           rows={1}
           className="w-full text-2xl font-bold text-gray-800 placeholder-gray-300 resize-none border-none outline-none bg-transparent leading-tight py-0.5"
         />
@@ -472,6 +521,7 @@ function BlockContent({ block, isUploading, fileInputRef, onBlockChange, onImage
             autoResize(e.target)
             onBlockChange(block.id, e.target.value)
           }}
+          onFocus={() => onFocusBlock?.(block.id)}
           rows={1}
           className="w-full text-xl font-semibold text-gray-700 placeholder-gray-300 resize-none border-none outline-none bg-transparent leading-tight py-0.5"
         />
@@ -487,6 +537,7 @@ function BlockContent({ block, isUploading, fileInputRef, onBlockChange, onImage
             autoResize(e.target)
             onBlockChange(block.id, e.target.value)
           }}
+          onFocus={() => onFocusBlock?.(block.id)}
           rows={1}
           className="w-full text-base text-gray-700 placeholder-gray-300 resize-none border-none outline-none bg-transparent leading-relaxed py-0.5"
         />
@@ -495,13 +546,19 @@ function BlockContent({ block, isUploading, fileInputRef, onBlockChange, onImage
     case 'image':
       return (
         <div className="py-1">
-          {block.content ? (
+          {block.content || previewUrl ? (
             <div className="relative group/img">
               <img
-                src={block.content}
+                src={block.content || previewUrl}
                 alt="첨부 이미지"
-                className="max-w-full rounded-lg border border-gray-200"
+                className={`max-w-full rounded-lg border border-gray-200 ${!block.content ? 'opacity-60' : ''}`}
               />
+              {/* 업로드 진행 중 표시 (미리보기 위) */}
+              {!block.content && (
+                <span className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                  업로드 중...
+                </span>
+              )}
               {/* 이미지 교체 버튼 */}
               <button
                 onClick={() => fileInputRef.current?.click()}
