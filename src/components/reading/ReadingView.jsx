@@ -74,12 +74,28 @@ export default function ReadingView() {
   const [editingCompletedAtId, setEditingCompletedAtId] = useState(null)
   const [completedAtDraft, setCompletedAtDraft] = useState('')
 
+  // 완료 탭 연도 필터 (기본: 올해, 'all' = 전체)
+  const [completedYear, setCompletedYear] = useState(() => String(new Date().getFullYear()))
+
+  const allCompletedBooks = books
+    .filter((book) => getBookGroup(book) === 'completed')
+    .sort((a, b) => (b.completedAt || '').localeCompare(a.completedAt || ''))
+
+  // 완료일이 있는 연도 + 올해를 내림차순으로 (완료일 미지정 책은 '전체'에서만 노출)
+  const completedYearOptions = Array.from(
+    new Set([
+      String(new Date().getFullYear()),
+      ...allCompletedBooks.filter((book) => book.completedAt).map((book) => book.completedAt.slice(0, 4)),
+    ]),
+  ).sort((a, b) => b.localeCompare(a))
+
   const bookGroups = {
     reading: books.filter((book) => getBookGroup(book) === 'reading'),
     idle: books.filter((book) => getBookGroup(book) === 'idle'),
-    completed: books
-      .filter((book) => getBookGroup(book) === 'completed')
-      .sort((a, b) => (b.completedAt || '').localeCompare(a.completedAt || '')),
+    completed:
+      completedYear === 'all'
+        ? allCompletedBooks
+        : allCompletedBooks.filter((book) => book.completedAt?.startsWith(completedYear)),
   }
   const visibleBooks = bookGroups[bookTab]
 
@@ -378,9 +394,33 @@ export default function ReadingView() {
               </button>
             ))}
           </div>
+          {bookTab === 'completed' && (
+            <div className="flex items-center gap-2 mb-4">
+              <label htmlFor="completed-year" className="text-sm font-medium text-gray-600">
+                완료 연도
+              </label>
+              <select
+                id="completed-year"
+                value={completedYear}
+                onChange={(e) => setCompletedYear(e.target.value)}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {completedYearOptions.map((y) => (
+                  <option key={y} value={y}>
+                    {y}년 ({allCompletedBooks.filter((book) => book.completedAt?.startsWith(y)).length}권)
+                  </option>
+                ))}
+                <option value="all">전체 ({allCompletedBooks.length}권)</option>
+              </select>
+            </div>
+          )}
           {visibleBooks.length === 0 ? (
             <div className="text-center py-8 text-gray-400 text-xl">
-              {books.length === 0 ? '등록된 책이 없습니다.' : BOOK_TAB_EMPTY_MESSAGES[bookTab]}
+              {books.length === 0
+                ? '등록된 책이 없습니다.'
+                : bookTab === 'completed' && completedYear !== 'all'
+                ? `${completedYear}년에 완료한 책이 없습니다.`
+                : BOOK_TAB_EMPTY_MESSAGES[bookTab]}
             </div>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
