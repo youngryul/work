@@ -30,7 +30,33 @@ function sortCompletedBooks(books) {
  * @param {{ books: Array }} props
  */
 export default function ReadingBookStack({ books }) {
-  const completedBooks = useMemo(() => sortCompletedBooks(books), [books])
+  const currentYear = String(new Date().getFullYear())
+  // 독서 탑 연도 필터 (기본: 올해, 'all' = 전체)
+  const [selectedYear, setSelectedYear] = useState(currentYear)
+
+  const allCompletedBooks = useMemo(() => sortCompletedBooks(books), [books])
+
+  // 완료일이 있는 연도 + 올해를 내림차순으로 (완료일 미지정 책은 '전체'에서만 노출)
+  const yearOptions = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          currentYear,
+          ...allCompletedBooks.filter((book) => book.completedAt).map((book) => book.completedAt.slice(0, 4)),
+        ]),
+      ).sort((a, b) => b.localeCompare(a)),
+    [allCompletedBooks, currentYear],
+  )
+
+  // 연도가 바뀌면 새 배열이 되어 아래 effect가 낙하 애니메이션을 다시 재생
+  const completedBooks = useMemo(
+    () =>
+      selectedYear === 'all'
+        ? allCompletedBooks
+        : allCompletedBooks.filter((book) => book.completedAt?.startsWith(selectedYear)),
+    [allCompletedBooks, selectedYear],
+  )
+  const isAllYears = selectedYear === 'all'
   const [animatedCount, setAnimatedCount] = useState(0)
 
   useEffect(() => {
@@ -60,9 +86,22 @@ export default function ReadingBookStack({ books }) {
         <div>
           <h2 className="text-3xl font-bold text-gray-800 font-sans">포실이 독서 탑</h2>
           <p className="text-sm text-gray-500 font-sans mt-1">
-            지금까지 완독한 책 {completedBooks.length}권
+            {isAllYears ? '지금까지' : `${selectedYear}년에`} 완독한 책 {completedBooks.length}권
           </p>
         </div>
+        <select
+          aria-label="독서 탑 연도"
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(e.target.value)}
+          className="px-3 py-1.5 text-sm font-sans border border-amber-300 rounded-lg bg-white text-gray-700 focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
+        >
+          {yearOptions.map((y) => (
+            <option key={y} value={y}>
+              {y}년
+            </option>
+          ))}
+          <option value="all">전체</option>
+        </select>
       </div>
 
       <div className="relative overflow-hidden rounded-2xl border-2 border-amber-200 bg-gradient-to-b from-sky-100 via-amber-50 to-amber-100 p-6 min-h-[420px]">
@@ -70,7 +109,9 @@ export default function ReadingBookStack({ books }) {
 
         {completedBooks.length === 0 ? (
           <div className="flex flex-col items-center justify-end min-h-[320px] text-center pb-2">
-            <p className="text-lg text-gray-600 font-sans mb-1">아직 완독한 책이 없어요</p>
+            <p className="text-lg text-gray-600 font-sans mb-1">
+              {isAllYears ? '아직 완독한 책이 없어요' : `${selectedYear}년에 완독한 책이 아직 없어요`}
+            </p>
             <p className="text-sm text-gray-400 font-sans mb-4">책을 다 읽고 완료 버튼을 눌러보세요!</p>
             <img
               src={BOOK_GIF_SRC}
