@@ -29,6 +29,7 @@ export const tasks = pgTable('tasks', {
   handwritingImageUrl: text('handwriting_image_url'), // iOS 앱에서 손글씨로 작성한 경우 손글씨 이미지 URL
   timeSlot: text('time_slot'), // 'morning' | 'afternoon' | 'evening' | NULL(미지정)
   isKey: boolean('is_key').default(false).notNull(), // 오늘의 핵심 할 일
+  postponeCount: integer('postpone_count').default(0).notNull(), // 끝내지 못하고 백로그로 돌아간 횟수
 })
 
 /**
@@ -856,3 +857,16 @@ export const userPosiliLoadout = pgTable(
  *   · user_preferences.notification_monthly_goal_enabled boolean DEFAULT true
  * - "습관 트래커 필요" 여부는 habit_trackers.monthly_goal_id 연결 여부로 판단한다.
  */
+
+/**
+ * backlog_health_checks — 백로그 점검 기록 (지표 추이·병목 해소 비교용)
+ * RLS 정책은 supabase-backlog-health-checks.sql 참고
+ */
+export const backlogHealthChecks = pgTable('backlog_health_checks', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull(),
+  checkedAt: timestamp('checked_at', { withTimezone: true }).defaultNow().notNull(),
+  metrics: jsonb('metrics').notNull().default({}),
+  summary: text('summary').notNull().default(''),
+  bottleneckTaskIds: uuid('bottleneck_task_ids').array().notNull().default([]),
+})

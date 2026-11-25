@@ -479,6 +479,15 @@ export default function TaskItem({
               ⭐ 핵심
             </span>
           )}
+          {/* 백로그: 오늘 할 일에서 끝내지 못하고 돌아온 횟수 */}
+          {isBacklog && task.postponeCount > 0 && !localCompleted && (
+            <span
+              className="ml-2 text-xs font-semibold text-gray-700 bg-white/80 border border-gray-300 rounded-full px-2 py-0.5 align-middle whitespace-nowrap"
+              title="오늘 할 일에 올렸다가 끝내지 못하고 백로그로 돌아온 횟수"
+            >
+              🔁 미룸 {task.postponeCount}회
+            </span>
+          )}
         </span>
       )}
 

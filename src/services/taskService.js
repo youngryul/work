@@ -23,6 +23,21 @@ function normalizeTask(task) {
     handwritingImageUrl: task.handwriting_image_url ?? task.handwritingImageUrl ?? null,
     timeSlot: task.time_slot ?? task.timeSlot ?? null,
     isKey: task.is_key ?? task.isKey ?? false,
+    postponeCount: Number(task.postpone_count ?? task.postponeCount ?? 0) || 0,
+  }
+}
+
+/**
+ * 미룸 횟수 +1 (오늘 할 일에서 끝내지 못하고 백로그로 돌아갈 때)
+ * 마이그레이션(supabase-tasks-postpone-count.sql) 전이어도 백로그 이동은 계속되도록 실패를 삼킨다
+ * @param {string[]} ids - 할 일 ID 목록 (미완료만 DB 에서 증가)
+ * @returns {Promise<void>}
+ */
+async function incrementPostponeCount(ids) {
+  if (!ids?.length) return
+  const { error } = await supabase.rpc('increment_task_postpone_count', { p_task_ids: ids })
+  if (error) {
+    console.warn('미룸 횟수 기록 실패 (마이그레이션 확인 필요):', error.message)
   }
 }
 
@@ -427,6 +442,7 @@ export async function moveToToday(id, options = {}) {
  * @returns {Promise<Object|null>} 수정된 할 일
  */
 export async function moveToBacklog(id) {
+  await incrementPostponeCount([id])
   return updateTask(id, { istoday: false })
 }
 
@@ -445,7 +461,7 @@ export async function resetTodayTasks() {
     // 오늘 할 일 중 모든 항목 조회 (완료/미완료 모두)
     const { data: allTodayTasks, error: fetchError } = await supabase
       .from('tasks')
-      .select('id')
+      .select('id, completed')
       .eq('user_id', userId)
       .eq('istoday', true)
 
@@ -458,6 +474,8 @@ export async function resetTodayTasks() {
     let movedCount = 0
     if (allTodayTasks && allTodayTasks.length > 0) {
       const allIds = allTodayTasks.map((t) => t.id)
+      // 끝내지 못한 할 일은 미룸 횟수 +1 (백로그 점검의 병목 판단용)
+      await incrementPostponeCount(allTodayTasks.filter((t) => !t.completed).map((t) => t.id))
       const { error: updateError } = await supabase
         .from('tasks')
         .update({ istoday: false })
@@ -633,6 +651,37 @@ export async function getCompletedTasksByMonth(year, month) {
 }
 
 /**
+ * 특정 시점 이후 완료한 할 일 목록 (패턴 분석용)
+ * @param {number} sinceTimestamp - 이 시각(ms) 이후 완료한 항목
+ * @param {number} [limit] - 최대 개수
+ * @returns {Promise<Array>} 완료한 할 일 목록 (최근 완료 순)
+ */
+export async function getCompletedTasksSince(sinceTimestamp, limit = 2000) {
+  const userId = await getCurrentUserId()
+  if (!userId) {
+    console.warn('로그인이 필요합니다.')
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('completed', true)
+    .not('completedat', 'is', null)
+    .gte('completedat', sinceTimestamp)
+    .order('completedat', { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    console.error('기간별 완료된 할 일 조회 오류:', error)
+    throw error
+  }
+
+  return (data || []).map(normalizeTask)
+}
+
+/**
  * 예약된 날짜가 오늘인 항목들을 오늘 할일로 자동 이동
  * @returns {Promise<number>} 이동된 항목 개수
  */
@@ -795,6 +844,7 @@ export async function moveTasksToBacklog(ids) {
   }
   if (!ids || ids.length === 0) return
 
+  await incrementPostponeCount(ids)
   const { error } = await supabase
     .from('tasks')
     .update({ istoday: false })

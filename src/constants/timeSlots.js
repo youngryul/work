@@ -181,6 +181,21 @@ export function isBeforeMorning(dateOrTimestamp = new Date(), times = getTimeSlo
 }
 
 /**
+ * 시각이 속한 "하루" (오전 시작 전 새벽은 전날 '퇴근 후'의 연장이므로 전날로 취급)
+ * 요일·일자별 통계를 낼 때 시간대 판정과 같은 기준을 쓰기 위함
+ * @param {Date | number} dateOrTimestamp
+ * @param {{ morning: number }} [times]
+ * @returns {Date}
+ */
+export function getSlotDayDate(dateOrTimestamp, times = getTimeSlotTimes()) {
+  const date = new Date(dateOrTimestamp)
+  if (isBeforeMorning(date, times)) {
+    date.setDate(date.getDate() - 1)
+  }
+  return date
+}
+
+/**
  * 시각 → 시간대 키
  * @param {Date | number} [dateOrTimestamp]
  * @param {{ morning: number, afternoon: number, evening: number }} [times]

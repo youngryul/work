@@ -6,6 +6,7 @@ import {
   DEFAULT_STUDY_TIMER_CATEGORY,
 } from '../constants/studyTimerCategories.js'
 import { awardJellyForStudySession } from './jellyService.js'
+import { getCurrentUserId } from '../utils/authHelper.js'
 
 /**
  * 오늘 날짜 YYYY-MM-DD (로컬)
@@ -146,6 +147,36 @@ export async function getStudySecondsByDate(year, month, options = {}) {
     totals[key] = (totals[key] || 0) + (Number(row.duration_seconds) || 0)
   }
   return totals
+}
+
+/**
+ * 특정 시점 이후 기록된 집중 세션 (요일·시간대 분석용)
+ * created_at 은 세션을 저장한 시각(= 끝난 시각)
+ * @param {number} sinceTimestamp - 이 시각(ms) 이후 기록된 세션
+ * @returns {Promise<Array<{ recordedAt: number, durationSeconds: number, source: string, category: string }>>}
+ */
+export async function getStudySessionsSince(sinceTimestamp) {
+  const userId = await getCurrentUserId()
+  if (!userId) return []
+
+  const { data, error } = await supabase
+    .from('study_sessions')
+    .select('created_at, duration_seconds, source, category')
+    .eq('user_id', userId)
+    .gte('created_at', new Date(sinceTimestamp).toISOString())
+    .order('created_at', { ascending: false })
+    .limit(3000)
+
+  if (error) throw error
+
+  return (data || [])
+    .map((row) => ({
+      recordedAt: Date.parse(row.created_at),
+      durationSeconds: Number(row.duration_seconds) || 0,
+      source: row.source || 'unknown',
+      category: row.category || 'study',
+    }))
+    .filter((row) => Number.isFinite(row.recordedAt) && row.durationSeconds > 0)
 }
 
 /**

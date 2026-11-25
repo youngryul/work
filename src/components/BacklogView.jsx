@@ -9,6 +9,7 @@ import { MENU_ICON_PATHS } from '../constants/navigationMenu.js'
 import { showToast, TOAST_TYPES } from './Toast.jsx'
 import ViewPageTitle from './ViewPageTitle.jsx'
 import BacklogAssistantChat from './backlog/BacklogAssistantChat.jsx'
+import BacklogHealthCheckModal from './backlog/BacklogHealthCheckModal.jsx'
 
 /**
  * 백로그 화면 컴포넌트
@@ -21,6 +22,8 @@ export default function BacklogView() {
   const [defaultCategory, setDefaultCategory] = useState('회사') // 기본값 먼저 설정
   /** 완료 애니메이션 중인 할 일 ID (목록에 유지) */
   const [completingTaskIds, setCompletingTaskIds] = useState(() => new Set())
+  /** 백로그 점검 모달 열림 여부 (점검은 모달 안 버튼을 눌러야만 실행) */
+  const [isHealthCheckOpen, setIsHealthCheckOpen] = useState(false)
 
   /**
    * 기본 카테고리 로드 (비동기로 처리하여 UI 블로킹 방지)
@@ -153,12 +156,28 @@ export default function BacklogView() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <BacklogAssistantChat onTasksCreated={loadTasks} />
+      <BacklogHealthCheckModal
+        open={isHealthCheckOpen}
+        onClose={() => setIsHealthCheckOpen(false)}
+        backlogTasks={tasks.filter((task) => !task.completed)}
+        onTasksChanged={loadTasks}
+      />
       <ViewPageTitle iconSrc={MENU_ICON_PATHS.backlog} title="백로그">
-        <p className="text-xl text-white">
-          {visibleTasks.length > 0
-            ? `총 ${visibleTasks.length}개의 할 일`
-            : '백로그가 비어있어요'}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xl text-white">
+            {visibleTasks.length > 0
+              ? `총 ${visibleTasks.length}개의 할 일`
+              : '백로그가 비어있어요'}
+          </p>
+          <button
+            type="button"
+            onClick={() => setIsHealthCheckOpen(true)}
+            className="px-4 py-2 rounded-xl bg-green-600 text-white text-base font-semibold hover:bg-green-700 shadow-sm transition-colors"
+            title="AI 로 병목 할일과 나에게 맞는 요일·시간대를 점검해요"
+          >
+            🩺 백로그 점검
+          </button>
+        </div>
       </ViewPageTitle>
 
       {/* 카테고리 관리 */}

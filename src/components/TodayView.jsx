@@ -20,6 +20,9 @@ import ViewPageTitle from './ViewPageTitle.jsx'
 import DiaryMemoryCard from './DiaryMemoryCard.jsx'
 import TimeSlotSection from './today/TimeSlotSection.jsx'
 import TimeSlotCleanupBanner from './today/TimeSlotCleanupBanner.jsx'
+import TodayOverloadBanner from './today/TodayOverloadBanner.jsx'
+import { getDailyCapacity, getOverloadThreshold } from '../services/taskCapacityService.js'
+import { TODAY_OVERLOAD_DISMISS_STORAGE_KEY } from '../constants/backlogHealthCheck.js'
 import {
   TIME_SLOTS,
   UNASSIGNED_SLOT,
@@ -118,6 +121,23 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
   })
   const [isCleaningUp, setIsCleaningUp] = useState(false)
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
+  /** 최근 4주 하루 처리량 (과부하 경고 기준, 기록이 없으면 null) */
+  const [dailyCapacity, setDailyCapacity] = useState(null)
+  /** 과부하 배너를 "오늘은 그만 보기" 한 날짜 */
+  const [overloadDismissedDate, setOverloadDismissedDate] = useState(() => {
+    try {
+      return localStorage.getItem(TODAY_OVERLOAD_DISMISS_STORAGE_KEY) || ''
+    } catch {
+      return ''
+    }
+  })
+
+  // 하루 처리량은 하루 한 번만 계산 (캐시)
+  useEffect(() => {
+    getDailyCapacity()
+      .then(setDailyCapacity)
+      .catch((error) => console.warn('하루 처리량 계산 실패:', error))
+  }, [])
 
   /**
    * 날짜 변경 감지 및 리셋 처리
@@ -297,6 +317,46 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
       // createdat 기준 오름차순
       return a.createdAt - b.createdAt
     })
+
+  /** 과부하 경고: 남은 할 일이 평소 하루 처리량 + 여유분을 넘으면 표시 */
+  const pendingTasks = incompleteTasks.filter((task) => !completingTaskIds.has(task.id))
+  const overloadThreshold = getOverloadThreshold(dailyCapacity)
+  const isOverloaded = overloadThreshold !== null && pendingTasks.length > overloadThreshold
+  /** 백로그로 보낼 후보: '언제든'(시간대 미지정)이면서 핵심이 아닌 할 일, 목록 뒤쪽부터 넘치는 만큼 */
+  const overloadMovableTasks = isOverloaded
+    ? pendingTasks
+        .filter((task) => !isValidTimeSlot(task.timeSlot) && !task.isKey)
+        .slice(-Math.max(1, Math.round(pendingTasks.length - dailyCapacity.avgPerActiveDay)))
+    : []
+  const showOverloadBanner = !isLoading && isOverloaded && overloadDismissedDate !== getTodayDateString()
+
+  const dismissOverloadBanner = () => {
+    const today = getTodayDateString()
+    setOverloadDismissedDate(today)
+    try {
+      localStorage.setItem(TODAY_OVERLOAD_DISMISS_STORAGE_KEY, today)
+    } catch {
+      // 저장 실패해도 이번 화면에서는 숨김
+    }
+  }
+
+  /**
+   * 과부하일 때 '언제든' 할 일 일부를 백로그로 보내기
+   */
+  const handleOverloadMoveToBacklog = async () => {
+    const ids = overloadMovableTasks.map((task) => task.id)
+    if (ids.length === 0) return
+    setIsCleaningUp(true)
+    try {
+      await moveTasksToBacklog(ids)
+      setTasks((prev) => prev.filter((task) => !ids.includes(task.id)))
+      showToast(`${ids.length}개를 백로그로 보냈어요.`, TOAST_TYPES.SUCCESS)
+    } catch (error) {
+      showToast(error.message || '백로그 이동에 실패했습니다.', TOAST_TYPES.ERROR)
+    } finally {
+      setIsCleaningUp(false)
+    }
+  }
 
   /**
    * 드래그 시작 핸들러
@@ -765,6 +825,18 @@ export default function TodayView({ appTheme = APP_THEMES.POSILY }) {
             onMoveToCurrent={handleMoveLeftoversToCurrent}
             onMoveToBacklog={handleMoveLeftoversToBacklog}
             onDismiss={dismissCleanupBanner}
+          />
+        )}
+
+        {/* 오늘 할 일 과부하 경고 */}
+        {showOverloadBanner && (
+          <TodayOverloadBanner
+            pendingCount={pendingTasks.length}
+            avgPerActiveDay={dailyCapacity.avgPerActiveDay}
+            movableCount={overloadMovableTasks.length}
+            isWorking={isCleaningUp}
+            onMoveToBacklog={handleOverloadMoveToBacklog}
+            onDismiss={dismissOverloadBanner}
           />
         )}
 
