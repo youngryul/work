@@ -13,9 +13,10 @@ const SKIP_COMPRESS_TYPES = ['image/gif', 'image/svg+xml']
  * 이미지 업로드
  * @param {File} file - 업로드할 이미지 파일
  * @param {string} folder - 저장할 폴더명 (기본값: 'project-records')
+ * @param {{ skipCompress?: boolean }} [options] - skipCompress: 투명 PNG처럼 JPEG로 바꾸면 안 되는 이미지
  * @returns {Promise<string>} 업로드된 이미지의 공개 URL
  */
-export async function uploadImage(originalFile, folder = 'project-records') {
+export async function uploadImage(originalFile, folder = 'project-records', options = {}) {
   // 파일 유효성 검사
   if (!originalFile.type.startsWith('image/')) {
     throw new Error('이미지 파일만 업로드 가능합니다.')
@@ -23,7 +24,7 @@ export async function uploadImage(originalFile, folder = 'project-records') {
 
   // 저장 용량 절약을 위해 업로드 전에 압축한다 (긴 변 1600px, JPEG)
   // GIF(움짤)·SVG는 변환하면 애니메이션/벡터가 깨지므로 원본 유지
-  const file = SKIP_COMPRESS_TYPES.includes(originalFile.type)
+  const file = options.skipCompress || SKIP_COMPRESS_TYPES.includes(originalFile.type)
     ? originalFile
     : await compressImageFile(originalFile)
 

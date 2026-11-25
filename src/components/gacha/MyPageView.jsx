@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { getGachaGradeMeta } from '../../constants/gachaGrades.js'
-import { getMyFarmProgress } from '../../services/farmService.js'
+import { getFarmDisplayImage } from '../../constants/farm.js'
+import { getFarmSettingsMap, getMyFarmProgress } from '../../services/farmService.js'
+import { usePosiliLoadout } from '../../hooks/usePosiliLoadout.js'
+import PosiliAvatar from '../posili/PosiliAvatar.jsx'
+import PosiliDecorModal from '../posili/PosiliDecorModal.jsx'
 import {
   getMyGachaCollection,
   getMyGachaPullCount,
@@ -20,18 +24,25 @@ export default function MyPageView() {
   const [activeCharacterId, setActiveCharacterId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [settingId, setSettingId] = useState(null)
+  const [farmStage, setFarmStage] = useState(1)
+  const [farmSettings, setFarmSettings] = useState({})
+  const [showDecor, setShowDecor] = useState(false)
+  const { loadout: posiliLoadout } = usePosiliLoadout()
 
   const load = async () => {
     setLoading(true)
     try {
-      const [items, count, progress] = await Promise.all([
+      const [items, count, progress, settings] = await Promise.all([
         getMyGachaCollection(),
         getMyGachaPullCount(),
         getMyFarmProgress(),
+        getFarmSettingsMap().catch(() => ({})),
       ])
       setCollection(items)
       setTotalPulls(count)
       setActiveCharacterId(progress.activeCharacter?.characterId ?? null)
+      setFarmStage(progress.stage ?? 1)
+      setFarmSettings(settings || {})
     } catch {
       setCollection([])
       setTotalPulls(0)
@@ -59,6 +70,14 @@ export default function MyPageView() {
     }
   }
 
+  // 내 캐릭터를 바꾸면 컬렉션의 이미지로 바로 반영한다
+  const activeCollectionItem = collection.find((item) => item.characterId === activeCharacterId)
+  const myPosiliImage = getFarmDisplayImage(
+    farmStage,
+    farmSettings,
+    activeCollectionItem ? { imageUrl: activeCollectionItem.imageUrl } : null,
+  )
+
   return (
     <div className="max-w-4xl mx-auto p-6 font-sans">
       <ViewPageTitle icon="👤" title="마이페이지">
@@ -66,6 +85,36 @@ export default function MyPageView() {
           {user?.email ? `${user.email}님의 ` : ''}포실이 컬렉션
         </p>
       </ViewPageTitle>
+
+      {!loading && (
+        <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border-2 border-green-200 bg-gradient-to-b from-sky-100 via-green-50 to-amber-50 p-5 shadow-sm sm:flex-row sm:gap-6">
+          <PosiliAvatar
+            characterImageUrl={myPosiliImage}
+            loadout={posiliLoadout}
+            sizeClassName="w-32 h-32 sm:w-36 sm:h-36"
+          />
+          <div className="text-center sm:text-left">
+            <p className="text-lg font-bold text-green-900">내 포실이</p>
+            <p className="mt-1 text-sm text-gray-600">배경과 액자로 포실이를 꾸며 보세요. 꾸민 모습은 포실이 성장 화면에도 보여요.</p>
+            <button
+              type="button"
+              onClick={() => setShowDecor(true)}
+              className="mt-3 inline-flex items-center gap-1 rounded-full border border-pink-200 bg-white/90 px-4 py-1.5 text-sm font-bold text-pink-700 shadow-sm hover:bg-pink-50"
+            >
+              🎀 꾸미기
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 열 때만 마운트해서 페이지 진입 시 불필요한 조회를 하지 않는다 */}
+      {showDecor && (
+        <PosiliDecorModal
+          open
+          onClose={() => setShowDecor(false)}
+          characterImageUrl={myPosiliImage}
+        />
+      )}
 
       <p className="mt-4 text-sm text-gray-600 bg-sky-50 border border-sky-100 rounded-xl px-4 py-3">
         뽑은 포실이 중 하나를 <strong>내 캐릭터</strong>로 설정하면 포실이 성장 화면(2단계 이상)에 표시돼요.

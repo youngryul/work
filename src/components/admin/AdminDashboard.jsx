@@ -7,6 +7,7 @@ import AdSettingsManagement from './AdSettingsManagement.jsx'
 import AiTokenManagement from './AiTokenManagement.jsx'
 import TokenPurchaseRequestManagement from './TokenPurchaseRequestManagement.jsx'
 import GachaCharacterManagement from './GachaCharacterManagement.jsx'
+import DecorItemManagement from './DecorItemManagement.jsx'
 import RoleMenuManagement from './RoleMenuManagement.jsx'
 import FeedbackManagement from './FeedbackManagement.jsx'
 
@@ -15,7 +16,7 @@ import FeedbackManagement from './FeedbackManagement.jsx'
  */
 export default function AdminDashboard() {
   const { user, loading: authLoading, isAdmin: isAdminUser } = useAuth()
-  const [activeTab, setActiveTab] = useState('announcements') // ... | 'gacha'
+  const [activeTab, setActiveTab] = useState('announcements') // ... | 'gacha' | 'decor'
 
   if (authLoading) {
     return (
@@ -138,6 +139,16 @@ export default function AdminDashboard() {
           >
             포실이 가챠
           </button>
+          <button
+            onClick={() => setActiveTab('decor')}
+            className={`px-6 py-2 rounded-lg font-semibold transition-colors font-sans ${
+              activeTab === 'decor'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            포실이 꾸미기
+          </button>
         </div>
       </div>
 
@@ -151,6 +162,7 @@ export default function AdminDashboard() {
       {activeTab === 'tokens' && <AiTokenManagement />}
       {activeTab === 'purchases' && <TokenPurchaseRequestManagement />}
       {activeTab === 'gacha' && <GachaCharacterManagement />}
+      {activeTab === 'decor' && <DecorItemManagement />}
     </div>
   )
 }

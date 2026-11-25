@@ -797,6 +797,56 @@ export const userFarmPostcards = pgTable(
 )
 
 /**
+ * decor_items — 포실이 꾸미기 아이템 (RLS·RPC: supabase-posili-decor.sql)
+ */
+export const decorItems = pgTable('decor_items', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  slot: text('slot').notNull(),
+  name: text('name').notNull(),
+  description: text('description').notNull().default(''),
+  imageUrl: text('image_url').notNull(),
+  rarity: text('rarity').notNull().default('common'),
+  priceJelly: integer('price_jelly').notNull().default(0),
+  isActive: boolean('is_active').notNull().default(true),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * user_decor_items — 사용자가 가진 꾸미기 아이템
+ */
+export const userDecorItems = pgTable(
+  'user_decor_items',
+  {
+    userId: uuid('user_id').notNull(),
+    itemId: uuid('item_id').notNull(),
+    acquiredVia: text('acquired_via').notNull().default('jelly'),
+    jellySpent: integer('jelly_spent').notNull().default(0),
+    acquiredAt: timestamp('acquired_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.itemId] }),
+  }),
+)
+
+/**
+ * user_posili_loadout — 부위별 착용 중인 꾸미기 아이템
+ */
+export const userPosiliLoadout = pgTable(
+  'user_posili_loadout',
+  {
+    userId: uuid('user_id').notNull(),
+    slot: text('slot').notNull(),
+    itemId: uuid('item_id').notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.slot] }),
+  }),
+)
+
+/**
  * 월별 목표 · 습관 트래커 (Drizzle 미관리, SQL 파일로 관리)
  * - monthly_goals, habit_trackers, habit_tracker_days, user_preferences 는
  *   Supabase에서 직접 만든 테이블이라 이 파일에 정의하지 않는다.

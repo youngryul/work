@@ -38,11 +38,16 @@ import { showToast, TOAST_TYPES } from '../Toast.jsx'
 
 import ViewPageTitle from '../ViewPageTitle.jsx'
 import FarmRankingView from './FarmRankingView.jsx'
+import PosiliAvatar from '../posili/PosiliAvatar.jsx'
+import PosiliDecorModal from '../posili/PosiliDecorModal.jsx'
+import { usePosiliLoadout } from '../../hooks/usePosiliLoadout.js'
 import FarmTripPanel from './FarmTripPanel.jsx'
 
 export default function FarmView() {
 
   const [showRanking, setShowRanking] = useState(false)
+  const [showDecor, setShowDecor] = useState(false)
+  const { loadout: posiliLoadout } = usePosiliLoadout()
 
   const [progress, setProgress] = useState({
 
@@ -330,6 +335,15 @@ export default function FarmView() {
 
       )}
 
+      {/* 열 때만 마운트해서 농장 진입 시 불필요한 조회를 하지 않는다 */}
+      {showDecor && (
+        <PosiliDecorModal
+          open
+          onClose={() => setShowDecor(false)}
+          characterImageUrl={stageImage}
+        />
+      )}
+
       {/* 캐릭터 & 성장 */}
 
       <div className="relative overflow-hidden rounded-3xl border-2 border-green-200 bg-gradient-to-b from-sky-100 via-green-50 to-amber-50 p-6 shadow-lg">
@@ -342,29 +356,27 @@ export default function FarmView() {
 
           </span>
 
-          <div className={`mx-auto ${stage === 1 ? 'farm-baby-bounce' : ''}`}>
-
-            <img
-
-              src={stageImage}
-
-              alt="포실이"
-
-              className={`mx-auto object-contain drop-shadow-xl select-none ${
-
-                stage === 1 ? 'w-40 h-40 sm:w-48 sm:h-48' : 'w-36 h-36 sm:w-44 sm:h-44'
-
-              }`}
-
-            />
-
-          </div>
+          <PosiliAvatar
+            characterImageUrl={stageImage}
+            loadout={posiliLoadout}
+            sizeClassName="w-44 h-44 sm:w-52 sm:h-52"
+            characterSizeClassName={stage === 1 ? 'w-[90%] h-[90%]' : 'w-[82%] h-[82%]'}
+            characterMotionClassName={stage === 1 ? 'farm-baby-bounce' : ''}
+          />
 
           {stage >= 2 && progress.activeCharacter && (
             <p className="mt-2 text-sm font-semibold text-green-800">
               {progress.activeCharacter.name}
             </p>
           )}
+
+          <button
+            type="button"
+            onClick={() => setShowDecor(true)}
+            className="mt-3 inline-flex items-center gap-1 rounded-full border border-pink-200 bg-white/90 px-4 py-1.5 text-sm font-bold text-pink-700 shadow-sm hover:bg-pink-50"
+          >
+            🎀 꾸미기
+          </button>
 
           {stage >= 3 && !progress.activeCharacter && (
             <p className="mt-2 text-xs text-emerald-700">
